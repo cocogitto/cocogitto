@@ -1,17 +1,43 @@
+#![feature(drain_filter)]
 #[macro_use]
 extern crate anyhow;
 
 mod git;
+use crate::git::changelog::Changelog;
 use git2::{Oid, Repository};
 use git::Commit;
 
 pub fn get_changelog(from: &str, to: &str) -> anyhow::Result<String> {
-    let from = Oid::from_str(from)?;
-    let to = Oid::from_str(to)?;
-    get_changelog_from_oid_range(from, to)
+    let from_oid = Oid::from_str(from)?;
+    let to_oid = Oid::from_str(to)?;
+    let commits = get_changelog_from_oid_range(from_oid, to_oid)?;
+
+    let mut changelog = Changelog {
+        from: from.to_owned(),
+        to: to.to_owned(),
+        date: "2020-07-15".to_owned(),
+        commits,
+    };
+    
+    Ok(changelog.to_markdown())
 }
 
-pub fn get_changelog_from_oid_range(from: Oid, to: Oid) -> anyhow::Result<String> {
+pub fn get_changelog_from_tags(from: &str, to: &str) -> anyhow::Result<String> {
+    let from_oid = resolve_lightweight_tags_oid(from)?;
+    let to_oid = resolve_lightweight_tags_oid(to)?;
+    let commits = get_changelog_from_oid_range(from_oid, to_oid)?;
+
+    let mut changelog = Changelog {
+        from: from.to_owned(),
+        to: to.to_owned(),
+        date: "2020-07-15".to_owned(),
+        commits,
+    };
+
+    Ok(changelog.to_markdown())
+}
+
+fn get_changelog_from_oid_range(from: Oid, to: Oid) -> anyhow::Result<Vec<Commit>> {
     let repo = Repository::open("./")?;
    
     // Ensure commit exists
@@ -36,14 +62,7 @@ pub fn get_changelog_from_oid_range(from: Oid, to: Oid) -> anyhow::Result<String
         commits.push(Commit::from_raw_message(raw_message));
     }
 
-    Ok("".to_string())
-}
-
-pub fn get_changelog_from_tags(from: &str, to: &str) -> anyhow::Result<String> {
-    let from_oid = resolve_lightweight_tags_oid(from)?;
-    let to_oid = resolve_lightweight_tags_oid(to)?;
-    get_changelog_from_oid_range(from_oid, to_oid)?;
-    Ok("".to_string())
+    Ok(commits)
 }
 
 fn resolve_lightweight_tags_oid(tag: &str) -> anyhow::Result<Oid> {

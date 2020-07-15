@@ -1,3 +1,5 @@
+pub mod changelog; 
+
 pub struct Commit {
     pub commit_type: String,
     pub scope: Option<String>,
@@ -5,7 +7,7 @@ pub struct Commit {
 }
 
 impl Commit {
-  pub fn from_raw_message(message: &str) -> Self {
+  pub(crate) fn from_raw_message(message: &str) -> Self {
 
     
     let split : Vec<&str> = message.split(": ").collect();
