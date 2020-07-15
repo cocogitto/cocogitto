@@ -1,4 +1,4 @@
-use crate::git::Commit;
+use crate::git::commit::Commit;
 
 pub struct Changelog {
   pub from: String,
@@ -8,11 +8,16 @@ pub struct Changelog {
 }
 
 impl Changelog {
-  pub fn to_markdown(&mut self) -> String {
+  pub fn markdown_header() -> String {
+    let mut out = 
+    #"# Changelog
+
+    All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
+    "#;
+  }
+  pub fn tag_diff_to_markdown(&mut self) -> String {
     let mut out = String::new(); 
-    out.push_str(&format!("## {}..{} - {}", self.from, self.to, self.date));
-    out.push_str("\n");
-    
+    out.push_str(&format!("## {}..{} - {}\n\n", self.from, self.to, self.date));
 
     out.push_str("### Features\n\n");
     self.commits.drain_filter(|commit|commit.commit_type == "feat")
@@ -57,6 +62,8 @@ impl Changelog {
     out.push_str("### Continuous Integration\n\n");
     self.commits.drain_filter(|commit|commit.commit_type == "ci")
     .for_each(|commit|out.push_str(&commit.description));
+
+    // TODO: add commit type from config
 
     out
   }

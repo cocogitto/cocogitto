@@ -5,7 +5,7 @@ extern crate anyhow;
 mod git;
 use crate::git::changelog::Changelog;
 use git2::{Oid, Repository};
-use git::Commit;
+use git::commit::Commit;
 
 pub fn get_changelog(from: &str, to: &str) -> anyhow::Result<String> {
     let from_oid = Oid::from_str(from)?;
@@ -19,7 +19,7 @@ pub fn get_changelog(from: &str, to: &str) -> anyhow::Result<String> {
         commits,
     };
     
-    Ok(changelog.to_markdown())
+    Ok(changelog.tag_diff_to_markdown())
 }
 
 pub fn get_changelog_from_tags(from: &str, to: &str) -> anyhow::Result<String> {
@@ -34,7 +34,7 @@ pub fn get_changelog_from_tags(from: &str, to: &str) -> anyhow::Result<String> {
         commits,
     };
 
-    Ok(changelog.to_markdown())
+    Ok(changelog.tag_diff_to_markdown())
 }
 
 fn get_changelog_from_oid_range(from: Oid, to: Oid) -> anyhow::Result<Vec<Commit>> {
