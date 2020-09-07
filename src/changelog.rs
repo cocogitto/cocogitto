@@ -1,9 +1,10 @@
-use crate::git::commit::{Commit, CommitType};
+use crate::commit::{Commit, CommitType};
 use colored::*;
+use git2::Oid;
 
 pub struct Changelog<'a> {
-    pub from: String,
-    pub to: String,
+    pub from: Oid,
+    pub to: Oid,
     pub date: String,
     pub commits: Vec<Commit<'a>>,
 }
@@ -20,7 +21,7 @@ impl Changelog<'_> {
             if !commits.is_empty() {
                 out.push_str(&format!("\n### {}\n\n", commit_type.get_markdown_title().red()));
                 commits.iter().for_each(|commit| out.push_str(&commit.to_markdown()));
-             }
+            }
         };
 
         add_commit_section(CommitType::Feature);

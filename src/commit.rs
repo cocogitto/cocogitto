@@ -1,6 +1,6 @@
 use std::cmp::Ordering;
 use git2::Commit as Git2Commit;
-use crate::git::commit::CommitType::*;
+use crate::commit::CommitType::*;
 use colored::*;
 
 
@@ -13,15 +13,28 @@ pub struct Commit<'a> {
     pub(crate) author: String,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SortCommit {
+    ByDate,
+    ByType,
+    ByScope,
+    ByTypeAndScope
+}
+
 impl Commit<'_> {
     pub fn from_git_commit(commit: Git2Commit) -> Self {
         let shorthand = commit.as_object().short_id().unwrap().as_str().unwrap().to_string();
         let message = commit.message().unwrap();
+        print!("Parsing commit : {} - {}", shorthand, message);
         let author = commit.author().name().unwrap_or_else(|| "").to_string();
         let split: Vec<&str> = message.split(": ").collect();
         let description = split[1].to_owned().replace('\n', "");
 
-        let left_part: Vec<&str> = split[0].split("(").collect();
+        let left_part: Vec<&str> = split[0]
+            .split("(")
+            .collect();
+
         let commit_type = CommitType::from(left_part[0]);
         let scope = left_part
             .get(1)
@@ -62,7 +75,7 @@ impl CommitType<'_> {
         match self {
             Feature => "Feature",
             BugFix => "Bug Fixes",
-            Chore => "Misellaneous Chores",
+            Chore => "Miscellaneous Chores",
             Revert => "Revert",
             Performances => "Performance Improvements",
             Documentation => "Documentation",

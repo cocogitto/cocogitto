@@ -1,14 +1,28 @@
 [package]
-name = "cocha"
+name = "cocogitto"
 version = "0.1.0"
 authors = ["Paul Delafosse <paul.delafosse@protonmail.com>"]
 edition = "2018"
+readme = "README.md"
+repository = "https://github.com/oknozor/cocogitto"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-git2 = "0.13.6"
-anyhow = "1.0.31"
-clap = "2.33.3"
-colored = "2.0.0"
-chrono = "0.4.15"
+git2 = "^0"
+anyhow = "^1"
+colored = "^2"
+chrono = "^0"
+config = "^0"
+serde_derive = "^1"
+serde = "^1"
+clap = { version = "^2", optional = true }
+
+[features]
+default = ["cli"]
+cli = [ "clap"]
+
+[[bin]]
+name = "cog"
+path = "src/bin/cog.rs"
+required-features = ["clap"]
