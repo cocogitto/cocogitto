@@ -58,23 +58,6 @@ pub(crate) enum CommitType<'a> {
 }
 
 impl CommitType<'_> {
-    pub(crate) fn get_key(&self) -> &str {
-        match self {
-            Feature => "feat",
-            BugFix => "fix",
-            Chore => "chore",
-            Revert => "revert",
-            Performances => "perf",
-            Documentation => "docs",
-            Style => "style",
-            Refactoring => "refactor",
-            Test => "test",
-            Build => "build",
-            Ci => "ci",
-            Custom(key, _) => key
-        }
-    }
-
     pub(crate) fn get_markdown_title(&self) -> &str {
         match self {
             Feature => "Feature",

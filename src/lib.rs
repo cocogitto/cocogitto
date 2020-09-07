@@ -6,7 +6,7 @@ mod git;
 use crate::git::changelog::Changelog;
 use git2::{Oid, Repository};
 use git::commit::Commit;
-use chrono::{NaiveDate, Utc};
+use chrono::Utc;
 
 pub fn get_changelog(from: &str, to: &str) -> anyhow::Result<String> {
     let from_oid = Oid::from_str(from)?;
