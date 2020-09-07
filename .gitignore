@@ -1,2 +1,4 @@
 /target
 Cargo.lock
+tests/dummy_repo
+.idea
