@@ -1,6 +1,7 @@
 use std::cmp::Ordering;
 use git2::Commit as Git2Commit;
 use crate::git::commit::CommitType::*;
+use colored::*;
 
 
 #[derive(Debug, Eq, PartialEq)]
@@ -18,7 +19,7 @@ impl Commit<'_> {
         let message = commit.message().unwrap();
         let author = commit.author().name().unwrap_or_else(|| "").to_string();
         let split: Vec<&str> = message.split(": ").collect();
-        let description = split[1].to_owned();
+        let description = split[1].to_owned().replace('\n', "");
 
         let left_part: Vec<&str> = split[0].split("(").collect();
         let commit_type = CommitType::from(left_part[0]);
@@ -36,7 +37,7 @@ impl Commit<'_> {
     }
 
     pub fn to_markdown(&self) -> String {
-        format!("{} - {} - {}", self.shorthand, self.description, self.author)
+        format!("{} - {} - {}\n", self.shorthand.yellow(), self.description, self.author.blue())
     }
 }
 
