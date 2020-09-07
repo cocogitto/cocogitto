@@ -2,9 +2,7 @@ use cocha::get_changelog_from_tags;
 use cocha::get_changelog;
 
 fn main() {
-  let oid_ch = get_changelog("ed849a93096262f4eb706061dee71af730572946", "396c3f29c55e0905609e6641b99897b8a5d50f33").unwrap();
+  let oid_ch = get_changelog("8806a55727b6c1767cca5d494599623fbb5dd1dd", "7672d8405f9736729bc275fcbdaa8676085fd00c" ).unwrap();
   println!("{}", oid_ch);
-  println!("TAGS =================");
-  let tag_ch = get_changelog_from_tags("0.1.0", "0.2.0").unwrap();
-  println!("{}", tag_ch);
+  //let tag_ch = get_changelog_from_tags("0.1.0", "0.2.0").unwrap();
 }

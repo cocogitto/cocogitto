@@ -1,11 +1,10 @@
-use crate::git::commit::Commit;
-use crate::git::changelog::CommitType::*;
+use crate::git::commit::{Commit, CommitType};
 
-pub struct Changelog {
+pub struct Changelog<'a> {
     pub from: String,
     pub to: String,
     pub date: String,
-    pub commits: Vec<Commit>,
+    pub commits: Vec<Commit<'a>>,
 }
 
 const HEADER: &str = r#"# Changelog
@@ -14,68 +13,17 @@ const HEADER: &str = r#"# Changelog
     "#;
 
 
-enum CommitType<'a> {
-    Feature,
-    BugFix,
-    Chore,
-    Revert,
-    Performances,
-    Documentation,
-    Style,
-    Refactoring,
-    Test,
-    Build,
-    Ci,
-    Custom(&'a str, &'a str),
-}
-
-impl CommitType<'_> {
-    fn get_key(&self) -> &str {
-        match self {
-            Feature => "feat",
-            BugFix => "fix",
-            Chore => "chore",
-            Revert => "revert",
-            Performances => "perf",
-            Documentation => "docs",
-            Style => "style",
-            Refactoring => "refactor",
-            Test => "test",
-            Build => "build",
-            Ci => "ci",
-            Custom(key, _) => key
-        }
-    }
-
-    fn get_markdown_title(&self) -> &str {
-        match self {
-            Feature => "Feature",
-            BugFix => "Bug Fixes",
-            Chore => "Misellaneous Chores",
-            Revert => "Revert",
-            Performances => "Performance Improvements",
-            Documentation => "Documentation",
-            Style => "Style",
-            Refactoring => "Refactoring",
-            Test => "Tests",
-            Build => "Build System",
-            Ci => "Continuous Integration",
-            Custom(_, value) => value,
-        }
-    }
-}
-
-impl Changelog {
+impl Changelog<'_> {
     pub fn tag_diff_to_markdown(&mut self) -> String {
         let mut out = String::new();
         out.push_str(&format!("## {}..{} - {}\n\n", self.from, self.to, self.date));
 
         let mut add_commit_section = |commit_type: CommitType| {
-            let commits: Vec<Commit> = self.commits.drain_filter(|commit| commit.commit_type == commit_type.get_key()).collect();
+            let commits: Vec<Commit> = self.commits.drain_filter(|commit| commit.commit_type == commit_type).collect();
 
             if !commits.is_empty() {
                 out.push_str(&format!("### {}\n\n", commit_type.get_markdown_title()));
-                commits.iter().for_each(|commit| out.push_str(&commit.description));
+                commits.iter().for_each(|commit| out.push_str(&commit.to_markdown()));
              }
         };
 

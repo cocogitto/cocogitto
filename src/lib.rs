@@ -37,7 +37,7 @@ pub fn get_changelog_from_tags(from: &str, to: &str) -> anyhow::Result<String> {
     Ok(changelog.tag_diff_to_markdown())
 }
 
-fn get_changelog_from_oid_range(from: Oid, to: Oid) -> anyhow::Result<Vec<Commit>> {
+fn get_changelog_from_oid_range<'a>(from: Oid, to: Oid) -> anyhow::Result<Vec<Commit<'a>>> {
     let repo = Repository::open("./")?;
    
     // Ensure commit exists
@@ -57,9 +57,8 @@ fn get_changelog_from_oid_range(from: Oid, to: Oid) -> anyhow::Result<Vec<Commit
             break
         }
 
-        let git_commit = repo.find_commit(oid)?;
-        let raw_message = git_commit.message().unwrap();
-        commits.push(Commit::from_raw_message(raw_message));
+        let commit = repo.find_commit(oid)?;
+        commits.push(Commit::from_git_commit(commit));
     }
 
     Ok(commits)
