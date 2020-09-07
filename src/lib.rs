@@ -6,16 +6,19 @@ mod git;
 use crate::git::changelog::Changelog;
 use git2::{Oid, Repository};
 use git::commit::Commit;
+use chrono::{NaiveDate, Utc};
 
 pub fn get_changelog(from: &str, to: &str) -> anyhow::Result<String> {
     let from_oid = Oid::from_str(from)?;
     let to_oid = Oid::from_str(to)?;
     let commits = get_changelog_from_oid_range(from_oid, to_oid)?;
 
+    let date  = Utc::now().naive_utc().date().to_string();
+
     let mut changelog = Changelog {
         from: from.to_owned(),
         to: to.to_owned(),
-        date: "2020-07-15".to_owned(),
+        date,
         commits,
     };
     
@@ -26,11 +29,12 @@ pub fn get_changelog_from_tags(from: &str, to: &str) -> anyhow::Result<String> {
     let from_oid = resolve_lightweight_tags_oid(from)?;
     let to_oid = resolve_lightweight_tags_oid(to)?;
     let commits = get_changelog_from_oid_range(from_oid, to_oid)?;
+    let date  = Utc::now().naive_utc().date().to_string();
 
     let mut changelog = Changelog {
         from: from.to_owned(),
         to: to.to_owned(),
-        date: "2020-07-15".to_owned(),
+        date,
         commits,
     };
 

@@ -1,13 +1,17 @@
-# Work in progress
+# cocogito
 
-basic steps :
- 1. generate markdown changelog from commit/tag to commit/tag 
- 2. optionally open for edition
- 3. merge with existing CHANGELOG.md or create it
- 4. optionally commit the result
+## CLI Commands
+- [ ] `coco check`
+- [ ] `coco rename {hash}`
+- [ ] `coco feat, fix, ...` 
+- [ ] `coco version --minor --edit`
+- [ ] `coco changelog --from 0.1.0 --to 1.0.0`
+- [ ] `coco changelog --from 8806av --to 8c6ca0`
 
-To do :
-- [ ] project name
-- [ ] clap CLI
-- [ ] append to existing changelog file
-- [ ] edit commmand vs auto commit mode
+
+
+Features :
+ - [ ] version hooks
+ - [ ] editor
+ - [ ] conventional commit extention (scopes, commit type)
+ - [ ] changelog template (header, footer)
