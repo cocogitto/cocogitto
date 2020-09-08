@@ -1,13 +1,13 @@
-use std::cmp::Ordering;
-use git2::Commit as Git2Commit;
 use crate::commit::CommitType::*;
+use anyhow::Result;
 use colored::*;
-
+use git2::Commit as Git2Commit;
+use std::cmp::Ordering;
 
 #[derive(Debug, Eq, PartialEq)]
-pub struct Commit<'a> {
+pub struct Commit {
     pub(crate) shorthand: String,
-    pub(crate) commit_type: CommitType<'a>,
+    pub(crate) commit_type: CommitType,
     pub(crate) scope: Option<String>,
     pub(crate) description: String,
     pub(crate) author: String,
@@ -19,43 +19,69 @@ pub enum SortCommit {
     ByDate,
     ByType,
     ByScope,
-    ByTypeAndScope
+    ByTypeAndScope,
 }
 
-impl Commit<'_> {
-    pub fn from_git_commit(commit: Git2Commit) -> Self {
-        let shorthand = commit.as_object().short_id().unwrap().as_str().unwrap().to_string();
-        let message = commit.message().unwrap();
+impl Commit {
+    pub fn from_git_commit(commit: Git2Commit) -> Result<Self> {
+        let shorthand = commit
+            .as_object()
+            .short_id()
+            .unwrap()
+            .as_str()
+            .unwrap()
+            .to_string();
+        let commit = commit.to_owned();
+        let message = commit.message();
+        let message = message.unwrap().to_owned();
+
         print!("Parsing commit : {} - {}", shorthand, message);
+
         let author = commit.author().name().unwrap_or_else(|| "").to_string();
-        let split: Vec<&str> = message.split(": ").collect();
+        let split: Vec<&str> = message.split(": ").to_owned().collect();
+
+        if split.len() <= 1 {
+            return Err(anyhow!("Skipping commit : invalid commit format".red()));
+        }
+
         let description = split[1].to_owned().replace('\n', "");
 
-        let left_part: Vec<&str> = split[0]
-            .split("(")
-            .collect();
+        let left_part: Vec<&str> = split[0].split("(").collect();
 
         let commit_type = CommitType::from(left_part[0]);
+
+        if let CommitType::Unknown(type_str) = commit_type {
+            return Err(anyhow!(
+                "Skipping commit : unknown commit type {}",
+                type_str
+            ));
+        };
+
         let scope = left_part
             .get(1)
             .map(|scope| scope[0..scope.len() - 1].to_owned());
 
-        Commit {
+        Ok(Commit {
             shorthand,
             commit_type,
             scope,
             description,
             author,
-        }
+        })
     }
 
     pub fn to_markdown(&self) -> String {
-        format!("{} - {} - {}\n", self.shorthand.yellow(), self.description, self.author.blue())
+        format!(
+            "{} - {} - {}\n",
+            self.shorthand.yellow(),
+            self.description,
+            self.author.blue()
+        )
     }
 }
 
 #[derive(Eq, PartialEq, Debug)]
-pub(crate) enum CommitType<'a> {
+pub(crate) enum CommitType {
     Feature,
     BugFix,
     Chore,
@@ -67,10 +93,11 @@ pub(crate) enum CommitType<'a> {
     Test,
     Build,
     Ci,
-    Custom(&'a str, &'a str),
+    Unknown(String),
+    Custom(String, String),
 }
 
-impl CommitType<'_> {
+impl CommitType {
     pub(crate) fn get_markdown_title(&self) -> &str {
         match self {
             Feature => "Feature",
@@ -85,11 +112,12 @@ impl CommitType<'_> {
             Build => "Build System",
             Ci => "Continuous Integration",
             Custom(_, value) => value,
+            Unknown(_) => unreachable!(),
         }
     }
 }
 
-impl From<&str> for CommitType<'_> {
+impl From<&str> for CommitType {
     fn from(commit_type: &str) -> Self {
         match commit_type {
             "feat" => Feature,
@@ -103,18 +131,18 @@ impl From<&str> for CommitType<'_> {
             "test" => Test,
             "build" => Build,
             "ci" => Ci,
-            _ => panic!("unknown commit type {}", commit_type)
+            other => Unknown(other.to_string()),
         }
     }
 }
 
-impl PartialOrd for Commit<'_> {
+impl PartialOrd for Commit {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         self.scope.partial_cmp(&other.scope)
     }
 }
 
-impl Ord for Commit<'_> {
+impl Ord for Commit {
     fn cmp(&self, other: &Self) -> Ordering {
         self.scope.cmp(&other.scope)
     }

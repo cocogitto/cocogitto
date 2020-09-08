@@ -1,9 +1,9 @@
-use std::path::PathBuf;
-use anyhow::Result;
-use crate::repository::Repository;
-use config::{Config, File};
 use crate::commit::SortCommit;
+use crate::repository::Repository;
+use anyhow::Result;
+use config::{Config, File};
 use std::collections::HashMap;
+use std::path::PathBuf;
 
 #[derive(Debug, Deserialize)]
 pub struct Settings {
@@ -35,4 +35,3 @@ impl Settings {
         }
     }
 }
-

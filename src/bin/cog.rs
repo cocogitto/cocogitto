@@ -1,4 +1,4 @@
-use clap::{App, AppSettings, SubCommand, Arg};
+use clap::{App, AppSettings, Arg, SubCommand};
 use cocogitto::CocoGitto;
 
 const APP_SETTINGS: &[AppSettings] = &[
@@ -15,13 +15,12 @@ const SUBCOMMAND_SETTINGS: &[AppSettings] = &[
 ];
 
 const PUBLISH: &str = "publish";
-const CHECK : &str = "check";
-const CHANGELOG : &str = "changelog";
+const CHECK: &str = "check";
+const CHANGELOG: &str = "changelog";
 
 fn main() {
     let cocogitto = CocoGitto::get().unwrap_or_else(|err| panic!("{}", err));
     let commit_types = cocogitto.commit_types();
-
 
     let commit_subcommands = commit_types
         .iter()
@@ -85,15 +84,10 @@ fn main() {
         .subcommands(commit_subcommands)
         .get_matches();
 
-
     if let Some(subcommand) = matches.subcommand_name() {
         match subcommand {
-            PUBLISH => {
-                todo!()
-            }
-            CHECK => {
-                todo!()
-            }
+            PUBLISH => todo!(),
+            CHECK => todo!(),
             CHANGELOG => {
                 let subcommand = matches.subcommand_matches(CHANGELOG).unwrap();
                 let from = subcommand.value_of("from");
@@ -106,8 +100,7 @@ fn main() {
                 }
             }
 
-            commit_commands => {
-            }
+            commit_commands => {}
         }
     }
 }

@@ -6,16 +6,17 @@ extern crate serde_derive;
 
 mod changelog;
 mod commit;
-pub mod settings;
 pub mod repository;
+pub mod settings;
 
 use crate::changelog::Changelog;
-use git2::{Oid, Repository as Git2Repository};
-use commit::Commit;
-use chrono::Utc;
-use crate::settings::Settings;
 use crate::repository::Repository;
+use crate::settings::Settings;
 use anyhow::Result;
+use chrono::Utc;
+use colored::*;
+use commit::Commit;
+use git2::{Oid, Repository as Git2Repository};
 
 pub struct CocoGitto {
     pub settings: Settings,
@@ -34,7 +35,10 @@ impl CocoGitto {
     }
 
     pub fn commit_types(&self) -> Vec<String> {
-        let mut commit_types: Vec<String> = self.settings.commit_types.iter()
+        let mut commit_types: Vec<String> = self
+            .settings
+            .commit_types
+            .iter()
             .map(|(key, _)| key)
             .cloned()
             .collect();
@@ -68,27 +72,9 @@ impl CocoGitto {
         todo!()
     }
 
-
     pub fn get_changelog(&self, from: Option<&str>, to: Option<&str>) -> anyhow::Result<String> {
-        let from = if let Some(from) = from {
-            if from.contains(".") {
-                self.repository.resolve_lightweight_tag(from)?
-            } else {
-                Oid::from_str(from)?
-            }.to_owned()
-        } else {
-            self.repository.get_latest_tag()?.id()
-        };
-
-        let to = if let Some(to) = to {
-            if to.contains(".") {
-                self.repository.resolve_lightweight_tag(to)?
-            } else {
-                Oid::from_str(to)?
-            }.to_owned()
-        } else {
-            self.repository.get_head_oid()?
-        };
+        let from = self.resolve_from_arg(from)?;
+        let to = self.resolve_to_arg(to)?;
 
         let commits = self.get_changelog_from_oid_range(from, to)?;
         let date = Utc::now().naive_utc().date().to_string();
@@ -103,7 +89,40 @@ impl CocoGitto {
         Ok(changelog.tag_diff_to_markdown())
     }
 
-    fn get_changelog_from_oid_range<'a>(&self, from: Oid, to: Oid) -> anyhow::Result<Vec<Commit<'a>>> {
+    // TODO : revparse
+    fn resolve_to_arg(&self, to: Option<&str>) -> Result<Oid> {
+        if let Some(to) = to {
+            if to.contains(".") {
+                self.repository.resolve_lightweight_tag(to)
+            } else {
+                Oid::from_str(to)
+            }
+            .to_owned()
+        } else {
+            self.repository
+                .get_head_commit_oid()
+                .unwrap_or(self.repository.get_first_commit()?)
+        }
+    }
+
+    // TODO : revparse
+    fn resolve_from_arg(&self, from: Option<&str>) -> Result<Oid> {
+        if let Some(from) = from {
+            if from.contains(".") {
+                self.repository.resolve_lightweight_tag(from)
+            } else {
+                Oid::from_str(from)
+            }
+            .to_owned()
+        } else {
+            self.repository
+                .get_latest_tag()
+                .unwrap_or(self.repository.get_first_commit()?)
+        }
+    }
+
+    fn get_changelog_from_oid_range(&self, from: Oid, to: Oid) -> Result<Vec<Commit>> {
+        println!("get changelog from {} to {}", from, to);
         // Ensure commit exists
         let repository = self.get_repository();
         repository.find_commit(from)?;
@@ -123,13 +142,18 @@ impl CocoGitto {
             }
 
             let commit = repository.find_commit(oid)?;
-            commits.push(Commit::from_git_commit(commit));
+            match Commit::from_git_commit(commit) {
+                Ok(commit) => commits.push(commit),
+                Err(err) => {
+                    let err = format!("{}", err).red();
+                    eprintln!("{}", err);
+                }
+            }
         }
 
         Ok(commits)
     }
 }
-
 
 #[cfg(test)]
 mod test {
