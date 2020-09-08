@@ -1,3 +1,4 @@
+use anyhow::Result;
 use clap::{App, AppSettings, Arg, SubCommand};
 use cocogitto::CocoGitto;
 
@@ -18,7 +19,7 @@ const PUBLISH: &str = "publish";
 const CHECK: &str = "check";
 const CHANGELOG: &str = "changelog";
 
-fn main() {
+fn main() -> Result<()> {
     let cocogitto = CocoGitto::get().unwrap_or_else(|err| panic!("{}", err));
     let commit_types = cocogitto.commit_types();
 
@@ -87,20 +88,17 @@ fn main() {
     if let Some(subcommand) = matches.subcommand_name() {
         match subcommand {
             PUBLISH => todo!(),
-            CHECK => todo!(),
+            CHECK => cocogitto.check()?,
             CHANGELOG => {
                 let subcommand = matches.subcommand_matches(CHANGELOG).unwrap();
                 let from = subcommand.value_of("from");
                 let to = subcommand.value_of("to");
-                let result = cocogitto.get_changelog(from, to);
-
-                match result {
-                    Ok(result) => println!("{}", result),
-                    Err(err) => eprintln!("{}", err),
-                }
+                let result = cocogitto.get_changelog(from, to)?;
+                println!("{}", result);
             }
 
-            commit_commands => {}
+            commit_commands => todo!(),
         }
     }
+    Ok(())
 }

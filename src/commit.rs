@@ -44,7 +44,7 @@ impl Commit {
             return Err(anyhow!("Skipping commit : invalid commit format".red()));
         }
 
-        let description = split[1].to_owned().replace('\n', "");
+        let description = split[1].to_owned().replace('\n', " ");
 
         let left_part: Vec<&str> = split[0].split("(").collect();
 
@@ -52,7 +52,7 @@ impl Commit {
 
         if let CommitType::Unknown(type_str) = commit_type {
             return Err(anyhow!(
-                "Skipping commit : unknown commit type {}",
+                "Skipping commit : unknown commit type `{}`",
                 type_str
             ));
         };

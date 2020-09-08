@@ -16,7 +16,7 @@ use anyhow::Result;
 use chrono::Utc;
 use colored::*;
 use commit::Commit;
-use git2::{Oid, Repository as Git2Repository};
+use git2::{Commit as Git2Commit, Oid, Repository as Git2Repository};
 
 pub struct CocoGitto {
     pub settings: Settings,
@@ -64,8 +64,22 @@ impl CocoGitto {
         &self.repository.0
     }
 
-    pub fn check() -> () {
-        todo!()
+    pub fn check(&self) -> Result<()> {
+        let from = self.repository.get_first_commit()?;
+        let to = self.repository.get_head_commit_oid()?;
+        let commits = self.get_commit_range(from, to)?;
+
+        for commit in commits {
+            match Commit::from_git_commit(commit) {
+                Ok(_) => (),
+                Err(err) => {
+                    let err = format!("{}", err).red();
+                    eprintln!("{}", err);
+                }
+            };
+        }
+
+        Ok(())
     }
 
     pub fn version() -> () {
@@ -76,7 +90,23 @@ impl CocoGitto {
         let from = self.resolve_from_arg(from)?;
         let to = self.resolve_to_arg(to)?;
 
-        let commits = self.get_changelog_from_oid_range(from, to)?;
+        let mut commits = vec![];
+
+        for commit in self.get_commit_range(from, to)? {
+            // We skip the origin commit (ex: from 0.1.0 to 1.0.0)
+            if commit.id() == from {
+                break;
+            }
+
+            match Commit::from_git_commit(commit) {
+                Ok(commit) => commits.push(commit),
+                Err(err) => {
+                    let err = format!("{}", err).red();
+                    eprintln!("{}", err);
+                }
+            };
+        }
+
         let date = Utc::now().naive_utc().date().to_string();
 
         let mut changelog = Changelog {
@@ -95,13 +125,12 @@ impl CocoGitto {
             if to.contains(".") {
                 self.repository.resolve_lightweight_tag(to)
             } else {
-                Oid::from_str(to)
+                Oid::from_str(to).map_err(|err| anyhow!(err))
             }
-            .to_owned()
         } else {
             self.repository
                 .get_head_commit_oid()
-                .unwrap_or(self.repository.get_first_commit()?)
+                .or_else(|_err| self.repository.get_first_commit())
         }
     }
 
@@ -111,18 +140,16 @@ impl CocoGitto {
             if from.contains(".") {
                 self.repository.resolve_lightweight_tag(from)
             } else {
-                Oid::from_str(from)
+                Oid::from_str(from).map_err(|err| anyhow!(err))
             }
-            .to_owned()
         } else {
             self.repository
                 .get_latest_tag()
-                .unwrap_or(self.repository.get_first_commit()?)
+                .or_else(|_err| self.repository.get_first_commit())
         }
     }
 
-    fn get_changelog_from_oid_range(&self, from: Oid, to: Oid) -> Result<Vec<Commit>> {
-        println!("get changelog from {} to {}", from, to);
+    fn get_commit_range(&self, from: Oid, to: Oid) -> Result<Vec<Git2Commit>> {
         // Ensure commit exists
         let repository = self.get_repository();
         repository.find_commit(from)?;
@@ -132,23 +159,12 @@ impl CocoGitto {
         revwalk.push(to)?;
         revwalk.push(from)?;
 
-        let mut commits = vec![];
+        let mut commits: Vec<Git2Commit> = vec![];
 
         for oid in revwalk {
             let oid = oid?;
-
-            if oid == from {
-                break;
-            }
-
             let commit = repository.find_commit(oid)?;
-            match Commit::from_git_commit(commit) {
-                Ok(commit) => commits.push(commit),
-                Err(err) => {
-                    let err = format!("{}", err).red();
-                    eprintln!("{}", err);
-                }
-            }
+            commits.push(commit);
         }
 
         Ok(commits)

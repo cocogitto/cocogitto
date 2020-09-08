@@ -1,5 +1,5 @@
 use anyhow::Result;
-use git2::{DiffOptions, Object, ObjectType, Oid, Repository as Git2Repository, Tag};
+use git2::{DiffOptions, Object, ObjectType, Oid, Repository as Git2Repository};
 use std::path::Path;
 
 /// A wrapper around `git2::Repository` this is used only for
@@ -69,8 +69,6 @@ impl Repository {
     }
 
     pub fn get_head_commit_oid(&self) -> Result<Oid> {
-        println!("get head oid");
-
         Ok(self.0.head().unwrap().peel_to_commit().unwrap().id())
     }
 
