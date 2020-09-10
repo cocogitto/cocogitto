@@ -2,9 +2,9 @@ use crate::commit::CommitType::*;
 use anyhow::Result;
 use colored::*;
 use git2::Commit as Git2Commit;
+use serde::export::Formatter;
 use std::cmp::Ordering;
 use std::fmt;
-use serde::export::Formatter;
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct Commit {
@@ -118,7 +118,7 @@ impl CommitType {
         }
     }
 
-    fn get_key_string(&self) ->  String {
+    fn get_key_string(&self) -> String {
         match &self {
             Feature => "feat".to_string(),
             BugFix => "fix".to_string(),

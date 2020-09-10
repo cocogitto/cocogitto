@@ -1,6 +1,6 @@
 use crate::commit::CommitType;
-use anyhow::Result;
 use crate::CocoGitto;
+use anyhow::Result;
 
 pub trait Command {
     fn execute(&self, cocogitto: CocoGitto) -> Result<()>;
@@ -25,7 +25,7 @@ impl CommitCommand {
                 "{commit_type}: {message}",
                 commit_type = &self.commit_type,
                 message = &self.message,
-            )
+            ),
         }
     }
 }
