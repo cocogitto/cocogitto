@@ -1,6 +1,6 @@
 use anyhow::Result;
 use clap::{App, AppSettings, Arg, SubCommand};
-use cocogitto::CocoGitto;
+use cocogitto::{CocoGitto, VersionIncrement};
 use std::process::exit;
 
 const APP_SETTINGS: &[AppSettings] = &[
@@ -16,7 +16,7 @@ const SUBCOMMAND_SETTINGS: &[AppSettings] = &[
     AppSettings::VersionlessSubcommands,
 ];
 
-const PUBLISH: &str = "publish";
+const BUMP: &str = "bump";
 const CHECK: &str = "check";
 const VERIFY: &str = "verify";
 const CHANGELOG: &str = "changelog";
@@ -58,7 +58,7 @@ fn main() -> Result<()> {
                 .arg(Arg::with_name("message").help("The commit message"))
         )
         .subcommand(
-            SubCommand::with_name(PUBLISH)
+            SubCommand::with_name(BUMP)
                 .settings(SUBCOMMAND_SETTINGS)
                 .about("Commit changelog from latest tag to HEAD and create a new tag")
                 .arg(Arg::with_name("version")
@@ -111,20 +111,24 @@ fn main() -> Result<()> {
 
     if let Some(subcommand) = matches.subcommand_name() {
         match subcommand {
-            PUBLISH => {
-                let subcommand = matches.subcommand_matches(PUBLISH).unwrap();
+            BUMP => {
+                let subcommand = matches.subcommand_matches(BUMP).unwrap();
 
-                if let Some(version) = subcommand.value_of("version") {
-                    todo!()
+                let increment = if let Some(version) = subcommand.value_of("version") {
+                    VersionIncrement::Manual(version.to_string())
                 } else if subcommand.is_present("auto") {
-                    todo!()
+                    VersionIncrement::Auto
                 } else if subcommand.is_present("major") {
-                    todo!()
+                    VersionIncrement::Major
                 } else if subcommand.is_present("patch") {
-                    todo!()
+                    VersionIncrement::Patch
                 } else if subcommand.is_present("minor") {
-                    todo!()
-                }
+                    VersionIncrement::Minor
+                } else {
+                    unreachable!()
+                };
+
+                cocogitto.create_version(increment)?
             }
             VERIFY => {
                 let subcommand = matches.subcommand_matches(VERIFY).unwrap();

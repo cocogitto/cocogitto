@@ -17,7 +17,10 @@ pub struct Commit {
 pub struct CommitMessage {
     pub(crate) commit_type: CommitType,
     pub(crate) scope: Option<String>,
+    pub(crate) body: Option<String>,
+    pub(crate) footer: Option<String>,
     pub(crate) description: String,
+    pub(crate) is_breaking_change: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -42,39 +45,75 @@ impl Commit {
         let commit = commit.to_owned();
         let message = commit.message();
         let message = message.unwrap().to_owned();
-
-        // TODO : lint
-        let message_display = message.replace("\n", " ");
-        let message_display = if message_display.len() > 80 {
-            message_display[0..80].blue()
-        } else {
-            message_display.blue()
-        };
-
-        println!("Parsing commit : {} - {}", shorthand, message_display);
-
         let author = commit.author().name().unwrap_or_else(|| "").to_string();
         let message = Commit::parse_commit_message(&message)?;
 
-        Ok(Commit {
+        let commit = Commit {
             shorthand,
             message,
             author,
-        })
+        };
+
+        Ok(commit)
     }
 
     pub(crate) fn parse_commit_message(message: &str) -> Result<CommitMessage> {
-        let split: Vec<&str> = message.split(": ").to_owned().collect();
-
-        if split.len() <= 1 {
-            return Err(anyhow!("{} : invalid commit format", "Error".red()));
+        let type_separator = message.find(": ");
+        if type_separator.is_none() {
+            return Err(anyhow!(
+                "{} : invalid commit format : missing {} separator",
+                "Error".red(),
+                ": ".yellow()
+            ));
         }
 
-        let description = split[1].to_owned().replace('\n', " ");
+        let idx = type_separator.unwrap();
 
-        let left_part: Vec<&str> = split[0].split("(").collect();
+        let mut type_and_scope = &message[0..idx];
+        let mut is_breaking_change = type_and_scope.chars().last() == Some('!');
 
-        let commit_type = CommitType::from(left_part[0]);
+        if is_breaking_change {
+            type_and_scope = &type_and_scope[0..type_and_scope.len() - 1];
+        }
+
+        let mut commit_type;
+
+        let scope: Option<String> = if let Some(left_par_idx) = type_and_scope.find("(") {
+            commit_type = CommitType::from(&type_and_scope[0..left_par_idx]);
+
+            Some(
+                type_and_scope
+                    .find(")")
+                    .ok_or(anyhow!("{} : missing closing parenthesis", "Error".red()))
+                    .map(|right_par_idx| {
+                        type_and_scope[left_par_idx + 1..right_par_idx].to_string()
+                    })?,
+            )
+        } else {
+            commit_type = CommitType::from(type_and_scope);
+            None
+        };
+
+        let contents = &message[idx + 2..message.len()];
+        let contents: Vec<&str> = contents.split('\n').collect();
+
+        let description = contents.get(0).map(|desc| desc.to_string());
+
+        if description.is_none() {
+            return Err(anyhow!("{} : missing commit description", "Error".red()));
+        }
+
+        let description = description.unwrap();
+
+        let body = contents.get(1).map(|desc| desc.to_string());
+
+        let footer = contents.get(2).map(|desc| desc.to_string());
+
+        if let Some(footer) = &footer {
+            is_breaking_change = is_breaking_change
+                || footer.contains("BREAKING CHANGE")
+                || footer.contains("BREAKING-CHANGE")
+        }
 
         if let CommitType::Unknown(type_str) = commit_type {
             return Err(anyhow!(
@@ -84,14 +123,13 @@ impl Commit {
             ));
         };
 
-        let scope = left_part
-            .get(1)
-            .map(|scope| scope[0..scope.len() - 1].to_owned());
-
         Ok(CommitMessage {
             description,
             commit_type,
             scope,
+            body,
+            footer,
+            is_breaking_change,
         })
     }
 
@@ -101,6 +139,38 @@ impl Commit {
             self.shorthand.yellow(),
             self.message.description,
             self.author.blue()
+        )
+    }
+}
+
+impl fmt::Display for Commit {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let message_display = self.message.description.replace("\n", " ");
+        let message_display = if message_display.len() > 80 {
+            format!("{}{}", &message_display[0..80], "...").blue()
+        } else {
+            message_display.blue()
+        };
+
+        let type_format = "type:".green().bold();
+        let scope_format = "scope:".green().bold();
+        let message_format = "message:".green().bold();
+        let breaking_change = if self.message.is_breaking_change {
+            format!(" - {}", "BREAKING CHANGE".red().bold())
+        } else {
+            "".to_string()
+        };
+        write!(
+            f,
+            "{}{}\n\t{} {}\n\t{} {}\n\t{} {}\n",
+            &self.shorthand.bold(),
+            breaking_change,
+            type_format,
+            &self.message.commit_type,
+            scope_format,
+            &self.message.scope.as_ref().unwrap_or(&"none".to_string()),
+            message_format,
+            message_display
         )
     }
 }
@@ -141,7 +211,7 @@ impl CommitType {
         }
     }
 
-    fn get_key_string(&self) -> String {
+    pub(crate) fn get_key_str(&self) -> String {
         match &self {
             Feature => "feat".to_string(),
             BugFix => "fix".to_string(),
@@ -181,7 +251,7 @@ impl From<&str> for CommitType {
 
 impl fmt::Display for CommitType {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.get_key_string())
+        write!(f, "{}", self.get_key_str())
     }
 }
 

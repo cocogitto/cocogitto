@@ -1,5 +1,7 @@
 use anyhow::Result;
-use git2::{DiffOptions, Object, ObjectType, Oid, Repository as Git2Repository};
+use git2::{
+    Commit as Git2Commit, DiffOptions, Object, ObjectType, Oid, Repository as Git2Repository,
+};
 use std::path::Path;
 
 /// A wrapper around `git2::Repository` this is used only for
@@ -69,28 +71,35 @@ impl Repository {
     }
 
     pub fn get_head_commit_oid(&self) -> Result<Oid> {
-        Ok(self.0.head().unwrap().peel_to_commit().unwrap().id())
+        self.get_head_object().map(|commit| commit.id())
+    }
+
+    pub fn get_head_object(&self) -> Result<Git2Commit> {
+        Ok(self.0.head().unwrap().peel_to_commit().unwrap())
     }
 
     pub fn resolve_lightweight_tag(&self, tag: &str) -> Result<Oid> {
-        println!("tag: {}", tag);
         self.0
             .resolve_reference_from_short_name(tag)
             .map(|reference| reference.target().unwrap())
             .map_err(|err| anyhow!("Cannot resolve tag {} : {}", tag, err.message()))
     }
 
-    pub fn get_latest_tag(&self) -> Result<Oid> {
-        println!("get tag latest");
+    pub fn get_latest_tag(&self) -> Result<String> {
         let tag_names = self.0.tag_names(None)?;
 
         let tags = tag_names.iter().collect::<Vec<Option<&str>>>();
 
         if let Some(Some(tag)) = tags.last() {
-            self.resolve_lightweight_tag(tag)
+            Ok(tag.to_string())
         } else {
             Err(anyhow!("Unable to get any tag"))
         }
+    }
+
+    pub fn get_latest_tag_oid(&self) -> Result<Oid> {
+        self.get_latest_tag()
+            .and_then(|oid| self.resolve_lightweight_tag(&oid))
     }
 
     pub fn get_first_commit(&self) -> Result<Oid> {
@@ -102,7 +111,7 @@ impl Repository {
             .map_err(|err| anyhow!(err))
     }
 
-    fn get_head(&self) -> Option<Object> {
+    pub fn get_head(&self) -> Option<Object> {
         if let Ok(head) = Repository::tree_to_treeish(&self.0, Some(&"HEAD".to_string())) {
             head
         } else {

@@ -5,14 +5,17 @@ extern crate anyhow;
 extern crate serde_derive;
 
 mod changelog;
+mod hook;
+mod semver;
+
 pub mod commit;
 pub mod repository;
-mod semver;
 pub mod settings;
 
 use crate::changelog::Changelog;
 use crate::commit::CommitType;
 use crate::repository::Repository;
+use crate::semver::SemVer;
 use crate::settings::Settings;
 use anyhow::Result;
 use chrono::Utc;
@@ -27,6 +30,14 @@ use tempdir::TempDir;
 pub struct CocoGitto {
     pub settings: Settings,
     repository: Repository,
+}
+
+pub enum VersionIncrement {
+    Major,
+    Minor,
+    Patch,
+    Auto,
+    Manual(String),
 }
 
 impl CocoGitto {
@@ -130,7 +141,7 @@ impl CocoGitto {
         let commits = self.get_commit_range(from, to)?;
         for commit in commits {
             match Commit::from_git_commit(&commit) {
-                Ok(_) => (),
+                Ok(commit) => println!("{}", commit),
                 Err(err) => {
                     let err = format!("{}", err).red();
                     eprintln!("{}", err);
@@ -160,8 +171,20 @@ impl CocoGitto {
         self.repository.commit(message)
     }
 
-    pub fn publish() -> () {
-        todo!()
+    pub fn create_version(&self, increment: VersionIncrement) -> Result<()> {
+        let next_version = match increment {
+            VersionIncrement::Manual(version) => SemVer::from_tag(&version)?,
+            VersionIncrement::Auto => self.get_auto_version()?,
+            VersionIncrement::Major => self.get_next_major()?,
+            VersionIncrement::Patch => self.get_next_patch()?,
+            VersionIncrement::Minor => self.get_next_minor()?,
+        };
+
+        let head = self.repository.get_head().unwrap();
+        self.repository
+            .0
+            .tag_lightweight(&next_version.to_string(), &head, false)?;
+        Ok(())
     }
 
     pub fn get_changelog(&self, from: Option<&str>, to: Option<&str>) -> anyhow::Result<String> {
@@ -197,6 +220,78 @@ impl CocoGitto {
         Ok(changelog.tag_diff_to_markdown())
     }
 
+    fn get_auto_version(&self) -> Result<SemVer> {
+        let tag = self
+            .repository
+            .get_latest_tag()
+            .unwrap_or_else(|_| SemVer::default().to_string());
+
+        let mut version = SemVer::from_tag(&tag)?;
+
+        let latest_tag = self
+            .repository
+            .get_latest_tag_oid()
+            .unwrap_or_else(|_| self.repository.get_first_commit().unwrap());
+
+        let head = self.repository.get_head_commit_oid()?;
+        let commits = self.get_commit_range(latest_tag, head)?;
+
+        for commit in commits {
+            let commit = Commit::from_git_commit(&commit)?;
+            match (
+                &commit.message.commit_type,
+                commit.message.is_breaking_change,
+            ) {
+                (CommitType::Feature, false) => {
+                    version = version.inc_patch();
+                    println!(
+                        "Found feature commit {}, bumping to {}",
+                        commit.shorthand.blue(),
+                        version.to_string().green()
+                    )
+                }
+                (CommitType::BugFix, false) => {
+                    version = version.inc_minor();
+                    println!(
+                        "Found bug fix commit {}, bumping to {}",
+                        commit.shorthand.blue(),
+                        version.to_string().green()
+                    )
+                }
+                (commit_type, true) => {
+                    version = version.inc_major();
+                    println!(
+                        "Found {} commit {} with type : {}",
+                        "BREAKING CHANGE".red(),
+                        commit.shorthand.blue(),
+                        commit_type.get_key_str().yellow()
+                    )
+                }
+                (_, false) => println!(
+                    "Skipping irrelevant commit {} with type : {}",
+                    commit.shorthand.blue(),
+                    commit.message.commit_type.get_key_str().yellow()
+                ),
+            }
+        }
+        Err(anyhow!(""))
+    }
+
+    fn get_next_major(&self) -> Result<SemVer> {
+        let tag = self.repository.get_latest_tag()?;
+        Ok(SemVer::from_tag(&tag)?.inc_major())
+    }
+
+    fn get_next_patch(&self) -> Result<SemVer> {
+        let tag = self.repository.get_latest_tag()?;
+        Ok(SemVer::from_tag(&tag)?.inc_patch())
+    }
+
+    fn get_next_minor(&self) -> Result<SemVer> {
+        let tag = self.repository.get_latest_tag()?;
+        Ok(SemVer::from_tag(&tag)?.inc_minor())
+    }
+
     // TODO : revparse
     fn resolve_to_arg(&self, to: Option<&str>) -> Result<Oid> {
         if let Some(to) = to {
@@ -222,7 +317,7 @@ impl CocoGitto {
             }
         } else {
             self.repository
-                .get_latest_tag()
+                .get_latest_tag_oid()
                 .or_else(|_err| self.repository.get_first_commit())
         }
     }
