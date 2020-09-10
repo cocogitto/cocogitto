@@ -5,12 +5,15 @@ use git2::Commit as Git2Commit;
 use serde::export::Formatter;
 use std::cmp::Ordering;
 use std::fmt;
+use chrono::{NaiveDateTime, Duration, Utc, DateTime};
+use chrono::format::Numeric::Timestamp;
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct Commit {
     pub(crate) shorthand: String,
     pub(crate) message: CommitMessage,
     pub(crate) author: String,
+    pub(crate) date: NaiveDateTime,
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -43,6 +46,7 @@ impl Commit {
             .to_string();
 
         let commit = commit.to_owned();
+       let date = NaiveDateTime::from_timestamp(commit.time().seconds(), 0);
         let message = commit.message();
         let message = message.unwrap().to_owned();
         let author = commit.author().name().unwrap_or_else(|| "").to_string();
@@ -52,6 +56,7 @@ impl Commit {
             shorthand,
             message,
             author,
+            date,
         };
 
         Ok(commit)
@@ -147,30 +152,54 @@ impl fmt::Display for Commit {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let message_display = self.message.description.replace("\n", " ");
         let message_display = if message_display.len() > 80 {
-            format!("{}{}", &message_display[0..80], "...").blue()
+            format!("{}{}", &message_display[0..80], "...").yellow()
         } else {
-            message_display.blue()
+            message_display.yellow()
         };
 
-        let type_format = "type:".green().bold();
-        let scope_format = "scope:".green().bold();
-        let message_format = "message:".green().bold();
+        let author_format = "Author:".green().bold();
+        let type_format = "Type:".green().bold();
+        let scope_format = "Scope:".green().bold();
         let breaking_change = if self.message.is_breaking_change {
-            format!(" - {}", "BREAKING CHANGE".red().bold())
+            format!("{} - ", "BREAKING CHANGE".red().bold())
         } else {
             "".to_string()
         };
+        let now = Utc::now().naive_utc();
+        let elapsed = now - self.date;
+        let elapsed =
+            if elapsed.num_weeks() > 0 {
+                let week = if elapsed.num_weeks() == 1 { "week" } else { "weeks" };
+                format!("{} {} ago", elapsed.num_weeks(), week)
+            } else if elapsed.num_days() > 0 {
+                let day = if elapsed.num_days() == 1 { "day" } else { "days" };
+                format!("{} {} ago", elapsed.num_days(), day)
+            } else if elapsed.num_hours() > 0 {
+                let hour = if elapsed.num_hours() == 1 { "hour" } else { "hours" };
+                format!("{} {} ago", elapsed.num_hours(), hour)
+            } else if elapsed.num_minutes() > 0 {
+                let minute = if elapsed.num_minutes() == 1 { "minute" } else { "minutes" };
+                format!("{} {} ago", elapsed.num_minutes(), minute)
+            } else if elapsed.num_seconds() > 0 {
+                let second = if elapsed.num_seconds() == 1 { "second" } else { "seconds" };
+                format!("{} {} ago", elapsed.num_seconds(), second)
+            } else {
+                "now".to_string()
+            };
+
         write!(
             f,
-            "{}{}\n\t{} {}\n\t{} {}\n\t{} {}\n",
-            &self.shorthand.bold(),
+            "{}{} ({}) - {}\n\t{} {}\n\t{} {}\n\t{} {}\n",
             breaking_change,
+            message_display,
+            &self.shorthand.bold(),
+            elapsed,
+            author_format,
+            &self.author,
             type_format,
             &self.message.commit_type,
             scope_format,
             &self.message.scope.as_ref().unwrap_or(&"none".to_string()),
-            message_format,
-            message_display
         )
     }
 }

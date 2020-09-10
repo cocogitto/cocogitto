@@ -18,7 +18,7 @@ use crate::repository::Repository;
 use crate::semver::SemVer;
 use crate::settings::Settings;
 use anyhow::Result;
-use chrono::Utc;
+use chrono::{Utc, NaiveDateTime};
 use colored::*;
 use commit::Commit;
 use git2::{Commit as Git2Commit, Oid, RebaseOptions, Repository as Git2Repository};
@@ -153,7 +153,12 @@ impl CocoGitto {
     }
 
     pub fn verify(message: &str) -> Result<()> {
-        Commit::parse_commit_message(message).map(|_| ())
+        Commit::parse_commit_message(message).map(|commit_message| println!("{}", Commit{
+            shorthand: "".to_string(),
+            message: commit_message,
+            author: "".to_string(),
+            date: Utc::now().naive_utc()
+        }))
     }
 
     pub fn conventional_commit(
