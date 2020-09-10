@@ -1,12 +1,13 @@
 use crate::commit::CommitType::*;
+use crate::error::CocoGittoError::CommitFormatError;
 use anyhow::Result;
+use chrono::format::Numeric::Timestamp;
+use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use colored::*;
 use git2::Commit as Git2Commit;
 use serde::export::Formatter;
 use std::cmp::Ordering;
 use std::fmt;
-use chrono::{NaiveDateTime, Duration, Utc, DateTime};
-use chrono::format::Numeric::Timestamp;
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct Commit {
@@ -46,28 +47,47 @@ impl Commit {
             .to_string();
 
         let commit = commit.to_owned();
-       let date = NaiveDateTime::from_timestamp(commit.time().seconds(), 0);
+        let date = NaiveDateTime::from_timestamp(commit.time().seconds(), 0);
         let message = commit.message();
-        let message = message.unwrap().to_owned();
+        let git2_message = message.unwrap().to_owned();
         let author = commit.author().name().unwrap_or_else(|| "").to_string();
-        let message = Commit::parse_commit_message(&message)?;
+        let message = Commit::parse_commit_message(&git2_message);
 
-        let commit = Commit {
-            shorthand,
-            message,
-            author,
-            date,
+        let result = match message {
+            Ok(message) => Ok(Commit {
+                shorthand,
+                message,
+                author,
+                date,
+            }),
+            Err(err) => {
+                let message = git2_message.replace("\n", "");
+                let commit_message = if message.len() > 80 {
+                    format!("{}{}", &message[0..80], "...").red()
+                } else {
+                    git2_message.red()
+                }
+                .to_string();
+                let cause = format!("{} {}", "cause:".red(), err);
+                let level = "ERROR".red().bold().to_string();
+                Err(anyhow!(CommitFormatError {
+                    level,
+                    shorthand,
+                    commit_message,
+                    cause
+                }))
+            }
         };
 
-        Ok(commit)
+        result
     }
 
+    // Todo extract to ParseError
     pub(crate) fn parse_commit_message(message: &str) -> Result<CommitMessage> {
         let type_separator = message.find(": ");
         if type_separator.is_none() {
             return Err(anyhow!(
-                "{} : invalid commit format : missing {} separator",
-                "Error".red(),
+                "invalid commit format : missing `{}` separator",
                 ": ".yellow()
             ));
         }
@@ -89,7 +109,7 @@ impl Commit {
             Some(
                 type_and_scope
                     .find(")")
-                    .ok_or(anyhow!("{} : missing closing parenthesis", "Error".red()))
+                    .ok_or(anyhow!("missing closing parenthesis"))
                     .map(|right_par_idx| {
                         type_and_scope[left_par_idx + 1..right_par_idx].to_string()
                     })?,
@@ -105,7 +125,7 @@ impl Commit {
         let description = contents.get(0).map(|desc| desc.to_string());
 
         if description.is_none() {
-            return Err(anyhow!("{} : missing commit description", "Error".red()));
+            return Err(anyhow!("missing commit description"));
         }
 
         let description = description.unwrap();
@@ -121,11 +141,7 @@ impl Commit {
         }
 
         if let CommitType::Unknown(type_str) = commit_type {
-            return Err(anyhow!(
-                "{} : unknown commit type `{}`",
-                "Error".red(),
-                type_str.red()
-            ));
+            return Err(anyhow!("unknown commit type `{}`", type_str.red()));
         };
 
         Ok(CommitMessage {
@@ -146,10 +162,7 @@ impl Commit {
             self.author.blue()
         )
     }
-}
-
-impl fmt::Display for Commit {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    pub fn get_log(&self) -> String {
         let message_display = self.message.description.replace("\n", " ");
         let message_display = if message_display.len() > 80 {
             format!("{}{}", &message_display[0..80], "...").yellow()
@@ -167,28 +180,46 @@ impl fmt::Display for Commit {
         };
         let now = Utc::now().naive_utc();
         let elapsed = now - self.date;
-        let elapsed =
-            if elapsed.num_weeks() > 0 {
-                let week = if elapsed.num_weeks() == 1 { "week" } else { "weeks" };
-                format!("{} {} ago", elapsed.num_weeks(), week)
-            } else if elapsed.num_days() > 0 {
-                let day = if elapsed.num_days() == 1 { "day" } else { "days" };
-                format!("{} {} ago", elapsed.num_days(), day)
-            } else if elapsed.num_hours() > 0 {
-                let hour = if elapsed.num_hours() == 1 { "hour" } else { "hours" };
-                format!("{} {} ago", elapsed.num_hours(), hour)
-            } else if elapsed.num_minutes() > 0 {
-                let minute = if elapsed.num_minutes() == 1 { "minute" } else { "minutes" };
-                format!("{} {} ago", elapsed.num_minutes(), minute)
-            } else if elapsed.num_seconds() > 0 {
-                let second = if elapsed.num_seconds() == 1 { "second" } else { "seconds" };
-                format!("{} {} ago", elapsed.num_seconds(), second)
+        let elapsed = if elapsed.num_weeks() > 0 {
+            let week = if elapsed.num_weeks() == 1 {
+                "week"
             } else {
-                "now".to_string()
+                "weeks"
             };
+            format!("{} {} ago", elapsed.num_weeks(), week)
+        } else if elapsed.num_days() > 0 {
+            let day = if elapsed.num_days() == 1 {
+                "day"
+            } else {
+                "days"
+            };
+            format!("{} {} ago", elapsed.num_days(), day)
+        } else if elapsed.num_hours() > 0 {
+            let hour = if elapsed.num_hours() == 1 {
+                "hour"
+            } else {
+                "hours"
+            };
+            format!("{} {} ago", elapsed.num_hours(), hour)
+        } else if elapsed.num_minutes() > 0 {
+            let minute = if elapsed.num_minutes() == 1 {
+                "minute"
+            } else {
+                "minutes"
+            };
+            format!("{} {} ago", elapsed.num_minutes(), minute)
+        } else if elapsed.num_seconds() > 0 {
+            let second = if elapsed.num_seconds() == 1 {
+                "second"
+            } else {
+                "seconds"
+            };
+            format!("{} {} ago", elapsed.num_seconds(), second)
+        } else {
+            "now".to_string()
+        };
 
-        write!(
-            f,
+        format!(
             "{}{} ({}) - {}\n\t{} {}\n\t{} {}\n\t{} {}\n",
             breaking_change,
             message_display,
@@ -201,6 +232,12 @@ impl fmt::Display for Commit {
             scope_format,
             &self.message.scope.as_ref().unwrap_or(&"none".to_string()),
         )
+    }
+}
+
+impl fmt::Display for Commit {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.get_log())
     }
 }
 

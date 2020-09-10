@@ -5,6 +5,7 @@ extern crate anyhow;
 extern crate serde_derive;
 
 mod changelog;
+pub mod error;
 mod hook;
 mod semver;
 
@@ -18,7 +19,7 @@ use crate::repository::Repository;
 use crate::semver::SemVer;
 use crate::settings::Settings;
 use anyhow::Result;
-use chrono::{Utc, NaiveDateTime};
+use chrono::{NaiveDateTime, Utc};
 use colored::*;
 use commit::Commit;
 use git2::{Commit as Git2Commit, Oid, RebaseOptions, Repository as Git2Repository};
@@ -83,8 +84,8 @@ impl CocoGitto {
 
     pub fn check_and_edit(&self) -> Result<()> {
         let from = self.repository.get_first_commit()?;
-        let to = self.repository.get_head_commit_oid()?;
-        let commits = self.get_commit_range(from, to)?;
+        let head = self.repository.get_head_commit_oid()?;
+        let commits = self.get_commit_range(from, head)?;
         let editor = std::env::var("EDITOR")?;
         let dir = TempDir::new("cocogito")?;
 
@@ -104,17 +105,19 @@ impl CocoGitto {
             .find_commit(errored_commits.last().unwrap().to_owned())?;
         let rebase_start = commit.parent_id(0)?;
         let commit = self.repository.0.find_annotated_commit(rebase_start)?;
-
+        let current = self.repository.0.find_annotated_commit(head)?;
         let mut options = RebaseOptions::new();
         let mut rebase = self
             .repository
             .0
-            .rebase(None, None, Some(&commit), Some(&mut options))?;
+            .rebase(None, Some(&commit), None, Some(&mut options))?;
 
         while let Some(Ok(rebase_operation)) = rebase.next() {
             let oid = rebase_operation.id();
+            let original_commit = self.repository.0.find_commit(oid)?;
+            println!("rebasing {}", oid);
             if errored_commits.contains(&oid) {
-                let original_commit = self.repository.0.find_commit(oid)?;
+                println!("\tmatch found in errored commits");
                 let file_path = dir.path().join(&commit.id().to_string());
                 let mut file = File::create(&file_path)?;
                 file.write_all(original_commit.message_bytes())?;
@@ -128,6 +131,8 @@ impl CocoGitto {
 
                 let new_message = std::fs::read_to_string(&file_path)?;
                 rebase.commit(None, &original_commit.committer(), Some(&new_message))?;
+            } else {
+                rebase.commit(None, &original_commit.committer(), None)?;
             }
         }
 
@@ -139,26 +144,52 @@ impl CocoGitto {
         let from = self.repository.get_first_commit()?;
         let to = self.repository.get_head_commit_oid()?;
         let commits = self.get_commit_range(from, to)?;
-        for commit in commits {
-            match Commit::from_git_commit(&commit) {
-                Ok(commit) => println!("{}", commit),
-                Err(err) => {
-                    let err = format!("{}", err).red();
-                    eprintln!("{}", err);
-                }
-            };
+        let errors: Vec<anyhow::Error> = commits
+            .iter()
+            .map(|commit| Commit::from_git_commit(commit))
+            .filter(|commit| commit.is_err())
+            .map(|err| err.unwrap_err())
+            .collect();
+
+        if errors.is_empty() {
+            let msg = "No errored commits".green();
+            println!("{}", msg)
+        } else {
+            errors.iter().for_each(|err| eprintln!("{}", err))
         }
 
         Ok(())
     }
 
+    pub fn get_log(&self) -> Result<String> {
+        let from = self.repository.get_first_commit()?;
+        let to = self.repository.get_head_commit_oid()?;
+        let commits = self.get_commit_range(from, to)?;
+        let logs = commits
+            .iter()
+            .map(|commit| Commit::from_git_commit(commit))
+            .map(|commit| match commit {
+                Ok(commit) => commit.get_log(),
+                Err(err) => err.to_string(),
+            })
+            .collect::<Vec<String>>()
+            .join("\n");
+
+        Ok(logs)
+    }
+
     pub fn verify(message: &str) -> Result<()> {
-        Commit::parse_commit_message(message).map(|commit_message| println!("{}", Commit{
-            shorthand: "".to_string(),
-            message: commit_message,
-            author: "".to_string(),
-            date: Utc::now().naive_utc()
-        }))
+        Commit::parse_commit_message(message).map(|commit_message| {
+            println!(
+                "{}",
+                Commit {
+                    shorthand: "".to_string(),
+                    message: commit_message,
+                    author: "".to_string(),
+                    date: Utc::now().naive_utc(),
+                }
+            )
+        })
     }
 
     pub fn conventional_commit(
@@ -202,6 +233,13 @@ impl CocoGitto {
             // We skip the origin commit (ex: from 0.1.0 to 1.0.0)
             if commit.id() == from {
                 break;
+            }
+
+            // Ignore merge commits
+            if let Some(message) = commit.message() {
+                if message.starts_with("Merge") {
+                    continue;
+                }
             }
 
             match Commit::from_git_commit(&commit) {

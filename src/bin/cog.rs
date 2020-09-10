@@ -1,6 +1,7 @@
 use anyhow::Result;
 use clap::{App, AppSettings, Arg, SubCommand};
 use cocogitto::{CocoGitto, VersionIncrement};
+use moins::Moins;
 use std::process::exit;
 
 const APP_SETTINGS: &[AppSettings] = &[
@@ -18,6 +19,7 @@ const SUBCOMMAND_SETTINGS: &[AppSettings] = &[
 
 const BUMP: &str = "bump";
 const CHECK: &str = "check";
+const LOG: &str = "log";
 const VERIFY: &str = "verify";
 const CHANGELOG: &str = "changelog";
 
@@ -52,6 +54,7 @@ fn main() -> Result<()> {
                     .long("edit")
                 )
         )
+        .subcommand(SubCommand::with_name(LOG).about("Like git log but for conventional commits"))
         .subcommand(
             SubCommand::with_name(VERIFY)
                 .about("Verify a single commit message")
@@ -150,6 +153,10 @@ fn main() -> Result<()> {
                 } else {
                     cocogitto.check()?
                 }
+            }
+            LOG => {
+                let mut content = cocogitto.get_log()?;
+                Moins::run(&mut content, None);
             }
             CHANGELOG => {
                 let subcommand = matches.subcommand_matches(CHANGELOG).unwrap();

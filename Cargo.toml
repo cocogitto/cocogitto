@@ -11,12 +11,14 @@ repository = "https://github.com/oknozor/cocogitto"
 [dependencies]
 git2 = "^0"
 anyhow = "^1"
+thiserror = "^1"
 colored = "^2"
 chrono = "^0"
 config = "^0"
 serde_derive = "^1"
 serde = "^1"
 tempdir = "^0"
+moins = "0.1.2"
 clap = { version = "^2", optional = true }
 
 [features]
