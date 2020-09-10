@@ -9,10 +9,15 @@ use std::fmt;
 #[derive(Debug, Eq, PartialEq)]
 pub struct Commit {
     pub(crate) shorthand: String,
+    pub(crate) message: CommitMessage,
+    pub(crate) author: String,
+}
+
+#[derive(Debug, Eq, PartialEq)]
+pub struct CommitMessage {
     pub(crate) commit_type: CommitType,
     pub(crate) scope: Option<String>,
     pub(crate) description: String,
-    pub(crate) author: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -33,6 +38,7 @@ impl Commit {
             .as_str()
             .unwrap()
             .to_string();
+
         let commit = commit.to_owned();
         let message = commit.message();
         let message = message.unwrap().to_owned();
@@ -48,10 +54,20 @@ impl Commit {
         println!("Parsing commit : {} - {}", shorthand, message_display);
 
         let author = commit.author().name().unwrap_or_else(|| "").to_string();
+        let message = Commit::parse_commit_message(&message)?;
+
+        Ok(Commit {
+            shorthand,
+            message,
+            author,
+        })
+    }
+
+    pub(crate) fn parse_commit_message(message: &str) -> Result<CommitMessage> {
         let split: Vec<&str> = message.split(": ").to_owned().collect();
 
         if split.len() <= 1 {
-            return Err(anyhow!("Skipping commit : invalid commit format".red()));
+            return Err(anyhow!("{} : invalid commit format", "Error".red()));
         }
 
         let description = split[1].to_owned().replace('\n', " ");
@@ -62,8 +78,9 @@ impl Commit {
 
         if let CommitType::Unknown(type_str) = commit_type {
             return Err(anyhow!(
-                "Skipping commit : unknown commit type `{}`",
-                type_str
+                "{} : unknown commit type `{}`",
+                "Error".red(),
+                type_str.red()
             ));
         };
 
@@ -71,12 +88,10 @@ impl Commit {
             .get(1)
             .map(|scope| scope[0..scope.len() - 1].to_owned());
 
-        Ok(Commit {
-            shorthand,
+        Ok(CommitMessage {
+            description,
             commit_type,
             scope,
-            description,
-            author,
         })
     }
 
@@ -84,7 +99,7 @@ impl Commit {
         format!(
             "{} - {} - {}\n",
             self.shorthand.yellow(),
-            self.description,
+            self.message.description,
             self.author.blue()
         )
     }
@@ -172,13 +187,13 @@ impl fmt::Display for CommitType {
 
 impl PartialOrd for Commit {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.scope.partial_cmp(&other.scope)
+        self.message.scope.partial_cmp(&other.message.scope)
     }
 }
 
 impl Ord for Commit {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.scope.cmp(&other.scope)
+        self.message.scope.cmp(&other.message.scope)
     }
 }
 

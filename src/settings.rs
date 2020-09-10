@@ -13,6 +13,7 @@ pub struct Settings {
     pub commit_types: HashMap<String, String>,
     pub changelog_file: PathBuf,
     pub sort_commit: SortCommit,
+    pub semver: bool,
 }
 
 impl Settings {

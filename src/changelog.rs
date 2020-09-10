@@ -12,16 +12,19 @@ pub struct Changelog {
 impl Changelog {
     pub fn tag_diff_to_markdown(&mut self) -> String {
         let mut out = String::new();
+
         out.push_str(&Changelog::header());
+        let short_to = &self.to.to_string()[0..6];
+        let short_from = &self.from.to_string()[0..6];
         out.push_str(&format!(
             "## {}..{} - {}\n\n",
-            self.from, self.to, self.date
+            short_from, short_to, self.date
         ));
 
         let mut add_commit_section = |commit_type: CommitType| {
             let commits: Vec<Commit> = self
                 .commits
-                .drain_filter(|commit| commit.commit_type == commit_type)
+                .drain_filter(|commit| commit.message.commit_type == commit_type)
                 .collect();
 
             if !commits.is_empty() {

@@ -7,6 +7,7 @@ extern crate serde_derive;
 mod changelog;
 pub mod commit;
 pub mod repository;
+mod semver;
 pub mod settings;
 
 use crate::changelog::Changelog;
@@ -17,10 +18,9 @@ use anyhow::Result;
 use chrono::Utc;
 use colored::*;
 use commit::Commit;
-use git2::ErrorClass::Odb;
-use git2::{Commit as Git2Commit, ObjectType, Oid, RebaseOptions, Repository as Git2Repository};
+use git2::{Commit as Git2Commit, Oid, RebaseOptions, Repository as Git2Repository};
 use std::fs::File;
-use std::io::{Read, Write};
+use std::io::Write;
 use std::process::{Command, Stdio};
 use tempdir::TempDir;
 
@@ -141,6 +141,10 @@ impl CocoGitto {
         Ok(())
     }
 
+    pub fn verify(message: &str) -> Result<()> {
+        Commit::parse_commit_message(message).map(|_| ())
+    }
+
     pub fn conventional_commit(
         &self,
         commit_type: &str,
@@ -156,7 +160,7 @@ impl CocoGitto {
         self.repository.commit(message)
     }
 
-    pub fn version() -> () {
+    pub fn publish() -> () {
         todo!()
     }
 

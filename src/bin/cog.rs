@@ -1,6 +1,7 @@
 use anyhow::Result;
 use clap::{App, AppSettings, Arg, SubCommand};
 use cocogitto::CocoGitto;
+use std::process::exit;
 
 const APP_SETTINGS: &[AppSettings] = &[
     AppSettings::SubcommandRequiredElseHelp,
@@ -17,6 +18,7 @@ const SUBCOMMAND_SETTINGS: &[AppSettings] = &[
 
 const PUBLISH: &str = "publish";
 const CHECK: &str = "check";
+const VERIFY: &str = "verify";
 const CHANGELOG: &str = "changelog";
 
 fn main() -> Result<()> {
@@ -43,54 +45,100 @@ fn main() -> Result<()> {
         .long_about("Conventional Commit Git Terminal Overlord is a tool to help you use the conventional commit specification")
         .subcommand(
             SubCommand::with_name(CHECK)
-                .about("")
+                .about("Verify all commit message against the conventional commit specification")
                 .arg(Arg::with_name("edit")
+                    .help("Interactively rename invalid commit message")
                     .short("e")
                     .long("edit")
                 )
         )
         .subcommand(
+            SubCommand::with_name(VERIFY)
+                .about("Verify a single commit message")
+                .arg(Arg::with_name("message").help("The commit message"))
+        )
+        .subcommand(
             SubCommand::with_name(PUBLISH)
                 .settings(SUBCOMMAND_SETTINGS)
-                .about("")
-                .arg(Arg::with_name("minor")
-                    .help("")
+                .about("Commit changelog from latest tag to HEAD and create a new tag")
+                .arg(Arg::with_name("version")
+                    .help("Manually set the next version")
                     .short("m")
-                    .long("minor")
-                    .required_unless_one(&["major", "patch"])
+                    .long("version")
+                    .required_unless_one(&["auto", "major", "patch", "minor"])
+                )
+                .arg(Arg::with_name("auto")
+                    .help("Atomatically suggest the next version")
+                    .short("a")
+                    .long("auto")
+                    .required_unless_one(&["version", "major", "patch", "minor"])
                 )
                 .arg(Arg::with_name("major")
-                    .help("")
+                    .help("Increment the major version")
                     .short("M")
                     .long("major")
-                    .required_unless_one(&["minor", "patch"])
+                    .required_unless_one(&["version", "auto", "patch", "minor"])
                 )
                 .arg(Arg::with_name("patch")
-                    .help("")
+                    .help("Increment the patch version")
                     .short("p")
                     .long("patch")
-                    .required_unless_one(&["minor", "major"])
-                ))
-        .subcommand(SubCommand::with_name(CHANGELOG)
-        .settings(SUBCOMMAND_SETTINGS)
-        .about("Display a changelog for a given commit oid range")
-        .arg(Arg::with_name("from")
-            .help("Generate the changelog from this commit or tag ref, default latest tag")
-            .short("f")
-            .long("from")
-            .takes_value(true)
+                    .required_unless_one(&["version", "auto", "major", "minor"])
+                )
+                .arg(Arg::with_name("minor")
+                    .help("Increment the minor version")
+                    .short("m")
+                    .long("minor")
+                    .required_unless_one(&["version", "auto", "patch", "major"])
+                )
         )
-        .arg(Arg::with_name("to")
-            .help("Generate the changelog to this commit or tag ref, default HEAD")
-            .short("t")
-            .long("to")
-            .takes_value(true)))
+        .subcommand(SubCommand::with_name(CHANGELOG)
+            .settings(SUBCOMMAND_SETTINGS)
+            .about("Display a changelog for a given commit oid range")
+            .arg(Arg::with_name("from")
+                .help("Generate the changelog from this commit or tag ref, default latest tag")
+                .short("f")
+                .long("from")
+                .takes_value(true)
+            )
+            .arg(Arg::with_name("to")
+                .help("Generate the changelog to this commit or tag ref, default HEAD")
+                .short("t")
+                .long("to")
+                .takes_value(true)))
         .subcommands(commit_subcommands)
         .get_matches();
 
     if let Some(subcommand) = matches.subcommand_name() {
         match subcommand {
-            PUBLISH => todo!(),
+            PUBLISH => {
+                let subcommand = matches.subcommand_matches(PUBLISH).unwrap();
+
+                if let Some(version) = subcommand.value_of("version") {
+                    todo!()
+                } else if subcommand.is_present("auto") {
+                    todo!()
+                } else if subcommand.is_present("major") {
+                    todo!()
+                } else if subcommand.is_present("patch") {
+                    todo!()
+                } else if subcommand.is_present("minor") {
+                    todo!()
+                }
+            }
+            VERIFY => {
+                let subcommand = matches.subcommand_matches(VERIFY).unwrap();
+                let message = subcommand.value_of("message").unwrap();
+
+                match CocoGitto::verify(message) {
+                    Ok(()) => exit(0),
+                    Err(err) => {
+                        eprintln!("{}", err);
+                        exit(1);
+                    }
+                }
+            }
+
             CHECK => {
                 let subcommand = matches.subcommand_matches(CHECK).unwrap();
                 if subcommand.is_present("edit") {
