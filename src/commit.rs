@@ -3,6 +3,8 @@ use anyhow::Result;
 use colored::*;
 use git2::Commit as Git2Commit;
 use std::cmp::Ordering;
+use std::fmt;
+use serde::export::Formatter;
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct Commit {
@@ -81,7 +83,7 @@ impl Commit {
 }
 
 #[derive(Eq, PartialEq, Debug)]
-pub(crate) enum CommitType {
+pub enum CommitType {
     Feature,
     BugFix,
     Chore,
@@ -115,6 +117,24 @@ impl CommitType {
             Unknown(_) => unreachable!(),
         }
     }
+
+    fn get_key_string(&self) ->  String {
+        match &self {
+            Feature => "feat".to_string(),
+            BugFix => "fix".to_string(),
+            Chore => "chore".to_string(),
+            Revert => "revert".to_string(),
+            Performances => "perf".to_string(),
+            Documentation => "docs".to_string(),
+            Style => "style".to_string(),
+            Refactoring => "refactor".to_string(),
+            Test => "test".to_string(),
+            Build => "build".to_string(),
+            Ci => "ci".to_string(),
+            Custom(key, _) => key.to_owned(),
+            Unknown(_) => unreachable!(),
+        }
+    }
 }
 
 impl From<&str> for CommitType {
@@ -133,6 +153,12 @@ impl From<&str> for CommitType {
             "ci" => Ci,
             other => Unknown(other.to_string()),
         }
+    }
+}
+
+impl fmt::Display for CommitType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.get_key_string())
     }
 }
 

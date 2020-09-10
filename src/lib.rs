@@ -5,9 +5,10 @@ extern crate anyhow;
 extern crate serde_derive;
 
 mod changelog;
-mod commit;
+pub mod commit;
 pub mod repository;
 pub mod settings;
+pub mod command;
 
 use crate::changelog::Changelog;
 use crate::repository::Repository;
