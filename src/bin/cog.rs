@@ -1,7 +1,5 @@
 use anyhow::Result;
 use clap::{App, AppSettings, Arg, SubCommand};
-use cocogitto::command::{Command, CommitCommand};
-use cocogitto::commit::CommitType;
 use cocogitto::CocoGitto;
 
 const APP_SETTINGS: &[AppSettings] = &[
@@ -99,18 +97,12 @@ fn main() -> Result<()> {
                 println!("{}", result);
             }
 
-            commit_command => {
-                if let Some(args) = matches.subcommand_matches(commit_command) {
+            commit_type => {
+                if let Some(args) = matches.subcommand_matches(commit_type) {
                     let message = args.value_of("message").unwrap().to_string();
                     let scope = args.value_of("scope").map(|scope| scope.to_string());
 
-                    let command = CommitCommand {
-                        commit_type: CommitType::from(commit_command),
-                        scope,
-                        message,
-                    };
-
-                    command.execute(cocogitto)?;
+                    cocogitto.conventional_commit(commit_type, scope, message)?;
                 }
             }
         }

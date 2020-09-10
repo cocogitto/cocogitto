@@ -83,7 +83,7 @@ impl Commit {
 }
 
 #[derive(Eq, PartialEq, Debug)]
-pub enum CommitType {
+pub(crate) enum CommitType {
     Feature,
     BugFix,
     Chore,

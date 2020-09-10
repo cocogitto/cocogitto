@@ -5,12 +5,12 @@ extern crate anyhow;
 extern crate serde_derive;
 
 mod changelog;
-pub mod command;
 pub mod commit;
 pub mod repository;
 pub mod settings;
 
 use crate::changelog::Changelog;
+use crate::commit::CommitType;
 use crate::repository::Repository;
 use crate::settings::Settings;
 use anyhow::Result;
@@ -81,6 +81,21 @@ impl CocoGitto {
         }
 
         Ok(())
+    }
+
+    pub fn conventional_commit(
+        &self,
+        commit_type: &str,
+        scope: Option<String>,
+        message: String,
+    ) -> Result<()> {
+        let commit_type = CommitType::from(commit_type);
+        let message = match scope {
+            Some(scope) => format!("{}({}): {}", commit_type, scope, message,),
+            None => format!("{}: {}", commit_type, message,),
+        };
+
+        self.repository.commit(message)
     }
 
     pub fn version() -> () {
