@@ -44,7 +44,10 @@ fn main() -> Result<()> {
         .subcommand(
             SubCommand::with_name(CHECK)
                 .about("")
-                .arg(Arg::with_name("edit"))
+                .arg(Arg::with_name("edit")
+                    .short("e")
+                    .long("edit")
+                )
         )
         .subcommand(
             SubCommand::with_name(PUBLISH)
@@ -88,7 +91,14 @@ fn main() -> Result<()> {
     if let Some(subcommand) = matches.subcommand_name() {
         match subcommand {
             PUBLISH => todo!(),
-            CHECK => cocogitto.check()?,
+            CHECK => {
+                let subcommand = matches.subcommand_matches(CHECK).unwrap();
+                if subcommand.is_present("edit") {
+                    cocogitto.check_and_edit()?;
+                } else {
+                    cocogitto.check()?
+                }
+            }
             CHANGELOG => {
                 let subcommand = matches.subcommand_matches(CHANGELOG).unwrap();
                 let from = subcommand.value_of("from");

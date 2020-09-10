@@ -17,7 +17,12 @@ use anyhow::Result;
 use chrono::Utc;
 use colored::*;
 use commit::Commit;
-use git2::{Commit as Git2Commit, Oid, Repository as Git2Repository};
+use git2::ErrorClass::Odb;
+use git2::{Commit as Git2Commit, ObjectType, Oid, RebaseOptions, Repository as Git2Repository};
+use std::fs::File;
+use std::io::{Read, Write};
+use std::process::{Command, Stdio};
+use tempdir::TempDir;
 
 pub struct CocoGitto {
     pub settings: Settings,
@@ -65,13 +70,66 @@ impl CocoGitto {
         &self.repository.0
     }
 
+    pub fn check_and_edit(&self) -> Result<()> {
+        let from = self.repository.get_first_commit()?;
+        let to = self.repository.get_head_commit_oid()?;
+        let commits = self.get_commit_range(from, to)?;
+        let editor = std::env::var("EDITOR")?;
+        let dir = TempDir::new("cocogito")?;
+
+        let errored_commits: Vec<Oid> = commits
+            .iter()
+            .map(|commit| {
+                let conv_commit = Commit::from_git_commit(&commit);
+                (commit.id(), conv_commit)
+            })
+            .filter(|commit| commit.1.is_err())
+            .map(|commit| commit.0)
+            .collect();
+
+        let commit = self
+            .repository
+            .0
+            .find_commit(errored_commits.last().unwrap().to_owned())?;
+        let rebase_start = commit.parent_id(0)?;
+        let commit = self.repository.0.find_annotated_commit(rebase_start)?;
+
+        let mut options = RebaseOptions::new();
+        let mut rebase = self
+            .repository
+            .0
+            .rebase(None, None, Some(&commit), Some(&mut options))?;
+
+        while let Some(Ok(rebase_operation)) = rebase.next() {
+            let oid = rebase_operation.id();
+            if errored_commits.contains(&oid) {
+                let original_commit = self.repository.0.find_commit(oid)?;
+                let file_path = dir.path().join(&commit.id().to_string());
+                let mut file = File::create(&file_path)?;
+                file.write_all(original_commit.message_bytes())?;
+
+                Command::new(&editor)
+                    .arg(&file_path)
+                    .stdout(Stdio::inherit())
+                    .stdin(Stdio::inherit())
+                    .stderr(Stdio::inherit())
+                    .output()?;
+
+                let new_message = std::fs::read_to_string(&file_path)?;
+                rebase.commit(None, &original_commit.committer(), Some(&new_message))?;
+            }
+        }
+
+        rebase.finish(None)?;
+        Ok(())
+    }
+
     pub fn check(&self) -> Result<()> {
         let from = self.repository.get_first_commit()?;
         let to = self.repository.get_head_commit_oid()?;
         let commits = self.get_commit_range(from, to)?;
-
         for commit in commits {
-            match Commit::from_git_commit(commit) {
+            match Commit::from_git_commit(&commit) {
                 Ok(_) => (),
                 Err(err) => {
                     let err = format!("{}", err).red();
@@ -114,7 +172,7 @@ impl CocoGitto {
                 break;
             }
 
-            match Commit::from_git_commit(commit) {
+            match Commit::from_git_commit(&commit) {
                 Ok(commit) => commits.push(commit),
                 Err(err) => {
                     let err = format!("{}", err).red();

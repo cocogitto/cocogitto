@@ -25,7 +25,7 @@ pub enum SortCommit {
 }
 
 impl Commit {
-    pub fn from_git_commit(commit: Git2Commit) -> Result<Self> {
+    pub fn from_git_commit(commit: &Git2Commit) -> Result<Self> {
         let shorthand = commit
             .as_object()
             .short_id()
@@ -37,7 +37,15 @@ impl Commit {
         let message = commit.message();
         let message = message.unwrap().to_owned();
 
-        print!("Parsing commit : {} - {}", shorthand, message);
+        // TODO : lint
+        let message_display = message.replace("\n", " ");
+        let message_display = if message_display.len() > 80 {
+            message_display[0..80].blue()
+        } else {
+            message_display.blue()
+        };
+
+        println!("Parsing commit : {} - {}", shorthand, message_display);
 
         let author = commit.author().name().unwrap_or_else(|| "").to_string();
         let split: Vec<&str> = message.split(": ").to_owned().collect();
