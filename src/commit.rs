@@ -1,8 +1,7 @@
 use crate::commit::CommitType::*;
 use crate::error::CocoGittoError::CommitFormatError;
 use anyhow::Result;
-use chrono::format::Numeric::Timestamp;
-use chrono::{DateTime, Duration, NaiveDateTime, Utc};
+use chrono::{NaiveDateTime, Utc};
 use colored::*;
 use git2::Commit as Git2Commit;
 use serde::export::Formatter;
@@ -101,7 +100,7 @@ impl Commit {
             type_and_scope = &type_and_scope[0..type_and_scope.len() - 1];
         }
 
-        let mut commit_type;
+        let commit_type;
 
         let scope: Option<String> = if let Some(left_par_idx) = type_and_scope.find("(") {
             commit_type = CommitType::from(&type_and_scope[0..left_par_idx]);

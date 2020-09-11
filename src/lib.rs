@@ -19,7 +19,7 @@ use crate::repository::Repository;
 use crate::semver::SemVer;
 use crate::settings::Settings;
 use anyhow::Result;
-use chrono::{NaiveDateTime, Utc};
+use chrono::Utc;
 use colored::*;
 use commit::Commit;
 use git2::{Commit as Git2Commit, Oid, RebaseOptions, Repository as Git2Repository};
@@ -99,40 +99,45 @@ impl CocoGitto {
             .map(|commit| commit.0)
             .collect();
 
+        let last_errored_commit = errored_commits.last();
+        println!("{:?}", last_errored_commit);
         let commit = self
             .repository
             .0
-            .find_commit(errored_commits.last().unwrap().to_owned())?;
+            .find_commit(last_errored_commit.unwrap().to_owned())?;
         let rebase_start = commit.parent_id(0)?;
         let commit = self.repository.0.find_annotated_commit(rebase_start)?;
-        let current = self.repository.0.find_annotated_commit(head)?;
         let mut options = RebaseOptions::new();
         let mut rebase = self
             .repository
             .0
             .rebase(None, Some(&commit), None, Some(&mut options))?;
 
-        while let Some(Ok(rebase_operation)) = rebase.next() {
-            let oid = rebase_operation.id();
-            let original_commit = self.repository.0.find_commit(oid)?;
-            println!("rebasing {}", oid);
-            if errored_commits.contains(&oid) {
-                println!("\tmatch found in errored commits");
-                let file_path = dir.path().join(&commit.id().to_string());
-                let mut file = File::create(&file_path)?;
-                file.write_all(original_commit.message_bytes())?;
+        while let Some(op) = rebase.next() {
+            if let Ok(rebase_operation) = op {
+                let oid = rebase_operation.id();
+                let original_commit = self.repository.0.find_commit(oid)?;
+                println!("rebasing {}", oid);
+                if errored_commits.contains(&oid) {
+                    println!("\tmatch found in errored commits");
+                    let file_path = dir.path().join(&commit.id().to_string());
+                    let mut file = File::create(&file_path)?;
+                    file.write_all(original_commit.message_bytes())?;
 
-                Command::new(&editor)
-                    .arg(&file_path)
-                    .stdout(Stdio::inherit())
-                    .stdin(Stdio::inherit())
-                    .stderr(Stdio::inherit())
-                    .output()?;
+                    Command::new(&editor)
+                        .arg(&file_path)
+                        .stdout(Stdio::inherit())
+                        .stdin(Stdio::inherit())
+                        .stderr(Stdio::inherit())
+                        .output()?;
 
-                let new_message = std::fs::read_to_string(&file_path)?;
-                rebase.commit(None, &original_commit.committer(), Some(&new_message))?;
+                    let new_message = std::fs::read_to_string(&file_path)?;
+                    rebase.commit(None, &original_commit.committer(), Some(&new_message))?;
+                } else {
+                    rebase.commit(None, &original_commit.committer(), None)?;
+                }
             } else {
-                rebase.commit(None, &original_commit.committer(), None)?;
+                eprintln!("{:?}", op);
             }
         }
 
@@ -146,6 +151,7 @@ impl CocoGitto {
         let commits = self.get_commit_range(from, to)?;
         let errors: Vec<anyhow::Error> = commits
             .iter()
+            .filter(|commit| !commit.message().unwrap_or("").starts_with("Merge"))
             .map(|commit| Commit::from_git_commit(commit))
             .filter(|commit| commit.is_err())
             .map(|err| err.unwrap_err())
@@ -167,6 +173,7 @@ impl CocoGitto {
         let commits = self.get_commit_range(from, to)?;
         let logs = commits
             .iter()
+            .filter(|commit| !commit.message().unwrap_or("").starts_with("Merge"))
             .map(|commit| Commit::from_git_commit(commit))
             .map(|commit| match commit {
                 Ok(commit) => commit.get_log(),

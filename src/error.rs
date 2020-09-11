@@ -1,5 +1,3 @@
-use crate::commit::Commit;
-use colored::*;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
