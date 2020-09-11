@@ -18,6 +18,7 @@ config = "^0"
 serde_derive = "^1"
 serde = "^1"
 tempdir = "^0"
+semver = "0.10.0"
 moins = "0.1.2"
 clap = { version = "^2", optional = true }
 

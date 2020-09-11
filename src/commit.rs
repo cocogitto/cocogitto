@@ -49,10 +49,10 @@ impl Commit {
         let date = NaiveDateTime::from_timestamp(commit.time().seconds(), 0);
         let message = commit.message();
         let git2_message = message.unwrap().to_owned();
-        let author = commit.author().name().unwrap_or_else(|| "").to_string();
+        let author = commit.author().name().unwrap_or("").to_string();
         let message = Commit::parse_commit_message(&git2_message);
 
-        let result = match message {
+        match message {
             Ok(message) => Ok(Commit {
                 shorthand,
                 message,
@@ -76,9 +76,7 @@ impl Commit {
                     cause
                 }))
             }
-        };
-
-        result
+        }
     }
 
     // Todo extract to ParseError
@@ -94,7 +92,7 @@ impl Commit {
         let idx = type_separator.unwrap();
 
         let mut type_and_scope = &message[0..idx];
-        let mut is_breaking_change = type_and_scope.chars().last() == Some('!');
+        let mut is_breaking_change = type_and_scope.ends_with('!');
 
         if is_breaking_change {
             type_and_scope = &type_and_scope[0..type_and_scope.len() - 1];
@@ -102,13 +100,13 @@ impl Commit {
 
         let commit_type;
 
-        let scope: Option<String> = if let Some(left_par_idx) = type_and_scope.find("(") {
+        let scope: Option<String> = if let Some(left_par_idx) = type_and_scope.find('(') {
             commit_type = CommitType::from(&type_and_scope[0..left_par_idx]);
 
             Some(
                 type_and_scope
-                    .find(")")
-                    .ok_or(anyhow!("missing closing parenthesis"))
+                    .find(')')
+                    .ok_or_else(|| anyhow!("missing closing parenthesis"))
                     .map(|right_par_idx| {
                         type_and_scope[left_par_idx + 1..right_par_idx].to_string()
                     })?,

@@ -107,7 +107,7 @@ impl Repository {
         revwalk.push_head()?;
         revwalk
             .last()
-            .ok_or(anyhow!("Could not find commit"))?
+            .ok_or_else(|| anyhow!("Could not find commit"))?
             .map_err(|err| anyhow!(err))
     }
 

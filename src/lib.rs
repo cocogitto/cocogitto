@@ -7,7 +7,6 @@ extern crate serde_derive;
 mod changelog;
 pub mod error;
 mod hook;
-mod semver;
 
 pub mod commit;
 pub mod repository;
@@ -16,13 +15,13 @@ pub mod settings;
 use crate::changelog::Changelog;
 use crate::commit::CommitType;
 use crate::repository::Repository;
-use crate::semver::SemVer;
 use crate::settings::Settings;
 use anyhow::Result;
 use chrono::Utc;
 use colored::*;
 use commit::Commit;
 use git2::{Commit as Git2Commit, Oid, RebaseOptions, Repository as Git2Repository};
+use semver::Version;
 use std::fs::File;
 use std::io::Write;
 use std::process::{Command, Stdio};
@@ -216,7 +215,7 @@ impl CocoGitto {
 
     pub fn create_version(&self, increment: VersionIncrement) -> Result<()> {
         let next_version = match increment {
-            VersionIncrement::Manual(version) => SemVer::from_tag(&version)?,
+            VersionIncrement::Manual(version) => Version::parse(&version)?,
             VersionIncrement::Auto => self.get_auto_version()?,
             VersionIncrement::Major => self.get_next_major()?,
             VersionIncrement::Patch => self.get_next_patch()?,
@@ -270,13 +269,13 @@ impl CocoGitto {
         Ok(changelog.tag_diff_to_markdown())
     }
 
-    fn get_auto_version(&self) -> Result<SemVer> {
+    fn get_auto_version(&self) -> Result<Version> {
         let tag = self
             .repository
             .get_latest_tag()
-            .unwrap_or_else(|_| SemVer::default().to_string());
+            .unwrap_or_else(|_| Version::new(0, 0, 0).to_string());
 
-        let mut version = SemVer::from_tag(&tag)?;
+        let mut version = Version::parse(&tag)?;
 
         let latest_tag = self
             .repository
@@ -293,7 +292,7 @@ impl CocoGitto {
                 commit.message.is_breaking_change,
             ) {
                 (CommitType::Feature, false) => {
-                    version = version.inc_patch();
+                    version.increment_patch();
                     println!(
                         "Found feature commit {}, bumping to {}",
                         commit.shorthand.blue(),
@@ -301,7 +300,7 @@ impl CocoGitto {
                     )
                 }
                 (CommitType::BugFix, false) => {
-                    version = version.inc_minor();
+                    version.increment_minor();
                     println!(
                         "Found bug fix commit {}, bumping to {}",
                         commit.shorthand.blue(),
@@ -309,7 +308,7 @@ impl CocoGitto {
                     )
                 }
                 (commit_type, true) => {
-                    version = version.inc_major();
+                    version.increment_major();
                     println!(
                         "Found {} commit {} with type : {}",
                         "BREAKING CHANGE".red(),
@@ -327,29 +326,31 @@ impl CocoGitto {
         Err(anyhow!(""))
     }
 
-    fn get_next_major(&self) -> Result<SemVer> {
+    fn get_next_major(&self) -> Result<Version> {
         let tag = self.repository.get_latest_tag()?;
-        Ok(SemVer::from_tag(&tag)?.inc_major())
+        let mut version = Version::parse(&tag)?;
+        version.increment_major();
+        Ok(version)
     }
 
-    fn get_next_patch(&self) -> Result<SemVer> {
+    fn get_next_patch(&self) -> Result<Version> {
         let tag = self.repository.get_latest_tag()?;
-        Ok(SemVer::from_tag(&tag)?.inc_patch())
+        let mut version = Version::parse(&tag)?;
+        version.increment_patch();
+        Ok(version)
     }
 
-    fn get_next_minor(&self) -> Result<SemVer> {
+    fn get_next_minor(&self) -> Result<Version> {
         let tag = self.repository.get_latest_tag()?;
-        Ok(SemVer::from_tag(&tag)?.inc_minor())
+        let mut version = Version::parse(&tag)?;
+        version.increment_minor();
+        Ok(version)
     }
 
     // TODO : revparse
     fn resolve_to_arg(&self, to: Option<&str>) -> Result<Oid> {
         if let Some(to) = to {
-            if to.contains(".") {
-                self.repository.resolve_lightweight_tag(to)
-            } else {
-                Oid::from_str(to).map_err(|err| anyhow!(err))
-            }
+            self.get_raw_oid_or_tag_oid(to)
         } else {
             self.repository
                 .get_head_commit_oid()
@@ -360,15 +361,19 @@ impl CocoGitto {
     // TODO : revparse
     fn resolve_from_arg(&self, from: Option<&str>) -> Result<Oid> {
         if let Some(from) = from {
-            if from.contains(".") {
-                self.repository.resolve_lightweight_tag(from)
-            } else {
-                Oid::from_str(from).map_err(|err| anyhow!(err))
-            }
+            self.get_raw_oid_or_tag_oid(from)
         } else {
             self.repository
                 .get_latest_tag_oid()
                 .or_else(|_err| self.repository.get_first_commit())
+        }
+    }
+
+    fn get_raw_oid_or_tag_oid(&self, input: &str) -> Result<Oid> {
+        if let Ok(_version) = Version::parse(input) {
+            self.repository.resolve_lightweight_tag(input)
+        } else {
+            Oid::from_str(input).map_err(|err| anyhow!(err))
         }
     }
 
