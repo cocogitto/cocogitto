@@ -239,7 +239,7 @@ impl fmt::Display for Commit {
 }
 
 #[derive(Eq, PartialEq, Debug)]
-pub(crate) enum CommitType {
+pub enum CommitType {
     Feature,
     BugFix,
     Chore,

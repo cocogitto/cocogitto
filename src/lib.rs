@@ -41,6 +41,31 @@ pub enum VersionIncrement {
     Manual(String),
 }
 
+pub enum CommitFilter {
+    Type(CommitType),
+    Scope(String),
+    Author(String),
+    BreakingChange,
+}
+
+pub struct CommitFilters(pub Vec<CommitFilter>);
+
+impl CommitFilters {
+    pub fn filters(&self, commit: &Commit) -> bool {
+        let mut take = true;
+        for filter in self.0.iter() {
+            take = take
+                && match filter {
+                    CommitFilter::Type(commit_type) => commit_type == &commit.message.commit_type,
+                    CommitFilter::Scope(scope) => Some(scope) == commit.message.scope.as_ref(),
+                    CommitFilter::Author(author) => author == &commit.author,
+                    CommitFilter::BreakingChange => commit.message.is_breaking_change,
+                }
+        }
+        take
+    }
+}
+
 impl CocoGitto {
     pub fn get() -> Result<Self> {
         let repository = Repository::open()?;
@@ -167,7 +192,7 @@ impl CocoGitto {
         Ok(())
     }
 
-    pub fn get_log(&self) -> Result<String> {
+    pub fn get_log(&self, filters: CommitFilters) -> Result<String> {
         let from = self.repository.get_first_commit()?;
         let to = self.repository.get_head_commit_oid()?;
         let commits = self.get_commit_range(from, to)?;
@@ -175,6 +200,10 @@ impl CocoGitto {
             .iter()
             .filter(|commit| !commit.message().unwrap_or("").starts_with("Merge"))
             .map(|commit| Commit::from_git_commit(commit))
+            .filter(|commit| match commit {
+                Ok(commit) => filters.filters(commit),
+                Err(err) => true,
+            })
             .map(|commit| match commit {
                 Ok(commit) => commit.get_log(),
                 Err(err) => err.to_string(),

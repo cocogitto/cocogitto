@@ -1,6 +1,7 @@
 use anyhow::Result;
 use clap::{App, AppSettings, Arg, SubCommand};
-use cocogitto::{CocoGitto, VersionIncrement};
+use cocogitto::commit::CommitType;
+use cocogitto::{CocoGitto, CommitFilter, CommitFilters, VersionIncrement};
 use moins::Moins;
 use std::process::exit;
 
@@ -55,6 +56,7 @@ fn main() -> Result<()> {
         .long_about("Conventional Commit Git Terminal Overlord is a tool to help you use the conventional commit specification")
         .subcommand(
             SubCommand::with_name(CHECK)
+                .settings(SUBCOMMAND_SETTINGS)
                 .about("Verify all commit message against the conventional commit specification")
                 .arg(Arg::with_name("edit")
                     .help("Interactively rename invalid commit message")
@@ -62,9 +64,33 @@ fn main() -> Result<()> {
                     .long("edit")
                 )
         )
-        .subcommand(SubCommand::with_name(LOG).about("Like git log but for conventional commits"))
+        .subcommand(SubCommand::with_name(LOG)
+            .settings(SUBCOMMAND_SETTINGS)
+            .about("Like git log but for conventional commits")
+            .arg(Arg::with_name("breaking-change")
+                .help("filter BREAKING CHANGE commit")
+                .short("B")
+                .long("breaking-change"))
+            .arg(Arg::with_name("type")
+                .help("filter on commit type")
+                .short("t")
+                .takes_value(true)
+                .long("type"))
+            .arg(Arg::with_name("author")
+                .help("filter on commit author")
+                .short("a")
+                .takes_value(true)
+                .long("author"))
+            .arg(Arg::with_name("scope")
+                .help("filter on commit scope")
+                .short("s")
+                .takes_value(true)
+                .long("scope"))
+        )
+
         .subcommand(
             SubCommand::with_name(VERIFY)
+                .settings(SUBCOMMAND_SETTINGS)
                 .about("Verify a single commit message")
                 .arg(Arg::with_name("message").help("The commit message"))
         )
@@ -164,7 +190,28 @@ fn main() -> Result<()> {
                 }
             }
             LOG => {
-                let mut content = cocogitto.get_log()?;
+                let subcommand = matches.subcommand_matches(LOG).unwrap();
+
+                let mut filters = vec![];
+                if let Some(commit_type) = subcommand.value_of("type") {
+                    filters.push(CommitFilter::Type(CommitType::from(commit_type)));
+                }
+
+                if let Some(scope) = subcommand.value_of("scope") {
+                    filters.push(CommitFilter::Scope(scope.to_string()));
+                }
+
+                if let Some(author) = subcommand.value_of("author") {
+                    filters.push(CommitFilter::Author(author.to_string()));
+                }
+
+                if subcommand.is_present("breaking-change") {
+                    filters.push(CommitFilter::BreakingChange);
+                }
+
+                let filters = CommitFilters(filters);
+
+                let mut content = cocogitto.get_log(filters)?;
                 Moins::run(&mut content, None);
             }
             CHANGELOG => {
