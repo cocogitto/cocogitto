@@ -13,7 +13,7 @@ pub mod repository;
 pub mod settings;
 
 use crate::changelog::Changelog;
-use crate::commit::CommitType;
+use crate::commit::{CommitMessage, CommitType};
 use crate::error::CocoGittoError::SemverError;
 use crate::repository::Repository;
 use crate::settings::Settings;
@@ -203,18 +203,29 @@ impl CocoGitto {
         &self,
         commit_type: &str,
         scope: Option<String>,
-        message: String,
+        description: String,
+        body: Option<String>,
+        footer: Option<String>,
+        is_breaking_change: bool,
     ) -> Result<()> {
         let commit_type = CommitType::from(commit_type);
-        let message = match scope {
-            Some(scope) => format!("{}({}): {}", commit_type, scope, message,),
-            None => format!("{}: {}", commit_type, message,),
-        };
+
+        let message = CommitMessage {
+            commit_type,
+            scope,
+            body,
+            footer,
+            description,
+            is_breaking_change,
+        }
+        .to_string();
 
         let oid = self.repository.commit(message)?;
         let commit = self.repository.0.find_commit(oid)?;
         let commit = Commit::from_git_commit(&commit)?;
-        Ok(println!("{}", commit))
+        println!("{}", commit);
+
+        Ok(())
     }
 
     pub fn create_version(&self, increment: VersionIncrement) -> Result<()> {

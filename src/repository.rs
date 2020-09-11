@@ -1,5 +1,5 @@
 use crate::error::CocoGittoError::GitError;
-use anyhow::{Error, Result};
+use anyhow::Result;
 use colored::Colorize;
 use git2::{
     Commit as Git2Commit, DiffOptions, Object, ObjectType, Oid, Repository as Git2Repository,

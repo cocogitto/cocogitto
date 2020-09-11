@@ -36,6 +36,14 @@ fn main() -> Result<()> {
                 .help("Create a pre-formatted commit")
                 .arg(Arg::with_name("message").help("The commit message"))
                 .arg(Arg::with_name("scope").help("The scope of the commit message"))
+                .arg(Arg::with_name("body").help("The body of the commit message"))
+                .arg(Arg::with_name("footer").help("The footer of the commit message"))
+                .arg(
+                    Arg::with_name("breaking-change")
+                        .help("BREAKING CHANGE commit")
+                        .short("B")
+                        .long("breaking-change"),
+                )
         })
         .collect::<Vec<App>>();
 
@@ -171,8 +179,17 @@ fn main() -> Result<()> {
                 if let Some(args) = matches.subcommand_matches(commit_type) {
                     let message = args.value_of("message").unwrap().to_string();
                     let scope = args.value_of("scope").map(|scope| scope.to_string());
-
-                    cocogitto.conventional_commit(commit_type, scope, message)?;
+                    let body = args.value_of("body").map(|body| body.to_string());
+                    let footer = args.value_of("footer").map(|footer| footer.to_string());
+                    let breaking_change = args.is_present("breaking-change");
+                    cocogitto.conventional_commit(
+                        commit_type,
+                        scope,
+                        message,
+                        body,
+                        footer,
+                        breaking_change,
+                    )?;
                 }
             }
         }

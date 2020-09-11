@@ -293,6 +293,32 @@ impl CommitType {
     }
 }
 
+impl ToString for CommitMessage {
+    fn to_string(&self) -> String {
+        let mut message = String::new();
+        message.push_str(&self.commit_type.get_key_str());
+
+        if let Some(scope) = &self.scope {
+            message.push_str(&format!("({})", scope));
+        }
+
+        if self.is_breaking_change {
+            message.push('!');
+        }
+
+        message.push_str(&format!(": {}", &self.description));
+
+        if let Some(body) = &self.body {
+            message.push_str(&format!("\n\n{}", body));
+        }
+
+        if let Some(footer) = &self.footer {
+            message.push_str(&format!("\n\n{}", footer));
+        }
+
+        message
+    }
+}
 impl From<&str> for CommitType {
     fn from(commit_type: &str) -> Self {
         match commit_type {
