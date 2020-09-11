@@ -1,4 +1,6 @@
+use crate::error::CocoGittoError::GitError;
 use anyhow::Result;
+use colored::Colorize;
 use git2::{
     Commit as Git2Commit, DiffOptions, Object, ObjectType, Oid, Repository as Git2Repository,
 };
@@ -117,6 +119,20 @@ impl Repository {
         } else {
             None
         }
+    }
+
+    pub fn create_tag(&self, name: &str) -> Result<()> {
+        let head = self.get_head().unwrap();
+        self.0
+            .tag_lightweight(name, &head, false)
+            .map(|_| ())
+            .map_err(|err| {
+                let cause_key = "cause:".red();
+                anyhow!(GitError {
+                    level: "Git error".to_string(),
+                    cause: format!("{} {}", cause_key, err.message())
+                })
+            })
     }
 
     fn tree_to_treeish<'a>(

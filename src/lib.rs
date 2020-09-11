@@ -14,6 +14,7 @@ pub mod settings;
 
 use crate::changelog::Changelog;
 use crate::commit::CommitType;
+use crate::error::CocoGittoError::SemverError;
 use crate::repository::Repository;
 use crate::settings::Settings;
 use anyhow::Result;
@@ -150,7 +151,7 @@ impl CocoGitto {
         let commits = self.get_commit_range(from, to)?;
         let errors: Vec<anyhow::Error> = commits
             .iter()
-            .filter(|commit| !commit.message().unwrap_or("").starts_with("Merge"))
+            .filter(|commit| !commit.message().unwrap_or("").starts_with("Merge "))
             .map(|commit| Commit::from_git_commit(commit))
             .filter(|commit| commit.is_err())
             .map(|err| err.unwrap_err())
@@ -214,18 +215,50 @@ impl CocoGitto {
     }
 
     pub fn create_version(&self, increment: VersionIncrement) -> Result<()> {
+        let tag = self
+            .repository
+            .get_latest_tag()
+            .unwrap_or_else(|_| Version::new(0, 0, 0).to_string());
+
+        let current_version = Version::parse(&tag)?;
+
         let next_version = match increment {
             VersionIncrement::Manual(version) => Version::parse(&version)?,
-            VersionIncrement::Auto => self.get_auto_version()?,
-            VersionIncrement::Major => self.get_next_major()?,
-            VersionIncrement::Patch => self.get_next_patch()?,
-            VersionIncrement::Minor => self.get_next_minor()?,
+            VersionIncrement::Auto => self.auto_bump_version(&current_version)?,
+            VersionIncrement::Major => {
+                let mut next = current_version.clone();
+                next.increment_major();
+                next
+            }
+            VersionIncrement::Patch => {
+                let mut next = current_version.clone();
+                next.increment_patch();
+                next
+            }
+            VersionIncrement::Minor => {
+                let mut next = current_version.clone();
+                next.increment_minor();
+                next
+            }
         };
 
-        let head = self.repository.get_head().unwrap();
-        self.repository
-            .0
-            .tag_lightweight(&next_version.to_string(), &head, false)?;
+        if next_version.le(&current_version) || next_version.eq(&current_version) {
+            let comparison = format!("{} <= {}", current_version, next_version).red();
+            let cause_key = "cause:".red();
+            let cause = format!(
+                "{} version MUST be greater than current one: {}",
+                cause_key, comparison
+            );
+            return Err(anyhow!(SemverError {
+                level: "SemVer Error".red().to_string(),
+                cause
+            }));
+        };
+
+        self.repository.create_tag(&next_version.to_string())?;
+        let bump = format!("{} -> {}", current_version, next_version).green();
+        println!("Bumped version : {}", bump);
+
         Ok(())
     }
 
@@ -269,82 +302,70 @@ impl CocoGitto {
         Ok(changelog.tag_diff_to_markdown())
     }
 
-    fn get_auto_version(&self) -> Result<Version> {
-        let tag = self
-            .repository
-            .get_latest_tag()
-            .unwrap_or_else(|_| Version::new(0, 0, 0).to_string());
+    fn auto_bump_version(&self, current_version: &Version) -> Result<Version> {
+        let mut next_version = current_version.clone();
 
-        let mut version = Version::parse(&tag)?;
-
-        let latest_tag = self
+        let changelog_start_oid = self
             .repository
             .get_latest_tag_oid()
             .unwrap_or_else(|_| self.repository.get_first_commit().unwrap());
 
         let head = self.repository.get_head_commit_oid()?;
-        let commits = self.get_commit_range(latest_tag, head)?;
+
+        let commits = self.get_commit_range(changelog_start_oid, head)?;
+
+        let commits: Vec<&Git2Commit> = commits
+            .iter()
+            .filter(|commit| !commit.message().unwrap_or("").starts_with("Merge "))
+            .collect();
 
         for commit in commits {
-            let commit = Commit::from_git_commit(&commit)?;
-            match (
-                &commit.message.commit_type,
-                commit.message.is_breaking_change,
-            ) {
-                (CommitType::Feature, false) => {
-                    version.increment_patch();
-                    println!(
-                        "Found feature commit {}, bumping to {}",
+            let commit = Commit::from_git_commit(&commit);
+
+            // TODO: prompt for continue on err
+            if let Err(err) = commit {
+                eprintln!("{}", err);
+            } else {
+                let commit = commit.unwrap();
+                match (
+                    &commit.message.commit_type,
+                    commit.message.is_breaking_change,
+                ) {
+                    (CommitType::Feature, false) => {
+                        next_version.increment_minor();
+                        println!(
+                            "Found feature commit {}, bumping to {}",
+                            commit.shorthand.blue(),
+                            next_version.to_string().green()
+                        )
+                    }
+                    (CommitType::BugFix, false) => {
+                        next_version.increment_patch();
+                        println!(
+                            "Found bug fix commit {}, bumping to {}",
+                            commit.shorthand.blue(),
+                            next_version.to_string().green()
+                        )
+                    }
+                    (commit_type, true) => {
+                        next_version.increment_major();
+                        println!(
+                            "Found {} commit {} with type : {}",
+                            "BREAKING CHANGE".red(),
+                            commit.shorthand.blue(),
+                            commit_type.get_key_str().yellow()
+                        )
+                    }
+                    (_, false) => println!(
+                        "Skipping irrelevant commit {} with type : {}",
                         commit.shorthand.blue(),
-                        version.to_string().green()
-                    )
+                        commit.message.commit_type.get_key_str().yellow()
+                    ),
                 }
-                (CommitType::BugFix, false) => {
-                    version.increment_minor();
-                    println!(
-                        "Found bug fix commit {}, bumping to {}",
-                        commit.shorthand.blue(),
-                        version.to_string().green()
-                    )
-                }
-                (commit_type, true) => {
-                    version.increment_major();
-                    println!(
-                        "Found {} commit {} with type : {}",
-                        "BREAKING CHANGE".red(),
-                        commit.shorthand.blue(),
-                        commit_type.get_key_str().yellow()
-                    )
-                }
-                (_, false) => println!(
-                    "Skipping irrelevant commit {} with type : {}",
-                    commit.shorthand.blue(),
-                    commit.message.commit_type.get_key_str().yellow()
-                ),
             }
         }
-        Err(anyhow!(""))
-    }
 
-    fn get_next_major(&self) -> Result<Version> {
-        let tag = self.repository.get_latest_tag()?;
-        let mut version = Version::parse(&tag)?;
-        version.increment_major();
-        Ok(version)
-    }
-
-    fn get_next_patch(&self) -> Result<Version> {
-        let tag = self.repository.get_latest_tag()?;
-        let mut version = Version::parse(&tag)?;
-        version.increment_patch();
-        Ok(version)
-    }
-
-    fn get_next_minor(&self) -> Result<Version> {
-        let tag = self.repository.get_latest_tag()?;
-        let mut version = Version::parse(&tag)?;
-        version.increment_minor();
-        Ok(version)
+        Ok(next_version)
     }
 
     // TODO : revparse
