@@ -1,5 +1,5 @@
 use crate::error::CocoGittoError::GitError;
-use anyhow::Result;
+use anyhow::{Error, Result};
 use colored::Colorize;
 use git2::{
     Commit as Git2Commit, DiffOptions, Object, ObjectType, Oid, Repository as Git2Repository,
@@ -20,7 +20,7 @@ impl Repository {
         self.0.workdir()
     }
 
-    pub fn commit(&self, message: String) -> Result<()> {
+    pub fn commit(&self, message: String) -> Result<Oid> {
         let repo = &self.0;
         let sig = &&self.0.signature()?;
         let tree_id = &&self.0.index()?.write_tree()?;
@@ -48,13 +48,11 @@ impl Repository {
 
             self.0
                 .commit(Some("HEAD"), &sig, &sig, &message, &tree, &[&tip])
-                .map(|_| ())
                 .map_err(|err| anyhow!(err))
         } else if repo_is_empty && repo_has_deltas {
             // First repo commit
             self.0
                 .commit(Some("HEAD"), &sig, &sig, &message, &tree, &[])
-                .map(|_| ())
                 .map_err(|err| anyhow!(err))
         } else {
             let statuses = repo.statuses(None)?;

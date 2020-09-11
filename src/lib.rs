@@ -211,7 +211,10 @@ impl CocoGitto {
             None => format!("{}: {}", commit_type, message,),
         };
 
-        self.repository.commit(message)
+        let oid = self.repository.commit(message)?;
+        let commit = self.repository.0.find_commit(oid)?;
+        let commit = Commit::from_git_commit(&commit)?;
+        Ok(println!("{}", commit))
     }
 
     pub fn create_version(&self, increment: VersionIncrement) -> Result<()> {
