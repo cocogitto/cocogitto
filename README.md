@@ -1,5 +1,8 @@
 # Cocogitto
 
+![logo](docs/assets/logo.png) 
+*Please if you are a graphic designer, help me with the logo*
+
 Cocogitto is a set of cli tool for the [conventional commit](https://www.conventionalcommits.org/en/v1.0.0/) 
 and [semver](https://semver.org/) specifications.  
 
