@@ -238,7 +238,7 @@ impl fmt::Display for Commit {
     }
 }
 
-#[derive(Eq, PartialEq, Debug)]
+#[derive(Eq, PartialEq, Debug, Clone)]
 pub enum CommitType {
     Feature,
     BugFix,

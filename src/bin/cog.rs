@@ -75,16 +75,19 @@ fn main() -> Result<()> {
                 .help("filter on commit type")
                 .short("t")
                 .takes_value(true)
+                .multiple(true)
                 .long("type"))
             .arg(Arg::with_name("author")
                 .help("filter on commit author")
                 .short("a")
                 .takes_value(true)
+                .multiple(true)
                 .long("author"))
             .arg(Arg::with_name("scope")
                 .help("filter on commit scope")
                 .short("s")
                 .takes_value(true)
+                .multiple(true)
                 .long("scope"))
         )
 
@@ -193,16 +196,22 @@ fn main() -> Result<()> {
                 let subcommand = matches.subcommand_matches(LOG).unwrap();
 
                 let mut filters = vec![];
-                if let Some(commit_type) = subcommand.value_of("type") {
-                    filters.push(CommitFilter::Type(CommitType::from(commit_type)));
+                if let Some(commit_types) = subcommand.values_of("type") {
+                    commit_types.for_each(|commit_type| {
+                        filters.push(CommitFilter::Type(CommitType::from(commit_type)));
+                    });
                 }
 
-                if let Some(scope) = subcommand.value_of("scope") {
-                    filters.push(CommitFilter::Scope(scope.to_string()));
+                if let Some(scopes) = subcommand.values_of("scope") {
+                    scopes.for_each(|scope| {
+                        filters.push(CommitFilter::Scope(scope.to_string()));
+                    });
                 }
 
-                if let Some(author) = subcommand.value_of("author") {
-                    filters.push(CommitFilter::Author(author.to_string()));
+                if let Some(authors) = subcommand.values_of("author") {
+                    authors.for_each(|author| {
+                        filters.push(CommitFilter::Author(author.to_string()));
+                    });
                 }
 
                 if subcommand.is_present("breaking-change") {
