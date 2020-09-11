@@ -13,14 +13,36 @@ Cocogitto was designed to help you respect the conventional and semver standard 
 It strive to be a simple, modern and fast command line interface and leverage [git2-rs](https://github.com/rust-lang/git2-rs)
 to provide what you would expect from such tool plus some original features.
 
+## Table of contents
+- [Configuration](#Configuration)
+- [Commands list](#Commands-list)
+- [Installation](#Installation)
+- [Features](#Features)
+    - [Creating conventional commits](#Creating-conventional-commits)
+    - [Adding custom commit types](#Adding-custom-commit-types)
+    - [Checking a repository](#Checking-a-repository)
+    - [Interactive rebase](#Interactive-rebase)
+    - [Verifying raw messages](#Verifying-raw-messages)
+    - [Cog log](#Cog-log)
+    - [Generating changelogs](#Generating-changelogs)
+        - [To stdout](#To-stdout)
+        - [To CHANGELOG.md](#To-CHANGELOG.md)
+    - [Installing commit hooks](#Installing-commit-hooks)
+- [Contributing](#Contributing)
+- [Licence](#Licence)
+
 
 ## Configuration
 
-*Work in progress**
+*Comming soon**
 
-## Commands 
+## Command list 
 
-*Work in progress**
+*Comming soon**
+
+## Installation
+
+*Comming soon*
 
 ## Features 
 
@@ -74,12 +96,12 @@ This would produce a commit with the following message: `feat: add operator over
 **Note:** For the sake of conciseness and productivity, commit commands have not been grouped under a `commit` subcommand and commit args are positional only.
 
 
-### Adding custom commit type 
+### Adding custom commit types
 
-**Work in progress**
+*Comming soon*
 
 
-### Checking a repo
+### Checking a repository
 
 Before generating changelog and creating automatic version you might want to check that 
 your git logs repect the conventional commit specification : 
@@ -89,6 +111,7 @@ cog check
 ```
 
 ![cog-log](docs/assets/cog_log.png) 
+
 *Ouput example from [toml-bombadil](https://github.com/oknozor/toml-bombadil) project*
 
 
@@ -107,7 +130,7 @@ Here instead of just displaying errors, cocogitto will open invalid commit messa
 Cocogitto will then perform a git rebase to rewrite edited commit messages. It is recommended to use `git push --force-with-lease` to synchronize your changes with your upstream branch.
 
 
-### Verifying raw message
+### Verifying raw messages
 
 You can check the validity of an arbitraty input string against the specification with `cog verify {message}` :
 
@@ -168,7 +191,7 @@ To choose your next version scheme, `cog bump` comes with several flags :
 | `--minor`     | Increase minor version (ex: `cog bump --minor`, bump from `1.1.0` to `2.0.0`)
 
 
-### Installing commit hook
+### Installing commit hooks
 
 If you want to enforce the conventional commit spec, it might be a good idea to set up a [pre-commit-hook](https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks).
 `cog install hooks` will install a pre-commit hook that use the `cog verify` command whenever a new commit is created. 
@@ -181,4 +204,4 @@ Found a bug, have a suggestion for a new feature ? Please read the contribution 
 
 ## Licence
 
-All the code in this repository is released under the MIT License, for more information take a look at the LICENSE file.
+All the code in this repository is released under the MIT License, for more information take a look at the [LICENSE](LICENSE) file.
