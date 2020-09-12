@@ -3,7 +3,8 @@ use clap::{App, AppSettings, Arg, SubCommand};
 use cocogitto::changelog::WriterMode;
 use cocogitto::commit::CommitType;
 use cocogitto::filter::{CommitFilter, CommitFilters};
-use cocogitto::{CocoGitto, VersionIncrement};
+use cocogitto::version::VersionIncrement;
+use cocogitto::CocoGitto;
 use moins::Moins;
 use std::process::exit;
 

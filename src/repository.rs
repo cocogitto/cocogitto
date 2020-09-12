@@ -152,6 +152,26 @@ impl Repository {
             })
     }
 
+    pub(crate) fn get_commit_range(&self, from: Oid, to: Oid) -> Result<Vec<Git2Commit>> {
+        // Ensure commit exists
+        self.0.find_commit(from)?;
+        self.0.find_commit(to)?;
+
+        let mut revwalk = self.0.revwalk()?;
+        revwalk.push(to)?;
+        revwalk.push(from)?;
+
+        let mut commits: Vec<Git2Commit> = vec![];
+
+        for oid in revwalk {
+            let oid = oid?;
+            let commit = self.0.find_commit(oid)?;
+            commits.push(commit);
+        }
+
+        Ok(commits)
+    }
+
     fn tree_to_treeish<'a>(
         repo: &'a Git2Repository,
         arg: Option<&String>,

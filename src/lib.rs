@@ -14,6 +14,7 @@ mod hook;
 pub mod commit;
 pub mod repository;
 pub mod settings;
+pub mod version;
 
 use crate::changelog::{Changelog, ChangelogWriter, WriterMode};
 use crate::commit::{CommitConfig, CommitMessage, CommitType};
@@ -21,11 +22,12 @@ use crate::error::ErrorKind::Semver;
 use crate::filter::CommitFilters;
 use crate::repository::Repository;
 use crate::settings::Settings;
+use crate::version::VersionIncrement;
 use anyhow::Result;
 use chrono::Utc;
 use colored::*;
 use commit::Commit;
-use git2::{Commit as Git2Commit, Oid, RebaseOptions};
+use git2::{Oid, RebaseOptions};
 use semver::Version;
 use std::collections::HashMap;
 use std::fs::File;
@@ -50,14 +52,6 @@ pub struct CocoGitto {
     changelog_path: PathBuf,
 }
 
-pub enum VersionIncrement {
-    Major,
-    Minor,
-    Patch,
-    Auto,
-    Manual(String),
-}
-
 impl CocoGitto {
     pub fn get() -> Result<Self> {
         let repository = Repository::open()?;
@@ -78,7 +72,7 @@ impl CocoGitto {
     pub fn check_and_edit(&self) -> Result<()> {
         let from = self.repository.get_first_commit()?;
         let head = self.repository.get_head_commit_oid()?;
-        let commits = self.get_commit_range(from, head)?;
+        let commits = self.repository.get_commit_range(from, head)?;
         let editor = std::env::var("EDITOR")?;
         let dir = TempDir::new("cocogito")?;
 
@@ -141,7 +135,7 @@ impl CocoGitto {
     pub fn check(&self) -> Result<()> {
         let from = self.repository.get_first_commit()?;
         let to = self.repository.get_head_commit_oid()?;
-        let commits = self.get_commit_range(from, to)?;
+        let commits = self.repository.get_commit_range(from, to)?;
         let errors: Vec<anyhow::Error> = commits
             .iter()
             .filter(|commit| !commit.message().unwrap_or("").starts_with("Merge "))
@@ -163,7 +157,7 @@ impl CocoGitto {
     pub fn get_log(&self, filters: CommitFilters) -> Result<String> {
         let from = self.repository.get_first_commit()?;
         let to = self.repository.get_head_commit_oid()?;
-        let commits = self.get_commit_range(from, to)?;
+        let commits = self.repository.get_commit_range(from, to)?;
         let logs = commits
             .iter()
             // Remove merge commits
@@ -252,26 +246,7 @@ impl CocoGitto {
 
         // Error on unstagged changes
 
-        //TODO Extract to version.rs with VersionIncremment
-        let next_version = match increment {
-            VersionIncrement::Manual(version) => Version::parse(&version)?,
-            VersionIncrement::Auto => self.get_auto_version(&current_version)?,
-            VersionIncrement::Major => {
-                let mut next = current_version.clone();
-                next.increment_major();
-                next
-            }
-            VersionIncrement::Patch => {
-                let mut next = current_version.clone();
-                next.increment_patch();
-                next
-            }
-            VersionIncrement::Minor => {
-                let mut next = current_version.clone();
-                next.increment_minor();
-                next
-            }
-        };
+        let next_version = increment.bump(&current_version)?;
 
         if next_version.le(&current_version) || next_version.eq(&current_version) {
             let comparison = format!("{} <= {}", current_version, next_version).red();
@@ -329,6 +304,7 @@ impl CocoGitto {
         let mut commits = vec![];
 
         for commit in self
+            .repository
             .get_commit_range(from, to)
             .map_err(|err| anyhow!("Could not get commit range {}...{} : {}", from, to, err))?
         {
@@ -363,72 +339,6 @@ impl CocoGitto {
         })
     }
 
-    fn get_auto_version(&self, current_version: &Version) -> Result<Version> {
-        let mut next_version = current_version.clone();
-
-        let changelog_start_oid = self
-            .repository
-            .get_latest_tag_oid()
-            .unwrap_or_else(|_| self.repository.get_first_commit().unwrap());
-
-        let head = self.repository.get_head_commit_oid()?;
-
-        let commits = self.get_commit_range(changelog_start_oid, head)?;
-
-        let commits: Vec<&Git2Commit> = commits
-            .iter()
-            .filter(|commit| !commit.message().unwrap_or("").starts_with("Merge "))
-            .collect();
-
-        for commit in commits {
-            let commit = Commit::from_git_commit(&commit);
-
-            // TODO: prompt for continue on err
-            if let Err(err) = commit {
-                eprintln!("{}", err);
-            } else {
-                let commit = commit.unwrap();
-                match (
-                    &commit.message.commit_type,
-                    commit.message.is_breaking_change,
-                ) {
-                    (CommitType::Feature, false) => {
-                        next_version.increment_minor();
-                        println!(
-                            "Found feature commit {}, bumping to {}",
-                            commit.shorthand.blue(),
-                            next_version.to_string().green()
-                        )
-                    }
-                    (CommitType::BugFix, false) => {
-                        next_version.increment_patch();
-                        println!(
-                            "Found bug fix commit {}, bumping to {}",
-                            commit.shorthand.blue(),
-                            next_version.to_string().green()
-                        )
-                    }
-                    (commit_type, true) => {
-                        next_version.increment_major();
-                        println!(
-                            "Found {} commit {} with type : {}",
-                            "BREAKING CHANGE".red(),
-                            commit.shorthand.blue(),
-                            commit_type.get_key_str().yellow()
-                        )
-                    }
-                    (_, false) => println!(
-                        "Skipping irrelevant commit {} with type : {}",
-                        commit.shorthand.blue(),
-                        commit.message.commit_type.get_key_str().yellow()
-                    ),
-                }
-            }
-        }
-
-        Ok(next_version)
-    }
-
     // TODO : revparse
     fn resolve_to_arg(&self, to: Option<&str>) -> Result<Oid> {
         if let Some(to) = to {
@@ -460,27 +370,6 @@ impl CocoGitto {
         } else {
             Oid::from_str(input).map_err(|err| anyhow!("`{}` is not a valid oid : {}", input, err))
         }
-    }
-
-    fn get_commit_range(&self, from: Oid, to: Oid) -> Result<Vec<Git2Commit>> {
-        // Ensure commit exists
-        let repository = &self.repository.0;
-        repository.find_commit(from)?;
-        repository.find_commit(to)?;
-
-        let mut revwalk = repository.revwalk()?;
-        revwalk.push(to)?;
-        revwalk.push(from)?;
-
-        let mut commits: Vec<Git2Commit> = vec![];
-
-        for oid in revwalk {
-            let oid = oid?;
-            let commit = repository.find_commit(oid)?;
-            commits.push(commit);
-        }
-
-        Ok(commits)
     }
 }
 
