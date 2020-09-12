@@ -7,9 +7,9 @@ pub struct Hook {
     pub command: String,
 }
 
+// TODO
 impl Hook {
     pub(crate) fn run(&self) -> Result<()> {
-        todo!();
         let command_display = format!("`{}`", &self.command.green());
         println!("Running pre-version hook : {}", command_display);
 

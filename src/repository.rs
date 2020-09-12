@@ -172,6 +172,11 @@ impl Repository {
         Ok(commits)
     }
 
+    pub(crate) fn get_author(&self) -> Result<String> {
+        self.0.signature()?.name()
+            .map(|name| name.to_string())
+            .ok_or_else(|| anyhow!("Cannot get committer name"))
+    }
     fn tree_to_treeish<'a>(
         repo: &'a Git2Repository,
         arg: Option<&String>,

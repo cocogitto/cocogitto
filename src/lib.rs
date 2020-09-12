@@ -59,6 +59,7 @@ impl CocoGitto {
         let changelog_path = settings
             .changelog_path
             .unwrap_or_else(|| PathBuf::from("CHANGELOG.md"));
+
         Ok(CocoGitto {
             repository,
             changelog_path,
@@ -180,18 +181,24 @@ impl CocoGitto {
         Ok(logs)
     }
 
-    pub fn verify(message: &str) -> Result<()> {
-        Commit::parse_commit_message(message).map(|commit_message| {
-            println!(
-                "{}",
-                Commit {
-                    shorthand: "not committed".to_string(),
-                    message: commit_message,
-                    author: " ".to_string(),
-                    date: Utc::now().naive_utc(),
-                }
-            )
-        })
+    pub fn verify(&self, message: &str) -> Result<()> {
+        let commit = Commit::parse_commit_message(message);
+
+        match commit {
+            Ok(message) => {
+                println!(
+                    "{}",
+                    Commit {
+                        shorthand: "not committed".to_string(),
+                        message,
+                        author: self.repository.get_author()?,
+                        date: Utc::now().naive_utc(),
+                    }
+                );
+                Ok(())
+            }
+            Err(err) => Err(err)
+        }
     }
 
     pub fn conventional_commit(

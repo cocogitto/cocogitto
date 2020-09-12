@@ -188,7 +188,7 @@ fn main() -> Result<()> {
                 let subcommand = matches.subcommand_matches(VERIFY).unwrap();
                 let message = subcommand.value_of("message").unwrap();
 
-                match CocoGitto::verify(message) {
+                match cocogitto.verify(message) {
                     Ok(()) => exit(0),
                     Err(err) => {
                         eprintln!("{}", err);
