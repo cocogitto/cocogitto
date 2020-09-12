@@ -6,7 +6,7 @@ extern crate serde_derive;
 #[macro_use]
 extern crate lazy_static;
 
-mod changelog;
+pub mod changelog;
 pub mod error;
 pub mod filter;
 mod hook;
@@ -15,7 +15,7 @@ pub mod commit;
 pub mod repository;
 pub mod settings;
 
-use crate::changelog::Changelog;
+use crate::changelog::{Changelog, ChangelogWriter, WriterMode};
 use crate::commit::{CommitConfig, CommitMessage, CommitType};
 use crate::error::ErrorKind::Semver;
 use crate::filter::CommitFilters;
@@ -30,6 +30,7 @@ use semver::Version;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
+use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use tempdir::TempDir;
 
@@ -46,6 +47,7 @@ lazy_static! {
 }
 pub struct CocoGitto {
     repository: Repository,
+    changelog_path: PathBuf,
 }
 
 pub enum VersionIncrement {
@@ -59,7 +61,14 @@ pub enum VersionIncrement {
 impl CocoGitto {
     pub fn get() -> Result<Self> {
         let repository = Repository::open()?;
-        Ok(CocoGitto { repository })
+        let settings = Settings::get(&repository)?;
+        let changelog_path = settings
+            .changelog_path
+            .unwrap_or_else(|| PathBuf::from("CHANGELOG.md"));
+        Ok(CocoGitto {
+            repository,
+            changelog_path,
+        })
     }
 
     pub fn get_commit_metadata() -> &'static CommitsMetadata {
@@ -220,17 +229,33 @@ impl CocoGitto {
         Ok(())
     }
 
-    pub fn create_version(&self, increment: VersionIncrement) -> Result<()> {
-        let tag = self
+    pub fn create_version(&self, increment: VersionIncrement, mode: WriterMode) -> Result<()> {
+        let statuses = self.repository.get_statuses()?;
+
+        if !statuses.is_empty() {
+            let statuses = statuses
+                .iter()
+                .map(|status| format!("{} : {:?}\n", status.path().unwrap(), status.status()))
+                .collect::<String>();
+            return Err(anyhow!(
+                "Repository contains unstaged change :\n{}",
+                statuses
+            ));
+        }
+
+        let current_tag = self
             .repository
             .get_latest_tag()
             .unwrap_or_else(|_| Version::new(0, 0, 0).to_string());
 
-        let current_version = Version::parse(&tag)?;
+        let current_version = Version::parse(&current_tag)?;
 
+        // Error on unstagged changes
+
+        //TODO Extract to version.rs with VersionIncremment
         let next_version = match increment {
             VersionIncrement::Manual(version) => Version::parse(&version)?,
-            VersionIncrement::Auto => self.auto_bump_version(&current_version)?,
+            VersionIncrement::Auto => self.get_auto_version(&current_version)?,
             VersionIncrement::Major => {
                 let mut next = current_version.clone();
                 next.increment_major();
@@ -261,20 +286,52 @@ impl CocoGitto {
             }));
         };
 
-        self.repository.create_tag(&next_version.to_string())?;
+        let version_str = next_version.to_string();
+
+        let origin = if current_tag.as_str() == "0.0.0" {
+            self.repository.get_first_commit()?.to_string()
+        } else {
+            current_tag
+        };
+
+        let changelog = self.get_changelog(
+            Some(&origin),
+            Some(&self.repository.get_head_commit_oid()?.to_string()),
+        )?;
+        let mut writter = ChangelogWriter {
+            changelog,
+            path: self.changelog_path.clone(),
+            mode,
+        };
+
+        writter.write()?;
+
+        self.repository.add_all()?;
+        self.repository.create_tag(&version_str)?;
+        self.repository
+            .commit(format!("chore(version): {}", next_version))?;
+
         let bump = format!("{} -> {}", current_version, next_version).green();
         println!("Bumped version : {}", bump);
 
         Ok(())
     }
 
-    pub fn get_changelog(&self, from: Option<&str>, to: Option<&str>) -> anyhow::Result<String> {
+    pub fn get_colored_changelog(&self, from: Option<&str>, to: Option<&str>) -> Result<String> {
+        let mut changelog = self.get_changelog(from, to)?;
+        Ok(changelog.markdown(true))
+    }
+
+    pub(crate) fn get_changelog(&self, from: Option<&str>, to: Option<&str>) -> Result<Changelog> {
         let from = self.resolve_from_arg(from)?;
         let to = self.resolve_to_arg(to)?;
 
         let mut commits = vec![];
 
-        for commit in self.get_commit_range(from, to)? {
+        for commit in self
+            .get_commit_range(from, to)
+            .map_err(|err| anyhow!("Could not get commit range {}...{} : {}", from, to, err))?
+        {
             // We skip the origin commit (ex: from 0.1.0 to 1.0.0)
             if commit.id() == from {
                 break;
@@ -298,17 +355,15 @@ impl CocoGitto {
 
         let date = Utc::now().naive_utc().date().to_string();
 
-        let mut changelog = Changelog {
+        Ok(Changelog {
             from,
             to,
             date,
             commits,
-        };
-
-        Ok(changelog.tag_diff_to_markdown())
+        })
     }
 
-    fn auto_bump_version(&self, current_version: &Version) -> Result<Version> {
+    fn get_auto_version(&self, current_version: &Version) -> Result<Version> {
         let mut next_version = current_version.clone();
 
         let changelog_start_oid = self
@@ -389,6 +444,7 @@ impl CocoGitto {
     fn resolve_from_arg(&self, from: Option<&str>) -> Result<Oid> {
         if let Some(from) = from {
             self.get_raw_oid_or_tag_oid(from)
+                .map_err(|err| anyhow!("Could not resolve from arg {} : {}", from, err))
         } else {
             self.repository
                 .get_latest_tag_oid()
@@ -398,9 +454,11 @@ impl CocoGitto {
 
     fn get_raw_oid_or_tag_oid(&self, input: &str) -> Result<Oid> {
         if let Ok(_version) = Version::parse(input) {
-            self.repository.resolve_lightweight_tag(input)
+            self.repository
+                .resolve_lightweight_tag(input)
+                .map_err(|err| anyhow!("tag {} not found : {} ", input, err))
         } else {
-            Oid::from_str(input).map_err(|err| anyhow!(err))
+            Oid::from_str(input).map_err(|err| anyhow!("`{}` is not a valid oid : {}", input, err))
         }
     }
 

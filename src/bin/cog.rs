@@ -1,5 +1,6 @@
 use anyhow::Result;
 use clap::{App, AppSettings, Arg, SubCommand};
+use cocogitto::changelog::WriterMode;
 use cocogitto::commit::CommitType;
 use cocogitto::filter::{CommitFilter, CommitFilters};
 use cocogitto::{CocoGitto, VersionIncrement};
@@ -179,7 +180,8 @@ fn main() -> Result<()> {
                     unreachable!()
                 };
 
-                cocogitto.create_version(increment)?
+                // TODO mode to cli
+                cocogitto.create_version(increment, WriterMode::Prepend)?
             }
             VERIFY => {
                 let subcommand = matches.subcommand_matches(VERIFY).unwrap();
@@ -241,7 +243,7 @@ fn main() -> Result<()> {
                 let subcommand = matches.subcommand_matches(CHANGELOG).unwrap();
                 let from = subcommand.value_of("from");
                 let to = subcommand.value_of("to");
-                let result = cocogitto.get_changelog(from, to)?;
+                let result = cocogitto.get_colored_changelog(from, to)?;
                 println!("{}", result);
             }
 

@@ -14,9 +14,10 @@ pub(crate) struct Settings {
     pub hooks: Vec<String>,
     #[serde(default)]
     pub commit_types: CommitsMetadataSettings,
-    // TODO :  default impl
-    pub changelog_file: PathBuf,
-    // TODO :  default impl
+    pub changelog_path: Option<PathBuf>,
+    pub changelog_header: Option<String>,
+    pub changelog_footer: Option<String>,
+    #[serde(default)]
     pub sort_commit: SortCommit,
 }
 
@@ -43,12 +44,20 @@ impl Settings {
     pub(crate) fn commit_types(&self) -> CommitsMetadata {
         let commit_settings = self.commit_types.clone();
         let mut custom_types = HashMap::new();
-        let mut default_types = HashMap::new();
 
         commit_settings.iter().for_each(|(key, value)| {
             let _ = custom_types.insert(CommitType::from(key.as_str()), value.clone());
         });
 
+        let mut default_types = Settings::get_default_commit_config();
+
+        default_types.extend(custom_types);
+
+        default_types
+    }
+
+    fn get_default_commit_config() -> CommitsMetadata {
+        let mut default_types = HashMap::new();
         default_types.insert(
             CommitType::Feature,
             CommitConfig::new("Features", "create a `feature` commit"),
@@ -98,8 +107,6 @@ impl Settings {
                 "create a `continuous integration` commit",
             ),
         );
-
-        default_types.extend(custom_types);
 
         default_types
     }

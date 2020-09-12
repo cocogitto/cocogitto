@@ -52,10 +52,14 @@ pub struct CommitConfig {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum SortCommit {
-    ByDate,
     ByType,
     ByScope,
-    ByTypeAndScope,
+}
+
+impl Default for SortCommit {
+    fn default() -> Self {
+        SortCommit::ByType
+    }
 }
 
 impl CommitConfig {
@@ -186,13 +190,20 @@ impl Commit {
         })
     }
 
-    pub fn to_markdown(&self) -> String {
-        format!(
-            "{} - {} - {}\n",
-            self.shorthand.yellow(),
-            self.message.description,
-            self.author.blue()
-        )
+    pub fn to_markdown(&self, colored: bool) -> String {
+        if colored {
+            format!(
+                "{} - {} - {}\n",
+                self.shorthand.yellow(),
+                self.message.description,
+                self.author.blue()
+            )
+        } else {
+            format!(
+                "{} - {} - {}\n",
+                self.shorthand, self.message.description, self.author
+            )
+        }
     }
     pub fn get_log(&self) -> String {
         let message_display = self.message.description.replace("\n", " ");

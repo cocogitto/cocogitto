@@ -2,13 +2,12 @@ use crate::error::ErrorKind::Git;
 use anyhow::Result;
 use colored::Colorize;
 use git2::{
-    Commit as Git2Commit, DiffOptions, Object, ObjectType, Oid, Repository as Git2Repository,
+    Commit as Git2Commit, Diff, DiffOptions, IndexAddOption, Object, ObjectType, Oid,
+    Repository as Git2Repository, StatusOptions, Statuses,
 };
 use std::path::Path;
 
-/// A wrapper around `git2::Repository` this is used only for
-/// unitary operation on the repository.
-pub struct Repository(pub(crate) Git2Repository);
+pub(crate) struct Repository(pub(crate) Git2Repository);
 
 impl Repository {
     pub(crate) fn open() -> Result<Repository> {
@@ -20,28 +19,42 @@ impl Repository {
         self.0.workdir()
     }
 
-    pub(crate) fn commit(&self, message: String) -> Result<Oid> {
-        let repo = &self.0;
-        let sig = &&self.0.signature()?;
-        let tree_id = &&self.0.index()?.write_tree()?;
-        let tree = self.0.find_tree(**tree_id)?;
-        let repo_is_empty = self.0.is_empty()?;
+    pub(crate) fn get_diff(&self) -> Option<Diff> {
         let mut options = DiffOptions::new();
 
         let diff = if let Some(head) = &self.get_head() {
-            repo.diff_tree_to_index(head.as_tree(), None, Some(&mut options))
+            self.0
+                .diff_tree_to_index(head.as_tree(), None, Some(&mut options))
         } else {
-            repo.diff_tree_to_workdir_with_index(None, Some(&mut options))
+            self.0
+                .diff_tree_to_workdir_with_index(None, Some(&mut options))
         };
 
-        let repo_has_deltas = if let Ok(diff) = diff {
-            let deltas = diff.deltas();
-            deltas.len() != 0
+        if let Ok(diff) = diff {
+            if diff.deltas().len() > 0 {
+                Some(diff)
+            } else {
+                None
+            }
         } else {
-            false
-        };
+            None
+        }
+    }
 
-        if !repo_is_empty && repo_has_deltas {
+    pub(crate) fn add_all(&self) -> Result<()> {
+        let mut index = self.0.index()?;
+        index.add_all(["*"].iter(), IndexAddOption::DEFAULT, None)?;
+        index.write().map_err(|err| anyhow!(err))
+    }
+
+    pub(crate) fn commit(&self, message: String) -> Result<Oid> {
+        let sig = self.0.signature()?;
+        let tree_id = self.0.index()?.write_tree()?;
+        let tree = self.0.find_tree(tree_id)?;
+        let is_empty = self.0.is_empty()?;
+        let has_delta = self.get_diff().is_some();
+
+        if !is_empty && has_delta {
             let head = &self.0.head()?;
             let head_target = head.target().expect("Cannot get HEAD target");
             let tip = &self.0.find_commit(head_target)?;
@@ -49,19 +62,31 @@ impl Repository {
             self.0
                 .commit(Some("HEAD"), &sig, &sig, &message, &tree, &[&tip])
                 .map_err(|err| anyhow!(err))
-        } else if repo_is_empty && repo_has_deltas {
+        } else if is_empty && has_delta {
             // First repo commit
             self.0
                 .commit(Some("HEAD"), &sig, &sig, &message, &tree, &[])
                 .map_err(|err| anyhow!(err))
         } else {
-            let statuses = repo.statuses(None)?;
+            let statuses = self.get_statuses()?;
             statuses.iter().for_each(|status| {
                 eprintln!("{} : {:?}", status.path().unwrap(), status.status());
             });
 
-            Err(anyhow!("err"))
+            // TODO
+            Err(anyhow!("{} : {} ", is_empty, has_delta))
         }
+    }
+
+    pub(crate) fn get_statuses(&self) -> Result<Statuses> {
+        let mut options = StatusOptions::new();
+        options.include_untracked(true);
+        options.exclude_submodules(true);
+        options.include_unmodified(false);
+
+        self.0
+            .statuses(Some(&mut options))
+            .map_err(|err| anyhow!(err))
     }
 
     pub(crate) fn get_head_commit_oid(&self) -> Result<Oid> {
@@ -83,7 +108,6 @@ impl Repository {
         let tag_names = self.0.tag_names(None)?;
 
         let tags = tag_names.iter().collect::<Vec<Option<&str>>>();
-
         if let Some(Some(tag)) = tags.last() {
             Ok(tag.to_string())
         } else {
@@ -94,6 +118,7 @@ impl Repository {
     pub(crate) fn get_latest_tag_oid(&self) -> Result<Oid> {
         self.get_latest_tag()
             .and_then(|oid| self.resolve_lightweight_tag(&oid))
+            .map_err(|err| anyhow!("Could not resolve latest tag : {}", err))
     }
 
     pub(crate) fn get_first_commit(&self) -> Result<Oid> {
