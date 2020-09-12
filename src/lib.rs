@@ -16,20 +16,21 @@ use crate::changelog::Changelog;
 use crate::commit::{CommitMessage, CommitType};
 use crate::error::CocoGittoError::SemverError;
 use crate::repository::Repository;
-use crate::settings::Settings;
+use crate::settings::{CommitTypeSetting, Settings};
 use anyhow::Result;
 use chrono::Utc;
 use colored::*;
 use commit::Commit;
 use git2::{Commit as Git2Commit, Oid, RebaseOptions, Repository as Git2Repository};
 use semver::Version;
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
 use std::process::{Command, Stdio};
 use tempdir::TempDir;
 
 pub struct CocoGitto {
-    pub settings: Settings,
+    pub allowed_commits: HashMap<String, CommitTypeSetting>,
     repository: Repository,
 }
 
@@ -132,33 +133,86 @@ impl CocoGitto {
         let settings = Settings::get(&repository)?;
 
         Ok(CocoGitto {
-            settings,
+            allowed_commits: CocoGitto::commit_types(&settings),
             repository,
         })
     }
 
-    pub fn commit_types(&self) -> Vec<String> {
-        let mut commit_types: Vec<String> = self
-            .settings
-            .commit_types
-            .iter()
-            .map(|(key, _)| key)
-            .cloned()
-            .collect();
+    fn commit_types(settings: &Settings) -> HashMap<String, CommitTypeSetting> {
+        let mut commit_types = settings.commit_types.clone();
 
-        commit_types.extend_from_slice(&[
+        let mut default_types = HashMap::new();
+        default_types.insert(
             "feat".to_string(),
+            CommitTypeSetting::new(
+                CommitType::Feature.get_markdown_title(),
+                "create a feature commit",
+            ),
+        );
+        default_types.insert(
             "fix".to_string(),
+            CommitTypeSetting::new(
+                CommitType::BugFix.get_markdown_title(),
+                "create a bug fix commit",
+            ),
+        );
+        default_types.insert(
             "chore".to_string(),
+            CommitTypeSetting::new(
+                CommitType::Chore.get_markdown_title(),
+                "create a chore commit",
+            ),
+        );
+        default_types.insert(
             "revert".to_string(),
+            CommitTypeSetting::new(
+                CommitType::Revert.get_markdown_title(),
+                "create a revert commit",
+            ),
+        );
+        default_types.insert(
             "perf".to_string(),
+            CommitTypeSetting::new(
+                CommitType::Performances.get_markdown_title(),
+                "create a performance commit",
+            ),
+        );
+        default_types.insert(
             "docs".to_string(),
+            CommitTypeSetting::new(
+                CommitType::Documentation.get_markdown_title(),
+                "create a documentation commit",
+            ),
+        );
+        default_types.insert(
             "style".to_string(),
+            CommitTypeSetting::new(
+                CommitType::Style.get_markdown_title(),
+                "create a style commit",
+            ),
+        );
+        default_types.insert(
             "refactor".to_string(),
+            CommitTypeSetting::new(
+                CommitType::Refactoring.get_markdown_title(),
+                "create a refactor commit",
+            ),
+        );
+        default_types.insert(
             "test".to_string(),
-            "build".to_string(),
+            CommitTypeSetting::new(
+                CommitType::Test.get_markdown_title(),
+                "create a test commit",
+            ),
+        );
+        default_types.insert(
             "ci".to_string(),
-        ]);
+            CommitTypeSetting::new(
+                CommitType::Ci.get_markdown_title(),
+                "create a continuous integration commit",
+            ),
+        );
+        commit_types.extend(default_types);
 
         commit_types
     }
@@ -283,9 +337,9 @@ impl CocoGitto {
             println!(
                 "{}",
                 Commit {
-                    shorthand: "".to_string(),
+                    shorthand: "not committed".to_string(),
                     message: commit_message,
-                    author: "".to_string(),
+                    author: " ".to_string(),
                     date: Utc::now().naive_utc(),
                 }
             )

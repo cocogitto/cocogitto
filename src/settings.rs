@@ -10,10 +10,26 @@ pub struct Settings {
     #[serde(default)]
     pub hooks: Vec<String>,
     #[serde(default)]
-    pub commit_types: HashMap<String, String>,
+    pub commit_types: HashMap<String, CommitTypeSetting>,
+    // TODO :  default impl
     pub changelog_file: PathBuf,
+    // TODO :  default impl
     pub sort_commit: SortCommit,
-    pub semver: bool,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct CommitTypeSetting {
+    pub changelog_title: String,
+    pub help_message: String,
+}
+
+impl CommitTypeSetting {
+    pub(crate) fn new(changelog_title: &str, help_message: &str) -> Self {
+        CommitTypeSetting {
+            changelog_title: changelog_title.to_string(),
+            help_message: help_message.to_string(),
+        }
+    }
 }
 
 impl Settings {

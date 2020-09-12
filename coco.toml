@@ -1,3 +1,2 @@
 changelog_file = "CHANGELOG.md"
 sort_commit = "by_type"
-semver = true
