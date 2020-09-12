@@ -3,9 +3,12 @@
 extern crate anyhow;
 #[macro_use]
 extern crate serde_derive;
+#[macro_use]
+extern crate lazy_static;
 
 mod changelog;
 pub mod error;
+pub mod filter;
 mod hook;
 
 pub mod commit;
@@ -13,10 +16,11 @@ pub mod repository;
 pub mod settings;
 
 use crate::changelog::Changelog;
-use crate::commit::{CommitMessage, CommitType};
+use crate::commit::{CommitConfig, CommitMessage, CommitType};
 use crate::error::CocoGittoError::SemverError;
+use crate::filter::CommitFilters;
 use crate::repository::Repository;
-use crate::settings::{CommitTypeSetting, Settings};
+use crate::settings::Settings;
 use anyhow::Result;
 use chrono::Utc;
 use colored::*;
@@ -29,8 +33,18 @@ use std::io::Write;
 use std::process::{Command, Stdio};
 use tempdir::TempDir;
 
+pub type CommitsMetadata = HashMap<CommitType, CommitConfig>;
+
+lazy_static! {
+    // This cannot be carried by `Cocogitto` struct since we need it to be available in `Changelog`,
+    // `Commit` etc. Be ensure that `CocoGitto::new` is called before using this  in order to bypass
+    // unwrapping in case of error.
+    static ref COMMITS_METADATA: CommitsMetadata = {
+        let repo = Repository::open().unwrap();
+        Settings::get(&repo).unwrap().commit_types()
+    };
+}
 pub struct CocoGitto {
-    pub allowed_commits: HashMap<String, CommitTypeSetting>,
     repository: Repository,
 }
 
@@ -42,179 +56,14 @@ pub enum VersionIncrement {
     Manual(String),
 }
 
-#[derive(Eq, PartialEq)]
-pub enum CommitFilter {
-    Type(CommitType),
-    Scope(String),
-    Author(String),
-    BreakingChange,
-    NoError,
-}
-
-pub struct CommitFilters(pub Vec<CommitFilter>);
-
-impl CommitFilters {
-    pub fn no_error(&self) -> bool {
-        !self.0.contains(&CommitFilter::NoError)
-    }
-
-    pub fn filter_git2_commit(&self, commit: &Git2Commit) -> bool {
-        // Author filters
-        let authors = self
-            .0
-            .iter()
-            .filter_map(|filter| match filter {
-                CommitFilter::Author(author) => Some(author),
-                _ => None,
-            })
-            .collect::<Vec<&String>>();
-
-        let filter_authors = if authors.is_empty() {
-            true
-        } else {
-            authors
-                .iter()
-                .any(|author| Some(author.as_str()) == commit.author().name())
-        };
-
-        filter_authors
-    }
-    pub fn filters(&self, commit: &Commit) -> bool {
-        // Commit type filters
-        let types = self
-            .0
-            .iter()
-            .filter_map(|filter| match filter {
-                CommitFilter::Type(commit_type) => Some(commit_type),
-                _ => None,
-            })
-            .collect::<Vec<&CommitType>>();
-
-        let filter_type = if types.is_empty() {
-            true
-        } else {
-            types
-                .iter()
-                .any(|commit_type| **commit_type == commit.message.commit_type)
-        };
-
-        // Scope filters
-        let scopes = self
-            .0
-            .iter()
-            .filter_map(|filter| match filter {
-                CommitFilter::Scope(scope) => Some(scope),
-                _ => None,
-            })
-            .collect::<Vec<&String>>();
-
-        let filter_scopes = if scopes.is_empty() {
-            true
-        } else {
-            scopes
-                .iter()
-                .any(|scope| Some(*scope) == commit.message.scope.as_ref())
-        };
-
-        // Breaking changes filters
-        let filter_breaking_changes = if self.0.contains(&CommitFilter::BreakingChange) {
-            commit.message.is_breaking_change
-        } else {
-            true
-        };
-
-        filter_type && filter_scopes && filter_breaking_changes
-    }
-}
-
 impl CocoGitto {
     pub fn get() -> Result<Self> {
         let repository = Repository::open()?;
-        let settings = Settings::get(&repository)?;
-
-        Ok(CocoGitto {
-            allowed_commits: CocoGitto::commit_types(&settings),
-            repository,
-        })
+        Ok(CocoGitto { repository })
     }
 
-    fn commit_types(settings: &Settings) -> HashMap<String, CommitTypeSetting> {
-        let mut commit_types = settings.commit_types.clone();
-
-        let mut default_types = HashMap::new();
-        default_types.insert(
-            "feat".to_string(),
-            CommitTypeSetting::new(
-                CommitType::Feature.get_markdown_title(),
-                "create a feature commit",
-            ),
-        );
-        default_types.insert(
-            "fix".to_string(),
-            CommitTypeSetting::new(
-                CommitType::BugFix.get_markdown_title(),
-                "create a bug fix commit",
-            ),
-        );
-        default_types.insert(
-            "chore".to_string(),
-            CommitTypeSetting::new(
-                CommitType::Chore.get_markdown_title(),
-                "create a chore commit",
-            ),
-        );
-        default_types.insert(
-            "revert".to_string(),
-            CommitTypeSetting::new(
-                CommitType::Revert.get_markdown_title(),
-                "create a revert commit",
-            ),
-        );
-        default_types.insert(
-            "perf".to_string(),
-            CommitTypeSetting::new(
-                CommitType::Performances.get_markdown_title(),
-                "create a performance commit",
-            ),
-        );
-        default_types.insert(
-            "docs".to_string(),
-            CommitTypeSetting::new(
-                CommitType::Documentation.get_markdown_title(),
-                "create a documentation commit",
-            ),
-        );
-        default_types.insert(
-            "style".to_string(),
-            CommitTypeSetting::new(
-                CommitType::Style.get_markdown_title(),
-                "create a style commit",
-            ),
-        );
-        default_types.insert(
-            "refactor".to_string(),
-            CommitTypeSetting::new(
-                CommitType::Refactoring.get_markdown_title(),
-                "create a refactor commit",
-            ),
-        );
-        default_types.insert(
-            "test".to_string(),
-            CommitTypeSetting::new(
-                CommitType::Test.get_markdown_title(),
-                "create a test commit",
-            ),
-        );
-        default_types.insert(
-            "ci".to_string(),
-            CommitTypeSetting::new(
-                CommitType::Ci.get_markdown_title(),
-                "create a continuous integration commit",
-            ),
-        );
-        commit_types.extend(default_types);
-
-        commit_types
+    pub fn get_commit_metadata() -> &'static CommitsMetadata {
+        &COMMITS_METADATA
     }
 
     pub fn get_repository(&self) -> &Git2Repository {

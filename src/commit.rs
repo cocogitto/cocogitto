@@ -1,5 +1,6 @@
 use crate::commit::CommitType::*;
 use crate::error::CocoGittoError::CommitFormatError;
+use crate::COMMITS_METADATA;
 use anyhow::Result;
 use chrono::{NaiveDateTime, Utc};
 use colored::*;
@@ -16,6 +17,22 @@ pub struct Commit {
     pub(crate) date: NaiveDateTime,
 }
 
+#[derive(Hash, Eq, PartialEq, Debug, Clone)]
+pub enum CommitType {
+    Feature,
+    BugFix,
+    Chore,
+    Revert,
+    Performances,
+    Documentation,
+    Style,
+    Refactoring,
+    Test,
+    Build,
+    Ci,
+    Custom(String),
+}
+
 #[derive(Debug, Eq, PartialEq)]
 pub struct CommitMessage {
     pub(crate) commit_type: CommitType,
@@ -26,6 +43,12 @@ pub struct CommitMessage {
     pub(crate) is_breaking_change: bool,
 }
 
+#[derive(Debug, Deserialize, Clone)]
+pub struct CommitConfig {
+    pub changelog_title: String,
+    pub help_message: String,
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum SortCommit {
@@ -33,6 +56,15 @@ pub enum SortCommit {
     ByType,
     ByScope,
     ByTypeAndScope,
+}
+
+impl CommitConfig {
+    pub(crate) fn new(changelog_title: &str, help_message: &str) -> Self {
+        CommitConfig {
+            changelog_title: changelog_title.to_string(),
+            help_message: help_message.to_string(),
+        }
+    }
 }
 
 impl Commit {
@@ -98,10 +130,10 @@ impl Commit {
             type_and_scope = &type_and_scope[0..type_and_scope.len() - 1];
         }
 
-        let commit_type;
+        let commit_type_str;
 
         let scope: Option<String> = if let Some(left_par_idx) = type_and_scope.find('(') {
-            commit_type = CommitType::from(&type_and_scope[0..left_par_idx]);
+            commit_type_str = &type_and_scope[0..left_par_idx];
 
             Some(
                 type_and_scope
@@ -112,7 +144,7 @@ impl Commit {
                     })?,
             )
         } else {
-            commit_type = CommitType::from(type_and_scope);
+            commit_type_str = type_and_scope;
             None
         };
 
@@ -137,8 +169,11 @@ impl Commit {
                 || footer.contains("BREAKING-CHANGE")
         }
 
-        if let CommitType::Unknown(type_str) = commit_type {
-            return Err(anyhow!("unknown commit type `{}`", type_str.red()));
+        let commit_type = CommitType::from(commit_type_str);
+        let allowed_commit = COMMITS_METADATA.get(&commit_type);
+
+        if allowed_commit.is_none() {
+            return Err(anyhow!("unknown commit type `{}`", commit_type_str.red()));
         };
 
         Ok(CommitMessage {
@@ -238,57 +273,21 @@ impl fmt::Display for Commit {
     }
 }
 
-#[derive(Eq, PartialEq, Debug, Clone)]
-pub enum CommitType {
-    Feature,
-    BugFix,
-    Chore,
-    Revert,
-    Performances,
-    Documentation,
-    Style,
-    Refactoring,
-    Test,
-    Build,
-    Ci,
-    Unknown(String),
-    Custom(String, String),
-}
-
 impl CommitType {
-    pub(crate) fn get_markdown_title(&self) -> &str {
-        match self {
-            Feature => "Feature",
-            BugFix => "Bug Fixes",
-            Chore => "Miscellaneous Chores",
-            Revert => "Revert",
-            Performances => "Performance Improvements",
-            Documentation => "Documentation",
-            Style => "Style",
-            Refactoring => "Refactoring",
-            Test => "Tests",
-            Build => "Build System",
-            Ci => "Continuous Integration",
-            Custom(_, value) => value,
-            Unknown(_) => unreachable!(),
-        }
-    }
-
-    pub(crate) fn get_key_str(&self) -> String {
+    pub fn get_key_str(&self) -> &str {
         match &self {
-            Feature => "feat".to_string(),
-            BugFix => "fix".to_string(),
-            Chore => "chore".to_string(),
-            Revert => "revert".to_string(),
-            Performances => "perf".to_string(),
-            Documentation => "docs".to_string(),
-            Style => "style".to_string(),
-            Refactoring => "refactor".to_string(),
-            Test => "test".to_string(),
-            Build => "build".to_string(),
-            Ci => "ci".to_string(),
-            Custom(key, _) => key.to_owned(),
-            Unknown(_) => unreachable!(),
+            Feature => "feat",
+            BugFix => "fix",
+            Chore => "chore",
+            Revert => "revert",
+            Performances => "perf",
+            Documentation => "docs",
+            Style => "style",
+            Refactoring => "refactor",
+            Test => "test",
+            Build => "build",
+            Ci => "ci",
+            Custom(key) => key,
         }
     }
 }
@@ -333,7 +332,7 @@ impl From<&str> for CommitType {
             "test" => Test,
             "build" => Build,
             "ci" => Ci,
-            other => Unknown(other.to_string()),
+            other => Custom(other.to_string()),
         }
     }
 }
@@ -359,6 +358,7 @@ impl Ord for Commit {
 #[cfg(test)]
 mod test {
     use super::Commit;
+    use crate::commit::CommitType;
 
     #[test]
     fn should_map_conventional_commit_message_to_struct() {
@@ -366,10 +366,11 @@ mod test {
         let message = "feat(database): add postgresql driver";
 
         // Act
-        let commit = Commit::from_raw_message(message);
+        let commit = Commit::parse_commit_message(message);
 
         // Assert
-        assert_eq!(commit.commit_type, "feat".to_owned());
+        let commit = commit.unwrap();
+        assert_eq!(commit.commit_type, CommitType::Feature);
         assert_eq!(commit.scope, Some("database".to_owned()));
         assert_eq!(commit.description, "add postgresql driver".to_owned());
     }

@@ -20,6 +20,7 @@ serde = "^1"
 tempdir = "^0"
 semver = "0.10.0"
 moins = "0.4.0"
+lazy_static = "1.4.0"
 clap = { version = "^2", optional = true }
 
 [features]

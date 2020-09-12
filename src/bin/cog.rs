@@ -1,7 +1,8 @@
 use anyhow::Result;
 use clap::{App, AppSettings, Arg, SubCommand};
 use cocogitto::commit::CommitType;
-use cocogitto::{CocoGitto, CommitFilter, CommitFilters, VersionIncrement};
+use cocogitto::filter::{CommitFilter, CommitFilters};
+use cocogitto::{CocoGitto, VersionIncrement};
 use moins::Moins;
 use std::process::exit;
 
@@ -25,16 +26,15 @@ const VERIFY: &str = "verify";
 const CHANGELOG: &str = "changelog";
 
 fn main() -> Result<()> {
-    let cocogitto = CocoGitto::get().unwrap_or_else(|err| panic!("{}", err));
+    let cocogitto = CocoGitto::get()?;
 
-    let commit_subcommands = cocogitto
-        .allowed_commits
+    let commit_subcommands = CocoGitto::get_commit_metadata()
         .iter()
-        .map(|commit_type| {
-            SubCommand::with_name(commit_type.0)
+        .map(|(commit_type, commit_config)| {
+            SubCommand::with_name(commit_type.get_key_str())
                 .settings(SUBCOMMAND_SETTINGS)
-                .about(&*commit_type.1.help_message)
-                .help("Create a pre-formatted commit")
+                .about(commit_config.help_message.as_str())
+                .help(commit_config.help_message.as_str())
                 .arg(Arg::with_name("message").help("The commit message"))
                 .arg(Arg::with_name("scope").help("The scope of the commit message"))
                 .arg(Arg::with_name("body").help("The body of the commit message"))

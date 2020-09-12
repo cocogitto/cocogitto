@@ -1,4 +1,5 @@
 use crate::commit::{Commit, CommitType};
+use crate::COMMITS_METADATA;
 use colored::*;
 use git2::Oid;
 
@@ -21,36 +22,25 @@ impl Changelog {
             short_from, short_to, self.date
         ));
 
-        let mut add_commit_section = |commit_type: CommitType| {
+        let add_commit_section = |commit_type: &CommitType| {
             let commits: Vec<Commit> = self
                 .commits
-                .drain_filter(|commit| commit.message.commit_type == commit_type)
+                .drain_filter(|commit| &commit.message.commit_type == commit_type)
                 .collect();
 
+            let metadata = COMMITS_METADATA.get(&commit_type).unwrap();
             if !commits.is_empty() {
-                out.push_str(&format!(
-                    "\n### {}\n\n",
-                    commit_type.get_markdown_title().red()
-                ));
+                out.push_str(&format!("\n### {}\n\n", metadata.changelog_title.red()));
                 commits
                     .iter()
                     .for_each(|commit| out.push_str(&commit.to_markdown()));
             }
         };
 
-        add_commit_section(CommitType::Feature);
-        add_commit_section(CommitType::BugFix);
-        add_commit_section(CommitType::Performances);
-        add_commit_section(CommitType::Revert);
-        add_commit_section(CommitType::Chore);
-        add_commit_section(CommitType::Documentation);
-        add_commit_section(CommitType::Style);
-        add_commit_section(CommitType::Refactoring);
-        add_commit_section(CommitType::Test);
-        add_commit_section(CommitType::Build);
-        add_commit_section(CommitType::Ci);
-
-        // TODO: add commit type from config
+        COMMITS_METADATA
+            .iter()
+            .map(|(commit_type, _)| commit_type)
+            .for_each(add_commit_section);
 
         out
     }
