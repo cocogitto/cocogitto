@@ -1,4 +1,4 @@
-use crate::commit::{CommitConfig, CommitType, SortCommit};
+use crate::commit::{CommitConfig, CommitType};
 use crate::repository::Repository;
 use crate::CommitsMetadata;
 use anyhow::Result;
@@ -17,8 +17,6 @@ pub(crate) struct Settings {
     pub changelog_path: Option<PathBuf>,
     pub changelog_header: Option<String>,
     pub changelog_footer: Option<String>,
-    #[serde(default)]
-    pub sort_commit: SortCommit,
 }
 
 impl Settings {

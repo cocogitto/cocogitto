@@ -197,7 +197,7 @@ impl CocoGitto {
                 );
                 Ok(())
             }
-            Err(err) => Err(err)
+            Err(err) => Err(err),
         }
     }
 

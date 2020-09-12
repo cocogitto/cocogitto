@@ -173,7 +173,9 @@ impl Repository {
     }
 
     pub(crate) fn get_author(&self) -> Result<String> {
-        self.0.signature()?.name()
+        self.0
+            .signature()?
+            .name()
             .map(|name| name.to_string())
             .ok_or_else(|| anyhow!("Cannot get committer name"))
     }

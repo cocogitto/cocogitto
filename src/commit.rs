@@ -49,19 +49,6 @@ pub struct CommitConfig {
     pub help_message: String,
 }
 
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum SortCommit {
-    ByType,
-    ByScope,
-}
-
-impl Default for SortCommit {
-    fn default() -> Self {
-        SortCommit::ByType
-    }
-}
-
 impl CommitConfig {
     pub(crate) fn new(changelog_title: &str, help_message: &str) -> Self {
         CommitConfig {
