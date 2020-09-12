@@ -89,6 +89,10 @@ fn main() -> Result<()> {
                 .takes_value(true)
                 .multiple(true)
                 .long("scope"))
+            .arg(Arg::with_name("no-error")
+                .help("omit error on the commit log")
+                .short("e")
+                .long("no-error"))
         )
 
         .subcommand(
@@ -216,6 +220,10 @@ fn main() -> Result<()> {
 
                 if subcommand.is_present("breaking-change") {
                     filters.push(CommitFilter::BreakingChange);
+                }
+
+                if subcommand.is_present("no-error") {
+                    filters.push(CommitFilter::NoError);
                 }
 
                 let filters = CommitFilters(filters);

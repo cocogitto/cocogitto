@@ -47,11 +47,37 @@ pub enum CommitFilter {
     Scope(String),
     Author(String),
     BreakingChange,
+    NoError,
 }
 
 pub struct CommitFilters(pub Vec<CommitFilter>);
 
 impl CommitFilters {
+    pub fn no_error(&self) -> bool {
+        !self.0.contains(&CommitFilter::NoError)
+    }
+
+    pub fn filter_git2_commit(&self, commit: &Git2Commit) -> bool {
+        // Author filters
+        let authors = self
+            .0
+            .iter()
+            .filter_map(|filter| match filter {
+                CommitFilter::Author(author) => Some(author),
+                _ => None,
+            })
+            .collect::<Vec<&String>>();
+
+        let filter_authors = if authors.is_empty() {
+            true
+        } else {
+            authors
+                .iter()
+                .any(|author| Some(author.as_str()) == commit.author().name())
+        };
+
+        filter_authors
+    }
     pub fn filters(&self, commit: &Commit) -> bool {
         // Commit type filters
         let types = self
@@ -89,22 +115,6 @@ impl CommitFilters {
                 .any(|scope| Some(*scope) == commit.message.scope.as_ref())
         };
 
-        // Author filters
-        let authors = self
-            .0
-            .iter()
-            .filter_map(|filter| match filter {
-                CommitFilter::Author(author) => Some(author),
-                _ => None,
-            })
-            .collect::<Vec<&String>>();
-
-        let filter_authors = if authors.is_empty() {
-            true
-        } else {
-            authors.iter().any(|author| *author == &commit.author)
-        };
-
         // Breaking changes filters
         let filter_breaking_changes = if self.0.contains(&CommitFilter::BreakingChange) {
             commit.message.is_breaking_change
@@ -112,7 +122,7 @@ impl CommitFilters {
             true
         };
 
-        filter_type && filter_authors && filter_scopes && filter_breaking_changes
+        filter_type && filter_scopes && filter_breaking_changes
     }
 }
 
@@ -250,19 +260,12 @@ impl CocoGitto {
             .iter()
             // Remove merge commits
             .filter(|commit| !commit.message().unwrap_or("").starts_with("Merge"))
+            .filter(|commit| filters.filter_git2_commit(&commit))
             .map(|commit| Commit::from_git_commit(commit))
-            // Remove errors if we have filters
-            .filter(|commit| {
-                if !filters.0.is_empty() {
-                    commit.is_ok()
-                } else {
-                    true
-                }
-            })
             // Apply filters
             .filter(|commit| match commit {
                 Ok(commit) => filters.filters(commit),
-                Err(_) => false,
+                Err(_) => filters.no_error(),
             })
             // Format
             .map(|commit| match commit {
