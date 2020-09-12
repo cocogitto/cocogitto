@@ -11,16 +11,16 @@ use std::path::Path;
 pub struct Repository(pub(crate) Git2Repository);
 
 impl Repository {
-    pub fn open() -> Result<Repository> {
+    pub(crate) fn open() -> Result<Repository> {
         let repo = Git2Repository::discover(".")?;
         Ok(Repository(repo))
     }
 
-    pub fn get_repo_dir(&self) -> Option<&Path> {
+    pub(crate) fn get_repo_dir(&self) -> Option<&Path> {
         self.0.workdir()
     }
 
-    pub fn commit(&self, message: String) -> Result<Oid> {
+    pub(crate) fn commit(&self, message: String) -> Result<Oid> {
         let repo = &self.0;
         let sig = &&self.0.signature()?;
         let tree_id = &&self.0.index()?.write_tree()?;
@@ -63,29 +63,29 @@ impl Repository {
             Err(anyhow!("err"))
         }
     }
-    pub fn get_current_branch_name(&self) -> Result<String> {
+    pub(crate) fn get_current_branch_name(&self) -> Result<String> {
         let head = &self.0.head()?;
         let head = head.shorthand();
         let branch_name = head.expect("Cannot get HEAT").into();
         Ok(branch_name)
     }
 
-    pub fn get_head_commit_oid(&self) -> Result<Oid> {
+    pub(crate) fn get_head_commit_oid(&self) -> Result<Oid> {
         self.get_head_object().map(|commit| commit.id())
     }
 
-    pub fn get_head_object(&self) -> Result<Git2Commit> {
+    pub(crate) fn get_head_object(&self) -> Result<Git2Commit> {
         Ok(self.0.head().unwrap().peel_to_commit().unwrap())
     }
 
-    pub fn resolve_lightweight_tag(&self, tag: &str) -> Result<Oid> {
+    pub(crate) fn resolve_lightweight_tag(&self, tag: &str) -> Result<Oid> {
         self.0
             .resolve_reference_from_short_name(tag)
             .map(|reference| reference.target().unwrap())
             .map_err(|err| anyhow!("Cannot resolve tag {} : {}", tag, err.message()))
     }
 
-    pub fn get_latest_tag(&self) -> Result<String> {
+    pub(crate) fn get_latest_tag(&self) -> Result<String> {
         let tag_names = self.0.tag_names(None)?;
 
         let tags = tag_names.iter().collect::<Vec<Option<&str>>>();
@@ -97,12 +97,12 @@ impl Repository {
         }
     }
 
-    pub fn get_latest_tag_oid(&self) -> Result<Oid> {
+    pub(crate) fn get_latest_tag_oid(&self) -> Result<Oid> {
         self.get_latest_tag()
             .and_then(|oid| self.resolve_lightweight_tag(&oid))
     }
 
-    pub fn get_first_commit(&self) -> Result<Oid> {
+    pub(crate) fn get_first_commit(&self) -> Result<Oid> {
         let mut revwalk = self.0.revwalk()?;
         revwalk.push_head()?;
         revwalk
@@ -111,7 +111,7 @@ impl Repository {
             .map_err(|err| anyhow!(err))
     }
 
-    pub fn get_head(&self) -> Option<Object> {
+    pub(crate) fn get_head(&self) -> Option<Object> {
         if let Ok(head) = Repository::tree_to_treeish(&self.0, Some(&"HEAD".to_string())) {
             head
         } else {
@@ -119,7 +119,7 @@ impl Repository {
         }
     }
 
-    pub fn create_tag(&self, name: &str) -> Result<()> {
+    pub(crate) fn create_tag(&self, name: &str) -> Result<()> {
         let head = self.get_head().unwrap();
         self.0
             .tag_lightweight(name, &head, false)
