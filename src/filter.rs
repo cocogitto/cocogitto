@@ -14,11 +14,11 @@ pub enum CommitFilter {
 pub struct CommitFilters(pub Vec<CommitFilter>);
 
 impl CommitFilters {
-    pub fn no_error(&self) -> bool {
+    pub(crate) fn no_error(&self) -> bool {
         !self.0.contains(&CommitFilter::NoError)
     }
 
-    pub fn filter_git2_commit(&self, commit: &Git2Commit) -> bool {
+    pub(crate) fn filter_git2_commit(&self, commit: &Git2Commit) -> bool {
         // Author filters
         let authors = self
             .0
@@ -39,7 +39,8 @@ impl CommitFilters {
 
         filter_authors
     }
-    pub fn filters(&self, commit: &Commit) -> bool {
+
+    pub(crate) fn filters(&self, commit: &Commit) -> bool {
         // Commit type filters
         let types = self
             .0

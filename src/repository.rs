@@ -1,4 +1,4 @@
-use crate::error::CocoGittoError::GitError;
+use crate::error::ErrorKind::Git;
 use anyhow::Result;
 use colored::Colorize;
 use git2::{
@@ -63,12 +63,6 @@ impl Repository {
             Err(anyhow!("err"))
         }
     }
-    pub(crate) fn get_current_branch_name(&self) -> Result<String> {
-        let head = &self.0.head()?;
-        let head = head.shorthand();
-        let branch_name = head.expect("Cannot get HEAT").into();
-        Ok(branch_name)
-    }
 
     pub(crate) fn get_head_commit_oid(&self) -> Result<Oid> {
         self.get_head_object().map(|commit| commit.id())
@@ -126,7 +120,7 @@ impl Repository {
             .map(|_| ())
             .map_err(|err| {
                 let cause_key = "cause:".red();
-                anyhow!(GitError {
+                anyhow!(Git {
                     level: "Git error".to_string(),
                     cause: format!("{} {}", cause_key, err.message())
                 })

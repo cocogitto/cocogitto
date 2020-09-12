@@ -1,5 +1,5 @@
 use crate::commit::CommitType::*;
-use crate::error::CocoGittoError::CommitFormatError;
+use crate::error::ErrorKind::CommitFormat;
 use crate::COMMITS_METADATA;
 use anyhow::Result;
 use chrono::{NaiveDateTime, Utc};
@@ -68,7 +68,7 @@ impl CommitConfig {
 }
 
 impl Commit {
-    pub fn from_git_commit(commit: &Git2Commit) -> Result<Self> {
+    pub(crate) fn from_git_commit(commit: &Git2Commit) -> Result<Self> {
         let shorthand = commit
             .as_object()
             .short_id()
@@ -101,7 +101,7 @@ impl Commit {
                 .to_string();
                 let cause = format!("{} {}", "cause:".red(), err);
                 let level = "ERROR".red().bold().to_string();
-                Err(anyhow!(CommitFormatError {
+                Err(anyhow!(CommitFormat {
                     level,
                     shorthand,
                     commit_message,

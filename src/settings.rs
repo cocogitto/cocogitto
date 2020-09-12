@@ -9,7 +9,7 @@ use std::path::PathBuf;
 type CommitsMetadataSettings = HashMap<String, CommitConfig>;
 
 #[derive(Debug, Deserialize)]
-pub struct Settings {
+pub(crate) struct Settings {
     #[serde(default)]
     pub hooks: Vec<String>,
     #[serde(default)]
@@ -21,7 +21,7 @@ pub struct Settings {
 }
 
 impl Settings {
-    pub fn get(repository: &Repository) -> Result<Self> {
+    pub(crate) fn get(repository: &Repository) -> Result<Self> {
         match repository.get_repo_dir() {
             Some(path) => {
                 if path.exists() {

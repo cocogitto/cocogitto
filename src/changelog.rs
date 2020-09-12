@@ -3,7 +3,7 @@ use crate::COMMITS_METADATA;
 use colored::*;
 use git2::Oid;
 
-pub struct Changelog {
+pub(crate) struct Changelog {
     pub from: Oid,
     pub to: Oid,
     pub date: String,
@@ -11,7 +11,7 @@ pub struct Changelog {
 }
 
 impl Changelog {
-    pub fn tag_diff_to_markdown(&mut self) -> String {
+    pub(crate) fn tag_diff_to_markdown(&mut self) -> String {
         let mut out = String::new();
 
         out.push_str(&Changelog::header());

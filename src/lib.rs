@@ -17,7 +17,7 @@ pub mod settings;
 
 use crate::changelog::Changelog;
 use crate::commit::{CommitConfig, CommitMessage, CommitType};
-use crate::error::CocoGittoError::SemverError;
+use crate::error::ErrorKind::Semver;
 use crate::filter::CommitFilters;
 use crate::repository::Repository;
 use crate::settings::Settings;
@@ -25,7 +25,7 @@ use anyhow::Result;
 use chrono::Utc;
 use colored::*;
 use commit::Commit;
-use git2::{Commit as Git2Commit, Oid, RebaseOptions, Repository as Git2Repository};
+use git2::{Commit as Git2Commit, Oid, RebaseOptions};
 use semver::Version;
 use std::collections::HashMap;
 use std::fs::File;
@@ -64,10 +64,6 @@ impl CocoGitto {
 
     pub fn get_commit_metadata() -> &'static CommitsMetadata {
         &COMMITS_METADATA
-    }
-
-    pub fn get_repository(&self) -> &Git2Repository {
-        &self.repository.0
     }
 
     pub fn check_and_edit(&self) -> Result<()> {
@@ -259,7 +255,7 @@ impl CocoGitto {
                 "{} version MUST be greater than current one: {}",
                 cause_key, comparison
             );
-            return Err(anyhow!(SemverError {
+            return Err(anyhow!(Semver {
                 level: "SemVer Error".red().to_string(),
                 cause
             }));
@@ -410,7 +406,7 @@ impl CocoGitto {
 
     fn get_commit_range(&self, from: Oid, to: Oid) -> Result<Vec<Git2Commit>> {
         // Ensure commit exists
-        let repository = self.get_repository();
+        let repository = &self.repository.0;
         repository.find_commit(from)?;
         repository.find_commit(to)?;
 
