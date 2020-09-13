@@ -1,5 +1,6 @@
 # Cocogitto
 ![CI](https://github.com/oknozor/cocogitto/workflows/CI/badge.svg)
+[![codecov](https://codecov.io/gh/oknozor/cocogitto/branch/master/graph/badge.svg)](https://codecov.io/gh/oknozor/cocogitto)
 
 ![logo](docs/assets/logo.png) 
 *Please if you are a graphic designer, help me with the logo*
