@@ -9,7 +9,6 @@ extern crate lazy_static;
 pub mod changelog;
 pub mod error;
 pub mod filter;
-mod hook;
 
 pub mod commit;
 pub mod repository;
