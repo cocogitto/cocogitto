@@ -87,9 +87,10 @@ impl Changelog {
             let metadata = COMMITS_METADATA.get(&commit_type).unwrap();
             if !commits.is_empty() {
                 out.push_str(&format!("\n### {}\n\n", metadata.changelog_title));
-                commits
-                    .iter()
-                    .for_each(|commit| out.push_str(&commit.to_markdown(colored)));
+                commits.iter().for_each(|commit| {
+                    out.push_str(&commit.to_markdown(colored));
+                    out.push('\n');
+                });
             }
         };
 
