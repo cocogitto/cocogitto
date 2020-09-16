@@ -219,7 +219,7 @@ impl CocoGitto {
             description,
             is_breaking_change,
         }
-        .to_string();
+            .to_string();
 
         let oid = self.repository.commit(message)?;
         let commit = self.repository.0.find_commit(oid)?;
@@ -380,7 +380,63 @@ impl CocoGitto {
 }
 
 #[cfg(test)]
+use std::env::temp_dir;
+
+#[cfg(test)]
+fn git_init() -> Result<()> {
+    let temp_dir = temp_dir();
+    std::env::set_current_dir(temp_dir)?;
+    Command::new("git")
+        .arg("init")
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
+        .output()?;
+
+    Ok(())
+}
+
+#[cfg(test)]
+fn git_commit(message: &str) -> Result<()> {
+    Command::new("git")
+        .arg("commit")
+        .arg("-m")
+        .arg(message)
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
+        .output()?;
+    Ok(())
+}
+
+#[cfg(test)]
+fn git_tag(tag: &str) -> Result<()> {
+    Command::new("tag")
+        .arg(tag)
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
+        .output()?;
+    Ok(())
+}
+
+#[cfg(test)]
+fn create_empty_config() -> Result<()> {
+    std::fs::File::create("coco.toml")?;
+    Ok(())
+}
+
+
+#[cfg(test)]
 mod test {
+    use crate::{git_init, create_empty_config, CocoGitto};
+    use anyhow::Result;
+
     #[test]
-    fn should_open_repo() {}
+    fn should_open_repo() -> Result<()> {
+        git_init()?;
+        create_empty_config()?;
+
+        let gitto = CocoGitto::get();
+
+        assert!(gitto.is_ok());
+        Ok(())
+    }
 }
