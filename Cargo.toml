@@ -23,6 +23,9 @@ moins = "0.4.0"
 lazy_static = "1.4.0"
 clap = { version = "^2", optional = true }
 
+[dev-dependencies]
+temp_testdir = "0.2.3"
+
 [features]
 default = ["cli"]
 cli = [ "clap"]
