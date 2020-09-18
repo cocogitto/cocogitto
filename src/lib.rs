@@ -46,6 +46,12 @@ lazy_static! {
         Settings::get(&repo).unwrap().commit_types()
     };
 }
+
+pub fn init() -> Result<()> {
+    println!("init command");
+    todo!();
+}
+
 pub struct CocoGitto {
     repository: Repository,
     changelog_path: PathBuf,
