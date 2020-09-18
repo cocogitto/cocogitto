@@ -23,6 +23,9 @@ jobs:
           toolchain: nightly
           override: true
 
+      - name: Setup git user
+        run: "git config --global user.name CogTest"
+
       - name: Test
         uses: actions-rs/tarpaulin@v0.1
         with:
