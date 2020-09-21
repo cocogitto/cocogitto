@@ -51,45 +51,45 @@ pub fn init<S: AsRef<Path> + ?Sized>(path: &S) -> Result<()> {
     let path = path.as_ref();
 
     if !path.exists() {
-        std::fs::create_dir(&path)?;
+        std::fs::create_dir(&path)
+            .map_err(|err| anyhow!("Could not create directory `{:?}`: {}", path, err))?;
     }
 
     let mut is_init_commit = false;
+    println!("{:?} exists {}", &path, path.exists());
     let repository = match Repository::open(&path) {
         Ok(repo) => {
             println!(
-                "Found git repository in {}, skipping initialisation",
-                path.canonicalize()?.display()
+                "Found git repository in {:?}, skipping initialisation",
+                &path
             );
             repo
         }
-        Err(_) => {
-            let initialisation = Repository::init(&path);
-            if initialisation.is_ok() {
-                println!(
-                    "Empty git repository initialized in {}",
-                    path.canonicalize()?.display()
-                )
+        Err(_) => match Repository::init(&path) {
+            Ok(repo) => {
+                println!("Empty git repository initialized in {:?}", &path);
+                is_init_commit = true;
+                repo
             }
-            is_init_commit = true;
-            initialisation?
-        }
+            Err(err) => panic!("Unable to init repository on {:?}: {}", &path, err),
+        },
     };
 
     let settings = Settings::default();
     let settings_path = path.join("coco.toml");
     if settings_path.exists() {
-        eprint!(
-            "Found coco.toml in {}, Nothing to do",
-            path.canonicalize()?.display()
-        );
+        eprint!("Found coco.toml in {:?}, Nothing to do", &path);
         exit(1);
     } else {
-        std::fs::write(settings_path, toml::to_string(&settings)?)?;
+        std::fs::write(&settings_path, toml::to_string(&settings)?)
+            .map_err(|err| anyhow!("Could not write file `{:?}` : {}", &settings_path, err))?;
     }
 
     // TODO : add coco only"
-    repository.add_all()?;
+    repository
+        .add_all()
+        .map_err(|err| anyhow!("Could not add file to repository index : {}", err))?;
+
     let message = if is_init_commit {
         "chore: init commit".to_string()
     } else {
