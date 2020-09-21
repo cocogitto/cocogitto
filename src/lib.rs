@@ -31,8 +31,8 @@ use semver::Version;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
-use std::path::PathBuf;
-use std::process::{Command, Stdio};
+use std::path::{Path, PathBuf};
+use std::process::{exit, Command, Stdio};
 use tempdir::TempDir;
 
 pub type CommitsMetadata = HashMap<CommitType, CommitConfig>;
@@ -42,14 +42,62 @@ lazy_static! {
     // `Commit` etc. Be ensure that `CocoGitto::new` is called before using this  in order to bypass
     // unwrapping in case of error.
     static ref COMMITS_METADATA: CommitsMetadata = {
-        let repo = Repository::open().unwrap();
+        let repo = Repository::open(".").unwrap();
         Settings::get(&repo).unwrap().commit_types()
     };
 }
 
-pub fn init() -> Result<()> {
-    println!("init command");
-    todo!();
+pub fn init<S: AsRef<Path> + ?Sized>(path: &S) -> Result<()> {
+    let path = path.as_ref();
+
+    if !path.exists() {
+        std::fs::create_dir(&path)?;
+    }
+
+    let mut is_init_commit = false;
+    let repository = match Repository::open(&path) {
+        Ok(repo) => {
+            println!(
+                "Found git repository in {}, skipping initialisation",
+                path.canonicalize()?.display()
+            );
+            repo
+        }
+        Err(_) => {
+            let initialisation = Repository::init(&path);
+            if initialisation.is_ok() {
+                println!(
+                    "Empty git repository initialized in {}",
+                    path.canonicalize()?.display()
+                )
+            }
+            is_init_commit = true;
+            initialisation?
+        }
+    };
+
+    let settings = Settings::default();
+    let settings_path = path.join("coco.toml");
+    if settings_path.exists() {
+        eprint!(
+            "Found coco.toml in {}, Nothing to do",
+            path.canonicalize()?.display()
+        );
+        exit(1);
+    } else {
+        std::fs::write(settings_path, toml::to_string(&settings)?)?;
+    }
+
+    // TODO : add coco only"
+    repository.add_all()?;
+    let message = if is_init_commit {
+        "chore: init commit".to_string()
+    } else {
+        "chore: add cocogitto config".to_string()
+    };
+
+    repository.commit(message)?;
+    Ok(())
 }
 
 pub struct CocoGitto {
@@ -59,7 +107,7 @@ pub struct CocoGitto {
 
 impl CocoGitto {
     pub fn get() -> Result<Self> {
-        let repository = Repository::open()?;
+        let repository = Repository::open(".")?;
         let settings = Settings::get(&repository)?;
         let changelog_path = settings
             .changelog_path

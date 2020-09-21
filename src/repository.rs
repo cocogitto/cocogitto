@@ -10,8 +10,12 @@ use std::path::Path;
 pub(crate) struct Repository(pub(crate) Git2Repository);
 
 impl Repository {
-    pub(crate) fn open() -> Result<Repository> {
-        let repo = Git2Repository::discover(".")?;
+    pub(crate) fn init<S: AsRef<Path> + ?Sized>(path: &S) -> Result<Repository> {
+        Ok(Repository(Git2Repository::init(&path)?))
+    }
+
+    pub(crate) fn open<S: AsRef<Path> + ?Sized>(path: &S) -> Result<Repository> {
+        let repo = Git2Repository::discover(&path)?;
         Ok(Repository(repo))
     }
 

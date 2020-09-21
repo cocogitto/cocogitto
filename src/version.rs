@@ -40,7 +40,7 @@ impl VersionIncrement {
 
     fn get_auto_version(&self, current_version: &Version) -> Result<Version> {
         let mut next_version = current_version.clone();
-        let repository = Repository::open()?;
+        let repository = Repository::open(".")?;
         let changelog_start_oid = repository
             .get_latest_tag_oid()
             .unwrap_or_else(|_| repository.get_first_commit().unwrap());

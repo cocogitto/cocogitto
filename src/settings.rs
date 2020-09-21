@@ -8,7 +8,7 @@ use std::path::PathBuf;
 
 type CommitsMetadataSettings = HashMap<String, CommitConfig>;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub(crate) struct Settings {
     #[serde(default)]
     pub hooks: Vec<String>,
@@ -17,6 +17,18 @@ pub(crate) struct Settings {
     pub changelog_path: Option<PathBuf>,
     pub changelog_header: Option<String>,
     pub changelog_footer: Option<String>,
+}
+
+impl Default for Settings {
+    fn default() -> Self {
+        Settings {
+            hooks: vec![],
+            commit_types: Default::default(),
+            changelog_path: None,
+            changelog_header: None,
+            changelog_footer: None,
+        }
+    }
 }
 
 impl Settings {

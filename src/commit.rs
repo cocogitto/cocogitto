@@ -43,7 +43,7 @@ pub struct CommitMessage {
     pub(crate) is_breaking_change: bool,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct CommitConfig {
     pub changelog_title: String,
     pub help_message: String,

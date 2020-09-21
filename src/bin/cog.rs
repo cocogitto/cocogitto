@@ -148,6 +148,11 @@ fn main() -> Result<()> {
 
     let init_subcommand = SubCommand::with_name(INIT)
         .settings(SUBCOMMAND_SETTINGS)
+        .arg(
+            Arg::with_name("path")
+                .help("path to init, default")
+                .default_value("."),
+        )
         .about("Install cog config files");
 
     let on_configured_repo_subcommands =
@@ -281,8 +286,9 @@ fn main() -> Result<()> {
             }
 
             INIT => {
-                let _subcommand = matches.subcommand_matches(INIT).unwrap();
-                cocogitto::init()?;
+                let subcommand = matches.subcommand_matches(INIT).unwrap();
+                let init_path = subcommand.value_of("path").unwrap(); // safe unwrap via clap default value
+                cocogitto::init(init_path)?;
             }
 
             commit_type => {

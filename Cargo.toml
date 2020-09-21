@@ -21,9 +21,12 @@ tempdir = "^0"
 semver = "0.10.0"
 moins = "0.4.0"
 lazy_static = "1.4.0"
+toml = "0.5.6"
 clap = { version = "^2", optional = true }
 
 [dev-dependencies]
+assert_cmd = "0.10"
+predicates = "1"
 temp_testdir = "0.2.3"
 
 [features]
