@@ -56,7 +56,6 @@ pub fn init<S: AsRef<Path> + ?Sized>(path: &S) -> Result<()> {
     }
 
     let mut is_init_commit = false;
-    println!("{:?} exists {}", &path, path.exists());
     let repository = match Repository::open(&path) {
         Ok(repo) => {
             println!(
@@ -81,8 +80,12 @@ pub fn init<S: AsRef<Path> + ?Sized>(path: &S) -> Result<()> {
         eprint!("Found coco.toml in {:?}, Nothing to do", &path);
         exit(1);
     } else {
-        std::fs::write(&settings_path, toml::to_string(&settings)?)
-            .map_err(|err| anyhow!("Could not write file `{:?}` : {}", &settings_path, err))?;
+        std::fs::write(
+            &settings_path,
+            toml::to_string(&settings)
+                .map_err(|err| anyhow!("Failed to serialize coco.toml : {}", err))?,
+        )
+        .map_err(|err| anyhow!("Could not write file `{:?}` : {}", &settings_path, err))?;
     }
 
     // TODO : add coco only"
@@ -108,7 +111,7 @@ pub struct CocoGitto {
 impl CocoGitto {
     pub fn get() -> Result<Self> {
         let repository = Repository::open(".")?;
-        let settings = Settings::get(&repository)?;
+        let settings = Settings::get(&repository).unwrap_or_default();
         let changelog_path = settings
             .changelog_path
             .unwrap_or_else(|| PathBuf::from("CHANGELOG.md"));

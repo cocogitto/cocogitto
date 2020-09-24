@@ -10,23 +10,19 @@ type CommitsMetadataSettings = HashMap<String, CommitConfig>;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub(crate) struct Settings {
+    pub changelog_path: Option<PathBuf>,
     #[serde(default)]
     pub hooks: Vec<String>,
     #[serde(default)]
     pub commit_types: CommitsMetadataSettings,
-    pub changelog_path: Option<PathBuf>,
-    pub changelog_header: Option<String>,
-    pub changelog_footer: Option<String>,
 }
 
 impl Default for Settings {
     fn default() -> Self {
         Settings {
-            hooks: vec![],
+            changelog_path: Some(PathBuf::from("CHANGELOG.md")),
             commit_types: Default::default(),
-            changelog_path: None,
-            changelog_header: None,
-            changelog_footer: None,
+            hooks: vec![],
         }
     }
 }
