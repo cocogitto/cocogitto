@@ -117,7 +117,7 @@ pub fn verify(author: Option<String>, message: &str) -> Result<()> {
                     shorthand: "not committed".to_string(),
                     message,
                     date: Utc::now().naive_utc(),
-                    author: author.unwrap_or("Unknown".to_string()),
+                    author: author.unwrap_or_else(|| "Unknown".to_string()),
                 }
             );
             Ok(())
