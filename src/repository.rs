@@ -73,12 +73,25 @@ impl Repository {
                 .map_err(|err| anyhow!(err))
         } else {
             let statuses = self.get_statuses()?;
-            statuses.iter().for_each(|status| {
-                eprintln!("{} : {:?}", status.path().unwrap(), status.status());
+            statuses.iter().for_each(|entry| {
+                let status = match entry.status() {
+                    s if s.contains(git2::Status::WT_NEW) => "Untracked: ",
+                    s if s.contains(git2::Status::WT_RENAMED) => "Renamed: ",
+                    s if s.contains(git2::Status::WT_DELETED) => "Deleted: ",
+                    s if s.contains(git2::Status::WT_TYPECHANGE) => "Typechange: ",
+                    s if s.contains(git2::Status::WT_MODIFIED) => "Modified: ",
+                    s if s.contains(git2::Status::INDEX_NEW) => "New file: ",
+                    s if s.contains(git2::Status::INDEX_MODIFIED) => "Modified: ",
+                    s if s.contains(git2::Status::INDEX_DELETED) => "Deleted: ",
+                    s if s.contains(git2::Status::INDEX_RENAMED) => "Renamed: ",
+                    s if s.contains(git2::Status::INDEX_TYPECHANGE) => "Typechange:",
+                    _ => "unknown git status",
+                };
+                println!("{} {}", status.red(), entry.path().unwrap());
             });
+            println!();
 
-            // TODO
-            Err(anyhow!("{} : {} ", is_empty, has_delta))
+            Err(anyhow!("nothing to commit (use \"git add\" to track)"))
         }
     }
 
