@@ -42,8 +42,11 @@ lazy_static! {
     // `Commit` etc. Be ensure that `CocoGitto::new` is called before using this  in order to bypass
     // unwrapping in case of error.
     static ref COMMITS_METADATA: CommitsMetadata = {
-        let repo = Repository::open(".").unwrap();
-        Settings::get(&repo).unwrap().commit_types()
+        if let Ok(repo) = Repository::open(".") {
+            Settings::get(&repo).unwrap_or_default().commit_types()
+        } else {
+            Settings::default().commit_types()
+        }
     };
 }
 
@@ -103,6 +106,26 @@ pub fn init<S: AsRef<Path> + ?Sized>(path: &S) -> Result<()> {
     Ok(())
 }
 
+pub fn verify(author: Option<String>, message: &str) -> Result<()> {
+    let commit = Commit::parse_commit_message(message);
+
+    match commit {
+        Ok(message) => {
+            println!(
+                "{}",
+                Commit {
+                    shorthand: "not committed".to_string(),
+                    message,
+                    date: Utc::now().naive_utc(),
+                    author: author.unwrap_or("Unknown".to_string()),
+                }
+            );
+            Ok(())
+        }
+        Err(err) => Err(err),
+    }
+}
+
 pub struct CocoGitto {
     repository: Repository,
     changelog_path: PathBuf,
@@ -111,7 +134,7 @@ pub struct CocoGitto {
 impl CocoGitto {
     pub fn get() -> Result<Self> {
         let repository = Repository::open(".")?;
-        let settings = Settings::get(&repository).unwrap_or_default();
+        let settings = Settings::get(&repository)?;
         let changelog_path = settings
             .changelog_path
             .unwrap_or_else(|| PathBuf::from("CHANGELOG.md"));
@@ -124,6 +147,10 @@ impl CocoGitto {
 
     pub fn get_commit_metadata() -> &'static CommitsMetadata {
         &COMMITS_METADATA
+    }
+
+    pub fn get_commiter(&self) -> Result<String> {
+        self.repository.get_author()
     }
 
     pub fn check_and_edit(&self) -> Result<()> {
@@ -237,26 +264,6 @@ impl CocoGitto {
         Ok(logs)
     }
 
-    pub fn verify(&self, message: &str) -> Result<()> {
-        let commit = Commit::parse_commit_message(message);
-
-        match commit {
-            Ok(message) => {
-                println!(
-                    "{}",
-                    Commit {
-                        shorthand: "not committed".to_string(),
-                        message,
-                        author: self.repository.get_author()?,
-                        date: Utc::now().naive_utc(),
-                    }
-                );
-                Ok(())
-            }
-            Err(err) => Err(err),
-        }
-    }
-
     pub fn conventional_commit(
         &self,
         commit_type: &str,
@@ -307,8 +314,7 @@ impl CocoGitto {
 
         let current_version = Version::parse(&current_tag)?;
 
-        // Error on unstagged changes
-
+        // Error on unstaged changes
         let next_version = increment.bump(&current_version)?;
 
         if next_version.le(&current_version) || next_version.eq(&current_version) {
@@ -318,6 +324,7 @@ impl CocoGitto {
                 "{} version MUST be greater than current one: {}",
                 cause_key, comparison
             );
+
             return Err(anyhow!(Semver {
                 level: "SemVer Error".red().to_string(),
                 cause

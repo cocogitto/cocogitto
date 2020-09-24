@@ -86,6 +86,7 @@ fn main() -> Result<()> {
         .about("Verify a single commit message")
         .arg(Arg::with_name("message").help("The commit message"))
         .display_order(3);
+
     let changelog_command = SubCommand::with_name(CHANGELOG)
         .settings(SUBCOMMAND_SETTINGS)
         .about("Display a changelog for a given commit oid range")
@@ -155,53 +156,19 @@ fn main() -> Result<()> {
         )
         .about("Install cog config files");
 
-    let on_configured_repo_subcommands =
-        vec![check_command, log_command, changelog_command, bump_command];
-
-    let default_subcommands = vec![verify_command, init_subcommand];
-
-    let mut app =  App::new("Coco Gitto")
+    let matches = App::new("Cogitto")
         .settings(APP_SETTINGS)
         .version(env!("CARGO_PKG_VERSION"))
         .author("Paul D. <paul.delafosse@protonmail.com>")
         .about("A conventional commit compliant, changelog and commit generator")
         .long_about("Conventional Commit Git Terminal Overlord is a tool to help you use the conventional commit specification")
-        .subcommands(default_subcommands);
-
-    let cocogitto = CocoGitto::get();
-
-    if cocogitto.is_ok() {
-        let commit_subcommands = CocoGitto::get_commit_metadata()
-            .iter()
-            .map(|(commit_type, commit_config)| {
-                SubCommand::with_name(commit_type.get_key_str())
-                    .settings(SUBCOMMAND_SETTINGS)
-                    .about(commit_config.help_message.as_str())
-                    .help(commit_config.help_message.as_str())
-                    .arg(Arg::with_name("message").help("The commit message"))
-                    .arg(Arg::with_name("scope").help("The scope of the commit message"))
-                    .arg(Arg::with_name("body").help("The body of the commit message"))
-                    .arg(Arg::with_name("footer").help("The footer of the commit message"))
-                    .arg(
-                        Arg::with_name("breaking-change")
-                            .help("BREAKING CHANGE commit")
-                            .short("B")
-                            .long("breaking-change"),
-                    )
-            })
-            .collect::<Vec<App>>();
-
-        app = app
-            .subcommands(on_configured_repo_subcommands)
-            .subcommands(commit_subcommands)
-            .display_order(6);
-    };
-
-    let matches = app.get_matches();
+        .subcommands(vec![verify_command, init_subcommand, check_command, log_command, changelog_command, bump_command])
+        .get_matches();
 
     if let Some(subcommand) = matches.subcommand_name() {
         match subcommand {
             BUMP => {
+                let cocogitto = CocoGitto::get()?;
                 let subcommand = matches.subcommand_matches(BUMP).unwrap();
 
                 let increment = if let Some(version) = subcommand.value_of("version") {
@@ -219,13 +186,16 @@ fn main() -> Result<()> {
                 };
 
                 // TODO mode to cli
-                cocogitto?.create_version(increment, WriterMode::Prepend)?
+                cocogitto.create_version(increment, WriterMode::Prepend)?
             }
             VERIFY => {
                 let subcommand = matches.subcommand_matches(VERIFY).unwrap();
                 let message = subcommand.value_of("message").unwrap();
+                let author = CocoGitto::get()
+                    .map(|cogito| cogito.get_commiter().unwrap())
+                    .ok();
 
-                match cocogitto?.verify(message) {
+                match cocogitto::verify(author, message) {
                     Ok(()) => exit(0),
                     Err(err) => {
                         eprintln!("{}", err);
@@ -235,14 +205,16 @@ fn main() -> Result<()> {
             }
 
             CHECK => {
+                let cocogitto = CocoGitto::get()?;
                 let subcommand = matches.subcommand_matches(CHECK).unwrap();
                 if subcommand.is_present("edit") {
-                    cocogitto?.check_and_edit()?;
+                    cocogitto.check_and_edit()?;
                 } else {
-                    cocogitto?.check()?
+                    cocogitto.check()?
                 }
             }
             LOG => {
+                let cocogitto = CocoGitto::get()?;
                 let subcommand = matches.subcommand_matches(LOG).unwrap();
 
                 let mut filters = vec![];
@@ -274,14 +246,15 @@ fn main() -> Result<()> {
 
                 let filters = CommitFilters(filters);
 
-                let mut content = cocogitto?.get_log(filters)?;
+                let mut content = cocogitto.get_log(filters)?;
                 Moins::run(&mut content, None);
             }
             CHANGELOG => {
+                let cocogitto = CocoGitto::get()?;
                 let subcommand = matches.subcommand_matches(CHANGELOG).unwrap();
                 let from = subcommand.value_of("from");
                 let to = subcommand.value_of("to");
-                let result = cocogitto?.get_colored_changelog(from, to)?;
+                let result = cocogitto.get_colored_changelog(from, to)?;
                 println!("{}", result);
             }
 
@@ -290,24 +263,7 @@ fn main() -> Result<()> {
                 let init_path = subcommand.value_of("path").unwrap(); // safe unwrap via clap default value
                 cocogitto::init(init_path)?;
             }
-
-            commit_type => {
-                if let Some(args) = matches.subcommand_matches(commit_type) {
-                    let message = args.value_of("message").unwrap().to_string();
-                    let scope = args.value_of("scope").map(|scope| scope.to_string());
-                    let body = args.value_of("body").map(|body| body.to_string());
-                    let footer = args.value_of("footer").map(|footer| footer.to_string());
-                    let breaking_change = args.is_present("breaking-change");
-                    cocogitto?.conventional_commit(
-                        commit_type,
-                        scope,
-                        message,
-                        body,
-                        footer,
-                        breaking_change,
-                    )?;
-                }
-            }
+            _ => unreachable!(),
         }
     }
     Ok(())

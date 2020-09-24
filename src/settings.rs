@@ -28,22 +28,21 @@ impl Default for Settings {
 }
 
 impl Settings {
+    // Fails only if config exists and is malformed
     pub(crate) fn get(repository: &Repository) -> Result<Self> {
         match repository.get_repo_dir() {
-            Some(path) => {
-                if path.exists() {
+            Some(repo_path) => {
+                let settings_path = repo_path.join("coco.toml");
+                if settings_path.exists() {
                     let mut s = Config::new();
-                    s.merge(File::from(path.join("coco.toml")))?;
+                    s.merge(File::from(settings_path))?;
                     s.try_into()
                         .map_err(|err| anyhow!("Config format error : {}", err))
                 } else {
-                    Err(anyhow!(
-                        "Missing `coco.toml` config file in {}",
-                        path.display()
-                    ))
+                    Ok(Settings::default())
                 }
             }
-            None => Err(anyhow!("Current dir is not a git repository")),
+            None => Ok(Settings::default()),
         }
     }
 
