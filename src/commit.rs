@@ -83,19 +83,30 @@ impl Commit {
                 date,
             }),
             Err(err) => {
-                let message = git2_message.replace("\n", "");
+                let additional_info = if commit.parent_count() == 0 {
+                    format!(
+                        "{} Init commit or commit with no parent cannot be edited",
+                        "warning:".yellow()
+                    )
+                } else {
+                    "".to_string()
+                };
+
+                let message = git2_message.trim_end();
                 let commit_message = if message.len() > 80 {
                     format!("{}{}", &message[0..80], "...").red()
                 } else {
-                    git2_message.red()
+                    message.red()
                 }
                 .to_string();
-                let cause = format!("{} {}", "cause:".red(), err);
+
+                let cause = format!("{} {}", "cause:".magenta(), err);
                 let level = "ERROR".red().bold().to_string();
                 Err(anyhow!(CommitFormat {
                     level,
                     shorthand,
                     commit_message,
+                    additional_info,
                     cause
                 }))
             }

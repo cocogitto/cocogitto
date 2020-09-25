@@ -160,7 +160,7 @@ impl CocoGitto {
         let editor = std::env::var("EDITOR")?;
         let dir = TempDir::new("cocogito")?;
 
-        let errored_commits: Vec<Oid> = commits
+        let mut errored_commits: Vec<Oid> = commits
             .iter()
             .map(|commit| {
                 let conv_commit = Commit::from_git_commit(&commit);
@@ -170,49 +170,61 @@ impl CocoGitto {
             .map(|commit| commit.0)
             .collect();
 
-        let last_errored_commit = errored_commits.last();
-        println!("{:?}", last_errored_commit);
-        let commit = self
-            .repository
-            .0
-            .find_commit(last_errored_commit.unwrap().to_owned())?;
-        let rebase_start = commit.parent_id(0)?;
-        let commit = self.repository.0.find_annotated_commit(rebase_start)?;
-        let mut options = RebaseOptions::new();
-        let mut rebase = self
-            .repository
-            .0
-            .rebase(None, Some(&commit), None, Some(&mut options))?;
+        // Get the last commit oid on the list as a starting point for our rebase
+        let last_errored_commit = errored_commits.pop();
+        if let Some(last_errored_commit) = last_errored_commit {
+            let commit = self
+                .repository
+                .0
+                .find_commit(last_errored_commit.to_owned())?;
 
-        while let Some(op) = rebase.next() {
-            if let Ok(rebase_operation) = op {
-                let oid = rebase_operation.id();
-                let original_commit = self.repository.0.find_commit(oid)?;
-                println!("rebasing {}", oid);
-                if errored_commits.contains(&oid) {
-                    println!("\tmatch found in errored commits");
-                    let file_path = dir.path().join(&commit.id().to_string());
-                    let mut file = File::create(&file_path)?;
-                    file.write_all(original_commit.message_bytes())?;
-
-                    Command::new(&editor)
-                        .arg(&file_path)
-                        .stdout(Stdio::inherit())
-                        .stdin(Stdio::inherit())
-                        .stderr(Stdio::inherit())
-                        .output()?;
-
-                    let new_message = std::fs::read_to_string(&file_path)?;
-                    rebase.commit(None, &original_commit.committer(), Some(&new_message))?;
-                } else {
-                    rebase.commit(None, &original_commit.committer(), None)?;
-                }
+            let rebase_start = if commit.parent_count() == 0 {
+                commit.id()
             } else {
-                eprintln!("{:?}", op);
+                commit.parent_id(0)?
+            };
+
+            let commit = self.repository.0.find_annotated_commit(rebase_start)?;
+            let mut options = RebaseOptions::new();
+            let mut rebase =
+                self.repository
+                    .0
+                    .rebase(None, Some(&commit), None, Some(&mut options))?;
+
+            while let Some(op) = rebase.next() {
+                if let Ok(rebase_operation) = op {
+                    let oid = rebase_operation.id();
+                    let original_commit = self.repository.0.find_commit(oid)?;
+                    if errored_commits.contains(&oid) {
+                        println!("Found errored commits : {}", &oid.to_string()[0..7]);
+                        let file_path = dir.path().join(&commit.id().to_string());
+                        let mut file = File::create(&file_path)?;
+                        file.write_all(original_commit.message_bytes())?;
+
+                        Command::new(&editor)
+                            .arg(&file_path)
+                            .stdout(Stdio::inherit())
+                            .stdin(Stdio::inherit())
+                            .stderr(Stdio::inherit())
+                            .output()?;
+
+                        let new_message = std::fs::read_to_string(&file_path)?;
+                        rebase.commit(None, &original_commit.committer(), Some(&new_message))?;
+                        println!(
+                            "Changed commit message to : \"{}\"",
+                            &new_message.trim_end()
+                        );
+                    } else {
+                        rebase.commit(None, &original_commit.committer(), None)?;
+                    }
+                } else {
+                    eprintln!("{:?}", op);
+                }
             }
+
+            rebase.finish(None)?;
         }
 
-        rebase.finish(None)?;
         Ok(())
     }
 
