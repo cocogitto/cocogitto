@@ -29,6 +29,8 @@ jobs:
 
       - name: Coverage
         uses: actions-rs/tarpaulin@v0.1
+        with:
+          args: -- --test-threads 1
 
       - name: Test
         uses: actions-rs/cargo@v1
