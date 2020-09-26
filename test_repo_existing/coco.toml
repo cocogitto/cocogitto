@@ -1,0 +1,4 @@
+changelog_path = "CHANGELOG.md"
+hooks = []
+
+[commit_types]
