@@ -102,7 +102,7 @@ pub fn init<S: AsRef<Path> + ?Sized>(path: &S) -> Result<()> {
         "chore: add cocogitto config".to_string()
     };
 
-    repository.commit(message)?;
+    repository.commit(&message)?;
     Ok(())
 }
 
@@ -133,7 +133,7 @@ pub struct CocoGitto {
 
 impl CocoGitto {
     pub fn get() -> Result<Self> {
-        let repository = Repository::open(".")?;
+        let repository = Repository::open(&std::env::current_dir()?)?;
         let settings = Settings::get(&repository)?;
         let changelog_path = settings
             .changelog_path
@@ -297,7 +297,7 @@ impl CocoGitto {
         }
         .to_string();
 
-        let oid = self.repository.commit(message)?;
+        let oid = self.repository.commit(&message)?;
         let commit = self.repository.0.find_commit(oid)?;
         let commit = Commit::from_git_commit(&commit)?;
         println!("{}", commit);
@@ -366,7 +366,7 @@ impl CocoGitto {
         self.repository.add_all()?;
         self.repository.create_tag(&version_str)?;
         self.repository
-            .commit(format!("chore(version): {}", next_version))?;
+            .commit(&format!("chore(version): {}", next_version))?;
 
         let bump = format!("{} -> {}", current_version, next_version).green();
         println!("Bumped version : {}", bump);

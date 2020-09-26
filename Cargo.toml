@@ -33,6 +33,10 @@ temp_testdir = "0.2.3"
 default = ["cli"]
 cli = [ "clap"]
 
+[lib]
+name = "cocogitto"
+path = "src/lib.rs"
+
 [[bin]]
 name = "cog"
 path = "src/bin/cog.rs"

@@ -1,9 +1,10 @@
 use anyhow::Result;
 use assert_cmd::prelude::*;
+use helper::*;
 use std::process::Command;
 use temp_testdir::TempDir;
 
-mod common;
+mod helper;
 
 #[test]
 #[cfg(not(tarpaulin))]
@@ -30,14 +31,11 @@ fn init_existing_repo() -> Result<()> {
 
     // Create repo with commits
     let temp_dir = TempDir::default();
-    let path = temp_dir.join("test_repo_existing");
-    std::fs::create_dir(&path)?;
-    std::env::set_current_dir(&path)?;
+    std::env::set_current_dir(&temp_dir)?;
+    git_init("test_repo_existing")?;
+    std::env::set_current_dir(temp_dir.join("test_repo_existing"))?;
 
-    common::git_init()?;
-    common::git_commit("chore: test commit")?;
-
-    std::env::set_current_dir(temp_dir.as_ref())?;
+    helper::git_commit("chore: test commit")?;
 
     command.assert().success();
     Ok(std::env::set_current_dir(current_dir)?)
@@ -53,14 +51,13 @@ fn fail_if_config_exist() -> Result<()> {
     command.arg("init").arg("test_repo_existing");
 
     // Create repo with commits
-    let path = temp_dir.join("test_repo_existing");
-    std::fs::create_dir(&path)?;
-    std::fs::write(&path.join("coco.toml"), "[hooks]")?;
-    std::env::set_current_dir(&path)?;
-    common::git_init()?;
-    common::git_commit("chore: test commit")?;
-
-    std::env::set_current_dir(temp_dir.as_ref())?;
+    std::env::set_current_dir(&temp_dir)?;
+    helper::git_init("test_repo_existing")?;
+    std::fs::write(
+        &temp_dir.join("test_repo_existing").join("coco.toml"),
+        "[hooks]",
+    )?;
+    helper::git_commit("chore: test commit")?;
 
     command.assert().failure();
 
