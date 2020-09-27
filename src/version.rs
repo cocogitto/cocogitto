@@ -103,3 +103,34 @@ impl VersionIncrement {
         Ok(next_version)
     }
 }
+
+#[cfg(test)]
+mod test {
+    use crate::version::VersionIncrement;
+    use semver::Version;
+    use anyhow::Result;
+
+    // Auto version tests resides in test/ dir since it rely on git log
+    // To generate the version
+
+    #[test]
+    fn major_bump() -> Result<()> {
+        let version = VersionIncrement::Major.bump(&Version::new(1, 0, 0))?;
+        assert_eq!(version, Version::new(2, 0, 0));
+        Ok(())
+    }
+
+    #[test]
+    fn minor_bump() -> Result<()> {
+        let version = VersionIncrement::Minor.bump(&Version::new(1, 0, 0))?;
+        assert_eq!(version, Version::new(1, 1, 0));
+        Ok(())
+    }
+
+    #[test]
+    fn patch_bump() -> Result<()> {
+        let version = VersionIncrement::Patch.bump(&Version::new(1, 0, 0))?;
+        assert_eq!(version, Version::new(1, 0, 1));
+        Ok(())
+    }
+}
