@@ -1,7 +1,7 @@
 use anyhow::Result;
+use assert_cmd::prelude::*;
 use std::process::Command;
 use temp_testdir::TempDir;
-use assert_cmd::prelude::*;
 
 mod helper;
 
@@ -11,7 +11,7 @@ fn auto_bump_from_start_ok() -> Result<()> {
     let current_dir = std::env::current_dir()?;
     let mut command = Command::cargo_bin("cog")?;
     command.arg("bump").arg("--auto");
-    let temp_dir = TempDir::default().permanent();
+    let temp_dir = TempDir::default();
     std::env::set_current_dir(&temp_dir)?;
     helper::git_init(".")?;
     helper::git_commit("chore: init")?;
@@ -32,7 +32,7 @@ fn auto_bump_frowm_latest_tag() -> Result<()> {
     let mut command = Command::cargo_bin("cog")?;
     command.arg("bump").arg("--auto");
 
-    let temp_dir = TempDir::default().permanent();
+    let temp_dir = TempDir::default();
     std::env::set_current_dir(&temp_dir)?;
     helper::git_init(".")?;
     helper::git_commit("chore: init")?;
@@ -57,7 +57,7 @@ fn minor_bump() -> Result<()> {
     let mut command = Command::cargo_bin("cog")?;
     command.arg("bump").arg("--minor");
 
-    let temp_dir = TempDir::default().permanent();
+    let temp_dir = TempDir::default();
     std::env::set_current_dir(&temp_dir)?;
     helper::git_init(".")?;
     helper::git_commit("chore: init")?;
@@ -78,7 +78,7 @@ fn major_bump() -> Result<()> {
     let mut command = Command::cargo_bin("cog")?;
     command.arg("bump").arg("--major");
 
-    let temp_dir = TempDir::default().permanent();
+    let temp_dir = TempDir::default();
     std::env::set_current_dir(&temp_dir)?;
     helper::git_init(".")?;
     helper::git_commit("chore: init")?;
@@ -99,7 +99,7 @@ fn patch_bump() -> Result<()> {
     let mut command = Command::cargo_bin("cog")?;
     command.arg("bump").arg("--patch");
 
-    let temp_dir = TempDir::default().permanent();
+    let temp_dir = TempDir::default();
     std::env::set_current_dir(&temp_dir)?;
     helper::git_init(".")?;
     helper::git_commit("chore: init")?;

@@ -16,7 +16,7 @@ fn init_empty_repo_in_target_dir() -> Result<()> {
     command.arg("init").arg("test_repo");
 
     let temp_dir = TempDir::default();
-    std::env::set_current_dir(temp_dir.as_ref())?;
+    std::env::set_current_dir(&temp_dir)?;
 
     command.assert().success();
     Ok(std::env::set_current_dir(current_dir)?)

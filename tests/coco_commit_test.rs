@@ -1,6 +1,6 @@
 use anyhow::Result;
-use std::process::Command;
 use assert_cmd::prelude::*;
+use std::process::Command;
 use temp_testdir::TempDir;
 
 mod helper;
@@ -16,7 +16,8 @@ fn commit_ok() -> Result<()> {
     std::fs::write(temp_dir.join("test_file"), "content")?;
     helper::git_add()?;
 
-    command.arg("feat")
+    command
+        .arg("feat")
         .arg("this is a commit message")
         .arg("scope")
         .arg("this is the body")
@@ -37,7 +38,8 @@ fn unstaged_changes_commit_err() -> Result<()> {
     helper::git_init(".")?;
     std::fs::write(temp_dir.join("test_file"), "content")?;
 
-    command.arg("feat")
+    command
+        .arg("feat")
         .arg("this is a commit message")
         .arg("scope")
         .arg("this is the body")
@@ -61,7 +63,8 @@ fn untracked_changes_commit_ok() -> Result<()> {
 
     std::fs::write(temp_dir.join("untracked"), "content")?;
 
-    command.arg("feat")
+    command
+        .arg("feat")
         .arg("this is a commit message")
         .arg("scope")
         .arg("this is the body")
@@ -82,7 +85,8 @@ fn empty_commit_err() -> Result<()> {
     std::env::set_current_dir(&temp_dir.to_path_buf())?;
     helper::git_init(".")?;
 
-    command.arg("feat")
+    command
+        .arg("feat")
         .arg("this is a commit message")
         .arg("scope")
         .arg("this is the body")

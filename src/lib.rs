@@ -308,6 +308,7 @@ impl CocoGitto {
     pub fn create_version(&self, increment: VersionIncrement, mode: WriterMode) -> Result<()> {
         let statuses = self.repository.get_statuses()?;
 
+        // Fail if repo contains un-staged or un-committed changes
         if !statuses.is_empty() {
             let statuses = statuses
                 .iter()
@@ -326,8 +327,9 @@ impl CocoGitto {
 
         let current_version = Version::parse(&current_tag)?;
 
-        // Error on unstaged changes
-        let next_version = increment.bump(&current_version)?;
+        let next_version = increment
+            .bump(&current_version)
+            .map_err(|err| anyhow!("Cannot bump version : {}", err))?;
 
         if next_version.le(&current_version) || next_version.eq(&current_version) {
             let comparison = format!("{} <= {}", current_version, next_version).red();
@@ -362,7 +364,8 @@ impl CocoGitto {
             mode,
         };
 
-        writter.write()
+        writter
+            .write()
             .map_err(|err| anyhow!("Unable to write CHANGELOG.md : {}", err))?;
 
         self.repository.add_all()?;

@@ -1,6 +1,6 @@
 use anyhow::Result;
-use std::process::{Command, Stdio};
 use rand::Rng;
+use std::process::{Command, Stdio};
 
 // Why those are picked as dead code by rustc ?
 
@@ -27,7 +27,6 @@ pub fn git_add() -> Result<()> {
 
     Ok(())
 }
-
 
 #[allow(dead_code)]
 pub fn git_commit(message: &str) -> Result<()> {
@@ -67,9 +66,7 @@ pub fn git_tag(tag: &str) -> Result<()> {
 
 #[allow(dead_code)]
 pub fn assert_tag(tag: &str) -> Result<()> {
-    let out = Command::new("ls")
-        .arg(".git/refs/tags")
-        .output()?.stdout;
+    let out = Command::new("ls").arg(".git/refs/tags").output()?.stdout;
 
     let out = String::from_utf8(out)?;
     let tags: Vec<&str> = out.split('\n').collect();

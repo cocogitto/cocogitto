@@ -153,9 +153,9 @@ impl Repository {
             ));
         }
 
-        let head = self.get_head().unwrap();
+        let head = self.get_head_commit().unwrap();
         self.0
-            .tag_lightweight(name, &head, false)
+            .tag_lightweight(name, &head.into_object(), false)
             .map(|_| ())
             .map_err(|err| {
                 let cause_key = "cause:".red();
@@ -172,8 +172,8 @@ impl Repository {
         self.0.find_commit(to)?;
 
         let mut revwalk = self.0.revwalk()?;
-        revwalk.push(to)?;
-        revwalk.push(from)?;
+
+        revwalk.push_range(&format!("{}..{}", from, to))?;
 
         let mut commits: Vec<Git2Commit> = vec![];
 

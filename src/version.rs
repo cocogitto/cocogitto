@@ -107,8 +107,8 @@ impl VersionIncrement {
 #[cfg(test)]
 mod test {
     use crate::version::VersionIncrement;
-    use semver::Version;
     use anyhow::Result;
+    use semver::Version;
 
     // Auto version tests resides in test/ dir since it rely on git log
     // To generate the version
