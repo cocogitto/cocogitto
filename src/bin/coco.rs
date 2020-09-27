@@ -7,12 +7,14 @@ const APP_SETTINGS: &[AppSettings] = &[
     AppSettings::UnifiedHelpMessage,
     AppSettings::ColoredHelp,
     AppSettings::VersionlessSubcommands,
+    AppSettings::DeriveDisplayOrder,
 ];
 
 const SUBCOMMAND_SETTINGS: &[AppSettings] = &[
     AppSettings::UnifiedHelpMessage,
     AppSettings::ColoredHelp,
     AppSettings::VersionlessSubcommands,
+    AppSettings::DeriveDisplayOrder,
 ];
 
 fn main() -> Result<()> {
