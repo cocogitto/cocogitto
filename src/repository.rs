@@ -73,8 +73,10 @@ impl Repository {
                 .commit(Some("HEAD"), &sig, &sig, &message, &tree, &[])
                 .map_err(|err| anyhow!(err))
         } else {
-            self.print_statues()?;
-            Err(anyhow!("nothing to commit (use \"git add\" to track)"))
+            Err(anyhow!(
+                "{}, nothing to commit (use \"git add\" to track)",
+                self.statuses_display()?
+            ))
         }
     }
 
@@ -147,9 +149,10 @@ impl Repository {
 
     pub(crate) fn create_tag(&self, name: &str) -> Result<()> {
         if self.get_diff(true).is_some() {
-            self.print_statues()?;
             return Err(anyhow!(
-                "cannot create tag : changes needs to be commited".red()
+                "{}{}",
+                self.statuses_display()?,
+                "Cannot create tag : changes needs to be commited".red()
             ));
         }
 
@@ -207,8 +210,10 @@ impl Repository {
         Ok(Some(tree))
     }
 
-    fn print_statues(&self) -> Result<()> {
+    pub fn statuses_display(&self) -> Result<String> {
         let statuses = self.get_statuses()?;
+        //TODO : implement fmt display and use a proper statuses wrapper struct
+        let mut out = String::new();
         statuses.iter().for_each(|entry| {
             let status = match entry.status() {
                 s if s.contains(git2::Status::WT_NEW) => "Untracked: ",
@@ -223,10 +228,9 @@ impl Repository {
                 s if s.contains(git2::Status::INDEX_TYPECHANGE) => "Typechange:",
                 _ => "unknown git status",
             };
-            println!("{} {}", status.red(), entry.path().unwrap());
+            out.push_str(&format!("{} {}\n", status.red(), entry.path().unwrap()));
         });
-        println!();
-        Ok(())
+        Ok(out)
     }
 }
 

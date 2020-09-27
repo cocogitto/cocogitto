@@ -310,13 +310,10 @@ impl CocoGitto {
 
         // Fail if repo contains un-staged or un-committed changes
         if !statuses.is_empty() {
-            let statuses = statuses
-                .iter()
-                .map(|status| format!("{} : {:?}\n", status.path().unwrap(), status.status()))
-                .collect::<String>();
             return Err(anyhow!(
-                "Repository contains unstaged change :\n{}",
-                statuses
+                "{}\n{}",
+                "repository contains unstaged change (use `git add` to track)",
+                self.repository.statuses_display()?,
             ));
         }
 
