@@ -28,6 +28,7 @@ clap = { version = "^2", optional = true }
 assert_cmd = "0.10"
 predicates = "1"
 temp_testdir = "0.2.3"
+rand = "0.7.3"
 
 [features]
 default = ["cli"]

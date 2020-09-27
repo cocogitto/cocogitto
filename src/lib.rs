@@ -355,18 +355,20 @@ impl CocoGitto {
             Some(&origin),
             Some(&self.repository.get_head_commit_oid()?.to_string()),
         )?;
+
         let mut writter = ChangelogWriter {
             changelog,
             path: self.changelog_path.clone(),
             mode,
         };
 
-        writter.write()?;
+        writter.write()
+            .map_err(|err| anyhow!("Unable to write CHANGELOG.md : {}", err))?;
 
         self.repository.add_all()?;
-        self.repository.create_tag(&version_str)?;
         self.repository
             .commit(&format!("chore(version): {}", next_version))?;
+        self.repository.create_tag(&version_str)?;
 
         let bump = format!("{} -> {}", current_version, next_version).green();
         println!("Bumped version : {}", bump);
