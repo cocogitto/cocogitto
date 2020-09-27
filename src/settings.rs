@@ -7,6 +7,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 
 type CommitsMetadataSettings = HashMap<String, CommitConfig>;
+pub(crate) type AuthorSettings = Vec<AuthorSetting>;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub(crate) struct Settings {
@@ -15,6 +16,14 @@ pub(crate) struct Settings {
     pub hooks: Vec<String>,
     #[serde(default)]
     pub commit_types: CommitsMetadataSettings,
+    #[serde(default)]
+    pub authors: AuthorSettings,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct AuthorSetting {
+    pub signature: String,
+    pub username: String,
 }
 
 impl Default for Settings {
@@ -23,6 +32,7 @@ impl Default for Settings {
             changelog_path: Some(PathBuf::from("CHANGELOG.md")),
             commit_types: Default::default(),
             hooks: vec![],
+            authors: vec![],
         }
     }
 }

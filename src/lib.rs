@@ -20,7 +20,7 @@ use crate::commit::{CommitConfig, CommitMessage, CommitType};
 use crate::error::ErrorKind::Semver;
 use crate::filter::CommitFilters;
 use crate::repository::Repository;
-use crate::settings::Settings;
+use crate::settings::{AuthorSettings, Settings};
 use crate::version::VersionIncrement;
 use anyhow::Result;
 use chrono::Utc;
@@ -129,6 +129,7 @@ pub fn verify(author: Option<String>, message: &str) -> Result<()> {
 pub struct CocoGitto {
     repository: Repository,
     changelog_path: PathBuf,
+    authors: AuthorSettings,
 }
 
 impl CocoGitto {
@@ -139,9 +140,12 @@ impl CocoGitto {
             .changelog_path
             .unwrap_or_else(|| PathBuf::from("CHANGELOG.md"));
 
+        let authors = settings.authors;
+
         Ok(CocoGitto {
             repository,
             changelog_path,
+            authors,
         })
     }
 
@@ -414,12 +418,14 @@ impl CocoGitto {
         }
 
         let date = Utc::now().naive_utc().date().to_string();
+        let authors = self.authors.clone();
 
         Ok(Changelog {
             from,
             to,
             date,
             commits,
+            authors,
         })
     }
 

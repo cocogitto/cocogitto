@@ -188,18 +188,20 @@ impl Commit {
         })
     }
 
-    pub fn to_markdown(&self, colored: bool) -> String {
+    pub fn to_markdown(&self, colored: bool, username: Option<&str>) -> String {
         if colored {
             format!(
                 "{} - {} - {}\n",
                 self.shorthand.yellow(),
                 self.message.description,
-                self.author.blue()
+                username.unwrap_or(&self.author).blue()
             )
         } else {
             format!(
                 "{} - {} - {}\n",
-                self.shorthand, self.message.description, self.author
+                self.shorthand,
+                self.message.description,
+                username.unwrap_or(&self.author)
             )
         }
     }

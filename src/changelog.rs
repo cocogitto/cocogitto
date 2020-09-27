@@ -1,5 +1,6 @@
 use self::WriterMode::*;
 use crate::commit::{Commit, CommitType};
+use crate::settings::AuthorSettings;
 use crate::COMMITS_METADATA;
 use anyhow::Result;
 use git2::Oid;
@@ -17,6 +18,7 @@ pub(crate) struct Changelog {
     pub to: Oid,
     pub date: String,
     pub commits: Vec<Commit>,
+    pub authors: AuthorSettings,
 }
 
 pub(crate) struct ChangelogWriter {
@@ -88,8 +90,17 @@ impl Changelog {
             let metadata = COMMITS_METADATA.get(&commit_type).unwrap();
             if !commits.is_empty() {
                 out.push_str(&format!("\n### {}\n\n", metadata.changelog_title));
+
                 commits.iter().for_each(|commit| {
-                    out.push_str(&commit.to_markdown(colored));
+                    if let Some(author) = self
+                        .authors
+                        .iter()
+                        .find(|author| author.signature == commit.author)
+                    {
+                        out.push_str(&commit.to_markdown(colored, Some(&author.username)));
+                    } else {
+                        out.push_str(&commit.to_markdown(colored, None));
+                    }
                 });
             }
         };
