@@ -70,7 +70,7 @@ impl VersionIncrement {
                         next_version.increment_minor();
                         println!(
                             "Found feature commit {}, bumping to {}",
-                            commit.shorthand.blue(),
+                            commit.shorthand().blue(),
                             next_version.to_string().green()
                         )
                     }
@@ -78,7 +78,7 @@ impl VersionIncrement {
                         next_version.increment_patch();
                         println!(
                             "Found bug fix commit {}, bumping to {}",
-                            commit.shorthand.blue(),
+                            commit.shorthand().blue(),
                             next_version.to_string().green()
                         )
                     }
@@ -87,13 +87,13 @@ impl VersionIncrement {
                         println!(
                             "Found {} commit {} with type : {}",
                             "BREAKING CHANGE".red(),
-                            commit.shorthand.blue(),
+                            commit.shorthand().blue(),
                             commit_type.get_key_str().yellow()
                         )
                     }
                     (_, false) => println!(
                         "Skipping irrelevant commit {} with type : {}",
-                        commit.shorthand.blue(),
+                        commit.shorthand().blue(),
                         commit.message.commit_type.get_key_str().yellow()
                     ),
                 }

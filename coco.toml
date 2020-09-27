@@ -1,3 +1,5 @@
+github = "https://github.com/oknozor/cocogitto"
+
 [[authors]]
 signature = "Paul Delafosse"
 username = "oknozor"

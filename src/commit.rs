@@ -1,6 +1,8 @@
 use crate::commit::CommitType::*;
 use crate::error::ErrorKind::CommitFormat;
+use crate::AUTHORS;
 use crate::COMMITS_METADATA;
+use crate::REMOTE_URL;
 use anyhow::Result;
 use chrono::{NaiveDateTime, Utc};
 use colored::*;
@@ -11,7 +13,7 @@ use std::fmt;
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct Commit {
-    pub(crate) shorthand: String,
+    pub(crate) oid: String,
     pub(crate) message: CommitMessage,
     pub(crate) author: String,
     pub(crate) date: NaiveDateTime,
@@ -60,13 +62,7 @@ impl CommitConfig {
 
 impl Commit {
     pub(crate) fn from_git_commit(commit: &Git2Commit) -> Result<Self> {
-        let shorthand = commit
-            .as_object()
-            .short_id()
-            .unwrap()
-            .as_str()
-            .unwrap()
-            .to_string();
+        let oid = commit.id().to_string();
 
         let commit = commit.to_owned();
         let date = NaiveDateTime::from_timestamp(commit.time().seconds(), 0);
@@ -77,7 +73,7 @@ impl Commit {
 
         match message {
             Ok(message) => Ok(Commit {
-                shorthand,
+                oid,
                 message,
                 author,
                 date,
@@ -104,13 +100,17 @@ impl Commit {
                 let level = "ERROR".red().bold().to_string();
                 Err(anyhow!(CommitFormat {
                     level,
-                    shorthand,
+                    shorthand: oid[0..6].into(),
                     commit_message,
                     additional_info,
                     cause
                 }))
             }
         }
+    }
+
+    pub(crate) fn shorthand(&self) -> String {
+        self.oid[0..6].to_string()
     }
 
     // Todo extract to ParseError
@@ -188,20 +188,32 @@ impl Commit {
         })
     }
 
-    pub fn to_markdown(&self, colored: bool, username: Option<&str>) -> String {
+    pub fn to_markdown(&self, colored: bool) -> String {
         if colored {
             format!(
                 "{} - {} - {}\n",
-                self.shorthand.yellow(),
+                self.shorthand().yellow(),
                 self.message.description,
-                username.unwrap_or(&self.author).blue()
+                self.author.blue()
             )
         } else {
+            let username = AUTHORS
+                .iter()
+                .find(|author| author.signature == self.author);
+            let github_author = username.map(|username| {
+                format!(
+                    "[{}](https://github.com/{})",
+                    &username.username, &username.username
+                )
+            });
+            let oid = REMOTE_URL.as_ref().map(|remote_url| {
+                format!("[{}]({}/commit/{})", &self.oid[0..6], remote_url, &self.oid)
+            });
             format!(
-                "{} - {} - {}\n",
-                self.shorthand,
+                "{} - {} - {}\n\n",
+                oid.unwrap_or_else(|| self.oid[0..6].into()),
                 self.message.description,
-                username.unwrap_or(&self.author)
+                github_author.unwrap_or_else(|| self.author.to_string())
             )
         }
     }
@@ -266,7 +278,7 @@ impl Commit {
             "{}{} ({}) - {}\n\t{} {}\n\t{} {}\n\t{} {}\n",
             breaking_change,
             message_display,
-            &self.shorthand.bold(),
+            &self.oid.bold(),
             elapsed,
             author_format,
             &self.author,
@@ -329,6 +341,7 @@ impl ToString for CommitMessage {
         message
     }
 }
+
 impl From<&str> for CommitType {
     fn from(commit_type: &str) -> Self {
         match commit_type {

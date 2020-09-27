@@ -20,7 +20,7 @@ use crate::commit::{CommitConfig, CommitMessage, CommitType};
 use crate::error::ErrorKind::Semver;
 use crate::filter::CommitFilters;
 use crate::repository::Repository;
-use crate::settings::{AuthorSettings, Settings};
+use crate::settings::Settings;
 use crate::version::VersionIncrement;
 use anyhow::Result;
 use chrono::Utc;
@@ -28,6 +28,7 @@ use colored::*;
 use commit::Commit;
 use git2::{Oid, RebaseOptions};
 use semver::Version;
+use settings::AuthorSetting;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
@@ -46,6 +47,22 @@ lazy_static! {
             Settings::get(&repo).unwrap_or_default().commit_types()
         } else {
             Settings::default().commit_types()
+        }
+    };
+
+    static ref REMOTE_URL: Option<String> = {
+        if let Ok(repo) = Repository::open(".") {
+            Settings::get(&repo).unwrap_or_default().github
+        } else {
+            None
+        }
+    };
+
+        static ref AUTHORS: Vec<AuthorSetting> = {
+        if let Ok(repo) = Repository::open(".") {
+            Settings::get(&repo).unwrap_or_default().authors
+        } else {
+            vec![]
         }
     };
 }
@@ -114,7 +131,7 @@ pub fn verify(author: Option<String>, message: &str) -> Result<()> {
             println!(
                 "{}",
                 Commit {
-                    shorthand: "not committed".to_string(),
+                    oid: "not committed".to_string(),
                     message,
                     date: Utc::now().naive_utc(),
                     author: author.unwrap_or_else(|| "Unknown".to_string()),
@@ -129,7 +146,6 @@ pub fn verify(author: Option<String>, message: &str) -> Result<()> {
 pub struct CocoGitto {
     repository: Repository,
     changelog_path: PathBuf,
-    authors: AuthorSettings,
 }
 
 impl CocoGitto {
@@ -140,12 +156,9 @@ impl CocoGitto {
             .changelog_path
             .unwrap_or_else(|| PathBuf::from("CHANGELOG.md"));
 
-        let authors = settings.authors;
-
         Ok(CocoGitto {
             repository,
             changelog_path,
-            authors,
         })
     }
 
@@ -357,6 +370,7 @@ impl CocoGitto {
         let changelog = self.get_changelog(
             Some(&origin),
             Some(&self.repository.get_head_commit_oid()?.to_string()),
+            Some(next_version.to_string()),
         )?;
 
         let mut writter = ChangelogWriter {
@@ -381,11 +395,16 @@ impl CocoGitto {
     }
 
     pub fn get_colored_changelog(&self, from: Option<&str>, to: Option<&str>) -> Result<String> {
-        let mut changelog = self.get_changelog(from, to)?;
+        let mut changelog = self.get_changelog(from, to, None)?;
         Ok(changelog.markdown(true))
     }
 
-    pub(crate) fn get_changelog(&self, from: Option<&str>, to: Option<&str>) -> Result<Changelog> {
+    pub(crate) fn get_changelog(
+        &self,
+        from: Option<&str>,
+        to: Option<&str>,
+        tag_name: Option<String>,
+    ) -> Result<Changelog> {
         let from = self.resolve_from_arg(from)?;
         let to = self.resolve_to_arg(to)?;
 
@@ -418,14 +437,13 @@ impl CocoGitto {
         }
 
         let date = Utc::now().naive_utc().date().to_string();
-        let authors = self.authors.clone();
 
         Ok(Changelog {
             from,
             to,
             date,
             commits,
-            authors,
+            tag_name,
         })
     }
 

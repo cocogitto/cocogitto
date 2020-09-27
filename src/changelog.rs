@@ -1,6 +1,5 @@
 use self::WriterMode::*;
 use crate::commit::{Commit, CommitType};
-use crate::settings::AuthorSettings;
 use crate::COMMITS_METADATA;
 use anyhow::Result;
 use git2::Oid;
@@ -18,7 +17,7 @@ pub(crate) struct Changelog {
     pub to: Oid,
     pub date: String,
     pub commits: Vec<Commit>,
-    pub authors: AuthorSettings,
+    pub tag_name: Option<String>,
 }
 
 pub(crate) struct ChangelogWriter {
@@ -76,10 +75,13 @@ impl Changelog {
 
         let short_to = &self.to.to_string()[0..6];
         let short_from = &self.from.to_string()[0..6];
-        out.push_str(&format!(
-            "\n## {}..{} - {}\n\n",
-            short_from, short_to, self.date
-        ));
+        let version_title = self
+            .tag_name
+            .as_ref()
+            .cloned()
+            .unwrap_or(format!("{}..{}", short_from, short_to));
+
+        out.push_str(&format!("\n## {} - {}\n\n", version_title, self.date));
 
         let add_commit_section = |commit_type: &CommitType| {
             let commits: Vec<Commit> = self
@@ -92,15 +94,7 @@ impl Changelog {
                 out.push_str(&format!("\n### {}\n\n", metadata.changelog_title));
 
                 commits.iter().for_each(|commit| {
-                    if let Some(author) = self
-                        .authors
-                        .iter()
-                        .find(|author| author.signature == commit.author)
-                    {
-                        out.push_str(&commit.to_markdown(colored, Some(&author.username)));
-                    } else {
-                        out.push_str(&commit.to_markdown(colored, None));
-                    }
+                    out.push_str(&commit.to_markdown(colored));
                 });
             }
         };
@@ -150,9 +144,10 @@ mod test {
             from: Oid::from_str("5375e15770ddf8821d0c1ad393d315e243014c15")?,
             to: Oid::from_str("35085f20c5293fc8830e4e44a9bb487f98734f73")?,
             date: Utc::now().date().naive_local().to_string(),
+            tag_name: None,
             commits: vec![
                 Commit {
-                    shorthand: "2134".to_string(),
+                    oid: "5375e15770ddf8821d0c1ad393d315e243014c15".to_string(),
                     message: CommitMessage {
                         commit_type: CommitType::Feature,
                         scope: None,
@@ -165,7 +160,7 @@ mod test {
                     date: Utc::now().naive_local(),
                 },
                 Commit {
-                    shorthand: "4321".to_string(),
+                    oid: "5375e15770ddf8821d0c1ad393d315e243014c15".to_string(),
                     message: CommitMessage {
                         commit_type: CommitType::Feature,
                         scope: None,
@@ -184,8 +179,13 @@ mod test {
         let content = ch.markdown(false);
 
         // Assert
-        assert!(content.contains("2134 - this is a commit message - coco"));
-        assert!(content.contains("4321 - this is an other commit message - cogi"));
+        println!("{}", content);
+        assert!(content.contains(
+            "[5375e1](https://github.com/oknozor/cocogitto/commit/5375e15770ddf8821d0c1ad393d315e243014c15) - this is a commit message - coco"
+        ));
+        assert!(content.contains(
+            "[5375e1](https://github.com/oknozor/cocogitto/commit/5375e15770ddf8821d0c1ad393d315e243014c15) - this is an other commit message - cogi"
+        ));
         assert!(content.contains("## 5375e1..35085f -"));
         assert!(content.contains("### Features"));
         assert!(!content.contains("### Tests"));
@@ -200,6 +200,7 @@ mod test {
             to: Oid::from_str("35085f20c5293fc8830e4e44a9bb487f98734f73")?,
             date: Utc::now().date().naive_local().to_string(),
             commits: vec![],
+            tag_name: None,
         };
 
         // Act

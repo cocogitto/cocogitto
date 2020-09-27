@@ -12,12 +12,13 @@ pub(crate) type AuthorSettings = Vec<AuthorSetting>;
 #[derive(Debug, Deserialize, Serialize)]
 pub(crate) struct Settings {
     pub changelog_path: Option<PathBuf>,
+    pub github: Option<String>,
     #[serde(default)]
     pub hooks: Vec<String>,
     #[serde(default)]
-    pub commit_types: CommitsMetadataSettings,
-    #[serde(default)]
     pub authors: AuthorSettings,
+    #[serde(default)]
+    pub commit_types: CommitsMetadataSettings,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -33,6 +34,7 @@ impl Default for Settings {
             commit_types: Default::default(),
             hooks: vec![],
             authors: vec![],
+            github: None,
         }
     }
 }
