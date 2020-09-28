@@ -30,11 +30,14 @@ release() {
       bin_folder="release"
    fi
 
-   bin_path="${COCOGITTO_HOME}/target/${bin_folder}/cocogitto"
-   chmod +x "$bin_path"
+   coco_bin_path="${COCOGITTO_HOME}/target/${bin_folder}/coco"
+   cog_bin_path="${COCOGITTO_HOME}/target/${bin_folder}/cog"
+   chmod +x "$coco_bin_path"
+   chmod +x "$cog_bin_path"
    mkdir -p "$TAR_DIR" 2> /dev/null || true
 
-   cp "$bin_path" "$TAR_DIR"
+   cp "$coco_bin_path" "$TAR_DIR"
+   cp "cog_bin_path" "$TAR_DIR"
 
    cd "$TAR_DIR"
    tar -czf cocogitto.tar.gz *
