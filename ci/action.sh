@@ -23,7 +23,7 @@ release() {
 
    if [ -n "$target" ]; then
       cargo install cross 2> /dev/null || true
-      cross build --release --target "$target" --bin cocogitto
+      cross build --release --target "$target"
       bin_folder="${target}/release"
    else
       cargo build --release
