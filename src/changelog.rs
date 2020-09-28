@@ -1,8 +1,7 @@
 use self::WriterMode::*;
 use crate::commit::{Commit, CommitType};
-use crate::COMMITS_METADATA;
+use crate::{OidOf, COMMITS_METADATA};
 use anyhow::Result;
-use git2::Oid;
 use std::fs;
 use std::path::PathBuf;
 
@@ -13,8 +12,8 @@ pub enum WriterMode {
 }
 
 pub(crate) struct Changelog {
-    pub from: Oid,
-    pub to: Oid,
+    pub from: OidOf,
+    pub to: OidOf,
     pub date: String,
     pub commits: Vec<Commit>,
     pub tag_name: Option<String>,
@@ -73,8 +72,8 @@ impl Changelog {
     pub(crate) fn markdown(&mut self, colored: bool) -> String {
         let mut out = String::new();
 
-        let short_to = &self.to.to_string()[0..6];
-        let short_from = &self.from.to_string()[0..6];
+        let short_to = &self.to;
+        let short_from = &self.from;
         let version_title = self
             .tag_name
             .as_ref()
@@ -133,6 +132,7 @@ impl Changelog {
 mod test {
     use crate::changelog::Changelog;
     use crate::commit::{Commit, CommitMessage, CommitType};
+    use crate::OidOf;
     use anyhow::Result;
     use chrono::Utc;
     use git2::Oid;
@@ -141,8 +141,8 @@ mod test {
     fn should_generate_changelog() -> Result<()> {
         // Arrange
         let mut ch = Changelog {
-            from: Oid::from_str("5375e15770ddf8821d0c1ad393d315e243014c15")?,
-            to: Oid::from_str("35085f20c5293fc8830e4e44a9bb487f98734f73")?,
+            from: OidOf::Other(Oid::from_str("5375e15770ddf8821d0c1ad393d315e243014c15")?),
+            to: OidOf::Other(Oid::from_str("35085f20c5293fc8830e4e44a9bb487f98734f73")?),
             date: Utc::now().date().naive_local().to_string(),
             tag_name: None,
             commits: vec![
@@ -196,8 +196,8 @@ mod test {
     fn should_generate_empty_changelog() -> Result<()> {
         // Arrange
         let mut ch = Changelog {
-            from: Oid::from_str("5375e15770ddf8821d0c1ad393d315e243014c15")?,
-            to: Oid::from_str("35085f20c5293fc8830e4e44a9bb487f98734f73")?,
+            from: OidOf::Other(Oid::from_str("5375e15770ddf8821d0c1ad393d315e243014c15")?),
+            to: OidOf::Other(Oid::from_str("35085f20c5293fc8830e4e44a9bb487f98734f73")?),
             date: Utc::now().date().naive_local().to_string(),
             commits: vec![],
             tag_name: None,

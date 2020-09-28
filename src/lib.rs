@@ -28,6 +28,8 @@ use colored::*;
 use commit::Commit;
 use git2::{Oid, RebaseOptions};
 use semver::Version;
+use serde::export::fmt::Display;
+use serde::export::Formatter;
 use settings::AuthorSetting;
 use std::collections::HashMap;
 use std::fs::File;
@@ -410,13 +412,16 @@ impl CocoGitto {
 
         let mut commits = vec![];
 
+        let from_oid = from.get_oid();
+        let to_oid = to.get_oid();
+
         for commit in self
             .repository
-            .get_commit_range(from, to)
+            .get_commit_range(from_oid, to_oid)
             .map_err(|err| anyhow!("Could not get commit range {}...{} : {}", from, to, err))?
         {
             // We skip the origin commit (ex: from 0.1.0 to 1.0.0)
-            if commit.id() == from {
+            if commit.id() == from_oid {
                 break;
             }
 
@@ -448,35 +453,63 @@ impl CocoGitto {
     }
 
     // TODO : revparse
-    fn resolve_to_arg(&self, to: Option<&str>) -> Result<Oid> {
+    fn resolve_to_arg(&self, to: Option<&str>) -> Result<OidOf> {
         if let Some(to) = to {
             self.get_raw_oid_or_tag_oid(to)
         } else {
             self.repository
                 .get_head_commit_oid()
-                .or_else(|_err| self.repository.get_first_commit())
+                .map(OidOf::Head)
+                .or_else(|_err| self.repository.get_first_commit().map(OidOf::Other))
         }
     }
 
     // TODO : revparse
-    fn resolve_from_arg(&self, from: Option<&str>) -> Result<Oid> {
+    fn resolve_from_arg(&self, from: Option<&str>) -> Result<OidOf> {
         if let Some(from) = from {
             self.get_raw_oid_or_tag_oid(from)
                 .map_err(|err| anyhow!("Could not resolve from arg {} : {}", from, err))
         } else {
             self.repository
-                .get_latest_tag_oid()
-                .or_else(|_err| self.repository.get_first_commit())
+                .get_latest_tag_oidof()
+                .or_else(|_err| self.repository.get_first_commit().map(OidOf::Other))
         }
     }
 
-    fn get_raw_oid_or_tag_oid(&self, input: &str) -> Result<Oid> {
+    fn get_raw_oid_or_tag_oid(&self, input: &str) -> Result<OidOf> {
         if let Ok(_version) = Version::parse(input) {
             self.repository
                 .resolve_lightweight_tag(input)
+                .map(|oid| OidOf::Tag(input.to_owned(), oid))
                 .map_err(|err| anyhow!("tag {} not found : {} ", input, err))
         } else {
-            Oid::from_str(input).map_err(|err| anyhow!("`{}` is not a valid oid : {}", input, err))
+            Oid::from_str(input)
+                .map(OidOf::Other)
+                .map_err(|err| anyhow!("`{}` is not a valid oid : {}", input, err))
+        }
+    }
+}
+
+enum OidOf {
+    Tag(String, Oid),
+    Head(Oid),
+    Other(Oid),
+}
+
+impl OidOf {
+    fn get_oid(&self) -> Oid {
+        match self {
+            OidOf::Tag(_, v) | OidOf::Head(v) | OidOf::Other(v) => v.to_owned(),
+        }
+    }
+}
+
+impl Display for OidOf {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            OidOf::Tag(tag, _) => write!(f, "{}", tag),
+            OidOf::Head(_) => write!(f, "HEAD"),
+            OidOf::Other(oid) => write!(f, "{}", &oid.to_string()[0..6]),
         }
     }
 }

@@ -19,7 +19,7 @@ fn verify_ok() -> Result<()> {
     command.arg("verify").arg(message);
 
     command.assert().success().stdout(format!(
-        r#"a commitw message (not committed) - now
+        r#"a commit message (not committed) - now
 	Author: {username}
 	Type: chore
 	Scope: none

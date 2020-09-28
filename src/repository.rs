@@ -1,4 +1,5 @@
 use crate::error::ErrorKind::Git;
+use crate::OidOf;
 use anyhow::Result;
 use colored::Colorize;
 use git2::{
@@ -126,7 +127,16 @@ impl Repository {
 
     pub(crate) fn get_latest_tag_oid(&self) -> Result<Oid> {
         self.get_latest_tag()
-            .and_then(|oid| self.resolve_lightweight_tag(&oid))
+            .and_then(|tag| self.resolve_lightweight_tag(&tag))
+            .map_err(|err| anyhow!("Could not resolve latest tag : {}", err))
+    }
+
+    pub(crate) fn get_latest_tag_oidof(&self) -> Result<OidOf> {
+        self.get_latest_tag()
+            .and_then(|tag| {
+                self.resolve_lightweight_tag(&tag)
+                    .map(|oid| OidOf::Tag(tag, oid))
+            })
             .map_err(|err| anyhow!("Could not resolve latest tag : {}", err))
     }
 
