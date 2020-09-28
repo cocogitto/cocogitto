@@ -2,6 +2,30 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.30.0 - 2020-09-28
+
+
+### Features
+
+[d71388](https://github.com/oknozor/cocogitto/commit/d7138865ee4d57a7b8bc18d8fcb73d43feedf504) - improve changelog title formatting - [oknozor](https://github.com/oknozor)
+
+
+### Miscellaneous Chores
+
+[a6fba9](https://github.com/oknozor/cocogitto/commit/a6fba9c4088032e5979876c4e6a829e7017a4496) - remove test generated dir - [oknozor](https://github.com/oknozor)
+
+
+### Tests
+
+[9da732](https://github.com/oknozor/cocogitto/commit/9da7321822225d823bf77ef7a06c579017b55cd3) - add verify it tests - [oknozor](https://github.com/oknozor)
+
+
+### Continuous Integration
+
+[d0d0ae](https://github.com/oknozor/cocogitto/commit/d0d0ae928069a1cdb9cb81f4e483f93c4abc29b0) - fix publish action script - [oknozor](https://github.com/oknozor)
+
+
+- - -
 ## 0.29.0 - 2020-09-27
 
 
