@@ -25,6 +25,7 @@ const SUBCOMMAND_SETTINGS: &[AppSettings] = &[
 
 const BUMP: &str = "bump";
 const CHECK: &str = "check";
+const EDIT: &str = "edit";
 const LOG: &str = "log";
 const VERIFY: &str = "verify";
 const CHANGELOG: &str = "changelog";
@@ -34,13 +35,11 @@ fn main() -> Result<()> {
     let check_command = SubCommand::with_name(CHECK)
         .settings(SUBCOMMAND_SETTINGS)
         .about("Verify all commit message against the conventional commit specification")
-        .arg(
-            Arg::with_name("edit")
-                .help("Interactively rename invalid commit message")
-                .short("e")
-                .long("edit"),
-        )
         .display_order(1);
+    let edit_command = SubCommand::with_name(EDIT)
+        .settings(SUBCOMMAND_SETTINGS)
+        .about("Interactively rename invalid commit message")
+        .display_order(2);
 
     let log_command = SubCommand::with_name(LOG)
         .settings(SUBCOMMAND_SETTINGS)
@@ -81,13 +80,13 @@ fn main() -> Result<()> {
                 .short("e")
                 .long("no-error"),
         )
-        .display_order(2);
+        .display_order(3);
 
     let verify_command = SubCommand::with_name(VERIFY)
         .settings(SUBCOMMAND_SETTINGS)
         .about("Verify a single commit message")
         .arg(Arg::with_name("message").help("The commit message"))
-        .display_order(3);
+        .display_order(4);
 
     let changelog_command = SubCommand::with_name(CHANGELOG)
         .settings(SUBCOMMAND_SETTINGS)
@@ -106,7 +105,7 @@ fn main() -> Result<()> {
                 .long("to")
                 .takes_value(true),
         )
-        .display_order(4);
+        .display_order(5);
 
     let bump_command = SubCommand::with_name(BUMP)
         .settings(SUBCOMMAND_SETTINGS)
@@ -147,7 +146,7 @@ fn main() -> Result<()> {
                 .long("minor")
                 .required_unless_one(&["version", "auto", "patch", "major"]),
         )
-        .display_order(5);
+        .display_order(6);
 
     let init_subcommand = SubCommand::with_name(INIT)
         .settings(SUBCOMMAND_SETTINGS)
@@ -164,7 +163,7 @@ fn main() -> Result<()> {
         .author("Paul D. <paul.delafosse@protonmail.com>")
         .about("A conventional commit compliant, changelog and commit generator")
         .long_about("Conventional Commit Git Terminal Overlord is a tool to help you use the conventional commit specification")
-        .subcommands(vec![verify_command, init_subcommand, check_command, log_command, changelog_command, bump_command])
+        .subcommands(vec![verify_command, init_subcommand, check_command, edit_command, log_command, changelog_command, bump_command])
         .get_matches();
 
     if let Some(subcommand) = matches.subcommand_name() {
@@ -208,12 +207,11 @@ fn main() -> Result<()> {
 
             CHECK => {
                 let cocogitto = CocoGitto::get()?;
-                let subcommand = matches.subcommand_matches(CHECK).unwrap();
-                if subcommand.is_present("edit") {
-                    cocogitto.check_and_edit()?;
-                } else {
-                    cocogitto.check()?
-                }
+                cocogitto.check()?
+            }
+            EDIT => {
+                let cocogitto = CocoGitto::get()?;
+                cocogitto.check_and_edit()?;
             }
             LOG => {
                 let cocogitto = CocoGitto::get()?;

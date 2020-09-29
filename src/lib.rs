@@ -172,12 +172,12 @@ impl CocoGitto {
 
     pub fn check_and_edit(&self) -> Result<()> {
         let from = self.repository.get_first_commit()?;
-        let head = self.repository.get_head_commit_oid()?;
-        let commits = self.repository.get_commit_range(from, head)?;
+        let head = self.repository.get_head_commit()?;
+        let commits = self.repository.get_commit_range(from, head.id())?;
         let editor = std::env::var("EDITOR")?;
         let dir = TempDir::new("cocogito")?;
 
-        let mut errored_commits: Vec<Oid> = commits
+        let errored_commits: Vec<Oid> = commits
             .iter()
             .map(|commit| {
                 let conv_commit = Commit::from_git_commit(&commit);
@@ -188,7 +188,7 @@ impl CocoGitto {
             .collect();
 
         // Get the last commit oid on the list as a starting point for our rebase
-        let last_errored_commit = errored_commits.pop();
+        let last_errored_commit = errored_commits.last();
         if let Some(last_errored_commit) = last_errored_commit {
             let commit = self
                 .repository
@@ -203,6 +203,7 @@ impl CocoGitto {
 
             let commit = self.repository.0.find_annotated_commit(rebase_start)?;
             let mut options = RebaseOptions::new();
+
             let mut rebase =
                 self.repository
                     .0
