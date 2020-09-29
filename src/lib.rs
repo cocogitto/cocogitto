@@ -116,13 +116,10 @@ pub fn init<S: AsRef<Path> + ?Sized>(path: &S) -> Result<()> {
         .add_all()
         .map_err(|err| anyhow!("Could not add file to repository index : {}", err))?;
 
-    let message = if is_init_commit {
-        "chore: init commit".to_string()
-    } else {
-        "chore: add cocogitto config".to_string()
-    };
+    if is_init_commit {
+        repository.commit("chore: initial commit")?;
+    }
 
-    repository.commit(&message)?;
     Ok(())
 }
 
