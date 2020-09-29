@@ -1,4 +1,5 @@
 use anyhow::Result;
+use cocogitto::CONFIG_PATH;
 use rand::Rng;
 use std::process::{Command, Stdio};
 
@@ -76,6 +77,6 @@ pub fn assert_tag(tag: &str) -> Result<()> {
 
 #[allow(dead_code)]
 pub fn create_empty_config() -> Result<()> {
-    std::fs::File::create("coco.toml")?;
+    std::fs::File::create(CONFIG_PATH)?;
     Ok(())
 }

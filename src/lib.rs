@@ -39,6 +39,7 @@ use std::process::{exit, Command, Stdio};
 use tempdir::TempDir;
 
 pub type CommitsMetadata = HashMap<CommitType, CommitConfig>;
+pub const CONFIG_PATH: &str = "cog.toml";
 
 lazy_static! {
     // This cannot be carried by `Cocogitto` struct since we need it to be available in `Changelog`,
@@ -97,15 +98,15 @@ pub fn init<S: AsRef<Path> + ?Sized>(path: &S) -> Result<()> {
     };
 
     let settings = Settings::default();
-    let settings_path = path.join("coco.toml");
+    let settings_path = path.join(CONFIG_PATH);
     if settings_path.exists() {
-        eprint!("Found coco.toml in {:?}, Nothing to do", &path);
+        eprint!("Found {} in {:?}, Nothing to do", CONFIG_PATH, &path);
         exit(1);
     } else {
         std::fs::write(
             &settings_path,
             toml::to_string(&settings)
-                .map_err(|err| anyhow!("Failed to serialize coco.toml : {}", err))?,
+                .map_err(|err| anyhow!("Failed to serialize {} : {}", CONFIG_PATH, err))?,
         )
         .map_err(|err| anyhow!("Could not write file `{:?}` : {}", &settings_path, err))?;
     }

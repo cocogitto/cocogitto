@@ -1,5 +1,6 @@
 use anyhow::Result;
 use assert_cmd::prelude::*;
+use cocogitto::CONFIG_PATH;
 use helper::*;
 use std::process::Command;
 use temp_testdir::TempDir;
@@ -54,7 +55,7 @@ fn fail_if_config_exist() -> Result<()> {
     std::env::set_current_dir(&temp_dir)?;
     helper::git_init("test_repo_existing")?;
     std::fs::write(
-        &temp_dir.join("test_repo_existing").join("coco.toml"),
+        &temp_dir.join("test_repo_existing").join(CONFIG_PATH),
         "[hooks]",
     )?;
     helper::git_commit("chore: test commit")?;

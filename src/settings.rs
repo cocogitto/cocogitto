@@ -1,6 +1,6 @@
 use crate::commit::{CommitConfig, CommitType};
 use crate::repository::Repository;
-use crate::CommitsMetadata;
+use crate::{CommitsMetadata, CONFIG_PATH};
 use anyhow::Result;
 use config::{Config, File};
 use std::collections::HashMap;
@@ -44,7 +44,7 @@ impl Settings {
     pub(crate) fn get(repository: &Repository) -> Result<Self> {
         match repository.get_repo_dir() {
             Some(repo_path) => {
-                let settings_path = repo_path.join("coco.toml");
+                let settings_path = repo_path.join(CONFIG_PATH);
                 if settings_path.exists() {
                     let mut s = Config::new();
                     s.merge(File::from(settings_path))?;
