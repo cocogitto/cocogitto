@@ -22,7 +22,7 @@ release() {
    rm -rf "${COCOGITTO_HOME}/target" 2> /dev/null || true
 
    if [ -n "$target" ]; then
-      cargo install cross 2> /dev/null || true
+      cargo install --version 0.1.16 cross 2> /dev/null || true
       cross build --release --target "$target"
       bin_folder="${target}/release"
    else
@@ -37,7 +37,7 @@ release() {
    mkdir -p "$TAR_DIR" 2> /dev/null || true
 
    cp "$coco_bin_path" "$TAR_DIR"
-   cp "cog_bin_path" "$TAR_DIR"
+   cp "$cog_bin_path" "$TAR_DIR"
 
    cd "$TAR_DIR"
    tar -czf cocogitto.tar.gz *

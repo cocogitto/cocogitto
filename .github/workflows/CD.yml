@@ -27,6 +27,10 @@ jobs:
             target: aarch64-linux-android
 
     steps:
+      - name: Install libssl-dev
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: sudo apt-get update && sudo apt-get install libssl-dev
+
       - uses: hecrj/setup-rust-action@v1.3.3
         with:
           rust-version: nightly
@@ -43,6 +47,6 @@ jobs:
         uses: svenstaro/upload-release-action@v1-release
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/tar/cocogito.tar.gz
+          file: target/tar/cocogitto.tar.gz
           tag: ${{ github.ref }}
           asset_name: cocogitto-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target }}.tar.gz
