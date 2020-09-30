@@ -27,15 +27,18 @@ jobs:
             target: aarch64-linux-android
 
     steps:
-      - uses: hecrj/setup-rust-action@v1.3.1
+      - uses: hecrj/setup-rust-action@v1.3.3
         with:
           rust-version: nightly
+
       - uses: actions/checkout@v1
       - name: Build
         run: ci/action.sh release ${{ matrix.target }}
+
       - name: Get the version
         id: get_version
         run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
+
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v1-release
         with:
