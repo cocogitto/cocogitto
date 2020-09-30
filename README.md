@@ -19,7 +19,7 @@ to provide what you would expect from such tools plus some original features.
 
 ### Goals
 
-- Make using the conventional commit easy and fun.
+- Make using the conventional commit spec easy and fun.
 - Enable people to focus on their work instead of correcting small mistakes and typo.
 - Correctness regarding semver and conventional commit.
 - Automate things when possible (ex : bumping versions).
@@ -62,7 +62,7 @@ cargo install cocogitto
 
 ## Configuration
 
-All configuration values are optional, take a look at [cog.toml][cog.toml] to know more.
+All configuration values are optional, take a look at [cog.toml](cog.toml) to know more.
 
 ## Binaries
 
@@ -87,12 +87,16 @@ Conventional commits are structured as follow :
 [optional footer(s)]
 ```
 
-Every `coco` command follows the same structure : `coco {type} {message} [optional scope] [optional body] [optional footer]`
+All `coco` subcommands follows the same structure : 
+
+```
+coco {type} {message} [optional scope] [optional body] [optional footer]
+```
+
 The only difference you need to remember is that `coco` commit scope comes after the commit description. This allows 
 to use positional arguments instead of typing flags (ex: `coco -t {type} -s {scope} -m {message}... and so on`)
 
-For instance if you want to create the following commit : `feat: add awesome feature` you would type the 
-following command:
+For instance if you want to create the following commit : `feat: add awesome feature` you would run this :
 
 ```shell script
 coco feat "add awesome feature"
