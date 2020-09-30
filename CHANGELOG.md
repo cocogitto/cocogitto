@@ -2,6 +2,20 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.32.3 - 2020-09-30
+
+
+### Bug Fixes
+
+[1c0d2e](https://github.com/oknozor/cocogitto/commit/1c0d2e9398323e6d4fc778309bed242040aa55b5) - fix openssl missing in CD - [oknozor](https://github.com/oknozor)
+
+
+### Documentation
+
+[da6f63](https://github.com/oknozor/cocogitto/commit/da6f63db9577a9e4ec9d3b10c3022e80be2d0f69) - tag, conventional commit and license badges to readme - [oknozor](https://github.com/oknozor)
+
+
+- - -
 ## 0.32.2 - 2020-09-30
 
 
