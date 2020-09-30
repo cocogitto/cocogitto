@@ -2,6 +2,37 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.32.1 - 2020-09-30
+
+
+### Documentation
+
+[b223f7](https://github.com/oknozor/cocogitto/commit/b223f7bec7f2f9df2189e56ffc7177ffa49d6440) - rewritte readme completely - [oknozor](https://github.com/oknozor)
+
+
+### Bug Fixes
+
+[7f04a9](https://github.com/oknozor/cocogitto/commit/7f04a985b05be36dff170795767a7ad4e696eb4d) - fix ci cross build command bin args - [oknozor](https://github.com/oknozor)
+
+
+### Refactoring
+
+[d4aa61](https://github.com/oknozor/cocogitto/commit/d4aa61b20ee0d5dd2299f8cb97a75186c75a64f5) - change config name to cog.toml - [oknozor](https://github.com/oknozor)
+
+
+### Features
+
+[fc7420](https://github.com/oknozor/cocogitto/commit/fc74207b943bfd1b3e36eab80f943e349b0eef36) - move check edit to dedicated subcommand and fix rebase - [oknozor](https://github.com/oknozor)
+
+[1028d0](https://github.com/oknozor/cocogitto/commit/1028d0bee3c12756fd429787a88232bdeae9dc81) - remove config commit on init existing repo - [oknozor](https://github.com/oknozor)
+
+
+### Miscellaneous Chores
+
+[72bd1e](https://github.com/oknozor/cocogitto/commit/72bd1e4190120b189db64ea2b63318839b219250) - update Cargo.toml - [oknozor](https://github.com/oknozor)
+
+
+- - -
 ## 0.30.0 - 2020-09-28
 
 
