@@ -3,58 +3,79 @@
 [![codecov](https://codecov.io/gh/oknozor/cocogitto/branch/master/graph/badge.svg)](https://codecov.io/gh/oknozor/cocogitto)
 
 ![logo](docs/assets/logo.png) 
-*Please if you are a graphic designer, help me with the logo*
 
-Cocogitto is a set of cli tool for the [conventional commit](https://www.conventionalcommits.org/en/v1.0.0/) 
+Cocogitto is a set of cli tools for the [conventional commit](https://www.conventionalcommits.org/en/v1.0.0/) 
 and [semver](https://semver.org/) specifications.  
 
 ## Foreword
 
 There are plenty of tools listed on the [conventional commit web site](https://www.conventionalcommits.org/en/v1.0.0/#tooling-for-conventional-commits) 
 to help you generate changelog, git hooks, commit template etc,
-Some of them are specifically designed for the conventional commit specification and some of them are general purpose.
+Some of them are specifically designed for the conventional commit specification, and some of them are general purpose.
 Cocogitto was designed to help you respect the conventional and semver standard and is not intended to be use in any other context.  
 
-It strive to be a simple, modern and fast command line interface and leverage [git2-rs](https://github.com/rust-lang/git2-rs)
-to provide what you would expect from such tool plus some original features.
+It strives to be a set of simples, moderns and fast command line interfaces and leverage [git2-rs](https://github.com/rust-lang/git2-rs)
+to provide what you would expect from such tools plus some original features.
+
+### Goals
+
+- Make using the conventional commit easy and fun.
+- Enable people to focus on their work instead of correcting small mistakes and typo.
+- Correctness regarding semver and conventional commit.
+- Automate things when possible (ex : bumping versions).
+
+### Non goals
+
+- Coccogitto is not a `git` remplacement. It uses some of libgit2 but  only to provide
+features related to the conventional commit specification. Anything else shall be done with `git`. 
+- Supporting other commit convention or git workflow.   
+
+
 
 ## Table of contents
 - [Configuration](#Configuration)
-- [Commands list](#Commands-list)
 - [Installation](#Installation)
-- [Features](#Features)
-    - [Creating conventional commits](#Creating-conventional-commits)
-    - [Adding custom commit types](#Adding-custom-commit-types)
-    - [Checking a repository](#Checking-a-repository)
-    - [Interactive rebase](#Interactive-rebase)
-    - [Verifying raw messages](#Verifying-raw-messages)
-    - [Cog log](#Cog-log)
-    - [Generating changelogs](#Generating-changelogs)
-        - [To stdout](#To-stdout)
-        - [To CHANGELOG.md](#To-CHANGELOG.md)
-    - [Installing commit hooks](#Installing-commit-hooks)
+- [Binaries](#Binaries)
+- [Coco Commits](#Coco-Commits)
+    - [Breaking changes](#Breaking-changes)
+- [Cog commands](#Cog-commands)
+    - [Initialize a project](#Initialize-a-project)
+        - [New repository](#New-repository)
+        - [Existing repository](#Existing-repository)
+    - [Check commit history](#Check-commit-history)
+    - [Edit commit history](#Edit-commit-history)
+    - [Conventional commit logs](#Conventional-commit-logs)
+    - [Generate changelogs](#Generate-changelogs)
+    - [Auto bump](#Auto-bump)
+    - [Run pre-bump hook](#Run-pre-bump-hook)
+    - [Install pre-commit hook](#Install-pre-commit-hook)
 - [Contributing](#Contributing)
 - [Licence](#Licence)
 
+## Installation
+
+At the moment cocogitto is only available via [crates.io](https://crates.io/crates/cocogitto)
+
+```
+cargo install cocogitto
+```
 
 ## Configuration
 
-*Comming soon**
+All configuration values are optional, take a look at [cog.toml][cog.toml] to know more.
 
-## Command list 
+## Binaries
 
-*Comming soon**
+At the moment Cocogitto comes with two binaries `coco` and `cog`. 
 
-## Installation
+- `coco` is used to create commits respecting the conventional commit spec.
+- `cog` does everything else : check your 
+repo history against the spec, edit malformed commit messages, generate changelog and bump versions etc.
 
-*Comming soon*
+## Coco Commits
 
-## Features 
-
-Cocogitto command line interface (`cog`) is composed of a set of subcommands, to know more about one run 
-`cog {subcommand} --help`. 
- 
-### Creating conventional commits
+`coco` allows you to easily create commits respecting the conventional specification. It comes with a set of sub-commands
+named after conventional commit types : `style`, `build`, `refactor`, `ci`, `fix`, `test`, `perf`, `chore`, `feat`, `revert`, `docs`.    
 
 Conventional commits are structured as follow : 
 
@@ -66,142 +87,237 @@ Conventional commits are structured as follow :
 [optional footer(s)]
 ```
 
-By default `cog` allow you to create commit of the following types :
+Every `coco` command follows the same structure : `coco {type} {message} [optional scope] [optional body] [optional footer]`
+The only difference you need to remember is that `coco` commit scope comes after the commit description. This allows 
+to use positional arguments instead of typing flags (ex: `coco -t {type} -s {scope} -m {message}... and so on`)
 
-| Commit type                   | Subcommand        |
-|:---                           | :---              |
-| Feature                       | `cog feat`        | 
-| Bug fix                       | `cog fix`         | 
-| Chore                         | `cog chore`       |
-| Revert                        | `cog revert`      |
-| Performances                  | `cog perf`        |
-| Documentation                 | `cog docs`        |
-| Style                         | `cog style`       |
-| Refactoring                   | `cog refactor`    |
-| Test                          | `cog test`        |
-| Build                         | `cog build`       |
-| Continuous integration        | `cog ci`          |
-
-
-To create a conventional commit use `git add` as you would normaly do. You can then create the commit with the desired commit type subcommand.
+For instance if you want to create the following commit : `feat: add awesome feature` you would type the 
+following command:
 
 ```shell script
-cog {type} {scope} {message} {body} {footer}
+coco feat "add awesome feature"
 ```
 
-As described in the specification, `scope`, `body` and `footer` are optional. A minimal commit
-would look like this : 
+### Breaking changes
+
+All `coco` argument are positional except the optional `-B` flag used to create breaking changes commits : 
 
 ```shell script
-cog feat "add operator overloading"
+coco fix -B "add fix a nasty bug" cli
 ```
 
-This would produce a commit with the following message: `feat: add operator overloading`
+This would create the following [breaking change](https://www.conventionalcommits.org/en/v1.0.0/#commit-message-with--to-draw-attention-to-breaking-change) 
+commit : `fix!: fix a nasty bug`.
 
-**Note:** For the sake of conciseness and productivity, commit commands have not been grouped under a `commit` subcommand and commit args are positional only.
-
-
-### Adding custom commit types
-
-*Comming soon*
+`coco` use the `!` notation to denote breaking changes commit because it can be easily seen in your git log, however if
+you manually create breaking changes commits with [the footer notation](https://www.conventionalcommits.org/en/v1.0.0/#commit-message-with-description-and-breaking-change-footer)
+cocogitto tools will still pick them.
 
 
-### Checking a repository
+## Cog commands
 
-Before generating changelog and creating automatic version you might want to check that 
-your git logs repect the conventional commit specification : 
+The `cog` binary is used for everything that is not commit the available commands are the following : 
+
+| Command     | Description | Required flags |
+| :---        | :----       |:---           |  
+| `init`      | Create an empty repository with `cog.toml` template config an initial commit ||
+| `check`     | Check current repository commit message ||
+| `edit`      | Interactive rebase of all non-conventional commit message ||
+| `log`       | Like `git log` but for conventional commits ||
+| `verify`    | Verify an input string against the conventional commit specification ||
+| `changelog` | Generate a changelog to stdout|`--from {revspec}`, `--to {revspec}` |
+| `bump`      | Bump current version, append to changelog file and create a version commit| `--auto`, `--major`, `--minor`, `--patch`, `--version <version>`|
+
+To know more about a specific `cog` subcommand one run `cog {subcommand} --help`. 
+
+
+### Initialize a project
+
+### New repository
 
 ```shell script
-cog check
+mkdir my_repo && cd my_repo
+cog init
 ```
 
-![cog-log](docs/assets/cog_log.png) 
+`cog init` works like `git init` except it create a template `cog.toml` config file, 
+and a default init commit with the following message : `chore: initial commit`.
 
-*Ouput example from [toml-bombadil](https://github.com/oknozor/toml-bombadil) project*
-
-
-### Interactive rebase
-
-Once you have spotted malformed commit message you can directly edit them :
+Optionally you can specify the path of the repository you want to create :
 
 ```shell script
-cog check --edit
+cog init my_repo
 ```
 
-[![asciicast](https://asciinema.org/a/lv5c6SeB2J6MWioafh12EriAZ.svg)](https://asciinema.org/a/lv5c6SeB2J6MWioafh12EriAZ)
+### Existing repository
 
-Here instead of just displaying errors, cocogitto will open invalid commit messages with `$EDITOR` and let you edit them to match the specification. Once done save the new message and edit the next errored one. 
+Running `cog init` on an existing repository will just create a template configuration without creating any commit :
 
-Cocogitto will then perform a git rebase to rewrite edited commit messages. It is recommended to use `git push --force-with-lease` to synchronize your changes with your upstream branch.
+```shell script
+git init my_repo && cd my_repo
+cog init
+```
+
+```
+❯ git status
+On branch master
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+	new file:   cog.toml
+```
+
+### Check commit history
+
+Running `cog check` will check your commit history against the conventional commit specification : 
+
+```
+❯ cog check
+No errored commits
+```
+
+Let us create an invalid commit : 
+```shell script
+git commit -m "Your Mother Was A Hamster, And Your Father Smelt Of Elderberries"
+```
+
+And check our commit history again :
+```
+❯ cog check
+ERROR - Your Mother Was A Hamster, And Your Father Smelt Of Elderberries - (c82c30)
+	cause: invalid commit format : missing `: ` separator
+```
+
+### Edit commit history
+
+Once you have spotted invalid commits you can quickly fix your commit history by running `cog edit`.
+This will perform an automatic rebase and let you edit each malformed commit message with your `$EDITOR`
+of choice. 
+
+### Conventional commit logs
+
+`cog log` is like `git log` but it displays additional conventional commit information, such as commit scope, 
+commit type etc. 
 
 
-### Verifying raw messages
-
-You can check the validity of an arbitraty input string against the specification with `cog verify {message}` :
-
-![cog_verify](docs/assets/cog_verify.png)
-
-This is primarily used to create pre-commit hook. 
-
-### Cog log
-
-`cog log` is a git log tailored for the conventional commit specification : 
 
 [![asciicast](https://asciinema.org/a/ssH4yRSlc28Rb9dHEDN7TowGe.svg)](https://asciinema.org/a/ssH4yRSlc28Rb9dHEDN7TowGe)
 
-Note that errored commit will still be displayed in the commit log. 
 
-Additionally `cog log` allow you to filter the commit log based on `scope`, `type`, `author` and `date-range` (**Not yet implemented**)
+### Generate changelogs
+
+There is two way to generate changelog with `cog` : 
+- To stdout with `cog changelog`.
+
+    ```
+    ❯ cog changelog
+    
+    ## 0.30.0..HEAD - 2020-09-30
+    
+    
+    ### Bug Fixes
+    
+    7f04a9 - fix ci cross build command bin args - Paul Delafosse
+    
+    ### Features
+    
+    fc7420 - move check edit to dedicated subcommand and fix rebase - Paul Delafosse
+    1028d0 - remove config commit on init existing repo - Paul Delafosse
+    
+    ### Refactoring
+    
+    d4aa61 - change config name to cog.toml - Paul Delafosse
+    ```
+  
+- To your repo `CHANGELOG.md` file with `cog bump` (see [Auto bump](#auto-bump)). 
 
 
-### Generating changelogs
+### Auto bump
 
-Cocogitto allow two main way to generate markdown changelogs : to stdout with the `changelog` command or to your `CHANGELOG.md` file with the `bump` command. 
-
-
-#### To stdout
-
-To generate a changelog directly to stdout simply run `cog changelog`. 
-By default the commit range picked for the changelog is `latest_tag...HEAD`, if your repo contains no tag the initial commit will be picked instead. 
-
-You can also manually specify the desired commit range with the `--from` and `--to` args. 
-Both args accepts git commit id or tag name : 
-
-```shell script
-cog changelog --from 1.0.0 --to dc080dd06bccb3f4c665db1f71bfd119b7de85c3
+Assuming we are working on the following git repository : 
+```
+* (HEAD -> master) feat: another cool feature
+* docs: add some documentation
+* fix: fix ugly bug
+* feat: add awesome feature
+* chore: initial commit
 ```
 
-[![asciicast](https://asciinema.org/a/Eo46grfVXMONRerGuep1ftWQX.svg)](https://asciinema.org/a/Eo46grfVXMONRerGuep1ftWQX)
+Let us now create a version : 
+```
+❯ cog bump --auto
+Found feature commit caef0f, bumping to 0.1.0
+Skipping irrelevant commit 025cc0 with type : docs
+Found bug fix commit e2af66, bumping to 0.1.1
+Found feature commit 1b87aa, bumping to 0.2.0
+Bumped version : 0.0.0 -> 0.2.0
+```
 
-#### To CHANGELOG.md
+If we look again at our git log : 
+```
+(HEAD -> master, tag: 0.2.0) chore(version): 0.2.0
+... 
+```
 
-Instead of generating the changelog to stdout you can completely automate the version creation process with `cog bump`. 
-This command does the following : 
+Also, a `CHANGELOG.md` file have been created. 
 
-- run pre-version hooks defined in your coco.toml config (ex: `cargo bump %version`)
-- generate a changelog from latest tag to HEAD
-- append the changelog to `CHANGELOG.md` (or the custom file defined in `coco.toml`)
-- add unstaged changes to git index
-- optionally create a tagged commit of the form `chore(version): bump to %version` (or the version commit template defined in the config)
+```markdown
+# Changelog
+All notable changes to this project will be documented in this file.
+See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
-The generated changelog will be appended on top of the previous version changelog, changelog header and footer will remain unchanged. 
-
-To choose your next version scheme, `cog bump` comes with several flags : 
-| flag          | description |
-|:--            | :---        |
-| `--auto`      | Automatically select the next version, and prompt the user for confirmation |
-| `--manual`    | Select the next version from user input (ex: `cog bump 1.0.1`)              |
-| `--major`     | Increase minor version (ex: `cog bump --minor`, bump from `1.0.0` to `1.0.1`)
-| `--patch`     | Increase patch version (ex: `cog bump --patch`, bump from `1.0.1` to `1.1.0`)
-| `--minor`     | Increase minor version (ex: `cog bump --minor`, bump from `1.1.0` to `2.0.0`)
+- - -
+## 0.2.0 - 2020-09-30
 
 
-### Installing commit hooks
+### Bug Fixes
 
-If you want to enforce the conventional commit spec, it might be a good idea to set up a [pre-commit-hook](https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks).
-`cog install hooks` will install a pre-commit hook that use the `cog verify` command whenever a new commit is created. 
+e2af66 - fix ugly bug - Paul Delafosse
 
-⚠️  Be aware that by installing the pre commit hook, you will force your team to use cocogitto. ⚠️ 
+
+### Documentation
+
+025cc0 - add some documentation - Paul Delafosse
+
+
+### Features
+
+caef0f - another cool feature - Paul Delafosse
+
+1b87aa - add awesome feature - Paul Delafosse
+
+
+- - -
+
+This changelog was generated by [cocogitto](https://github.com/oknozor/cocogitto).
+```
+
+You need to run `cog bump` with one of the following flags : 
+- `--auto` : choose the next version for you (based on feature commit, bug fixes commit and BREAKING_CHANGE commit).
+- `--major` : increment the MAJOR version.
+- `--minor` : increment the MINOR version.
+- `--patch` : increment the PATCH version.
+- `--version <version>` : set version manually (ex : `cog bump --version 3.2.1`).
+
+
+If you create a new version, the version changelog will be prepended to your changelog file separed by `- - -`.
+Note that if your project already contains a changelog you can tell `cog` about it by adding this to the file : 
+```markdown
+# Some changelog headers
+- - -
+- - -
+# Previous content not generated by cocogitto
+```
+
+You might also need to adjust `changelog_path` in `cog.toml`. 
+
+## Run pre bump hook
+
+*Comming soon*
+
+### Install pre commit hook
+
+*Comming soon*
+
 
 ## Contributing
 
