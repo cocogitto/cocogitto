@@ -2,6 +2,20 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.32.2 - 2020-09-30
+
+
+### Bug Fixes
+
+[5350b1](https://github.com/oknozor/cocogitto/commit/5350b110b4e39bf6942a58b7a89425e21927b966) - bump setup-rust-action to v1.3.3 - [oknozor](https://github.com/oknozor)
+
+
+### Documentation
+
+[9a3351](https://github.com/oknozor/cocogitto/commit/9a33516649ba8dd15fafbb6b22970efab1c04dee) - add corrections to README - [oknozor](https://github.com/oknozor)
+
+
+- - -
 ## 0.32.1 - 2020-09-30
 
 
