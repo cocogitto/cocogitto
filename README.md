@@ -1,8 +1,11 @@
 # Cocogitto
+![logo](docs/assets/logo.png)
 ![CI](https://github.com/oknozor/cocogitto/workflows/CI/badge.svg)
 [![codecov](https://codecov.io/gh/oknozor/cocogitto/branch/master/graph/badge.svg)](https://codecov.io/gh/oknozor/cocogitto)
+![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/oknozor/cocogitto)
+[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://conventionalcommits.org)
+![License](https://img.shields.io/github/license/oknozor/cocogitto)
 
-![logo](docs/assets/logo.png) 
 
 Cocogitto is a set of cli tools for the [conventional commit](https://www.conventionalcommits.org/en/v1.0.0/) 
 and [semver](https://semver.org/) specifications.  
