@@ -166,7 +166,7 @@ impl CocoGitto {
         &COMMITS_METADATA
     }
 
-    pub fn get_commiter(&self) -> Result<String> {
+    pub fn get_committer(&self) -> Result<String> {
         self.repository.get_author()
     }
 

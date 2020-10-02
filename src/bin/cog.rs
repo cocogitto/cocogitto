@@ -193,7 +193,7 @@ fn main() -> Result<()> {
                 let subcommand = matches.subcommand_matches(VERIFY).unwrap();
                 let message = subcommand.value_of("message").unwrap();
                 let author = CocoGitto::get()
-                    .map(|cogito| cogito.get_commiter().unwrap())
+                    .map(|cogito| cogito.get_committer().unwrap())
                     .ok();
 
                 match cocogitto::verify(author, message) {
