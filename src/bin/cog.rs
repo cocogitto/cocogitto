@@ -146,6 +146,12 @@ fn main() -> Result<()> {
                 .long("minor")
                 .required_unless_one(&["version", "auto", "patch", "major"]),
         )
+        .arg(
+            Arg::with_name("pre")
+                .help("Set the pre-release version")
+                .long("pre")
+                .takes_value(true),
+        )
         .display_order(6);
 
     let init_subcommand = SubCommand::with_name(INIT)
@@ -186,8 +192,10 @@ fn main() -> Result<()> {
                     unreachable!()
                 };
 
+                let pre = subcommand.value_of("pre");
+
                 // TODO mode to cli
-                cocogitto.create_version(increment, WriterMode::Prepend)?
+                cocogitto.create_version(increment, WriterMode::Prepend, pre)?
             }
             VERIFY => {
                 let subcommand = matches.subcommand_matches(VERIFY).unwrap();

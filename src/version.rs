@@ -3,7 +3,7 @@ use crate::repository::Repository;
 use anyhow::Result;
 use colored::*;
 use git2::Commit as Git2Commit;
-use semver::Version;
+use semver::{Identifier, Version};
 
 pub enum VersionIncrement {
     Major,
@@ -104,11 +104,36 @@ impl VersionIncrement {
     }
 }
 
+pub fn parse_pre_release(string: &str) -> Result<Vec<Identifier>> {
+    if !string
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '.' || c == '-')
+    {
+        return Err(anyhow!("Pre-release string must be a dot-separated list of identifiers comprised of ASCII alphanumerics and hyphens [0-9A-Za-z-]"));
+    }
+
+    if string.starts_with('.') || string.contains("..") || string.ends_with('.') {
+        return Err(anyhow!(
+            "Dot-separated identifiers in the pre-release string must not be empty"
+        ));
+    }
+
+    let idents = string
+        .split('.')
+        .map(|s| match s.parse::<u64>() {
+            Ok(n) => Identifier::Numeric(n),
+            Err(_) => Identifier::AlphaNumeric(s.to_string()),
+        })
+        .collect();
+
+    Ok(idents)
+}
+
 #[cfg(test)]
 mod test {
-    use crate::version::VersionIncrement;
+    use crate::version::{parse_pre_release, VersionIncrement};
     use anyhow::Result;
-    use semver::Version;
+    use semver::{Identifier, Version};
 
     // Auto version tests resides in test/ dir since it rely on git log
     // To generate the version
@@ -132,5 +157,36 @@ mod test {
         let version = VersionIncrement::Patch.bump(&Version::new(1, 0, 0))?;
         assert_eq!(version, Version::new(1, 0, 1));
         Ok(())
+    }
+
+    #[test]
+    fn parse_pre_release_valid() -> Result<()> {
+        let idents = parse_pre_release("alpha.0-dev.1")?;
+        assert_eq!(
+            &idents,
+            &[
+                Identifier::AlphaNumeric("alpha".into()),
+                Identifier::AlphaNumeric("0-dev".into()),
+                Identifier::Numeric(1),
+            ]
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn parse_pre_release_non_ascii() {
+        assert!(parse_pre_release("РАСТ").is_err());
+    }
+
+    #[test]
+    fn parse_pre_release_illegal_ascii() {
+        assert!(parse_pre_release("alpha$5").is_err());
+    }
+
+    #[test]
+    fn parse_pre_release_empty_ident() {
+        assert!(parse_pre_release(".alpha.5").is_err());
+        assert!(parse_pre_release("alpha..5").is_err());
+        assert!(parse_pre_release("alpha.5.").is_err());
     }
 }

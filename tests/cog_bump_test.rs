@@ -112,3 +112,24 @@ fn patch_bump() -> Result<()> {
 
     Ok(std::env::set_current_dir(current_dir)?)
 }
+
+#[test]
+#[cfg(not(tarpaulin))]
+fn pre_release_bump() -> Result<()> {
+    let current_dir = std::env::current_dir()?;
+    let mut command = Command::cargo_bin("cog")?;
+    command.arg("bump").arg("--major").arg("--pre").arg("alpha");
+
+    let temp_dir = TempDir::default();
+    std::env::set_current_dir(&temp_dir)?;
+    helper::git_init(".")?;
+    helper::git_commit("chore: init")?;
+    helper::git_tag("1.0.0")?;
+    helper::git_commit("feat: feature")?;
+
+    command.assert().success();
+    assert!(temp_dir.join("CHANGELOG.md").exists());
+    helper::assert_tag("2.0.0-alpha")?;
+
+    Ok(std::env::set_current_dir(current_dir)?)
+}

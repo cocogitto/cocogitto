@@ -21,7 +21,7 @@ use crate::error::ErrorKind::Semver;
 use crate::filter::CommitFilters;
 use crate::repository::Repository;
 use crate::settings::Settings;
-use crate::version::VersionIncrement;
+use crate::version::{parse_pre_release, VersionIncrement};
 use anyhow::Result;
 use chrono::Utc;
 use colored::*;
@@ -323,7 +323,12 @@ impl CocoGitto {
         Ok(())
     }
 
-    pub fn create_version(&self, increment: VersionIncrement, mode: WriterMode) -> Result<()> {
+    pub fn create_version(
+        &self,
+        increment: VersionIncrement,
+        mode: WriterMode,
+        pre_release: Option<&str>,
+    ) -> Result<()> {
         let statuses = self.repository.get_statuses()?;
 
         // Fail if repo contains un-staged or un-committed changes
@@ -342,7 +347,7 @@ impl CocoGitto {
 
         let current_version = Version::parse(&current_tag)?;
 
-        let next_version = increment
+        let mut next_version = increment
             .bump(&current_version)
             .map_err(|err| anyhow!("Cannot bump version : {}", err))?;
 
@@ -359,6 +364,10 @@ impl CocoGitto {
                 cause
             }));
         };
+
+        if let Some(pre_release) = pre_release {
+            next_version.pre = parse_pre_release(pre_release)?;
+        }
 
         let version_str = next_version.to_string();
 
