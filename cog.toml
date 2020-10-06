@@ -6,7 +6,8 @@ github = "https://github.com/oknozor/cocogitto"
 # and generate changelog links to their github profiles
 authors = [
     { signature = "Paul Delafosse", username = "oknozor" },
-    { signature = "John Smith", username = "koala42" }
+    { signature = "Jack Dorland", username = "jackdorland" },
+    { signature = "Mike Lubinets", username = "mersinvald" }
 ]
 
 
