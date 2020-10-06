@@ -206,9 +206,21 @@ of choice.
 commit type etc. 
 
 
-
 [![asciicast](https://asciinema.org/a/ssH4yRSlc28Rb9dHEDN7TowGe.svg)](https://asciinema.org/a/ssH4yRSlc28Rb9dHEDN7TowGe)
 
+You can also filter the log content with the following flags (`cog log --help`) :
+
+- `-B` : display breaking changes only
+- `-t` : filter on commit type
+- `-a` : filter on commit author
+- `-s` : filter on commit scope
+- `-e` : ignore errors 
+
+Those flag can be combined to achieve complex search in your commit history : 
+
+```shell script
+cog log --author "Paul Delafosse" "Mike Lubinets" --type feat --scope cli --no-error
+```
 
 ### Generate changelogs
 
