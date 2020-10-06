@@ -2,6 +2,29 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.33.1 - 2020-10-06
+
+
+### Features
+
+[05a487](https://github.com/oknozor/cocogitto/commit/05a487aa73b55e7f84d324fc30b145de67b75d91) - bump --pre flag to set the pre-release version - [mersinvald](https://github.com/mersinvald)
+
+
+### Documentation
+
+[dff77b](https://github.com/oknozor/cocogitto/commit/dff77b3a13d9ca1c9fd5720a7e3e688db7338996) - add log filters to the doc - [oknozor](https://github.com/oknozor)
+
+[a1906c](https://github.com/oknozor/cocogitto/commit/a1906c3ea740efd15882c7a957d9d62e2ab2182e) - add  bump flag to the doc - [oknozor](https://github.com/oknozor)
+
+[1c66d7](https://github.com/oknozor/cocogitto/commit/1c66d72dd250a722d3b96c15b114a077592e342e) - add contributors github usernames to cog.toml - [oknozor](https://github.com/oknozor)
+
+
+### Bug Fixes
+
+[f97a6f](https://github.com/oknozor/cocogitto/commit/f97a6f33b3f1992018208747746332dab60b05b3) - typo in get_committer - [jackdorland](https://github.com/jackdorland)
+
+
+- - -
 ## 0.32.3 - 2020-09-30
 
 
