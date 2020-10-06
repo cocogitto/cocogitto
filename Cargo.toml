@@ -1,6 +1,6 @@
 [package]
 name = "cocogitto"
-version = "0.30.0"
+version = "0.33.1"
 authors = ["Paul Delafosse <paul.delafosse@protonmail.com>"]
 edition = "2018"
 readme = "README.md"
