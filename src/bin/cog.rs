@@ -1,11 +1,10 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use clap::{App, AppSettings, Arg, SubCommand};
-use cocogitto::changelog::WriterMode;
 use cocogitto::commit::CommitType;
 use cocogitto::filter::{CommitFilter, CommitFilters};
 use cocogitto::version::VersionIncrement;
 use cocogitto::CocoGitto;
-use moins::Moins;
+use cocogitto::{changelog::WriterMode, output::Output};
 use std::process::exit;
 
 const APP_SETTINGS: &[AppSettings] = &[
@@ -223,6 +222,13 @@ fn main() -> Result<()> {
             }
             LOG => {
                 let cocogitto = CocoGitto::get()?;
+
+                let mut output = Output::builder()
+                    .with_pager_from_env("PAGER")
+                    // TODO: replace with "repo_name:latest_tag"?
+                    .with_file_name("cog log")
+                    .build()?;
+
                 let subcommand = matches.subcommand_matches(LOG).unwrap();
 
                 let mut filters = vec![];
@@ -254,8 +260,11 @@ fn main() -> Result<()> {
 
                 let filters = CommitFilters(filters);
 
-                let mut content = cocogitto.get_log(filters)?;
-                Moins::run(&mut content, None);
+                let content = cocogitto.get_log(filters)?;
+                output
+                    .handle()?
+                    .write_all(content.as_bytes())
+                    .context("failed to write log into the pager")?;
             }
             CHANGELOG => {
                 let cocogitto = CocoGitto::get()?;
