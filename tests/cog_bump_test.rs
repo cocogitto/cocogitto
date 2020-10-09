@@ -133,3 +133,28 @@ fn pre_release_bump() -> Result<()> {
 
     Ok(std::env::set_current_dir(current_dir)?)
 }
+
+#[test]
+#[cfg(not(tarpaulin))]
+#[cfg(target_os = "linux")]
+fn bump_with_hook() -> Result<()> {
+    let current_dir = std::env::current_dir()?;
+    let mut command = Command::cargo_bin("cog")?;
+    command.arg("bump").arg("--major");
+
+    let temp_dir = TempDir::default();
+    std::env::set_current_dir(&temp_dir)?;
+
+    std::fs::write("cog.toml", r#"hooks = ["touch %version"]"#)?;
+
+    helper::git_init(".")?;
+    helper::git_commit("chore: init")?;
+    helper::git_tag("1.0.0")?;
+    helper::git_commit("feat: feature")?;
+
+    command.assert().success();
+    assert!(temp_dir.join("2.0.0").exists());
+    helper::assert_tag("2.0.0")?;
+
+    Ok(std::env::set_current_dir(current_dir)?)
+}

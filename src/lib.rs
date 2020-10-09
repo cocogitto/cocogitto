@@ -11,6 +11,7 @@ pub mod error;
 pub mod filter;
 
 pub mod commit;
+pub mod hook;
 pub mod repository;
 pub mod settings;
 pub mod version;
@@ -22,20 +23,21 @@ use crate::filter::CommitFilters;
 use crate::repository::Repository;
 use crate::settings::Settings;
 use crate::version::{parse_pre_release, VersionIncrement};
-use anyhow::Result;
+use anyhow::{Context, Result};
 use chrono::Utc;
 use colored::*;
 use commit::Commit;
 use git2::{Oid, RebaseOptions};
+use hook::Hook;
 use semver::Version;
 use serde::export::fmt::Display;
 use serde::export::Formatter;
 use settings::AuthorSetting;
-use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{exit, Command, Stdio};
+use std::{collections::HashMap, str::FromStr};
 use tempdir::TempDir;
 
 pub type CommitsMetadata = HashMap<CommitType, CommitConfig>;
@@ -393,6 +395,8 @@ impl CocoGitto {
             .write()
             .map_err(|err| anyhow!("Unable to write CHANGELOG.md : {}", err))?;
 
+        self.run_bump_hooks(&version_str)?;
+
         self.repository.add_all()?;
         self.repository
             .commit(&format!("chore(version): {}", next_version))?;
@@ -495,6 +499,32 @@ impl CocoGitto {
                 .map(OidOf::Other)
                 .map_err(|err| anyhow!("`{}` is not a valid oid : {}", input, err))
         }
+    }
+
+    fn run_bump_hooks(&self, next_version: &str) -> Result<()> {
+        let settings = Settings::get(&self.repository)?;
+
+        let hooks = settings
+            .hooks
+            .iter()
+            .map(String::as_str)
+            .map(Hook::from_str)
+            .enumerate()
+            .map(|(idx, result)| result.context(format!("Cannot parse hook at index {}", idx)))
+            .collect::<Result<Vec<Hook>>>()?;
+
+        for mut hook in hooks {
+            hook.entries().try_for_each(|mut entry| {
+                entry.fill(|key| match key {
+                    "version" => Some(next_version),
+                    _ => None,
+                })
+            })?;
+
+            hook.run().context(format!("{}", hook))?;
+        }
+
+        Ok(())
     }
 }
 
