@@ -7,7 +7,8 @@ github = "https://github.com/oknozor/cocogitto"
 authors = [
     { signature = "Paul Delafosse", username = "oknozor" },
     { signature = "Jack Dorland", username = "jackdorland" },
-    { signature = "Mike Lubinets", username = "mersinvald" }
+    { signature = "Mike Lubinets", username = "mersinvald" },
+    { signature = "Marcin Puc", username = "tranzystorek-io" }
 ]
 
 
