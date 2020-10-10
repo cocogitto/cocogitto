@@ -223,10 +223,14 @@ fn main() -> Result<()> {
             LOG => {
                 let cocogitto = CocoGitto::get()?;
 
+                let repo_tag_name = match cocogitto.get_repo_tag_name() {
+                    Some(name) => name,
+                    None => "cog log".to_string(),
+                };
+
                 let mut output = Output::builder()
                     .with_pager_from_env("PAGER")
-                    // TODO: replace with "repo_name:latest_tag"?
-                    .with_file_name("cog log")
+                    .with_file_name(repo_tag_name)
                     .build()?;
 
                 let subcommand = matches.subcommand_matches(LOG).unwrap();

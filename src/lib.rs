@@ -173,6 +173,20 @@ impl CocoGitto {
         self.repository.get_author()
     }
 
+    pub fn get_repo_tag_name(&self) -> Option<String> {
+        let mut repo_tag_name = String::new();
+
+        let repo_path = self.repository.get_repo_dir()?.iter().last()?;
+        repo_tag_name.push_str(repo_path.to_str()?);
+
+        if let Ok(latest_tag) = self.repository.get_latest_tag() {
+            repo_tag_name.push_str(":");
+            repo_tag_name.push_str(&latest_tag);
+        };
+
+        Some(repo_tag_name)
+    }
+
     pub fn check_and_edit(&self) -> Result<()> {
         let from = self.repository.get_first_commit()?;
         let head = self.repository.get_head_commit()?;
