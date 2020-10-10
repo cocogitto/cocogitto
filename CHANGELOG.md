@@ -2,6 +2,37 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.34.0 - 2020-10-10
+
+
+### Miscellaneous Chores
+
+[5de190](https://github.com/oknozor/cocogitto/commit/5de19002f103ef62a5202fbcf6476cd1cf1d661d) - bump cargo.toml version - [oknozor](https://github.com/oknozor)
+
+
+### Features
+
+[e4d5fe](https://github.com/oknozor/cocogitto/commit/e4d5fef7cdb5b3421345b21491c01407e509cfe2) - use external pager instead of moins - Mike
+
+[c11147](https://github.com/oknozor/cocogitto/commit/c11147d7ed082d05f0731512579c6dfa6dbc8831) - pre-commit bump hooks - Mike
+
+
+### Documentation
+
+[cf5419](https://github.com/oknozor/cocogitto/commit/cf5419c29ebc1ffb355c00668b7adcd2d646ae7d) - add documentation for version hooks - [oknozor](https://github.com/oknozor)
+
+
+### Bug Fixes
+
+[b0609e](https://github.com/oknozor/cocogitto/commit/b0609e7920cc4aae093fca49e9643973610c41b0) - cog bump now perform a single version bump (#44) - [oknozor](https://github.com/oknozor)
+
+
+### Continuous Integration
+
+[42827f](https://github.com/oknozor/cocogitto/commit/42827f02f762fbd36af88489e929abe12e603030) - update codecov action to work with forks - [oknozor](https://github.com/oknozor)
+
+
+- - -
 ## 0.33.1 - 2020-10-06
 
 
