@@ -179,8 +179,13 @@ impl CocoGitto {
         let repo_path = self.repository.get_repo_dir()?.iter().last()?;
         repo_tag_name.push_str(repo_path.to_str()?);
 
+        if let Some(branch_shorthand) = self.repository.get_branch_shorthand() {
+            repo_tag_name.push_str(" on ");
+            repo_tag_name.push_str(&branch_shorthand);
+        }
+
         if let Ok(latest_tag) = self.repository.get_latest_tag() {
-            repo_tag_name.push(':');
+            repo_tag_name.push(' ');
             repo_tag_name.push_str(&latest_tag);
         };
 
