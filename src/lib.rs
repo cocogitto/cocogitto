@@ -180,7 +180,7 @@ impl CocoGitto {
         repo_tag_name.push_str(repo_path.to_str()?);
 
         if let Ok(latest_tag) = self.repository.get_latest_tag() {
-            repo_tag_name.push_str(":");
+            repo_tag_name.push(':');
             repo_tag_name.push_str(&latest_tag);
         };
 
