@@ -195,7 +195,7 @@ fn bump_with_hook() -> Result<()> {
     let temp_dir = TempDir::default();
     std::env::set_current_dir(&temp_dir)?;
 
-    std::fs::write("cog.toml", r#"hooks = ["touch %version"]"#)?;
+    std::fs::write("cog.toml", r#"pre_bump_hooks = ["touch %version"]"#)?;
 
     helper::git_init(".")?;
     helper::git_commit("chore: init")?;

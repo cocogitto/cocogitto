@@ -20,7 +20,7 @@ pub(crate) struct Settings {
     pub changelog_path: Option<PathBuf>,
     pub github: Option<String>,
     #[serde(default)]
-    pub hooks: Vec<String>,
+    pub pre_bump_hooks: Vec<String>,
     #[serde(default)]
     pub post_bump_hooks: Vec<String>,
     #[serde(default)]
@@ -40,7 +40,7 @@ impl Default for Settings {
         Settings {
             changelog_path: Some(PathBuf::from("CHANGELOG.md")),
             commit_types: Default::default(),
-            hooks: vec![],
+            pre_bump_hooks: vec![],
             post_bump_hooks: vec![],
             authors: vec![],
             github: None,
@@ -139,7 +139,7 @@ impl Settings {
 
     pub fn get_hooks(&self, hook_type: HookType) -> &Vec<String> {
         match hook_type {
-            HookType::PreBump => &self.hooks,
+            HookType::PreBump => &self.pre_bump_hooks,
             HookType::PostBump => &self.post_bump_hooks,
         }
     }
