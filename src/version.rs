@@ -39,7 +39,6 @@ impl VersionIncrement {
     }
 
     fn get_auto_version(&self, current_version: &Version) -> Result<Version> {
-        let mut next_version = current_version.clone();
         let repository = Repository::open(".")?;
         let changelog_start_oid = repository
             .get_latest_tag_oid()
@@ -54,9 +53,49 @@ impl VersionIncrement {
             .filter(|commit| !commit.message().unwrap_or("").starts_with("Merge "))
             .collect();
 
-        for commit in commits {
-            let commit = Commit::from_git_commit(&commit);
+        VersionIncrement::display_history(&commits);
 
+        let conventional_commits: Vec<Commit> = commits
+            .iter()
+            .map(|commit| Commit::from_git_commit(commit))
+            .filter(|commit| commit.is_ok())
+            .map(Result::unwrap)
+            .collect();
+
+        VersionIncrement::get_next_auto_version(current_version, conventional_commits.as_slice())
+    }
+
+    fn get_next_auto_version(current_version: &Version, commits: &[Commit]) -> Result<Version> {
+        let mut next_version = current_version.clone();
+
+        let major_bump = commits
+            .iter()
+            .any(|commit| commit.message.is_breaking_change);
+
+        let minor_bump = commits
+            .iter()
+            .any(|commit| commit.message.commit_type == CommitType::Feature);
+
+        let patch_bump = commits
+            .iter()
+            .any(|commit| commit.message.commit_type == CommitType::BugFix);
+
+        if major_bump {
+            next_version.increment_major();
+        } else if minor_bump {
+            next_version.increment_minor();
+        } else if patch_bump {
+            next_version.increment_patch();
+        } else {
+            return Err(anyhow!("No commit found to bump current version"));
+        }
+
+        Ok(next_version)
+    }
+
+    fn display_history(commits: &[&Git2Commit]) {
+        for commit in commits {
+            let commit = Commit::from_git_commit(commit);
             // TODO: prompt for continue on err
             if let Err(err) = commit {
                 eprintln!("{}", err);
@@ -67,30 +106,17 @@ impl VersionIncrement {
                     commit.message.is_breaking_change,
                 ) {
                     (CommitType::Feature, false) => {
-                        next_version.increment_minor();
-                        println!(
-                            "Found feature commit {}, bumping to {}",
-                            commit.shorthand().blue(),
-                            next_version.to_string().green()
-                        )
+                        println!("Found feature commit {}", commit.shorthand().blue(),)
                     }
                     (CommitType::BugFix, false) => {
-                        next_version.increment_patch();
-                        println!(
-                            "Found bug fix commit {}, bumping to {}",
-                            commit.shorthand().blue(),
-                            next_version.to_string().green()
-                        )
+                        println!("Found bug fix commit {}", commit.shorthand().blue(),)
                     }
-                    (commit_type, true) => {
-                        next_version.increment_major();
-                        println!(
-                            "Found {} commit {} with type : {}",
-                            "BREAKING CHANGE".red(),
-                            commit.shorthand().blue(),
-                            commit_type.get_key_str().yellow()
-                        )
-                    }
+                    (commit_type, true) => println!(
+                        "Found {} commit {} with type : {}",
+                        "BREAKING CHANGE".red(),
+                        commit.shorthand().blue(),
+                        commit_type.get_key_str().yellow()
+                    ),
                     (_, false) => println!(
                         "Skipping irrelevant commit {} with type : {}",
                         commit.shorthand().blue(),
@@ -99,8 +125,6 @@ impl VersionIncrement {
                 }
             }
         }
-
-        Ok(next_version)
     }
 }
 
@@ -131,8 +155,10 @@ pub fn parse_pre_release(string: &str) -> Result<Vec<Identifier>> {
 
 #[cfg(test)]
 mod test {
+    use crate::commit::{Commit, CommitMessage, CommitType};
     use crate::version::{parse_pre_release, VersionIncrement};
     use anyhow::Result;
+    use chrono::Utc;
     use semver::{Identifier, Version};
 
     // Auto version tests resides in test/ dir since it rely on git log
@@ -171,6 +197,104 @@ mod test {
             ]
         );
         Ok(())
+    }
+
+    #[test]
+    fn should_get_next_auto_version_patch() {
+        let patch = Commit {
+            oid: "1234".to_string(),
+            message: CommitMessage {
+                commit_type: CommitType::BugFix,
+                scope: None,
+                body: None,
+                footer: None,
+                description: "fix".to_string(),
+                is_breaking_change: false,
+            },
+            author: "".to_string(),
+            date: Utc::now().naive_local(),
+        };
+
+        let version =
+            VersionIncrement::get_next_auto_version(&Version::parse("1.0.0").unwrap(), &[patch]);
+
+        assert_eq!(version.unwrap(), Version::new(1, 0, 1))
+    }
+
+    #[test]
+    fn should_get_next_auto_version_breaking_changes() {
+        let feature = Commit {
+            oid: "1234".to_string(),
+            message: CommitMessage {
+                commit_type: CommitType::Feature,
+                scope: None,
+                body: None,
+                footer: None,
+                description: "feature".to_string(),
+                is_breaking_change: false,
+            },
+            author: "".to_string(),
+            date: Utc::now().naive_local(),
+        };
+
+        let breaking_change = Commit {
+            oid: "1234".to_string(),
+            message: CommitMessage {
+                commit_type: CommitType::Feature,
+                scope: None,
+                body: None,
+                footer: None,
+                description: "feature".to_string(),
+                is_breaking_change: true,
+            },
+            author: "".to_string(),
+            date: Utc::now().naive_local(),
+        };
+
+        let version = VersionIncrement::get_next_auto_version(
+            &Version::parse("1.0.0").unwrap(),
+            &[breaking_change, feature],
+        );
+
+        assert_eq!(version.unwrap(), Version::new(2, 0, 0))
+    }
+
+    #[test]
+    fn should_get_next_auto_version_minor() {
+        let patch = Commit {
+            oid: "1234".to_string(),
+            message: CommitMessage {
+                commit_type: CommitType::BugFix,
+                scope: None,
+                body: None,
+                footer: None,
+                description: "fix".to_string(),
+                is_breaking_change: false,
+            },
+            author: "".to_string(),
+            date: Utc::now().naive_local(),
+        };
+
+        let feature = Commit {
+            oid: "1234".to_string(),
+            message: CommitMessage {
+                commit_type: CommitType::Feature,
+                scope: None,
+                body: None,
+                footer: None,
+                description: "feature".to_string(),
+                is_breaking_change: false,
+            },
+            author: "".to_string(),
+            date: Utc::now().naive_local(),
+        };
+
+        let version = VersionIncrement::get_next_auto_version(
+            &Version::parse("1.0.0").unwrap(),
+            &[patch, feature],
+        );
+
+        assert_eq!(version.unwrap(), Version::new(1, 1, 0))
     }
 
     #[test]
