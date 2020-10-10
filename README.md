@@ -338,7 +338,23 @@ You might also need to adjust `changelog_path` in `cog.toml`.
 
 ## Run pre bump hook
 
-*Comming soon*
+Creating git tag automatically is great but sometimes you need to edit some file with the new version number,
+or perform some additional checks before doing so. 
+
+A typical example is editing your project manifest in your package manager configuration file.
+You can run pre bump commands with the `%version` alias to reference the newly created version :
+
+```toml
+# cog.toml
+hooks = [
+    "cargo build --release",
+    "cargo bump %version",
+]
+```
+
+When running `cog bump` these command will be run before creating the version commit.
+Assuming we are bumping to `1.1.0`, the `%version` alias will be replaced with `1.1.0`.
+
 
 ### Install pre commit hook
 
