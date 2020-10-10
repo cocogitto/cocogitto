@@ -22,7 +22,7 @@ use crate::commit::{CommitConfig, CommitMessage, CommitType};
 use crate::error::ErrorKind::Semver;
 use crate::filter::CommitFilters;
 use crate::repository::Repository;
-use crate::settings::Settings;
+use crate::settings::{HookType, Settings};
 use crate::version::{parse_pre_release, VersionIncrement};
 use anyhow::{Context, Result};
 use chrono::Utc;
@@ -396,12 +396,14 @@ impl CocoGitto {
             .write()
             .map_err(|err| anyhow!("Unable to write CHANGELOG.md : {}", err))?;
 
-        self.run_bump_hooks(&version_str)?;
+        self.run_hooks(HookType::PreBump, &version_str)?;
 
         self.repository.add_all()?;
         self.repository
             .commit(&format!("chore(version): {}", next_version))?;
         self.repository.create_tag(&version_str)?;
+
+        self.run_hooks(HookType::PostBump, &version_str)?;
 
         let bump = format!("{} -> {}", current_version, next_version).green();
         println!("Bumped version : {}", bump);
@@ -502,11 +504,11 @@ impl CocoGitto {
         }
     }
 
-    fn run_bump_hooks(&self, next_version: &str) -> Result<()> {
+    fn run_hooks(&self, hook_type: HookType, next_version: &str) -> Result<()> {
         let settings = Settings::get(&self.repository)?;
 
         let hooks = settings
-            .hooks
+            .get_hooks(hook_type)
             .iter()
             .map(String::as_str)
             .map(Hook::from_str)
