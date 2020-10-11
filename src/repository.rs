@@ -157,6 +157,14 @@ impl Repository {
         }
     }
 
+    pub(crate) fn get_branch_shorthand(&self) -> Option<String> {
+        if let Ok(head) = self.0.head() {
+            Some(head.shorthand()?.to_string())
+        } else {
+            None
+        }
+    }
+
     pub(crate) fn create_tag(&self, name: &str) -> Result<()> {
         if self.get_diff(true).is_some() {
             return Err(anyhow!(
