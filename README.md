@@ -50,7 +50,9 @@ features related to the conventional commit specification. Anything else shall b
     - [Conventional commit logs](#Conventional-commit-logs)
     - [Generate changelogs](#Generate-changelogs)
     - [Auto bump](#Auto-bump)
-    - [Run pre-bump hook](#Run-pre-bump-hook)
+    - [Bump hooks](#Bump-hooks)
+    - [Pre bump hooks](#pre-bump-hooks)
+    - [Post bump hooks](#post-bump-hooks)
     - [Install pre-commit hook](#Install-pre-commit-hook)
 - [Contributing](#Contributing)
 - [Licence](#Licence)
@@ -336,7 +338,9 @@ Note that if your project already contains a changelog you can tell `cog` about 
 
 You might also need to adjust `changelog_path` in `cog.toml`. 
 
-## Run pre bump hook
+## Bump hooks
+
+### Pre bump hooks
 
 Creating git tag automatically is great but sometimes you need to edit some file with the new version number,
 or perform some additional checks before doing so. 
@@ -354,6 +358,19 @@ pre_bump_hooks = [
 
 When running `cog bump` these command will be run before creating the version commit.
 Assuming we are bumping to `1.1.0`, the `%version` alias will be replaced with `1.1.0`.
+
+### Post bump hooks
+
+You can tell `cog` to run commands after the bump.
+
+```toml
+# cog.toml
+post_bump_hooks = [
+    "git push",
+    "git push origin %version",
+    "cargo publish"
+]
+```  
 
 
 ### Install pre commit hook
