@@ -336,7 +336,11 @@ Note that if your project already contains a changelog you can tell `cog` about 
 - - -
 ```
 
-You might also need to adjust `changelog_path` in `cog.toml`. 
+You might also need to adjust `changelog_path` in `cog.toml`.
+
+**Note:** `cog bump --auto` treats `0.y.z` versions specially,
+i.e. it will never do an auto bump to the `1.0.0` version, even if there are breaking changes.
+That way, you can keep adding features in the development stage and decide yourself, when your API is stable.
 
 ## Bump hooks
 
