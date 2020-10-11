@@ -346,7 +346,7 @@ You can run pre bump commands with the `%version` alias to reference the newly c
 
 ```toml
 # cog.toml
-hooks = [
+pre_bump_hooks = [
     "cargo build --release",
     "cargo bump %version",
 ]
