@@ -2,6 +2,43 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 1.0.0 - 2020-10-11
+
+
+### Miscellaneous Chores
+
+[8ace14](https://github.com/oknozor/cocogitto/commit/8ace14d36b08b0cba31dc1064af35c960ccb2660) - add several bump hooks and update doc - [oknozor](https://github.com/oknozor)
+
+[1cd3fc](https://github.com/oknozor/cocogitto/commit/1cd3fc18323c2c1ad81ea4dcf4fb20f5b88c89c4) - add tranzystorek-io to contributors - [tranzystorek-io](https://github.com/tranzystorek-io)
+
+
+### Refactoring
+
+[061004](https://github.com/oknozor/cocogitto/commit/061004e682269b615a85aa51adc52cfbe5c696ec) - fix clippy lints - [renaultfernandes](https://github.com/renaultfernandes)
+
+
+### Documentation
+
+[78a997](https://github.com/oknozor/cocogitto/commit/78a99781add5b25a5126d1d939adf67ef5748687) - add signature to contributors list - [renaultfernandes](https://github.com/renaultfernandes)
+
+
+### Bug Fixes
+
+[602030](https://github.com/oknozor/cocogitto/commit/602030e6bdb519f716ee4439300118cf5fe5e4c3) - move cargo package to post bump - [oknozor](https://github.com/oknozor)
+
+
+### Features
+
+[7015c5](https://github.com/oknozor/cocogitto/commit/7015c51480c15171cc211efb0c3eda0854fc9b09) - rename hooks to pre_bump_hooks - [tranzystorek-io](https://github.com/tranzystorek-io)
+
+[a56b1e](https://github.com/oknozor/cocogitto/commit/a56b1e268703e9548fdd90b0a40d0ef602b29156) - add post-bump-hooks - [tranzystorek-io](https://github.com/tranzystorek-io)
+
+[2bcf97](https://github.com/oknozor/cocogitto/commit/2bcf972be90c903e334f97cf67e010fe1147bd92) - include current branch name in "cog log" - [renaultfernandes](https://github.com/renaultfernandes)
+
+[7c6c72](https://github.com/oknozor/cocogitto/commit/7c6c7259d67bbb7b5ae42df6c3b53dacd503073d) - show repo and current tag name in "cog log" - [renaultfernandes](https://github.com/renaultfernandes)
+
+
+- - -
 ## 0.34.0 - 2020-10-10
 
 
