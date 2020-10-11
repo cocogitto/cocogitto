@@ -24,7 +24,6 @@ pre_bump_hooks = [
     "cargo test -- --test-threads 1",
     "cargo clippy",
     "cargo build --release",
-    "cargo package",
     "cargo fmt --all",
     "cargo bump %version",
 ]
@@ -35,6 +34,7 @@ pre_bump_hooks = [
 post_bump_hooks = [
     "git push",
     "git push origin %version",
+    "cargo package",
     "cargo publish"
 ]
 
