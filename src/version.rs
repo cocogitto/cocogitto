@@ -66,25 +66,31 @@ impl VersionIncrement {
     }
 
     fn get_next_auto_version(current_version: &Version, commits: &[Commit]) -> Result<Version> {
+        let is_major_bump = || {
+            current_version.major != 0
+                && commits
+                    .iter()
+                    .any(|commit| commit.message.is_breaking_change)
+        };
+
+        let is_minor_bump = || {
+            commits
+                .iter()
+                .any(|commit| commit.message.commit_type == CommitType::Feature)
+        };
+
+        let is_patch_bump = || {
+            commits
+                .iter()
+                .any(|commit| commit.message.commit_type == CommitType::BugFix)
+        };
+
         let mut next_version = current_version.clone();
-
-        let major_bump = commits
-            .iter()
-            .any(|commit| commit.message.is_breaking_change);
-
-        let minor_bump = commits
-            .iter()
-            .any(|commit| commit.message.commit_type == CommitType::Feature);
-
-        let patch_bump = commits
-            .iter()
-            .any(|commit| commit.message.commit_type == CommitType::BugFix);
-
-        if major_bump {
+        if is_major_bump() {
             next_version.increment_major();
-        } else if minor_bump {
+        } else if is_minor_bump() {
             next_version.increment_minor();
-        } else if patch_bump {
+        } else if is_patch_bump() {
             next_version.increment_patch();
         } else {
             return Err(anyhow!("No commit found to bump current version"));
