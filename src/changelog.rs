@@ -1,7 +1,8 @@
 use self::WriterMode::*;
-use crate::commit::{Commit, CommitType};
+use crate::commit::Commit;
 use crate::{OidOf, COMMITS_METADATA};
 use anyhow::Result;
+use itertools::Itertools;
 use std::fs;
 use std::path::PathBuf;
 
@@ -76,32 +77,28 @@ impl Changelog {
         let short_from = &self.from;
         let version_title = self
             .tag_name
-            .as_ref()
-            .cloned()
-            .unwrap_or(format!("{}..{}", short_from, short_to));
+            .clone()
+            .unwrap_or_else(|| format!("{}..{}", short_from, short_to));
 
         out.push_str(&format!("\n## {} - {}\n\n", version_title, self.date));
 
-        let add_commit_section = |commit_type: &CommitType| {
-            let commits: Vec<Commit> = self
-                .commits
-                .drain_filter(|commit| &commit.message.commit_type == commit_type)
-                .collect();
+        let grouped = self
+            .commits
+            .drain(..)
+            .map(|commit| {
+                let md = commit.to_markdown(colored);
+                (commit.message.commit_type, md)
+            })
+            .into_group_map();
 
-            let metadata = COMMITS_METADATA.get(&commit_type).unwrap();
-            if !commits.is_empty() {
-                out.push_str(&format!("\n### {}\n\n", metadata.changelog_title));
+        for (commit_type, commits) in grouped {
+            let meta = &COMMITS_METADATA[&commit_type];
 
-                commits.iter().for_each(|commit| {
-                    out.push_str(&commit.to_markdown(colored));
-                });
+            out.push_str(&format!("\n### {}\n\n", meta.changelog_title));
+            for description in commits {
+                out.push_str(&description);
             }
-        };
-
-        COMMITS_METADATA
-            .iter()
-            .map(|(commit_type, _)| commit_type)
-            .for_each(add_commit_section);
+        }
 
         out
     }
