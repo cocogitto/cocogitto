@@ -38,6 +38,8 @@ features related to the conventional commit specification. Anything else shall b
 ## Table of contents
 - [Configuration](#Configuration)
 - [Installation](#Installation)
+    - [Cargo](#cargo)
+    - [Archlinux](#archlinux)
 - [Binaries](#Binaries)
 - [Coco Commits](#Coco-Commits)
     - [Breaking changes](#Breaking-changes)
@@ -59,10 +61,18 @@ features related to the conventional commit specification. Anything else shall b
 
 ## Installation
 
-At the moment cocogitto is only available via [crates.io](https://crates.io/crates/cocogitto)
+### Cargo
+
+Cocogitto is available on [crates.io](https://crates.io/crates/cocogitto) : 
 
 ```
 cargo install cocogitto
+```
+
+### Archlinux
+
+```
+yay -S cocogitto-bin
 ```
 
 ## Configuration
