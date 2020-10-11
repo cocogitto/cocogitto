@@ -266,6 +266,44 @@ mod test {
     }
 
     #[test]
+    fn should_get_next_auto_version_breaking_changes_on_initial_dev_version() {
+        let feature = Commit {
+            oid: "1234".to_string(),
+            message: CommitMessage {
+                commit_type: CommitType::Feature,
+                scope: None,
+                body: None,
+                footer: None,
+                description: "feature".to_string(),
+                is_breaking_change: false,
+            },
+            author: "".to_string(),
+            date: Utc::now().naive_local(),
+        };
+
+        let breaking_change = Commit {
+            oid: "1234".to_string(),
+            message: CommitMessage {
+                commit_type: CommitType::Feature,
+                scope: None,
+                body: None,
+                footer: None,
+                description: "feature".to_string(),
+                is_breaking_change: true,
+            },
+            author: "".to_string(),
+            date: Utc::now().naive_local(),
+        };
+
+        let version = VersionIncrement::get_next_auto_version(
+            &Version::parse("0.1.0").unwrap(),
+            &[breaking_change, feature],
+        );
+
+        assert_eq!(version.unwrap(), Version::new(0, 2, 0))
+    }
+
+    #[test]
     fn should_get_next_auto_version_minor() {
         let patch = Commit {
             oid: "1234".to_string(),
