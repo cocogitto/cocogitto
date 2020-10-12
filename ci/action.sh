@@ -38,6 +38,7 @@ release() {
 
    cp "$coco_bin_path" "$TAR_DIR"
    cp "$cog_bin_path" "$TAR_DIR"
+   cp "COCOGITTO_HOME/LICENSE" "$TAR_DIR"
 
    cd "$TAR_DIR"
    tar -czf cocogitto.tar.gz *
