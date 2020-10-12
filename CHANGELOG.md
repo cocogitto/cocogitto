@@ -2,6 +2,41 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 1.0.1 - 2020-10-12
+
+
+### Refactoring
+
+[7c4a1c](https://github.com/oknozor/cocogitto/commit/7c4a1cb692b445f36a44857ce17db32b91acd24c) - replace drain_filter() with a stable alternative - [tranzystorek-io](https://github.com/tranzystorek-io)
+
+
+### Documentation
+
+[2bd8bb](https://github.com/oknozor/cocogitto/commit/2bd8bb3f8534efc7de808417a237c72e84173fa2) - add AUR package to README - [oknozor](https://github.com/oknozor)
+
+[6fb5ec](https://github.com/oknozor/cocogitto/commit/6fb5ec579a1532a90619ddccd80788a9c99acc72) - document special behavior of auto bumps on 0.y.z - [tranzystorek-io](https://github.com/tranzystorek-io)
+
+
+### Bug Fixes
+
+[f11374](https://github.com/oknozor/cocogitto/commit/f11374426cbdd395a89437e11ae6fbe1eae88144) - treat 0.y.z autobumps specially - [tranzystorek-io](https://github.com/tranzystorek-io)
+
+
+### Tests
+
+[67a736](https://github.com/oknozor/cocogitto/commit/67a736c22eaea6d923c76497e82da6f4f3c14666) - add test for autobumping a breaking change on 0.y.z - [tranzystorek-io](https://github.com/tranzystorek-io)
+
+
+### Continuous Integration
+
+[f66ad9](https://github.com/oknozor/cocogitto/commit/f66ad94585567a496487a989dd3051f61defd387) - use rust stable in github ci - [oknozor](https://github.com/oknozor)
+
+[fe94f4](https://github.com/oknozor/cocogitto/commit/fe94f46b0db1b1b73c11a061a134ca1a1285ac54) - add license to release tar - [oknozor](https://github.com/oknozor)
+
+[1f59a8](https://github.com/oknozor/cocogitto/commit/1f59a859cb0f382f6a64ef59921c655b90ef2e58) - build on rust stable instead of nightly - [oknozor](https://github.com/oknozor)
+
+
+- - -
 ## 1.0.0 - 2020-10-11
 
 
