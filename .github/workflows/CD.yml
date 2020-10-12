@@ -33,7 +33,7 @@ jobs:
 
       - uses: hecrj/setup-rust-action@v1.3.3
         with:
-          rust-version: nightly
+          rust-version: stable
 
       - uses: actions/checkout@v1
       - name: Build
