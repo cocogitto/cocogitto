@@ -2,6 +2,15 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 1.0.2 - 2020-10-12
+
+
+### Bug Fixes
+
+[2505a4](https://github.com/oknozor/cocogitto/commit/2505a4442fa477561ce4e17fd4b9c6edc90d99dc) - fix typo in ci LICENSE path - [oknozor](https://github.com/oknozor)
+
+
+- - -
 ## 1.0.1 - 2020-10-12
 
 
