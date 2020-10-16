@@ -535,13 +535,7 @@ impl CocoGitto {
             .collect::<Result<Vec<Hook>>>()?;
 
         for mut hook in hooks {
-            hook.entries().try_for_each(|mut entry| {
-                entry.fill(|key| match key {
-                    "version" => Some(next_version),
-                    _ => None,
-                })
-            })?;
-
+            hook.insert_version(next_version);
             hook.run().context(format!("{}", hook))?;
         }
 

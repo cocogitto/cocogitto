@@ -2,7 +2,7 @@ use std::{fmt, process::Command, str::FromStr};
 
 use crate::Result;
 
-static ENTRY_SYMBOL: char = '%';
+pub const VERSION_KEY: &str = "%version";
 
 pub struct Hook(Vec<String>);
 
@@ -28,21 +28,17 @@ impl fmt::Display for Hook {
 }
 
 impl Hook {
-    pub fn entries(&mut self) -> impl Iterator<Item = HookEntry> {
-        self.0
-            .iter_mut()
-            .filter(|s| s.starts_with(ENTRY_SYMBOL))
-            .map(HookEntry)
-    }
+    pub fn insert_version(&mut self, value: &str) {
+        let entries_with_version = self
+            .0
+            .iter()
+            .map(|entry| entry.replace(VERSION_KEY, value))
+            .collect();
 
-    pub fn is_ready(&self) -> bool {
-        !self.0.iter().any(|s| s.starts_with(ENTRY_SYMBOL))
+        self.0 = entries_with_version
     }
 
     pub fn run(&self) -> Result<()> {
-        // Hook should have all entries filled before running
-        assert!(self.is_ready());
-
         let (cmd, args) = self.0.split_first().expect("hook must not be empty");
 
         let status = Command::new(&cmd).args(args).status()?;
@@ -52,25 +48,6 @@ impl Hook {
         } else {
             Ok(())
         }
-    }
-}
-
-pub struct HookEntry<'a>(&'a mut String);
-
-impl HookEntry<'_> {
-    pub fn fill<'b, F>(&mut self, f: F) -> Result<()>
-    where
-        F: FnOnce(&str) -> Option<&'b str> + 'b,
-    {
-        // trim ENTRY_SYMBOL in the beginning
-        let key = &self.0[1..];
-
-        let value = f(key).ok_or_else(|| anyhow!("unknown key {}", key))?;
-
-        self.0.clear();
-        self.0.push_str(value);
-
-        Ok(())
     }
 }
 
@@ -96,43 +73,48 @@ mod test {
     }
 
     #[test]
-    fn fill_entries() -> Result<()> {
-        let mut hook = Hook::from_str("cmd %one %two %three")?;
-
-        assert!(!hook.is_ready());
-
-        hook.entries().try_for_each(|mut entry| {
-            entry.fill(|key| match key {
-                "one" => Some("1"),
-                "two" => Some("2"),
-                "three" => Some("3"),
-                _ => None,
-            })
-        })?;
-
-        assert!(hook.is_ready());
+    fn replace_version_cargo() -> Result<()> {
+        let mut hook = Hook::from_str("cargo bump %version")?;
+        hook.insert_version("1.0.0");
 
         assert_eq!(
             &hook.0,
-            &["cmd".to_string(), "1".into(), "2".into(), "3".into()]
+            &["cargo".to_string(), "bump".into(), "1.0.0".into()]
         );
-
         Ok(())
     }
 
     #[test]
-    fn fill_entries_unknown_key() -> Result<()> {
-        let mut hook = Hook::from_str("%unknown")?;
+    fn replace_version_maven() -> Result<()> {
+        let mut hook = Hook::from_str("mvn versions:set -DnewVersion=%version")?;
+        hook.insert_version("1.0.0");
 
-        assert!(!hook.is_ready());
+        assert_eq!(
+            &hook.0,
+            &[
+                "mvn".to_string(),
+                "versions:set".into(),
+                "-DnewVersion=1.0.0".into()
+            ]
+        );
+        Ok(())
+    }
 
-        let result = hook
-            .entries()
-            .try_for_each(|mut entry| entry.fill(|_| None));
-        assert!(result.is_err());
+    #[test]
+    fn leave_hook_untouched_when_no_version() -> Result<()> {
+        let mut hook = Hook::from_str("echo \"Hello World\"")?;
+        hook.insert_version("1.0.0");
 
-        assert!(!hook.is_ready());
+        assert_eq!(&hook.0, &["echo".to_string(), "Hello World".into()]);
+        Ok(())
+    }
 
+    #[test]
+    fn replace_quoted_version() -> Result<()> {
+        let mut hook = Hook::from_str("echo \"%version\"")?;
+        hook.insert_version("1.0.0");
+
+        assert_eq!(&hook.0, &["echo".to_string(), "1.0.0".into()]);
         Ok(())
     }
 }
