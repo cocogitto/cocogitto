@@ -3,6 +3,7 @@
 COMMIT_MSG_FILE=$1
 
 MESSAGE=$(cat $COMMIT_MSG_FILE)
+
 if cog verify "$MESSAGE"; then
     echo "Commit parse succeded"
 else 
