@@ -55,7 +55,7 @@ features related to the conventional commit specification. Anything else shall b
     - [Bump hooks](#Bump-hooks)
     - [Pre bump hooks](#pre-bump-hooks)
     - [Post bump hooks](#post-bump-hooks)
-    - [Install pre-commit hook](#Install-pre-commit-hook)
+    - [Builtin git hooks](#Builtin-git-hooks)
 - [Contributing](#Contributing)
 - [Licence](#Licence)
 
@@ -387,7 +387,7 @@ post_bump_hooks = [
 ```  
 
 
-### Install pre commit hook
+### Builtin git hooks
 
 To protect your commit history, and your git remote, cog have builtins 
 [git hooks](https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks). 
