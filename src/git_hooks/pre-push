@@ -1,0 +1,8 @@
+#!/bin/sh
+
+if cog check; then
+    exit 0
+fi
+
+echo "Invalid commits where found, force push with '--no-verify'"
+exit 1

@@ -2,6 +2,7 @@ use anyhow::{Context, Result};
 use clap::{App, AppSettings, Arg, SubCommand};
 use cocogitto::commit::CommitType;
 use cocogitto::filter::{CommitFilter, CommitFilters};
+use cocogitto::git_hooks::HookKind;
 use cocogitto::version::VersionIncrement;
 use cocogitto::CocoGitto;
 use cocogitto::{changelog::WriterMode, output::Output};
@@ -29,12 +30,14 @@ const LOG: &str = "log";
 const VERIFY: &str = "verify";
 const CHANGELOG: &str = "changelog";
 const INIT: &str = "init";
+const INSTALL_GIT_HOOK: &str = "install-hook";
 
 fn main() -> Result<()> {
     let check_command = SubCommand::with_name(CHECK)
         .settings(SUBCOMMAND_SETTINGS)
         .about("Verify all commit message against the conventional commit specification")
         .display_order(1);
+
     let edit_command = SubCommand::with_name(EDIT)
         .settings(SUBCOMMAND_SETTINGS)
         .about("Interactively rename invalid commit message")
@@ -162,13 +165,26 @@ fn main() -> Result<()> {
         )
         .about("Install cog config files");
 
+    let install_git_hook = SubCommand::with_name(INSTALL_GIT_HOOK)
+        .settings(SUBCOMMAND_SETTINGS)
+        .about("Add git hooks to the repository")
+        .arg(
+            Arg::with_name("hook-type")
+                .help("Type of hook to install")
+                .takes_value(true)
+                .required(true)
+                .possible_values(&["pre-commit", "pre-push", "all"])
+                .default_value("all"),
+        )
+        .display_order(7);
+
     let matches = App::new("Cogitto")
         .settings(APP_SETTINGS)
         .version(env!("CARGO_PKG_VERSION"))
         .author("Paul D. <paul.delafosse@protonmail.com>")
         .about("A conventional commit compliant, changelog and commit generator")
         .long_about("Conventional Commit Git Terminal Overlord is a tool to help you use the conventional commit specification")
-        .subcommands(vec![verify_command, init_subcommand, check_command, edit_command, log_command, changelog_command, bump_command])
+        .subcommands(vec![verify_command, init_subcommand, check_command, edit_command, log_command, changelog_command, bump_command, install_git_hook])
         .get_matches();
 
     if let Some(subcommand) = matches.subcommand_name() {
@@ -214,7 +230,7 @@ fn main() -> Result<()> {
 
             CHECK => {
                 let cocogitto = CocoGitto::get()?;
-                cocogitto.check()?
+                cocogitto.check()?;
             }
             EDIT => {
                 let cocogitto = CocoGitto::get()?;
@@ -283,6 +299,18 @@ fn main() -> Result<()> {
                 let subcommand = matches.subcommand_matches(INIT).unwrap();
                 let init_path = subcommand.value_of("path").unwrap(); // safe unwrap via clap default value
                 cocogitto::init(init_path)?;
+            }
+
+            INSTALL_GIT_HOOK => {
+                let subcommand = matches.subcommand_matches(INSTALL_GIT_HOOK).unwrap();
+                let hook_type = subcommand.value_of("hook-type").unwrap(); // safe unwrap via clap default value
+                let cocogitto = CocoGitto::get()?;
+                match hook_type {
+                    "pre-commit" => cocogitto.install_hook(HookKind::PrepareCommit)?,
+                    "pre-push" => cocogitto.install_hook(HookKind::PrePush)?,
+                    "all" => cocogitto.install_hook(HookKind::All)?,
+                    _ => unreachable!(),
+                }
             }
             _ => unreachable!(),
         }

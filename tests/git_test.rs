@@ -62,6 +62,6 @@ fn check_commit_history_err() -> Result<()> {
 
     let gitto = CocoGitto::get()?;
 
-    assert!(gitto.check().is_ok());
+    assert!(gitto.check().is_err());
     Ok(())
 }

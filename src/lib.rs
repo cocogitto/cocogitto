@@ -11,6 +11,7 @@ pub mod filter;
 pub mod output;
 
 pub mod commit;
+pub mod git_hooks;
 pub mod hook;
 pub mod repository;
 pub mod settings;
@@ -29,6 +30,7 @@ use colored::*;
 use commit::Commit;
 use git2::{Oid, RebaseOptions};
 use hook::Hook;
+use itertools::Itertools;
 use semver::Version;
 use serde::export::fmt::Display;
 use serde::export::Formatter;
@@ -281,12 +283,16 @@ impl CocoGitto {
 
         if errors.is_empty() {
             let msg = "No errored commits".green();
-            println!("{}", msg)
+            println!("{}", msg);
+            Ok(())
         } else {
-            errors.iter().for_each(|err| eprintln!("{}", err));
+            let err: String = errors
+                .iter()
+                .map(|err| err.to_string())
+                .intersperse("\n".to_string())
+                .collect();
+            Err(anyhow!("{}", err))
         }
-
-        Ok(())
     }
 
     pub fn get_log(&self, filters: CommitFilters) -> Result<String> {
