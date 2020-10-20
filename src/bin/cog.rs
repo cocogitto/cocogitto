@@ -173,8 +173,7 @@ fn main() -> Result<()> {
                 .help("Type of hook to install")
                 .takes_value(true)
                 .required(true)
-                .possible_values(&["pre-commit", "pre-push", "all"])
-                .default_value("all"),
+                .possible_values(&["pre-commit", "pre-push", "all"]),
         )
         .display_order(7);
 
