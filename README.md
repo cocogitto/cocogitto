@@ -394,7 +394,7 @@ To protect your commit history, and your git remote, cog have builtins
 
 You can install them all by running : 
 ```
-cog install-hook
+cog install-hook all
 ```
 
 Or one by one, specifying the hook name : 
