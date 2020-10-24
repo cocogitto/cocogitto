@@ -1,10 +1,12 @@
+use super::status::Statuses;
+use crate::error::ErrorKind;
 use crate::error::ErrorKind::Git;
 use crate::OidOf;
 use anyhow::Result;
 use colored::Colorize;
 use git2::{
     Commit as Git2Commit, Diff, DiffOptions, IndexAddOption, Object, ObjectType, Oid,
-    Repository as Git2Repository, StatusOptions, Statuses,
+    Repository as Git2Repository, StatusOptions,
 };
 use std::path::Path;
 
@@ -74,10 +76,9 @@ impl Repository {
                 .commit(Some("HEAD"), &sig, &sig, &message, &tree, &[])
                 .map_err(|err| anyhow!(err))
         } else {
-            Err(anyhow!(
-                "{}, nothing to commit (use \"git add\" to track)",
-                self.statuses_display()?
-            ))
+            Err(anyhow!(ErrorKind::NothingToCommit {
+                statuses: self.get_statuses()?
+            }))
         }
     }
 
@@ -87,9 +88,12 @@ impl Repository {
         options.exclude_submodules(true);
         options.include_unmodified(false);
 
-        self.0
+        let statuses = self
+            .0
             .statuses(Some(&mut options))
-            .map_err(|err| anyhow!(err))
+            .map_err(|err| anyhow!(err))?;
+
+        Ok(Statuses::from(statuses))
     }
 
     pub(crate) fn get_head_commit_oid(&self) -> Result<Oid> {
@@ -169,7 +173,7 @@ impl Repository {
         if self.get_diff(true).is_some() {
             return Err(anyhow!(
                 "{}{}",
-                self.statuses_display()?,
+                self.get_statuses()?,
                 "Cannot create tag : changes needs to be commited".red()
             ));
         }
@@ -226,29 +230,6 @@ impl Repository {
         let obj = repo.revparse_single(arg)?;
         let tree = obj.peel(ObjectType::Tree)?;
         Ok(Some(tree))
-    }
-
-    pub fn statuses_display(&self) -> Result<String> {
-        let statuses = self.get_statuses()?;
-        //TODO : implement fmt display and use a proper statuses wrapper struct
-        let mut out = String::new();
-        statuses.iter().for_each(|entry| {
-            let status = match entry.status() {
-                s if s.contains(git2::Status::WT_NEW) => "Untracked: ",
-                s if s.contains(git2::Status::WT_RENAMED) => "Renamed: ",
-                s if s.contains(git2::Status::WT_DELETED) => "Deleted: ",
-                s if s.contains(git2::Status::WT_TYPECHANGE) => "Typechange: ",
-                s if s.contains(git2::Status::WT_MODIFIED) => "Modified: ",
-                s if s.contains(git2::Status::INDEX_NEW) => "New file: ",
-                s if s.contains(git2::Status::INDEX_MODIFIED) => "Modified: ",
-                s if s.contains(git2::Status::INDEX_DELETED) => "Deleted: ",
-                s if s.contains(git2::Status::INDEX_RENAMED) => "Renamed: ",
-                s if s.contains(git2::Status::INDEX_TYPECHANGE) => "Typechange:",
-                _ => "unknown git status",
-            };
-            out.push_str(&format!("{} {}\n", status.red(), entry.path().unwrap()));
-        });
-        Ok(out)
     }
 }
 
@@ -398,7 +379,7 @@ mod test {
 
         let statuses = repo.get_statuses()?;
 
-        assert!(statuses.is_empty());
+        assert!(statuses.0.is_empty());
         Ok(())
     }
 
@@ -412,7 +393,7 @@ mod test {
 
         let statuses = repo.get_statuses()?;
 
-        assert!(statuses.is_empty().not());
+        assert!(statuses.0.is_empty().not());
         Ok(())
     }
 

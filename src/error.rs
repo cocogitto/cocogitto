@@ -1,3 +1,4 @@
+use crate::git::status::Statuses;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -10,6 +11,8 @@ pub(crate) enum ErrorKind {
         cause: String,
         additional_info: String,
     },
+    #[error("{statuses}")]
+    NothingToCommit { statuses: Statuses },
     #[error("{level}:\n\t{cause}\n")]
     Semver { level: String, cause: String },
     #[error("{level}:\n\t{cause}\n")]
