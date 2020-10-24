@@ -1,9 +1,10 @@
 use anyhow::Result;
-use clap::{App, AppSettings, Arg, SubCommand};
+use clap::{App, AppSettings, Arg, Shell, SubCommand};
 use cocogitto::CocoGitto;
 
 const APP_SETTINGS: &[AppSettings] = &[
-    AppSettings::SubcommandRequiredElseHelp,
+    AppSettings::ArgsNegateSubcommands,
+    AppSettings::SubcommandsNegateReqs,
     AppSettings::UnifiedHelpMessage,
     AppSettings::ColoredHelp,
     AppSettings::VersionlessSubcommands,
@@ -17,52 +18,84 @@ const SUBCOMMAND_SETTINGS: &[AppSettings] = &[
     AppSettings::DeriveDisplayOrder,
 ];
 
+const GENERATE_COMPLETIONS: &str = "generate-completions";
+
 fn main() -> Result<()> {
     let cocogitto = CocoGitto::get()?;
 
-    let matches =  App::new("Cocogito")
+    let matches = app().get_matches();
+
+    if let Some(subcommand) = matches.subcommand_matches(GENERATE_COMPLETIONS) {
+        let for_shell = match subcommand.value_of("type").unwrap() {
+            "bash" => Shell::Bash,
+            "elvish" => Shell::Elvish,
+            "fish" => Shell::Fish,
+            "zsh" => Shell::Zsh,
+            _ => unreachable!(),
+        };
+        app().gen_completions_to("coco", for_shell, &mut std::io::stdout());
+    } else {
+        let commit_type = matches.value_of("type").unwrap().to_string();
+        let message = matches.value_of("message").unwrap().to_string();
+        let scope = matches.value_of("scope").map(|scope| scope.to_string());
+        let body = matches.value_of("body").map(|body| body.to_string());
+        let footer = matches.value_of("footer").map(|footer| footer.to_string());
+        let breaking_change = matches.is_present("breaking-change");
+
+        cocogitto.conventional_commit(
+            &commit_type,
+            scope,
+            message,
+            body,
+            footer,
+            breaking_change,
+        )?;
+    }
+
+    Ok(())
+}
+
+fn app<'a, 'b>() -> App<'a, 'b> {
+    let keys = CocoGitto::get_commit_metadata()
+        .iter()
+        .map(|(commit_type, _)| commit_type.get_key_str())
+        .collect::<Vec<&str>>();
+
+    App::new("Coco")
         .settings(APP_SETTINGS)
         .version(env!("CARGO_PKG_VERSION"))
         .author("Paul D. <paul.delafosse@protonmail.com>")
-        .about("A conventional commit compliant, changelog and commit generator")
-        .long_about("Conventional Commit Git Terminal Overlord is a tool to help you use the conventional commit specification")
-        .subcommands(CocoGitto::get_commit_metadata()
-            .iter()
-            .map(|(commit_type, commit_config)| {
-                SubCommand::with_name(commit_type.get_key_str())
-                    .settings(SUBCOMMAND_SETTINGS)
-                    .about(commit_config.help_message.as_str())
-                    .help(commit_config.help_message.as_str())
-                    .arg(Arg::with_name("message").help("The commit message"))
-                    .arg(Arg::with_name("scope").help("The scope of the commit message"))
-                    .arg(Arg::with_name("body").help("The body of the commit message"))
-                    .arg(Arg::with_name("footer").help("The footer of the commit message"))
-                    .arg(
-                        Arg::with_name("breaking-change")
-                            .help("BREAKING CHANGE commit")
-                            .short("B")
-                            .long("breaking-change"),
-                    )
-            })
-            .collect::<Vec<App>>()
-        ).get_matches();
-
-    if let Some(commit_subcommand) = matches.subcommand_name() {
-        if let Some(args) = matches.subcommand_matches(commit_subcommand) {
-            let message = args.value_of("message").unwrap().to_string();
-            let scope = args.value_of("scope").map(|scope| scope.to_string());
-            let body = args.value_of("body").map(|body| body.to_string());
-            let footer = args.value_of("footer").map(|footer| footer.to_string());
-            let breaking_change = args.is_present("breaking-change");
-            cocogitto.conventional_commit(
-                commit_subcommand,
-                scope,
-                message,
-                body,
-                footer,
-                breaking_change,
-            )?;
-        }
-    }
-    Ok(())
+        .about("A command line tool to create conventional commits")
+        .arg(
+            Arg::with_name("type")
+                .help("The type of the commit message")
+                .possible_values(keys.as_slice())
+                .required(true),
+        )
+        .arg(
+            Arg::with_name("message")
+                .help("The type of the commit message")
+                .required(true),
+        )
+        .arg(Arg::with_name("scope").help("The scope of the commit message"))
+        .arg(Arg::with_name("body").help("The body of the commit message"))
+        .arg(Arg::with_name("footer").help("The footer of the commit message"))
+        .arg(
+            Arg::with_name("breaking-change")
+                .help("BREAKING CHANGE commit")
+                .short("B")
+                .long("breaking-change"),
+        )
+        .subcommand(
+            SubCommand::with_name(GENERATE_COMPLETIONS)
+                .settings(SUBCOMMAND_SETTINGS)
+                .about("Generate shell completions")
+                .arg(
+                    Arg::with_name("type")
+                        .possible_values(&["bash", "elvish", "fish", "zsh"])
+                        .required(true)
+                        .takes_value(true)
+                        .help("Type of completions to generate"),
+                ),
+        )
 }

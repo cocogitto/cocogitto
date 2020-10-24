@@ -41,6 +41,7 @@ features related to the conventional commit specification. Anything else shall b
     - [Cargo](#cargo)
     - [Archlinux](#archlinux)
 - [Binaries](#Binaries)
+    - [Shell completions](#Shell-completions)
 - [Coco Commits](#Coco-Commits)
     - [Breaking changes](#Breaking-changes)
 - [Cog commands](#Cog-commands)
@@ -87,9 +88,35 @@ At the moment Cocogitto comes with two binaries `coco` and `cog`.
 - `cog` does everything else : check your 
 repo history against the spec, edit malformed commit messages, generate changelog and bump versions etc.
 
+### Shell completions
+
+Before getting started you might want to install shell completions for `cog` and `coco` commands.
+Supported shells are `bash`, `elvish`, `fish` and `zsh`.
+
+Example installing completions: 
+
+```
+# Bash
+$ cog generate-completions bash > ~/.local/share/bash-completion/completions/cog
+$ coco generate-completions bash > ~ bash > ~/.local/share/bash-completion/completions/coco
+
+# Bash (macOS/Homebrew)
+$ cog generate-completions bash > ~ bash > $(brew --prefix)/etc/bash_completion.d/cog.bash-completion
+$ coco generate-completions bash > ~ bash > $(brew --prefix)/etc/bash_completion.d/coco.bash-completion
+
+# Fish
+$ mkdir -p ~/.config/fish/completions
+$ cog generate-completions bash > ~ fish > ~/.config/fish/completions/cog.fish
+$ coco generate-completions bash > ~ fish > ~/.config/fish/completions/coco.fish
+
+# Zsh
+$ cog generate-completions bash > ~ zsh > ~/.zfunc/_cog
+$ coco generate-completions bash > ~ zsh > ~/.zfunc/_coco
+```
+
 ## Coco Commits
 
-`coco` allows you to easily create commits respecting the conventional specification. It comes with a set of sub-commands
+`coco` allows you to easily create commits respecting the conventional specification. It comes with a set of predefined arguments
 named after conventional commit types : `style`, `build`, `refactor`, `ci`, `fix`, `test`, `perf`, `chore`, `feat`, `revert`, `docs`.    
 
 Conventional commits are structured as follow : 
@@ -102,14 +129,14 @@ Conventional commits are structured as follow :
 [optional footer(s)]
 ```
 
-All `coco` subcommands follows the same structure : 
+All `coco` commit commands follows the same structure : 
 
 ```
 coco {type} {message} [optional scope] [optional body] [optional footer]
 ```
 
 The only difference you need to remember is that `coco` commit scope comes after the commit description. This allows 
-to use positional arguments instead of typing flags (ex: `coco -t {type} -s {scope} -m {message}... and so on`)
+using positional arguments instead of typing flags (ex: `coco -t {type} -s {scope} -m {message}... and so on`)
 
 For instance if you want to create the following commit : `feat: add awesome feature` you would run this :
 
@@ -236,7 +263,7 @@ cog log --author "Paul Delafosse" "Mike Lubinets" --type feat --scope cli --no-e
 
 ### Generate changelogs
 
-There is two way to generate changelog with `cog` : 
+There are two way to generate changelog with `cog` : 
 - To stdout with `cog changelog`.
 
     ```
@@ -259,7 +286,7 @@ There is two way to generate changelog with `cog` :
     d4aa61 - change config name to cog.toml - Paul Delafosse
     ```
   
-- To your repo `CHANGELOG.md` file with `cog bump` (see [Auto bump](#auto-bump)). 
+- To your repo `CHANGELOG.md` file with `cog bump`. 
 
 
 ### Auto bump
