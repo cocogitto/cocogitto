@@ -123,26 +123,6 @@ pub fn init<S: AsRef<Path> + ?Sized>(path: &S) -> Result<()> {
     Ok(())
 }
 
-pub fn verify(author: Option<String>, message: &str) -> Result<()> {
-    let commit = Commit::parse_commit_message(message);
-
-    match commit {
-        Ok(message) => {
-            println!(
-                "{}",
-                Commit {
-                    oid: "not committed".to_string(),
-                    message,
-                    date: Utc::now().naive_utc(),
-                    author: author.unwrap_or_else(|| "Unknown".to_string()),
-                }
-            );
-            Ok(())
-        }
-        Err(err) => Err(err),
-    }
-}
-
 pub struct CocoGitto {
     repository: Repository,
     changelog_path: PathBuf,
@@ -436,6 +416,9 @@ impl CocoGitto {
         Ok(changelog.markdown(true))
     }
 
+    /// ## Get a changelog between two oids
+    /// - `from` default value : latest tag or else first commit
+    /// - `to` default value : `HEAD` or else first commit
     pub(crate) fn get_changelog(
         &self,
         from: Option<&str>,
@@ -545,6 +528,7 @@ impl CocoGitto {
     }
 }
 
+/// A wrapper for git2 oid including tags and HEAD ref
 enum OidOf {
     Tag(String, Oid),
     Head(Oid),
@@ -560,6 +544,7 @@ impl OidOf {
 }
 
 impl Display for OidOf {
+    /// Print the oid according to it's type
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             OidOf::Tag(tag, _) => write!(f, "{}", tag),
