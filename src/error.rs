@@ -1,4 +1,7 @@
 use crate::git::status::Statuses;
+use colored::*;
+use serde::export::Formatter;
+use std::fmt;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -17,4 +20,30 @@ pub(crate) enum ErrorKind {
     Semver { level: String, cause: String },
     #[error("{level}:\n\t{cause}\n")]
     Git { level: String, cause: String },
+}
+
+// This is not meant to be unwrap like other errors
+// just to emit a warning on hook failure
+pub(crate) struct PreHookError {
+    pub(crate) cause: String,
+    pub(crate) version: String,
+    pub(crate) stash_number: u32,
+}
+
+impl fmt::Display for PreHookError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let header = format!(
+            "Error: {} `{}` {}",
+            "prehook run".red(),
+            self.cause,
+            "failed".red()
+        );
+        let stash_ref = format!("`cog_bump_{}`", self.version);
+        let suggestion = format!(
+            "\tAll changes made during hook runs have been stashed on {}\n\
+        \tyou can run `git stash apply stash@{}` to restore these changes.",
+            stash_ref, self.stash_number
+        );
+        write!(f, "{}\n{}", header, suggestion)
+    }
 }

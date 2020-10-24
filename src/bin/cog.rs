@@ -40,7 +40,7 @@ fn main() -> Result<()> {
     if let Some(subcommand) = matches.subcommand_name() {
         match subcommand {
             BUMP => {
-                let cocogitto = CocoGitto::get()?;
+                let mut cocogitto = CocoGitto::get()?;
                 let subcommand = matches.subcommand_matches(BUMP).unwrap();
 
                 let increment = if let Some(version) = subcommand.value_of("version") {
