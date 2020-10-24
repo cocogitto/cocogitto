@@ -294,8 +294,8 @@ impl fmt::Display for Commit {
     }
 }
 
-impl CommitType {
-    pub fn get_key_str(&self) -> &str {
+impl AsRef<str> for CommitType {
+    fn as_ref(&self) -> &str {
         match &self {
             Feature => "feat",
             BugFix => "fix",
@@ -313,10 +313,29 @@ impl CommitType {
     }
 }
 
+impl From<&str> for CommitType {
+    fn from(commit_type: &str) -> Self {
+        match commit_type {
+            "feat" => Feature,
+            "fix" => BugFix,
+            "chore" => Chore,
+            "revert" => Revert,
+            "perf" => Performances,
+            "docs" => Documentation,
+            "style" => Style,
+            "refactor" => Refactoring,
+            "test" => Test,
+            "build" => Build,
+            "ci" => Ci,
+            other => Custom(other.to_string()),
+        }
+    }
+}
+
 impl ToString for CommitMessage {
     fn to_string(&self) -> String {
         let mut message = String::new();
-        message.push_str(&self.commit_type.get_key_str());
+        message.push_str(&self.commit_type.as_ref());
 
         if let Some(scope) = &self.scope {
             message.push_str(&format!("({})", scope));
@@ -340,28 +359,9 @@ impl ToString for CommitMessage {
     }
 }
 
-impl From<&str> for CommitType {
-    fn from(commit_type: &str) -> Self {
-        match commit_type {
-            "feat" => Feature,
-            "fix" => BugFix,
-            "chore" => Chore,
-            "revert" => Revert,
-            "perf" => Performances,
-            "docs" => Documentation,
-            "style" => Style,
-            "refactor" => Refactoring,
-            "test" => Test,
-            "build" => Build,
-            "ci" => Ci,
-            other => Custom(other.to_string()),
-        }
-    }
-}
-
 impl fmt::Display for CommitType {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.get_key_str())
+        write!(f, "{}", self.as_ref())
     }
 }
 

@@ -58,7 +58,7 @@ fn main() -> Result<()> {
 fn app<'a, 'b>() -> App<'a, 'b> {
     let keys = CocoGitto::get_commit_metadata()
         .iter()
-        .map(|(commit_type, _)| commit_type.get_key_str())
+        .map(|(commit_type, _)| commit_type.as_ref())
         .collect::<Vec<&str>>();
 
     App::new("Coco")
