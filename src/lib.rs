@@ -19,7 +19,7 @@ use crate::settings::{HookType, Settings};
 use anyhow::{Context, Result};
 use chrono::Utc;
 use colored::*;
-use conventional::changelog::{Changelog, ChangelogWriter, WriterMode};
+use conventional::changelog::{Changelog, ChangelogWriter};
 use conventional::commit::Commit;
 use conventional::commit::{CommitConfig, CommitMessage, CommitType};
 use conventional::version::{parse_pre_release, VersionIncrement};
@@ -331,7 +331,6 @@ impl CocoGitto {
     pub fn create_version(
         &mut self,
         increment: VersionIncrement,
-        mode: WriterMode,
         pre_release: Option<&str>,
     ) -> Result<()> {
         let statuses = self.repository.get_statuses()?;
@@ -387,7 +386,6 @@ impl CocoGitto {
         let mut writter = ChangelogWriter {
             changelog,
             path: self.changelog_path.clone(),
-            mode,
         };
 
         writter

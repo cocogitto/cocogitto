@@ -1,16 +1,9 @@
-use self::WriterMode::*;
 use crate::conventional::commit::Commit;
 use crate::{OidOf, COMMITS_METADATA};
 use anyhow::Result;
 use itertools::Itertools;
 use std::fs;
 use std::path::PathBuf;
-
-pub enum WriterMode {
-    Replace,
-    Prepend,
-    Append,
-}
 
 pub(crate) struct Changelog {
     pub from: OidOf,
@@ -23,27 +16,14 @@ pub(crate) struct Changelog {
 pub(crate) struct ChangelogWriter {
     pub(crate) changelog: Changelog,
     pub(crate) path: PathBuf,
-    pub(crate) mode: WriterMode,
 }
 
 impl ChangelogWriter {
-    pub(crate) fn write(&mut self) -> Result<()> {
-        match &self.mode {
-            Append => self.insert(),
-            Prepend => self.insert(),
-            Replace => self.replace(),
-        }
-    }
-
-    fn insert(&mut self) -> Result<()> {
+    pub fn write(&mut self) -> Result<()> {
         let mut changelog_content =
             fs::read_to_string(&self.path).unwrap_or_else(|_err| Changelog::changelog_template());
 
-        let separator_idx = match self.mode {
-            Append => changelog_content.rfind("- - -"),
-            Prepend => changelog_content.find("- - -"),
-            _ => unreachable!(),
-        };
+        let separator_idx = changelog_content.find("- - -");
 
         if let Some(idx) = separator_idx {
             let markdown_changelog = self.changelog.markdown(false);
@@ -58,14 +38,6 @@ impl ChangelogWriter {
                 self.path.display()
             ))
         }
-    }
-
-    fn replace(&mut self) -> Result<()> {
-        let mut content = Changelog::default_header();
-        content.push_str(&self.changelog.markdown(false));
-        content.push_str(Changelog::default_footer().as_str());
-
-        fs::write(&self.path, content).map_err(|err| anyhow!(err))
     }
 }
 

@@ -5,8 +5,8 @@ use cocogitto::conventional::commit::CommitType;
 use cocogitto::conventional::version::VersionIncrement;
 use cocogitto::git::hook::HookKind;
 use cocogitto::log::filter::{CommitFilter, CommitFilters};
+use cocogitto::log::output::Output;
 use cocogitto::CocoGitto;
-use cocogitto::{conventional::changelog::WriterMode, log::output::Output};
 use std::process::exit;
 
 const APP_SETTINGS: &[AppSettings] = &[
@@ -60,7 +60,7 @@ fn main() -> Result<()> {
                 let pre = subcommand.value_of("pre");
 
                 // TODO mode to cli
-                cocogitto.create_version(increment, WriterMode::Prepend, pre)?
+                cocogitto.create_version(increment, pre)?
             }
             VERIFY => {
                 let subcommand = matches.subcommand_matches(VERIFY).unwrap();
