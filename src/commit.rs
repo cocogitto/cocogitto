@@ -48,14 +48,12 @@ pub struct CommitMessage {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct CommitConfig {
     pub changelog_title: String,
-    pub help_message: String,
 }
 
 impl CommitConfig {
-    pub(crate) fn new(changelog_title: &str, help_message: &str) -> Self {
+    pub(crate) fn new(changelog_title: &str) -> Self {
         CommitConfig {
             changelog_title: changelog_title.to_string(),
-            help_message: help_message.to_string(),
         }
     }
 }
@@ -397,5 +395,8 @@ mod test {
         assert_eq!(commit.commit_type, CommitType::Feature);
         assert_eq!(commit.scope, Some("database".to_owned()));
         assert_eq!(commit.description, "add postgresql driver".to_owned());
+        assert!(!commit.is_breaking_change);
+        assert!(commit.body.is_none());
+        assert!(commit.footer.is_none());
     }
 }

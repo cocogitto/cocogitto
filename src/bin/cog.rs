@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use clap::{App, AppSettings, Arg, SubCommand};
+use clap::{App, AppSettings, Arg, Shell, SubCommand};
 use cocogitto::commit::CommitType;
 use cocogitto::filter::{CommitFilter, CommitFilters};
 use cocogitto::git_hooks::HookKind;
@@ -31,8 +31,156 @@ const VERIFY: &str = "verify";
 const CHANGELOG: &str = "changelog";
 const INIT: &str = "init";
 const INSTALL_GIT_HOOK: &str = "install-hook";
+const GENERATE_COMPLETIONS: &str = "generate-completions";
 
 fn main() -> Result<()> {
+    let matches = app().get_matches();
+
+    if let Some(subcommand) = matches.subcommand_name() {
+        match subcommand {
+            BUMP => {
+                let cocogitto = CocoGitto::get()?;
+                let subcommand = matches.subcommand_matches(BUMP).unwrap();
+
+                let increment = if let Some(version) = subcommand.value_of("version") {
+                    VersionIncrement::Manual(version.to_string())
+                } else if subcommand.is_present("auto") {
+                    VersionIncrement::Auto
+                } else if subcommand.is_present("major") {
+                    VersionIncrement::Major
+                } else if subcommand.is_present("patch") {
+                    VersionIncrement::Patch
+                } else if subcommand.is_present("minor") {
+                    VersionIncrement::Minor
+                } else {
+                    unreachable!()
+                };
+
+                let pre = subcommand.value_of("pre");
+
+                // TODO mode to cli
+                cocogitto.create_version(increment, WriterMode::Prepend, pre)?
+            }
+            VERIFY => {
+                let subcommand = matches.subcommand_matches(VERIFY).unwrap();
+                let message = subcommand.value_of("message").unwrap();
+                let author = CocoGitto::get()
+                    .map(|cogito| cogito.get_committer().unwrap())
+                    .ok();
+
+                match cocogitto::verify(author, message) {
+                    Ok(()) => exit(0),
+                    Err(err) => {
+                        eprintln!("{}", err);
+                        exit(1);
+                    }
+                }
+            }
+
+            CHECK => {
+                let cocogitto = CocoGitto::get()?;
+                cocogitto.check()?;
+            }
+            EDIT => {
+                let cocogitto = CocoGitto::get()?;
+                cocogitto.check_and_edit()?;
+            }
+            LOG => {
+                let cocogitto = CocoGitto::get()?;
+
+                let repo_tag_name = match cocogitto.get_repo_tag_name() {
+                    Some(name) => name,
+                    None => "cog log".to_string(),
+                };
+
+                let mut output = Output::builder()
+                    .with_pager_from_env("PAGER")
+                    .with_file_name(repo_tag_name)
+                    .build()?;
+
+                let subcommand = matches.subcommand_matches(LOG).unwrap();
+
+                let mut filters = vec![];
+                if let Some(commit_types) = subcommand.values_of("type") {
+                    commit_types.for_each(|commit_type| {
+                        filters.push(CommitFilter::Type(CommitType::from(commit_type)));
+                    });
+                }
+
+                if let Some(scopes) = subcommand.values_of("scope") {
+                    scopes.for_each(|scope| {
+                        filters.push(CommitFilter::Scope(scope.to_string()));
+                    });
+                }
+
+                if let Some(authors) = subcommand.values_of("author") {
+                    authors.for_each(|author| {
+                        filters.push(CommitFilter::Author(author.to_string()));
+                    });
+                }
+
+                if subcommand.is_present("breaking-change") {
+                    filters.push(CommitFilter::BreakingChange);
+                }
+
+                if subcommand.is_present("no-error") {
+                    filters.push(CommitFilter::NoError);
+                }
+
+                let filters = CommitFilters(filters);
+
+                let content = cocogitto.get_log(filters)?;
+                output
+                    .handle()?
+                    .write_all(content.as_bytes())
+                    .context("failed to write log into the pager")?;
+            }
+            CHANGELOG => {
+                let cocogitto = CocoGitto::get()?;
+                let subcommand = matches.subcommand_matches(CHANGELOG).unwrap();
+                let from = subcommand.value_of("from");
+                let to = subcommand.value_of("to");
+                let result = cocogitto.get_colored_changelog(from, to)?;
+                println!("{}", result);
+            }
+
+            INIT => {
+                let subcommand = matches.subcommand_matches(INIT).unwrap();
+                let init_path = subcommand.value_of("path").unwrap(); // safe unwrap via clap default value
+                cocogitto::init(init_path)?;
+            }
+
+            INSTALL_GIT_HOOK => {
+                let subcommand = matches.subcommand_matches(INSTALL_GIT_HOOK).unwrap();
+                let hook_type = subcommand.value_of("hook-type").unwrap(); // safe unwrap via clap default value
+                let cocogitto = CocoGitto::get()?;
+                match hook_type {
+                    "pre-commit" => cocogitto.install_hook(HookKind::PrepareCommit)?,
+                    "pre-push" => cocogitto.install_hook(HookKind::PrePush)?,
+                    "all" => cocogitto.install_hook(HookKind::All)?,
+                    _ => unreachable!(),
+                }
+            }
+
+            GENERATE_COMPLETIONS => {
+                let generate_subcommand = matches.subcommand_matches(GENERATE_COMPLETIONS).unwrap();
+                let for_shell = match generate_subcommand.value_of("type").unwrap() {
+                    "bash" => Shell::Bash,
+                    "elvish" => Shell::Elvish,
+                    "fish" => Shell::Fish,
+                    "zsh" => Shell::Zsh,
+                    _ => unreachable!(),
+                };
+                app().gen_completions_to("cog", for_shell, &mut std::io::stdout());
+            }
+
+            _ => unreachable!(),
+        }
+    }
+    Ok(())
+}
+
+fn app<'a, 'b>() -> App<'a, 'b> {
     let check_command = SubCommand::with_name(CHECK)
         .settings(SUBCOMMAND_SETTINGS)
         .about("Verify all commit message against the conventional commit specification")
@@ -177,142 +325,31 @@ fn main() -> Result<()> {
         )
         .display_order(7);
 
-    let matches = App::new("Cogitto")
+    App::new("Cog")
         .settings(APP_SETTINGS)
         .version(env!("CARGO_PKG_VERSION"))
         .author("Paul D. <paul.delafosse@protonmail.com>")
-        .about("A conventional commit compliant, changelog and commit generator")
-        .long_about("Conventional Commit Git Terminal Overlord is a tool to help you use the conventional commit specification")
-        .subcommands(vec![verify_command, init_subcommand, check_command, edit_command, log_command, changelog_command, bump_command, install_git_hook])
-        .get_matches();
-
-    if let Some(subcommand) = matches.subcommand_name() {
-        match subcommand {
-            BUMP => {
-                let cocogitto = CocoGitto::get()?;
-                let subcommand = matches.subcommand_matches(BUMP).unwrap();
-
-                let increment = if let Some(version) = subcommand.value_of("version") {
-                    VersionIncrement::Manual(version.to_string())
-                } else if subcommand.is_present("auto") {
-                    VersionIncrement::Auto
-                } else if subcommand.is_present("major") {
-                    VersionIncrement::Major
-                } else if subcommand.is_present("patch") {
-                    VersionIncrement::Patch
-                } else if subcommand.is_present("minor") {
-                    VersionIncrement::Minor
-                } else {
-                    unreachable!()
-                };
-
-                let pre = subcommand.value_of("pre");
-
-                // TODO mode to cli
-                cocogitto.create_version(increment, WriterMode::Prepend, pre)?
-            }
-            VERIFY => {
-                let subcommand = matches.subcommand_matches(VERIFY).unwrap();
-                let message = subcommand.value_of("message").unwrap();
-                let author = CocoGitto::get()
-                    .map(|cogito| cogito.get_committer().unwrap())
-                    .ok();
-
-                match cocogitto::verify(author, message) {
-                    Ok(()) => exit(0),
-                    Err(err) => {
-                        eprintln!("{}", err);
-                        exit(1);
-                    }
-                }
-            }
-
-            CHECK => {
-                let cocogitto = CocoGitto::get()?;
-                cocogitto.check()?;
-            }
-            EDIT => {
-                let cocogitto = CocoGitto::get()?;
-                cocogitto.check_and_edit()?;
-            }
-            LOG => {
-                let cocogitto = CocoGitto::get()?;
-
-                let repo_tag_name = match cocogitto.get_repo_tag_name() {
-                    Some(name) => name,
-                    None => "cog log".to_string(),
-                };
-
-                let mut output = Output::builder()
-                    .with_pager_from_env("PAGER")
-                    .with_file_name(repo_tag_name)
-                    .build()?;
-
-                let subcommand = matches.subcommand_matches(LOG).unwrap();
-
-                let mut filters = vec![];
-                if let Some(commit_types) = subcommand.values_of("type") {
-                    commit_types.for_each(|commit_type| {
-                        filters.push(CommitFilter::Type(CommitType::from(commit_type)));
-                    });
-                }
-
-                if let Some(scopes) = subcommand.values_of("scope") {
-                    scopes.for_each(|scope| {
-                        filters.push(CommitFilter::Scope(scope.to_string()));
-                    });
-                }
-
-                if let Some(authors) = subcommand.values_of("author") {
-                    authors.for_each(|author| {
-                        filters.push(CommitFilter::Author(author.to_string()));
-                    });
-                }
-
-                if subcommand.is_present("breaking-change") {
-                    filters.push(CommitFilter::BreakingChange);
-                }
-
-                if subcommand.is_present("no-error") {
-                    filters.push(CommitFilter::NoError);
-                }
-
-                let filters = CommitFilters(filters);
-
-                let content = cocogitto.get_log(filters)?;
-                output
-                    .handle()?
-                    .write_all(content.as_bytes())
-                    .context("failed to write log into the pager")?;
-            }
-            CHANGELOG => {
-                let cocogitto = CocoGitto::get()?;
-                let subcommand = matches.subcommand_matches(CHANGELOG).unwrap();
-                let from = subcommand.value_of("from");
-                let to = subcommand.value_of("to");
-                let result = cocogitto.get_colored_changelog(from, to)?;
-                println!("{}", result);
-            }
-
-            INIT => {
-                let subcommand = matches.subcommand_matches(INIT).unwrap();
-                let init_path = subcommand.value_of("path").unwrap(); // safe unwrap via clap default value
-                cocogitto::init(init_path)?;
-            }
-
-            INSTALL_GIT_HOOK => {
-                let subcommand = matches.subcommand_matches(INSTALL_GIT_HOOK).unwrap();
-                let hook_type = subcommand.value_of("hook-type").unwrap(); // safe unwrap via clap default value
-                let cocogitto = CocoGitto::get()?;
-                match hook_type {
-                    "pre-commit" => cocogitto.install_hook(HookKind::PrepareCommit)?,
-                    "pre-push" => cocogitto.install_hook(HookKind::PrePush)?,
-                    "all" => cocogitto.install_hook(HookKind::All)?,
-                    _ => unreachable!(),
-                }
-            }
-            _ => unreachable!(),
-        }
-    }
-    Ok(())
+        .about("A command line tool for the conventional commits and semver specifications")
+        .subcommands(vec![
+            verify_command,
+            init_subcommand,
+            check_command,
+            edit_command,
+            log_command,
+            changelog_command,
+            bump_command,
+            install_git_hook,
+        ])
+        .subcommand(
+            SubCommand::with_name(GENERATE_COMPLETIONS)
+                .settings(SUBCOMMAND_SETTINGS)
+                .about("Generate shell completions")
+                .arg(
+                    Arg::with_name("type")
+                        .possible_values(&["bash", "elvish", "fish", "zsh"])
+                        .required(true)
+                        .takes_value(true)
+                        .help("Type of completions to generate"),
+                ),
+        )
 }

@@ -84,55 +84,25 @@ impl Settings {
 
     fn get_default_commit_config() -> CommitsMetadata {
         let mut default_types = HashMap::new();
-        default_types.insert(
-            CommitType::Feature,
-            CommitConfig::new("Features", "create a `feature` commit"),
-        );
-        default_types.insert(
-            CommitType::BugFix,
-            CommitConfig::new("Bug Fixes", "create a `bug fix` commit"),
-        );
-        default_types.insert(
-            CommitType::Chore,
-            CommitConfig::new("Miscellaneous Chores", "create a `chore` commit"),
-        );
-        default_types.insert(
-            CommitType::Revert,
-            CommitConfig::new("Revert", "create a `revert` commit"),
-        );
+        default_types.insert(CommitType::Feature, CommitConfig::new("Features"));
+        default_types.insert(CommitType::BugFix, CommitConfig::new("Bug Fixes"));
+        default_types.insert(CommitType::Chore, CommitConfig::new("Miscellaneous Chores"));
+        default_types.insert(CommitType::Revert, CommitConfig::new("Revert"));
         default_types.insert(
             CommitType::Performances,
-            CommitConfig::new("Performance Improvements", "create a `performance` commit"),
+            CommitConfig::new("Performance Improvements"),
         );
         default_types.insert(
             CommitType::Documentation,
-            CommitConfig::new("Documentation", "create a `documentation` commit"),
+            CommitConfig::new("Documentation"),
         );
-        default_types.insert(
-            CommitType::Style,
-            CommitConfig::new("Style", "create a `style` commit"),
-        );
-        default_types.insert(
-            CommitType::Refactoring,
-            CommitConfig::new("Refactoring", "create a `refactor` commit"),
-        );
-        default_types.insert(
-            CommitType::Test,
-            CommitConfig::new("Tests", "create a `test` commit"),
-        );
+        default_types.insert(CommitType::Style, CommitConfig::new("Style"));
+        default_types.insert(CommitType::Refactoring, CommitConfig::new("Refactoring"));
+        default_types.insert(CommitType::Test, CommitConfig::new("Tests"));
 
-        default_types.insert(
-            CommitType::Build,
-            CommitConfig::new("Build system", "create a continuous `build` commit"),
-        );
+        default_types.insert(CommitType::Build, CommitConfig::new("Build system"));
 
-        default_types.insert(
-            CommitType::Ci,
-            CommitConfig::new(
-                "Continuous Integration",
-                "create a `continuous integration` commit",
-            ),
-        );
+        default_types.insert(CommitType::Ci, CommitConfig::new("Continuous Integration"));
 
         default_types
     }
