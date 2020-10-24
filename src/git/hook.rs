@@ -8,8 +8,8 @@ use std::os::unix::fs::PermissionsExt;
 
 use std::fs;
 
-pub static PRE_PUSH_HOOK: &[u8] = include_bytes!("pre-push");
-pub static PREPARE_COMMIT_HOOK: &[u8] = include_bytes!("prepare-commit-msg");
+pub static PRE_PUSH_HOOK: &[u8] = include_bytes!("assets/pre-push");
+pub static PREPARE_COMMIT_HOOK: &[u8] = include_bytes!("assets/prepare-commit-msg");
 const PRE_COMMIT_HOOK_PATH: &str = ".git/hooks/prepare-commit-msg";
 const PRE_PUSH_HOOK_PATH: &str = ".git/hooks/pre-push";
 
@@ -60,7 +60,7 @@ fn create_hook(path: &PathBuf, kind: HookKind) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use crate::git_hooks::HookKind;
+    use crate::git::hook::HookKind;
     use crate::CocoGitto;
     use anyhow::Result;
     use std::env;

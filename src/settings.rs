@@ -1,5 +1,5 @@
-use crate::commit::{CommitConfig, CommitType};
-use crate::repository::Repository;
+use crate::conventional::commit::{CommitConfig, CommitType};
+use crate::git::repository::Repository;
 use crate::{CommitsMetadata, CONFIG_PATH};
 use anyhow::Result;
 use config::{Config, File};

@@ -1,11 +1,11 @@
 use anyhow::{Context, Result};
 use clap::{App, AppSettings, Arg, Shell, SubCommand};
-use cocogitto::commit::CommitType;
-use cocogitto::filter::{CommitFilter, CommitFilters};
-use cocogitto::git_hooks::HookKind;
-use cocogitto::version::VersionIncrement;
+use cocogitto::conventional::commit::CommitType;
+use cocogitto::conventional::version::VersionIncrement;
+use cocogitto::git::hook::HookKind;
+use cocogitto::log::filter::{CommitFilter, CommitFilters};
 use cocogitto::CocoGitto;
-use cocogitto::{changelog::WriterMode, output::Output};
+use cocogitto::{conventional::changelog::WriterMode, log::output::Output};
 use std::process::exit;
 
 const APP_SETTINGS: &[AppSettings] = &[

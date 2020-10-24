@@ -1,5 +1,5 @@
-use crate::commit::{Commit, CommitType};
-use crate::repository::Repository;
+use crate::conventional::commit::{Commit, CommitType};
+use crate::git::repository::Repository;
 use anyhow::Result;
 use colored::*;
 use git2::Commit as Git2Commit;
@@ -161,8 +161,8 @@ pub fn parse_pre_release(string: &str) -> Result<Vec<Identifier>> {
 
 #[cfg(test)]
 mod test {
-    use crate::commit::{Commit, CommitMessage, CommitType};
-    use crate::version::{parse_pre_release, VersionIncrement};
+    use crate::conventional::commit::{Commit, CommitMessage, CommitType};
+    use crate::conventional::version::{parse_pre_release, VersionIncrement};
     use anyhow::Result;
     use chrono::Utc;
     use semver::{Identifier, Version};

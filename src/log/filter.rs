@@ -1,5 +1,5 @@
-use crate::commit::Commit;
-use crate::commit::CommitType;
+use crate::conventional::commit::Commit;
+use crate::conventional::commit::CommitType;
 use git2::Commit as Git2Commit;
 
 #[derive(Eq, PartialEq)]

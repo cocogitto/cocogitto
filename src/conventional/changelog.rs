@@ -1,5 +1,5 @@
 use self::WriterMode::*;
-use crate::commit::Commit;
+use crate::conventional::commit::Commit;
 use crate::{OidOf, COMMITS_METADATA};
 use anyhow::Result;
 use itertools::Itertools;
@@ -127,8 +127,8 @@ impl Changelog {
 
 #[cfg(test)]
 mod test {
-    use crate::changelog::Changelog;
-    use crate::commit::{Commit, CommitMessage, CommitType};
+    use crate::conventional::changelog::Changelog;
+    use crate::conventional::commit::{Commit, CommitMessage, CommitType};
     use crate::OidOf;
     use anyhow::Result;
     use chrono::Utc;
