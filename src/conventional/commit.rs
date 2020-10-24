@@ -107,8 +107,12 @@ impl Commit {
         }
     }
 
-    pub(crate) fn shorthand(&self) -> String {
-        self.oid[0..6].to_string()
+    pub(crate) fn shorthand(&self) -> &str {
+        if self.oid != "not committed" {
+            &self.oid[0..6]
+        } else {
+            &self.oid
+        }
     }
 
     // Todo extract to ParseError
@@ -277,7 +281,7 @@ impl Commit {
             "{}{} ({}) - {}\n\t{} {}\n\t{} {}\n\t{} {}\n",
             breaking_change,
             message_display,
-            &self.oid.bold(),
+            &self.shorthand().bold(),
             elapsed,
             author_format,
             &self.author,
