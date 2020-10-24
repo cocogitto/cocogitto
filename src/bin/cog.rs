@@ -1,5 +1,6 @@
 use anyhow::{Context, Result};
 use clap::{App, AppSettings, Arg, Shell, SubCommand};
+use cocogitto::conventional::commit;
 use cocogitto::conventional::commit::CommitType;
 use cocogitto::conventional::version::VersionIncrement;
 use cocogitto::git::hook::HookKind;
@@ -68,7 +69,7 @@ fn main() -> Result<()> {
                     .map(|cogito| cogito.get_committer().unwrap())
                     .ok();
 
-                match cocogitto::verify(author, message) {
+                match commit::verify(author, message) {
                     Ok(()) => exit(0),
                     Err(err) => {
                         eprintln!("{}", err);

@@ -215,6 +215,7 @@ impl Commit {
             )
         }
     }
+
     pub fn get_log(&self) -> String {
         let message_display = self.message.description.replace("\n", " ");
         let message_display = if message_display.len() > 80 {
@@ -377,10 +378,30 @@ impl Ord for Commit {
     }
 }
 
+pub fn verify(author: Option<String>, message: &str) -> Result<()> {
+    let commit = Commit::parse_commit_message(message);
+
+    match commit {
+        Ok(message) => {
+            println!(
+                "{}",
+                Commit {
+                    oid: "not committed".to_string(),
+                    message,
+                    date: Utc::now().naive_utc(),
+                    author: author.unwrap_or_else(|| "Unknown".to_string()),
+                }
+            );
+            Ok(())
+        }
+        Err(err) => Err(err),
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::Commit;
-    use crate::conventional::commit::CommitType;
+    use crate::conventional::commit::{verify, CommitType};
 
     #[test]
     fn should_map_conventional_commit_message_to_struct() {
@@ -398,5 +419,29 @@ mod test {
         assert!(!commit.is_breaking_change);
         assert!(commit.body.is_none());
         assert!(commit.footer.is_none());
+    }
+
+    #[test]
+    fn should_verify_message_ok() {
+        // Arrange
+        let message = "feat(database): add postgresql driver";
+
+        // Act
+        let result = verify(Some("toml".into()), message);
+
+        // Assert
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn should_verify_message_err() {
+        // Arrange
+        let message = "feat add postgresql driver";
+
+        // Act
+        let result = verify(Some("toml".into()), message);
+
+        // Assert
+        assert!(result.is_err());
     }
 }
