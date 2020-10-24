@@ -191,6 +191,15 @@ impl Repository {
             })
     }
 
+    pub(crate) fn stash_failed_version(&mut self, version: &str) -> Result<()> {
+        let sig = self.0.signature()?;
+        let message = &format!("cog_bump_{}", version);
+        self.0
+            .stash_save(&sig, message, None)
+            .map(|_| ())
+            .map_err(|err| anyhow!(err))
+    }
+
     pub(crate) fn get_commit_range(&self, from: Oid, to: Oid) -> Result<Vec<Git2Commit>> {
         // Ensure commit exists
         self.0.find_commit(from)?;

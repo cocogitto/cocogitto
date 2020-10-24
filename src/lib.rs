@@ -14,6 +14,7 @@ pub mod log;
 pub mod settings;
 
 use crate::error::ErrorKind::Semver;
+use crate::error::PreHookError;
 use crate::settings::{HookType, Settings};
 use anyhow::{Context, Result};
 use chrono::Utc;
@@ -328,7 +329,7 @@ impl CocoGitto {
     }
 
     pub fn create_version(
-        &self,
+        &mut self,
         increment: VersionIncrement,
         mode: WriterMode,
         pre_release: Option<&str>,
@@ -393,9 +394,25 @@ impl CocoGitto {
             .write()
             .map_err(|err| anyhow!("Unable to write CHANGELOG.md : {}", err))?;
 
-        self.run_hooks(HookType::PreBump, &version_str)?;
-
+        let hook_result = self.run_hooks(HookType::PreBump, &version_str);
         self.repository.add_all()?;
+
+        // Hook failed, we need to stop here and reset
+        // the repository to a clean state
+        if let Err(err) = hook_result {
+            self.repository.stash_failed_version(&version_str)?;
+            eprintln!(
+                "{}",
+                PreHookError {
+                    cause: err.to_string(),
+                    version: version_str,
+                    stash_number: 0
+                }
+            );
+
+            exit(1);
+        }
+
         self.repository
             .commit(&format!("chore(version): {}", next_version))?;
         self.repository.create_tag(&version_str)?;
