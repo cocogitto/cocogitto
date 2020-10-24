@@ -7,11 +7,13 @@ use std::fmt;
 
 pub(crate) struct Statuses(pub Vec<Status>);
 
+#[derive(Eq, PartialEq)]
 pub(crate) enum Status {
     Untracked(Changes),
     UnCommitted(Changes),
 }
 
+#[derive(Eq, PartialEq)]
 pub(crate) enum Changes {
     New(String),
     Renamed(String),
@@ -99,5 +101,40 @@ impl fmt::Display for Statuses {
 impl fmt::Debug for Statuses {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{}", &self)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::git::status::{Changes, Statuses};
+    use anyhow::Result;
+    use git2::Repository;
+    use git2::StatusOptions;
+    use std::fs;
+    use temp_testdir::TempDir;
+
+    #[test]
+    fn should_get_statuses_from_git_statuses() -> Result<()> {
+        let temp_testdir = TempDir::default();
+        let path = temp_testdir.join("test_repo");
+        let repo = Repository::init(&path)?;
+        fs::write(path.join("file"), "content")?;
+
+        let mut options = StatusOptions::new();
+        options.include_untracked(true);
+        options.exclude_submodules(true);
+        options.include_unmodified(false);
+
+        let git_statuses = repo
+            .statuses(Some(&mut options))
+            .map_err(|err| anyhow!(err))?;
+
+        let statuses = Statuses::from(git_statuses);
+
+        assert!(statuses
+            .0
+            .contains(&super::Status::Untracked(Changes::New("file".into()))));
+        assert_eq!(statuses.0.len(), 1);
+        Ok(())
     }
 }
