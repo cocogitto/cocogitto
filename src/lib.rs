@@ -39,6 +39,7 @@ use std::{collections::HashMap, str::FromStr};
 use tempdir::TempDir;
 
 pub type CommitsMetadata = HashMap<CommitType, CommitConfig>;
+
 pub const CONFIG_PATH: &str = "cog.toml";
 
 lazy_static! {
@@ -335,12 +336,8 @@ impl CocoGitto {
         let statuses = self.repository.get_statuses()?;
 
         // Fail if repo contains un-staged or un-committed changes
-        if !statuses.is_empty() {
-            return Err(anyhow!(
-                "{}\n{}",
-                "repository contains unstaged change (use `git add` to track)",
-                self.repository.statuses_display()?,
-            ));
+        if !statuses.0.is_empty() {
+            return Err(anyhow!("{}", self.repository.get_statuses()?));
         }
 
         let current_tag = self
