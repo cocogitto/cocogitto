@@ -13,6 +13,7 @@ pub mod hook;
 pub mod log;
 pub mod settings;
 
+use crate::conventional::commit::verify;
 use crate::error::ErrorKind::Semver;
 use crate::error::PreHookError;
 use crate::settings::{HookType, Settings};
@@ -218,7 +219,17 @@ impl CocoGitto {
                         println!("Found errored commits : {}", &oid.to_string()[0..7]);
                         let file_path = dir.path().join(&commit.id().to_string());
                         let mut file = File::create(&file_path)?;
-                        file.write_all(original_commit.message_bytes())?;
+
+                        let hint = format!(
+                            "# Editing commit {}\
+                        \n# Replace this message with a conventional commit compliant one\
+                        \n# Save and exit to edit the next errored commit\n",
+                            original_commit.id()
+                        );
+
+                        let mut message_bytes: Vec<u8> = hint.as_bytes().to_vec();
+                        message_bytes.extend_from_slice(original_commit.message_bytes());
+                        file.write_all(&message_bytes)?;
 
                         Command::new(&editor)
                             .arg(&file_path)
@@ -227,12 +238,24 @@ impl CocoGitto {
                             .stderr(Stdio::inherit())
                             .output()?;
 
-                        let new_message = std::fs::read_to_string(&file_path)?;
+                        let new_message = std::fs::read_to_string(&file_path)?
+                            .lines()
+                            .filter(|line| !line.starts_with('#'))
+                            .filter(|line| !line.trim().is_empty())
+                            .collect::<String>();
+
                         rebase.commit(None, &original_commit.committer(), Some(&new_message))?;
-                        println!(
-                            "Changed commit message to : \"{}\"",
-                            &new_message.trim_end()
-                        );
+                        match verify(self.repository.get_author().ok(), &new_message) {
+                            Ok(_) => println!(
+                                "Changed commit message to : \"{}\"",
+                                &new_message.trim_end()
+                            ),
+                            Err(err) => eprintln!(
+                                "Error: {}\n\t{}",
+                                "Edited message is still not compliant".red(),
+                                err
+                            ),
+                        }
                     } else {
                         rebase.commit(None, &original_commit.committer(), None)?;
                     }
@@ -242,6 +265,8 @@ impl CocoGitto {
             }
 
             rebase.finish(None)?;
+        } else {
+            println!("{}", "No errored commit, skipping rebase".green());
         }
 
         Ok(())
@@ -404,7 +429,7 @@ impl CocoGitto {
                 PreHookError {
                     cause: err.to_string(),
                     version: version_str,
-                    stash_number: 0
+                    stash_number: 0,
                 }
             );
 
