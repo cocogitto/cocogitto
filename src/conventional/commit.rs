@@ -1,4 +1,4 @@
-use crate::commit::CommitType::*;
+use crate::conventional::commit::CommitType::*;
 use crate::error::ErrorKind::CommitFormat;
 use crate::AUTHORS;
 use crate::COMMITS_METADATA;
@@ -380,7 +380,7 @@ impl Ord for Commit {
 #[cfg(test)]
 mod test {
     use super::Commit;
-    use crate::commit::CommitType;
+    use crate::conventional::commit::CommitType;
 
     #[test]
     fn should_map_conventional_commit_message_to_struct() {

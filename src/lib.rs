@@ -5,32 +5,28 @@ extern crate serde_derive;
 #[macro_use]
 extern crate lazy_static;
 
-pub mod changelog;
 pub mod error;
-pub mod filter;
-pub mod output;
 
-pub mod commit;
-pub mod git_hooks;
+pub mod conventional;
+pub mod git;
 pub mod hook;
-pub mod repository;
+pub mod log;
 pub mod settings;
-pub mod version;
 
-use crate::changelog::{Changelog, ChangelogWriter, WriterMode};
-use crate::commit::{CommitConfig, CommitMessage, CommitType};
 use crate::error::ErrorKind::Semver;
-use crate::filter::CommitFilters;
-use crate::repository::Repository;
 use crate::settings::{HookType, Settings};
-use crate::version::{parse_pre_release, VersionIncrement};
 use anyhow::{Context, Result};
 use chrono::Utc;
 use colored::*;
-use commit::Commit;
+use conventional::changelog::{Changelog, ChangelogWriter, WriterMode};
+use conventional::commit::Commit;
+use conventional::commit::{CommitConfig, CommitMessage, CommitType};
+use conventional::version::{parse_pre_release, VersionIncrement};
+use git::repository::Repository;
 use git2::{Oid, RebaseOptions};
 use hook::Hook;
 use itertools::Itertools;
+use log::filter::CommitFilters;
 use semver::Version;
 use serde::export::fmt::Display;
 use serde::export::Formatter;
