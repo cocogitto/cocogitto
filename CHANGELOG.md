@@ -2,6 +2,56 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 1.1.0 - 2020-10-26
+
+
+### Features
+
+[271b92](https://github.com/oknozor/cocogitto/commit/271b920ceb6eaf61ad2c21f7568ea1e9cedcd0db) - add editor hint on cog edit - [oknozor](https://github.com/oknozor)
+
+[72a692](https://github.com/oknozor/cocogitto/commit/72a6925a582b9038ba7b75d49a76df57ce21adfb) - stash hook generated changes on prehook failure - [oknozor](https://github.com/oknozor)
+
+[fa24d6](https://github.com/oknozor/cocogitto/commit/fa24d643c2b8415abc0e931ea3fae7907c40bbc4) - add shell completions - [oknozor](https://github.com/oknozor)
+
+[940df1](https://github.com/oknozor/cocogitto/commit/940df1369520a2c68dee9e90e9f8cd0eff346fc3) - add git-hooks installer - [oknozor](https://github.com/oknozor)
+
+
+### Refactoring
+
+[098d6c](https://github.com/oknozor/cocogitto/commit/098d6c079379e88c13d77685a5eee4a3be34df67) - remove unused writter mode: Append & Replace - [oknozor](https://github.com/oknozor)
+
+[7191f4](https://github.com/oknozor/cocogitto/commit/7191f4e25a70fe437b4c567550d2308b3702cbb7) - extract git statuses to a dedicated module - [oknozor](https://github.com/oknozor)
+
+[a69bb2](https://github.com/oknozor/cocogitto/commit/a69bb2a6f43f901dafcb1eb17d2ed3685927a862) - use dir modules instead of file - [oknozor](https://github.com/oknozor)
+
+[bac60f](https://github.com/oknozor/cocogitto/commit/bac60fd07ba76fd0648a64aecad67589aeae5eba) - use Astr<str> for commit type instead of custom impl - [oknozor](https://github.com/oknozor)
+
+
+### Miscellaneous Chores
+
+[1f0671](https://github.com/oknozor/cocogitto/commit/1f0671d1e3faff35f7f30aaa9fba9c226318797b) - use carret requirement for all dependencies - [oknozor](https://github.com/oknozor)
+
+
+### Documentation
+
+[97503f](https://github.com/oknozor/cocogitto/commit/97503fb0d665e0a5014c75c6aa308de1f061dfbf) - change git hooks readme title - [oknozor](https://github.com/oknozor)
+
+
+### Tests
+
+[bd69f4](https://github.com/oknozor/cocogitto/commit/bd69f41c1f47b5e7172df710c97c74c7ec9e6b56) - add statuses test - [oknozor](https://github.com/oknozor)
+
+[6d107c](https://github.com/oknozor/cocogitto/commit/6d107cd0bfe0e401134f9ec8f3d6b23b59c0a759) - move verify to commit module add add tests - [oknozor](https://github.com/oknozor)
+
+
+### Bug Fixes
+
+[6ff44d](https://github.com/oknozor/cocogitto/commit/6ff44d47c981399c6bfabf8e5a40e6bc30ac2092) - use shorthand instead of full oid in cog log - [oknozor](https://github.com/oknozor)
+
+[dac869](https://github.com/oknozor/cocogitto/commit/dac8698e72d1d8f1d712fa983c4b0196608dc35d) - remove default value for install hook command - [oknozor](https://github.com/oknozor)
+
+
+- - -
 ## 1.0.3 - 2020-10-16
 
 
