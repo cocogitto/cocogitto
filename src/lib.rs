@@ -50,7 +50,7 @@ lazy_static! {
     // unwrapping in case of error.
     static ref COMMITS_METADATA: CommitsMetadata = {
         if let Ok(repo) = Repository::open(".") {
-            Settings::get(&repo).unwrap_or_default().commit_types()
+            Settings::get(&repo, None).unwrap_or_default().commit_types()
         } else {
             Settings::default().commit_types()
         }
@@ -58,7 +58,7 @@ lazy_static! {
 
     static ref REMOTE_URL: Option<String> = {
         if let Ok(repo) = Repository::open(".") {
-            Settings::get(&repo).unwrap_or_default().github
+            Settings::get(&repo, None).unwrap_or_default().github
         } else {
             None
         }
@@ -66,7 +66,7 @@ lazy_static! {
 
         static ref AUTHORS: Vec<AuthorSetting> = {
         if let Ok(repo) = Repository::open(".") {
-            Settings::get(&repo).unwrap_or_default().authors
+            Settings::get(&repo, None).unwrap_or_default().authors
         } else {
             vec![]
         }
@@ -134,7 +134,7 @@ pub struct CocoGitto {
 impl CocoGitto {
     pub fn get() -> Result<Self> {
         let repository = Repository::open(&std::env::current_dir()?)?;
-        let settings = Settings::get(&repository)?;
+        let settings = Settings::get(&repository, None)?;
         let changelog_path = settings
             .changelog_path
             .unwrap_or_else(|| PathBuf::from("CHANGELOG.md"));
@@ -357,6 +357,7 @@ impl CocoGitto {
         &mut self,
         increment: VersionIncrement,
         pre_release: Option<&str>,
+        hooks_config: Option<&str>,
     ) -> Result<()> {
         let statuses = self.repository.get_statuses()?;
 
@@ -417,7 +418,7 @@ impl CocoGitto {
             .write()
             .map_err(|err| anyhow!("Unable to write CHANGELOG.md : {}", err))?;
 
-        let hook_result = self.run_hooks(HookType::PreBump, &version_str);
+        let hook_result = self.run_hooks(HookType::PreBump, &version_str, hooks_config);
         self.repository.add_all()?;
 
         // Hook failed, we need to stop here and reset
@@ -440,7 +441,7 @@ impl CocoGitto {
             .commit(&format!("chore(version): {}", next_version))?;
         self.repository.create_tag(&version_str)?;
 
-        self.run_hooks(HookType::PostBump, &version_str)?;
+        self.run_hooks(HookType::PostBump, &version_str, hooks_config)?;
 
         let bump = format!("{} -> {}", current_version, next_version).green();
         println!("Bumped version : {}", bump);
@@ -544,8 +545,13 @@ impl CocoGitto {
         }
     }
 
-    fn run_hooks(&self, hook_type: HookType, next_version: &str) -> Result<()> {
-        let settings = Settings::get(&self.repository)?;
+    fn run_hooks(
+        &self,
+        hook_type: HookType,
+        next_version: &str,
+        hooks_config: Option<&str>,
+    ) -> Result<()> {
+        let settings = Settings::get(&self.repository, hooks_config)?;
 
         let hooks = settings
             .get_hooks(hook_type)
