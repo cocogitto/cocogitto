@@ -58,9 +58,10 @@ fn main() -> Result<()> {
                 };
 
                 let pre = subcommand.value_of("pre");
+                let hooks_config = subcommand.value_of("config");
 
                 // TODO mode to cli
-                cocogitto.create_version(increment, pre)?
+                cocogitto.create_version(increment, pre, hooks_config)?
             }
             VERIFY => {
                 let subcommand = matches.subcommand_matches(VERIFY).unwrap();
@@ -301,6 +302,13 @@ fn app<'a, 'b>() -> App<'a, 'b> {
             Arg::with_name("pre")
                 .help("Set the pre-release version")
                 .long("pre")
+                .takes_value(true),
+        )
+        .arg(
+            Arg::with_name("config")
+                .help("Specify path to hooks config file")
+                .short("c")
+                .long("config")
                 .takes_value(true),
         )
         .display_order(6);

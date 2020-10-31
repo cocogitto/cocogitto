@@ -50,10 +50,10 @@ impl Default for Settings {
 
 impl Settings {
     // Fails only if config exists and is malformed
-    pub(crate) fn get(repository: &Repository) -> Result<Self> {
+    pub(crate) fn get(repository: &Repository, config_path: Option<&str>) -> Result<Self> {
         match repository.get_repo_dir() {
             Some(repo_path) => {
-                let settings_path = repo_path.join(CONFIG_PATH);
+                let settings_path = repo_path.join(config_path.unwrap_or(CONFIG_PATH));
                 if settings_path.exists() {
                     let mut s = Config::new();
                     s.merge(File::from(settings_path))?;
