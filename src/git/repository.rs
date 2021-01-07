@@ -1,4 +1,5 @@
 use super::status::Statuses;
+use semver::Version;
 use crate::error::ErrorKind;
 use crate::error::ErrorKind::Git;
 use crate::OidOf;
@@ -120,9 +121,19 @@ impl Repository {
 
     pub(crate) fn get_latest_tag(&self) -> Result<String> {
         let tag_names = self.0.tag_names(None)?;
+        let mut versions = Vec::new();
 
-        let tags = tag_names.iter().collect::<Vec<Option<&str>>>();
-        if let Some(Some(tag)) = tags.last() {
+        for tag in tag_names.iter().collect::<Vec<Option<&str>>>() {
+            if let Some(tag) = tag {
+                if let Ok(version) = Version::parse(tag) {
+                    versions.push(version);
+                }
+            }
+        }
+
+        versions.sort();
+
+        if let Some(tag) = versions.last() {
             Ok(tag.to_string())
         } else {
             Err(anyhow!("Unable to get any tag"))
