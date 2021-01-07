@@ -102,6 +102,32 @@ fn auto_bump_patch_from_latest_tag() -> Result<()> {
 
 #[test]
 #[cfg(not(tarpaulin))]
+fn auto_bump_respect_semver_sorting() -> Result<()> {
+    let current_dir = std::env::current_dir()?;
+    let mut command = Command::cargo_bin("cog")?;
+    command.arg("bump").arg("--auto");
+
+    let temp_dir = TempDir::default();
+    std::env::set_current_dir(&temp_dir)?;
+    helper::git_init(".")?;
+    helper::git_commit("chore: init")?;
+    helper::git_commit("feat(taef): feature")?;
+    helper::git_commit("fix: bug fix")?;
+    helper::git_tag("0.9.1")?;
+    helper::git_commit("feat(the_fix): feature")?;
+    helper::git_tag("0.10.0")?;
+    helper::git_commit("fix: fix 1")?;
+    helper::git_commit("fix: fix 2")?;
+
+    command.assert().success();
+    assert!(temp_dir.join("CHANGELOG.md").exists());
+    helper::assert_tag("0.10.1")?;
+
+    Ok(std::env::set_current_dir(current_dir)?)
+}
+
+#[test]
+#[cfg(not(tarpaulin))]
 fn minor_bump() -> Result<()> {
     let current_dir = std::env::current_dir()?;
     let mut command = Command::cargo_bin("cog")?;
