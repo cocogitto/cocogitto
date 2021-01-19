@@ -522,17 +522,17 @@ mod test {
         std::fs::write(&path.join("file"), "changes")?;
         repo.add_all()?;
         repo.commit("first commit")?;
-        repo.create_tag("tag1")?;
+        repo.create_tag("0.1.0")?;
 
         std::fs::write(&path.join("file"), "changes2")?;
         repo.add_all()?;
         repo.commit("second commit")?;
-        repo.create_tag("tag2")?;
+        repo.create_tag("0.2.0")?;
 
         let tag = repo.get_latest_tag();
 
         assert!(tag.is_ok());
-        assert_eq!(tag.unwrap(), "tag2");
+        assert_eq!(tag.unwrap(), "0.2.0");
         Ok(())
     }
 
@@ -561,7 +561,7 @@ mod test {
         std::fs::write(&path.join("file"), "changes")?;
         repo.add_all()?;
         repo.commit("first commit")?;
-        repo.create_tag("tag1")?;
+        repo.create_tag("1.0.0")?;
 
         let tag = repo.get_latest_tag_oid();
 
