@@ -2,7 +2,7 @@ use crate::git::status::Changes::{Deleted, Modified, New, Renamed, TypeChange};
 use colored::*;
 use git2::StatusEntry as Git2StatusEntry;
 use git2::Statuses as Git2Statuses;
-use serde::export::Formatter;
+use std::fmt::Formatter;
 use std::fmt;
 
 pub(crate) struct Statuses(pub Vec<Status>);
