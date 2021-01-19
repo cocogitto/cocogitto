@@ -2,8 +2,8 @@ use crate::git::status::Changes::{Deleted, Modified, New, Renamed, TypeChange};
 use colored::*;
 use git2::StatusEntry as Git2StatusEntry;
 use git2::Statuses as Git2Statuses;
-use std::fmt::Formatter;
 use std::fmt;
+use std::fmt::Formatter;
 
 pub(crate) struct Statuses(pub Vec<Status>);
 
@@ -42,10 +42,7 @@ impl From<Git2Statuses<'_>> for Statuses {
 
 impl<'a, 'b: 'a> From<Git2StatusEntry<'b>> for Status {
     fn from(status: Git2StatusEntry<'b>) -> Self {
-        let path = status
-            .path()
-            .unwrap_or_else(|| "invalid utf8 path")
-            .to_string();
+        let path = status.path().unwrap_or("invalid utf8 path").to_string();
         match status.status() {
             s if s.is_wt_new() => Status::Untracked(New(path)),
             s if s.is_wt_renamed() => Status::Untracked(Renamed(path)),

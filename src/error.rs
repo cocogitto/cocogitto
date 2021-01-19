@@ -1,7 +1,7 @@
 use crate::git::status::Statuses;
 use colored::*;
-use std::fmt::Formatter;
 use std::fmt;
+use std::fmt::Formatter;
 use thiserror::Error;
 
 #[derive(Error, Debug)]

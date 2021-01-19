@@ -7,9 +7,9 @@ use anyhow::Result;
 use chrono::{NaiveDateTime, Utc};
 use colored::*;
 use git2::Commit as Git2Commit;
-use std::fmt::Formatter;
 use std::cmp::Ordering;
 use std::fmt;
+use std::fmt::Formatter;
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct Commit {

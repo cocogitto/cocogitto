@@ -1,5 +1,4 @@
 use super::status::Statuses;
-use semver::Version;
 use crate::error::ErrorKind;
 use crate::error::ErrorKind::Git;
 use crate::OidOf;
@@ -9,6 +8,7 @@ use git2::{
     Commit as Git2Commit, Diff, DiffOptions, IndexAddOption, Object, ObjectType, Oid,
     Repository as Git2Repository, StatusOptions,
 };
+use semver::Version;
 use std::path::Path;
 
 pub(crate) struct Repository(pub(crate) Git2Repository);
