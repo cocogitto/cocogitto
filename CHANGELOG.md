@@ -2,6 +2,43 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 1.2.0 - 2021-01-19
+
+
+### Features
+
+[635a04](https://github.com/oknozor/cocogitto/commit/635a043c04a37a4b355b473759ab4071e91530cf) - add --config flag to cog bump - [renaultfernandes](https://github.com/renaultfernandes)
+
+
+### Bug Fixes
+
+[3c4f60](https://github.com/oknozor/cocogitto/commit/3c4f60138e5eaf38ff317d4b7a8e0878ae6b7a34) - get latest tag based on semver format - [pjvds](https://github.com/pjvds)
+
+
+### Tests
+
+[2a7da2](https://github.com/oknozor/cocogitto/commit/2a7da281e45fcd014cdc38c8274d458baeee2e10) - fix failing test - [oknozor](https://github.com/oknozor)
+
+[968592](https://github.com/oknozor/cocogitto/commit/9685924a2f76cd7829892b034d7e630eb4bf7bda) - add test to test semver sorting for auto bump - [pjvds](https://github.com/pjvds)
+
+
+### Continuous Integration
+
+[84b334](https://github.com/oknozor/cocogitto/commit/84b334a4c4dae4fa25acd0475e7a311c74c0135e) - fix deprecated set env and add path github action commands - [oknozor](https://github.com/oknozor)
+
+[ac87ba](https://github.com/oknozor/cocogitto/commit/ac87babab51aef2f24e71d4bc684694b2eb65126) - add aur package submodule - [oknozor](https://github.com/oknozor)
+
+
+### Miscellaneous Chores
+
+[764739](https://github.com/oknozor/cocogitto/commit/7647397ce681909272b21bbc5c5f27ca43dc9ec5) - add pjvds to the contributors list - [oknozor](https://github.com/oknozor)
+
+[09ed3e](https://github.com/oknozor/cocogitto/commit/09ed3e6ca3b51307e7b7cfe35fb14666119b90d2) - clippy lints and fmt * - [oknozor](https://github.com/oknozor)
+
+[b0ef1e](https://github.com/oknozor/cocogitto/commit/b0ef1ef870389f96b9db1fec144c7f1fb1476132) - replace serde fmt rexport with std::fmt - [oknozor](https://github.com/oknozor)
+
+
+- - -
 ## 1.1.0 - 2020-10-26
 
 
