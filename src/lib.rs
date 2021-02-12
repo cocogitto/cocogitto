@@ -33,6 +33,7 @@ use semver::Version;
 use settings::AuthorSetting;
 use std::fmt::Display;
 use std::fmt::Formatter;
+use std::fmt::Write as FmtWrite;
 use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -154,19 +155,15 @@ impl CocoGitto {
     }
 
     pub fn get_repo_tag_name(&self) -> Option<String> {
-        let mut repo_tag_name = String::new();
-
         let repo_path = self.repository.get_repo_dir()?.iter().last()?;
-        repo_tag_name.push_str(repo_path.to_str()?);
+        let mut repo_tag_name = repo_path.to_str()?.to_string();
 
         if let Some(branch_shorthand) = self.repository.get_branch_shorthand() {
-            repo_tag_name.push_str(" on ");
-            repo_tag_name.push_str(&branch_shorthand);
+            write!(&mut repo_tag_name, " on {}", branch_shorthand).unwrap();
         }
 
         if let Ok(latest_tag) = self.repository.get_latest_tag() {
-            repo_tag_name.push(' ');
-            repo_tag_name.push_str(&latest_tag);
+            write!(&mut repo_tag_name, " {}", latest_tag).unwrap();
         };
 
         Some(repo_tag_name)
@@ -362,9 +359,7 @@ impl CocoGitto {
         let statuses = self.repository.get_statuses()?;
 
         // Fail if repo contains un-staged or un-committed changes
-        if !statuses.0.is_empty() {
-            return Err(anyhow!("{}", self.repository.get_statuses()?));
-        }
+        ensure!(statuses.0.is_empty(), "{}", self.repository.get_statuses()?);
 
         let current_tag = self
             .repository
@@ -385,10 +380,10 @@ impl CocoGitto {
                 cause_key, comparison
             );
 
-            return Err(anyhow!(Semver {
+            bail!(Semver {
                 level: "SemVer Error".red().to_string(),
                 cause
-            }));
+            });
         };
 
         if let Some(pre_release) = pre_release {
@@ -397,7 +392,7 @@ impl CocoGitto {
 
         let version_str = next_version.to_string();
 
-        let origin = if current_tag.as_str() == "0.0.0" {
+        let origin = if current_tag == "0.0.0" {
             self.repository.get_first_commit()?.to_string()
         } else {
             current_tag
@@ -409,12 +404,12 @@ impl CocoGitto {
             Some(next_version.to_string()),
         )?;
 
-        let mut writter = ChangelogWriter {
+        let mut writer = ChangelogWriter {
             changelog,
             path: self.changelog_path.clone(),
         };
 
-        writter
+        writer
             .write()
             .map_err(|err| anyhow!("Unable to write CHANGELOG.md : {}", err))?;
 

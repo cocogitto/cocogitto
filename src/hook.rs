@@ -10,9 +10,7 @@ impl FromStr for Hook {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.is_empty() {
-            bail!("hook must not be an empty string")
-        }
+        ensure!(!s.is_empty(), "hook must not be an empty string");
 
         let words = shell_words::split(s)?;
 
@@ -29,13 +27,9 @@ impl fmt::Display for Hook {
 
 impl Hook {
     pub fn insert_version(&mut self, value: &str) {
-        let entries_with_version = self
-            .0
-            .iter()
-            .map(|entry| entry.replace(VERSION_KEY, value))
-            .collect();
-
-        self.0 = entries_with_version
+        for entry in &mut self.0 {
+            *entry = entry.replace(VERSION_KEY, value);
+        }
     }
 
     pub fn run(&self) -> Result<()> {
@@ -43,11 +37,9 @@ impl Hook {
 
         let status = Command::new(&cmd).args(args).status()?;
 
-        if !status.success() {
-            Err(anyhow!("hook failed with status {}", status))
-        } else {
-            Ok(())
-        }
+        ensure!(status.success(), "hook failed with status {}", status);
+
+        Ok(())
     }
 }
 

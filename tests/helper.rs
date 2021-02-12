@@ -47,7 +47,7 @@ pub fn git_commit(message: &str) -> Result<()> {
     Command::new("git")
         .arg("commit")
         .arg("-m")
-        .arg(&format!("{}", message))
+        .arg(message)
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
         .output()?;

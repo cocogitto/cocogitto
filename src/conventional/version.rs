@@ -93,7 +93,7 @@ impl VersionIncrement {
         } else if is_patch_bump() {
             next_version.increment_patch();
         } else {
-            return Err(anyhow!("No commit found to bump current version"));
+            bail!("No commit found to bump current version");
         }
 
         Ok(next_version)
@@ -135,18 +135,17 @@ impl VersionIncrement {
 }
 
 pub fn parse_pre_release(string: &str) -> Result<Vec<Identifier>> {
-    if !string
-        .chars()
-        .all(|c| c.is_ascii_alphanumeric() || c == '.' || c == '-')
-    {
-        return Err(anyhow!("Pre-release string must be a dot-separated list of identifiers comprised of ASCII alphanumerics and hyphens [0-9A-Za-z-]"));
-    }
+    ensure!(
+        string
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || ['.', '-'].contains(&c)),
+        "Pre-release string must be a dot-separated list of identifiers comprised of ASCII alphanumerics and hyphens [0-9A-Za-z-]"
+    );
 
-    if string.starts_with('.') || string.contains("..") || string.ends_with('.') {
-        return Err(anyhow!(
-            "Dot-separated identifiers in the pre-release string must not be empty"
-        ));
-    }
+    ensure!(
+        !string.starts_with('.') && !string.contains("..") && !string.ends_with('.'),
+        "Dot-separated identifiers in the pre-release string must not be empty"
+    );
 
     let idents = string
         .split('.')
