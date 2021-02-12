@@ -121,22 +121,11 @@ impl Repository {
 
     pub(crate) fn get_latest_tag(&self) -> Result<String> {
         let tag_names = self.0.tag_names(None)?;
-        let mut versions = Vec::new();
+        let latest_tag = tag_names.iter().flatten().flat_map(Version::parse).max();
 
-        for tag in tag_names.iter().collect::<Vec<Option<&str>>>() {
-            if let Some(tag) = tag {
-                if let Ok(version) = Version::parse(tag) {
-                    versions.push(version);
-                }
-            }
-        }
-
-        versions.sort();
-
-        if let Some(tag) = versions.last() {
-            Ok(tag.to_string())
-        } else {
-            Err(anyhow!("Unable to get any tag"))
+        match latest_tag {
+            Some(tag) => Ok(tag.to_string()),
+            None => Err(anyhow!("Unable to get any tag")),
         }
     }
 
@@ -165,29 +154,25 @@ impl Repository {
     }
 
     pub(crate) fn get_head(&self) -> Option<Object> {
-        if let Ok(head) = Repository::tree_to_treeish(&self.0, Some(&"HEAD".to_string())) {
-            head
-        } else {
-            None
-        }
+        Repository::tree_to_treeish(&self.0, Some(&"HEAD".to_string()))
+            .ok()
+            .flatten()
     }
 
     pub(crate) fn get_branch_shorthand(&self) -> Option<String> {
-        if let Ok(head) = self.0.head() {
-            Some(head.shorthand()?.to_string())
-        } else {
-            None
-        }
+        self.0
+            .head()
+            .ok()
+            .and_then(|head| head.shorthand().map(|shorthand| shorthand.to_string()))
     }
 
     pub(crate) fn create_tag(&self, name: &str) -> Result<()> {
-        if self.get_diff(true).is_some() {
-            return Err(anyhow!(
-                "{}{}",
-                self.get_statuses()?,
-                "Cannot create tag : changes needs to be commited".red()
-            ));
-        }
+        ensure!(
+            self.get_diff(true).is_none(),
+            "{}{}",
+            self.get_statuses()?,
+            "Cannot create tag: changes need to be committed".red()
+        );
 
         let head = self.get_head_commit().unwrap();
         self.0

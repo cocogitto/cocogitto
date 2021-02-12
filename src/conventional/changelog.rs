@@ -2,6 +2,7 @@ use crate::conventional::commit::Commit;
 use crate::{OidOf, COMMITS_METADATA};
 use anyhow::Result;
 use itertools::Itertools;
+use std::fmt::Write;
 use std::fs;
 use std::path::PathBuf;
 
@@ -43,8 +44,6 @@ impl ChangelogWriter {
 
 impl Changelog {
     pub(crate) fn markdown(&mut self, colored: bool) -> String {
-        let mut out = String::new();
-
         let short_to = &self.to;
         let short_from = &self.from;
         let version_title = self
@@ -52,7 +51,7 @@ impl Changelog {
             .clone()
             .unwrap_or_else(|| format!("{}..{}", short_from, short_to));
 
-        out.push_str(&format!("\n## {} - {}\n\n", version_title, self.date));
+        let mut out = format!("\n## {} - {}\n\n", version_title, self.date);
 
         let grouped = self
             .commits
@@ -66,7 +65,7 @@ impl Changelog {
         for (commit_type, commits) in grouped {
             let meta = &COMMITS_METADATA[&commit_type];
 
-            out.push_str(&format!("\n### {}\n\n", meta.changelog_title));
+            write!(&mut out, "\n### {}\n\n", meta.changelog_title).unwrap();
             for description in commits {
                 out.push_str(&description);
             }

@@ -118,12 +118,11 @@ impl Commit {
     // Todo extract to ParseError
     pub(crate) fn parse_commit_message(message: &str) -> Result<CommitMessage> {
         let type_separator = message.find(": ");
-        if type_separator.is_none() {
-            return Err(anyhow!(
-                "invalid commit format : missing `{}` separator",
-                ": ".yellow()
-            ));
-        }
+        ensure!(
+            type_separator.is_some(),
+            "invalid commit format: missing `{}` separator",
+            ": ".yellow()
+        );
 
         let idx = type_separator.unwrap();
 
@@ -157,9 +156,7 @@ impl Commit {
 
         let description = contents.get(0).map(|desc| desc.to_string());
 
-        if description.is_none() {
-            return Err(anyhow!("missing commit description"));
-        }
+        ensure!(description.is_some(), "missing commit description");
 
         let description = description.unwrap();
 
@@ -176,9 +173,11 @@ impl Commit {
         let commit_type = CommitType::from(commit_type_str);
         let allowed_commit = COMMITS_METADATA.get(&commit_type);
 
-        if allowed_commit.is_none() {
-            return Err(anyhow!("unknown commit type `{}`", commit_type_str.red()));
-        };
+        ensure!(
+            allowed_commit.is_some(),
+            "unknown commit type `{}`",
+            commit_type_str.red()
+        );
 
         Ok(CommitMessage {
             description,
