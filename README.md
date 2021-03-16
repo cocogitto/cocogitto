@@ -387,18 +387,18 @@ Creating git tag automatically is great but sometimes you need to edit some file
 or perform some additional checks before doing so. 
 
 A typical example is editing your project manifest in your package manager configuration file.
-You can run pre bump commands with the `%version` alias to reference the newly created version :
+You can run pre bump commands with the `{{version}}` alias to reference the newly created version :
 
 ```toml
 # cog.toml
 pre_bump_hooks = [
     "cargo build --release",
-    "cargo bump %version",
+    "cargo bump {{version}}",
 ]
 ```
 
 When running `cog bump` these command will be run before creating the version commit.
-Assuming we are bumping to `1.1.0`, the `%version` alias will be replaced with `1.1.0`.
+Assuming we are bumping to `1.1.0`, the `{{version}}` alias will be replaced with `1.1.0`.
 
 ### Post bump hooks
 
@@ -408,11 +408,36 @@ You can tell `cog` to run commands after the bump.
 # cog.toml
 post_bump_hooks = [
     "git push",
-    "git push origin %version",
+    "git push origin {{version}}",
     "cargo publish"
 ]
 ```  
 
+### Version DSL
+
+It is common to bump your development branch version package manifest after creating a new release. 
+A typical example in the java world would be to bump your maven snapshot on your development branch after a release.  
+
+```toml
+# cog.toml
+post_bump_hooks = [
+    "git push",
+    "git push origin {{version}}",
+    "git checkout develop",
+    "git rebase master",
+    "mvn versions:set -DnewVersion={{version+minor-SNAPSHOT}}",
+    "coco chore \"bump snapshot to {{version+1minor-SNAPSHOT}}\"",
+    "git push",
+]
+```
+
+As you can see we are bumping the manifest using a small DSL. It as only a few keywords : 
+- start with the `version` keyword.
+- followed by the `+` operator.
+- `major`, `minor` and `patch` to specify the kind of increment you want. 
+  Then an optional amount, default being one (`version+1minor` and `version+minor` being the same).
+- followed by any number of `+{amount}{kind}` (exemple: `version+2major+1patch`)
+- ended by any alphanumeric character (SemVer additional labels for pre-release and build metadata), here `-SNAPSHOT`.
 
 ### Builtin git hooks
 
