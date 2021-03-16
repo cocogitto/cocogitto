@@ -558,7 +558,7 @@ impl CocoGitto {
             .collect::<Result<Vec<Hook>>>()?;
 
         for mut hook in hooks {
-            hook.insert_version(next_version);
+            hook.insert_version(next_version)?;
             hook.run().context(format!("{}", hook))?;
         }
 
