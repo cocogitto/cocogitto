@@ -2,6 +2,34 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 2.0.0 - 2021-03-18
+
+
+### Continuous Integration
+
+[7fb50e](https://github.com/oknozor/cocogitto/commit/7fb50ed991917581178c121acfb78327a28e384e) - use tarpaulin 0.16 to fix build before next cargo release - [oknozor](https://github.com/oknozor)
+
+
+### Features
+
+[edf610](https://github.com/oknozor/cocogitto/commit/edf610e8cab474b93017faf6404b11e8e4fa1093) - add version DSL in cog.toml - [oknozor](https://github.com/oknozor)
+
+
+### Refactoring
+
+[4c7442](https://github.com/oknozor/cocogitto/commit/4c74429e9cbab88fce0f73c73332102feae48963) - do some general code clean-up - [tranzystorek-io](https://github.com/tranzystorek-io)
+
+
+### Miscellaneous Chores
+
+[4fc160](https://github.com/oknozor/cocogitto/commit/4fc160e02b74d68d5c807a2d116fc7912a61bae3) - update cog.toml - [oknozor](https://github.com/oknozor)
+
+[ba9bfd](https://github.com/oknozor/cocogitto/commit/ba9bfd699f2ec4d9ad6c6ecbd39deaf9c484c317) - remove temp_test_dir dep - [oknozor](https://github.com/oknozor)
+
+[edf667](https://github.com/oknozor/cocogitto/commit/edf667f9f6a9173ac5581b93474f32d7e5fba29b) - bump assert_cmd crate - [oknozor](https://github.com/oknozor)
+
+
+- - -
 ## 1.2.0 - 2021-01-19
 
 
