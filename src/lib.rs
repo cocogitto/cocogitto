@@ -39,7 +39,7 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{exit, Command, Stdio};
 use std::{collections::HashMap, str::FromStr};
-use tempdir::TempDir;
+use tempfile::TempDir;
 
 pub type CommitsMetadata = HashMap<CommitType, CommitConfig>;
 
@@ -174,7 +174,7 @@ impl CocoGitto {
         let head = self.repository.get_head_commit()?;
         let commits = self.repository.get_commit_range(from, head.id())?;
         let editor = std::env::var("EDITOR")?;
-        let dir = TempDir::new("cocogito")?;
+        let dir = TempDir::new()?;
 
         let errored_commits: Vec<Oid> = commits
             .iter()

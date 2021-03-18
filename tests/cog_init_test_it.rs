@@ -3,7 +3,7 @@ use assert_cmd::prelude::*;
 use cocogitto::CONFIG_PATH;
 use helper::*;
 use std::process::Command;
-use temp_testdir::TempDir;
+use tempfile::TempDir;
 
 mod helper;
 
@@ -16,8 +16,8 @@ fn init_empty_repo_in_target_dir() -> Result<()> {
     let mut command = Command::cargo_bin("cog")?;
     command.arg("init").arg("test_repo");
 
-    let temp_dir = TempDir::default();
-    std::env::set_current_dir(&temp_dir)?;
+    let temp_dir = TempDir::new()?;
+    std::env::set_current_dir(&temp_dir.path())?;
 
     command.assert().success();
     Ok(std::env::set_current_dir(current_dir)?)
@@ -31,10 +31,10 @@ fn init_existing_repo() -> Result<()> {
     command.arg("init").arg("test_repo_existing");
 
     // Create repo with commits
-    let temp_dir = TempDir::default();
+    let temp_dir = TempDir::new()?;
     std::env::set_current_dir(&temp_dir)?;
     git_init("test_repo_existing")?;
-    std::env::set_current_dir(temp_dir.join("test_repo_existing"))?;
+    std::env::set_current_dir(temp_dir.path().join("test_repo_existing"))?;
 
     helper::git_commit("chore: test commit")?;
 
@@ -46,7 +46,7 @@ fn init_existing_repo() -> Result<()> {
 #[cfg(not(tarpaulin))]
 fn fail_if_config_exist() -> Result<()> {
     let current_dir = std::env::current_dir()?;
-    let temp_dir = TempDir::default();
+    let temp_dir = TempDir::new()?;
 
     let mut command = Command::cargo_bin("cog")?;
     command.arg("init").arg("test_repo_existing");
@@ -55,7 +55,7 @@ fn fail_if_config_exist() -> Result<()> {
     std::env::set_current_dir(&temp_dir)?;
     helper::git_init("test_repo_existing")?;
     std::fs::write(
-        &temp_dir.join("test_repo_existing").join(CONFIG_PATH),
+        &temp_dir.path().join("test_repo_existing").join(CONFIG_PATH),
         "[hooks]",
     )?;
     helper::git_commit("chore: test commit")?;
@@ -72,8 +72,8 @@ fn init_current_dir_with_no_arg() -> Result<()> {
     let mut command = Command::cargo_bin("cog")?;
     command.arg("init");
 
-    let temp_dir = TempDir::default();
-    let path = temp_dir.join("test_repo_no_args");
+    let temp_dir = TempDir::new()?;
+    let path = temp_dir.path().join("test_repo_no_args");
     std::fs::create_dir(&path)?;
     std::env::set_current_dir(&path)?;
 
