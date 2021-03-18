@@ -244,13 +244,13 @@ mod test {
     use anyhow::Result;
     use std::ops::Not;
     use std::process::{Command, Stdio};
-    use temp_testdir::TempDir;
+    use tempfile::TempDir;
 
     #[test]
     fn init_repo() -> Result<()> {
-        let temp_testdir = TempDir::default();
+        let tmp = TempDir::new()?;
 
-        let repo = Repository::init(&temp_testdir.join("test_repo"));
+        let repo = Repository::init(&tmp.path().join("test_repo"));
 
         assert!(repo.is_ok());
         Ok(())
@@ -258,9 +258,9 @@ mod test {
 
     #[test]
     fn create_commit_ok() -> Result<()> {
-        let temp_testdir = TempDir::default();
+        let tmp = TempDir::new()?;
 
-        let path = temp_testdir.join("test_repo");
+        let path = tmp.path().join("test_repo");
         let repo = Repository::init(&path)?;
         std::fs::write(&path.join("file"), "changes")?;
         repo.add_all()?;
@@ -271,9 +271,9 @@ mod test {
 
     #[test]
     fn not_create_empty_commit() -> Result<()> {
-        let temp_testdir = TempDir::default();
+        let tmp = TempDir::new()?;
 
-        let path = temp_testdir.join("test_repo");
+        let path = tmp.path().join("test_repo");
         let repo = Repository::init(&path)?;
 
         assert!(repo.commit("feat: a test commit").is_err());
@@ -282,9 +282,9 @@ mod test {
 
     #[test]
     fn not_create_empty_commit_with_unstaged_changed() -> Result<()> {
-        let temp_testdir = TempDir::default();
+        let tmp = TempDir::new()?;
 
-        let path = temp_testdir.join("test_repo");
+        let path = tmp.path().join("test_repo");
         let repo = Repository::init(&path)?;
         std::fs::write(&path.join("file"), "changes")?;
 
@@ -294,9 +294,9 @@ mod test {
 
     #[test]
     fn get_repo_working_dir_some() -> Result<()> {
-        let temp_testdir = TempDir::default();
+        let tmp = TempDir::new()?;
 
-        let path = temp_testdir.join("test_repo");
+        let path = tmp.path().join("test_repo");
         let repo = Repository::init(&path)?;
         let dir = &path.join("dir");
         std::fs::create_dir(dir)?;
@@ -308,9 +308,9 @@ mod test {
 
     #[test]
     fn get_diff_some() -> Result<()> {
-        let temp_testdir = TempDir::default();
+        let tmp = TempDir::new()?;
 
-        let path = temp_testdir.join("test_repo");
+        let path = tmp.path().join("test_repo");
         let repo = Repository::init(&path)?;
         std::fs::write(&path.join("file"), "changes")?;
         repo.add_all()?;
@@ -321,9 +321,9 @@ mod test {
 
     #[test]
     fn get_diff_none() -> Result<()> {
-        let temp_testdir = TempDir::default();
+        let tmp = TempDir::new()?;
 
-        let path = temp_testdir.join("test_repo");
+        let path = tmp.path().join("test_repo");
         let repo = Repository::init(&path)?;
         std::fs::write(&path.join("file"), "changes")?;
 
@@ -333,9 +333,9 @@ mod test {
 
     #[test]
     fn get_diff_include_untracked_some() -> Result<()> {
-        let temp_testdir = TempDir::default();
+        let tmp = TempDir::new()?;
 
-        let path = temp_testdir.join("test_repo");
+        let path = tmp.path().join("test_repo");
         let repo = Repository::init(&path)?;
         std::fs::write(&path.join("file"), "changes")?;
 
@@ -345,9 +345,9 @@ mod test {
 
     #[test]
     fn get_diff_include_untracked_none() -> Result<()> {
-        let temp_testdir = TempDir::default();
+        let tmp = TempDir::new()?;
 
-        let path = temp_testdir.join("test_repo");
+        let path = tmp.path().join("test_repo");
         let repo = Repository::init(&path)?;
 
         assert!(repo.get_diff(true).is_none());
@@ -357,10 +357,10 @@ mod test {
     // see: https://git-scm.com/book/en/v2/Git-on-the-Server-Getting-Git-on-a-Server
     #[test]
     fn open_bare_err() -> Result<()> {
-        let temp_testdir = TempDir::default();
-        std::env::set_current_dir(&temp_testdir)?;
+        let tmp = TempDir::new()?;
+        std::env::set_current_dir(&tmp)?;
 
-        let tmp = &temp_testdir.to_str().unwrap();
+        let tmp = &tmp.path().to_str().unwrap();
 
         Command::new("git")
             .arg("init")
@@ -377,9 +377,9 @@ mod test {
 
     #[test]
     fn get_repo_statuses_empty() -> Result<()> {
-        let temp_testdir = TempDir::default();
+        let tmp = TempDir::new()?;
 
-        let path = temp_testdir.join("test_repo");
+        let path = tmp.path().join("test_repo");
         let repo = Repository::init(&path)?;
 
         let statuses = repo.get_statuses()?;
@@ -390,9 +390,9 @@ mod test {
 
     #[test]
     fn get_repo_statuses_not_empty() -> Result<()> {
-        let temp_testdir = TempDir::default();
+        let tmp = TempDir::new()?;
 
-        let path = temp_testdir.join("test_repo");
+        let path = tmp.path().join("test_repo");
         let repo = Repository::init(&path)?;
         std::fs::write(&path.join("file"), "changes")?;
 
@@ -404,9 +404,9 @@ mod test {
 
     #[test]
     fn get_repo_head_oid_ok() -> Result<()> {
-        let temp_testdir = TempDir::default();
+        let tmp = TempDir::new()?;
 
-        let path = temp_testdir.join("test_repo");
+        let path = tmp.path().join("test_repo");
         let repo = Repository::init(&path)?;
         std::fs::write(&path.join("file"), "changes")?;
         repo.add_all()?;
@@ -421,9 +421,9 @@ mod test {
 
     #[test]
     fn get_repo_head_oid_err() -> Result<()> {
-        let temp_testdir = TempDir::default();
+        let tmp = TempDir::new()?;
 
-        let path = temp_testdir.join("test_repo");
+        let path = tmp.path().join("test_repo");
         let repo = Repository::init(&path)?;
 
         let oid = repo.get_head_commit_oid();
@@ -434,9 +434,9 @@ mod test {
 
     #[test]
     fn get_repo_head_obj_ok() -> Result<()> {
-        let temp_testdir = TempDir::default();
+        let tmp = TempDir::new()?;
 
-        let path = temp_testdir.join("test_repo");
+        let path = tmp.path().join("test_repo");
         let repo = Repository::init(&path)?;
         std::fs::write(&path.join("file"), "changes")?;
         repo.add_all()?;
@@ -451,9 +451,9 @@ mod test {
 
     #[test]
     fn get_repo_head_obj_err() -> Result<()> {
-        let temp_testdir = TempDir::default();
+        let tmp = TempDir::new()?;
 
-        let path = temp_testdir.join("test_repo");
+        let path = tmp.path().join("test_repo");
         let repo = Repository::init(&path)?;
         std::fs::write(&path.join("file"), "changes")?;
         repo.add_all()?;
@@ -466,9 +466,9 @@ mod test {
 
     #[test]
     fn resolve_lightweight_tag_ok() -> Result<()> {
-        let temp_testdir = TempDir::default();
+        let tmp = TempDir::new()?;
 
-        let path = temp_testdir.join("test_repo");
+        let path = tmp.path().join("test_repo");
         let repo = Repository::init(&path)?;
         std::fs::write(&path.join("file"), "changes")?;
         repo.add_all()?;
@@ -483,9 +483,9 @@ mod test {
 
     #[test]
     fn resolve_lightweight_tag_err() -> Result<()> {
-        let temp_testdir = TempDir::default();
+        let tmp = TempDir::new()?;
 
-        let path = temp_testdir.join("test_repo");
+        let path = tmp.path().join("test_repo");
         let repo = Repository::init(&path)?;
         std::fs::write(&path.join("file"), "changes")?;
         repo.add_all()?;
@@ -500,9 +500,9 @@ mod test {
 
     #[test]
     fn get_latest_tag_ok() -> Result<()> {
-        let temp_testdir = TempDir::default();
+        let tmp = TempDir::new()?;
 
-        let path = temp_testdir.join("test_repo");
+        let path = tmp.path().join("test_repo");
         let repo = Repository::init(&path)?;
         std::fs::write(&path.join("file"), "changes")?;
         repo.add_all()?;
@@ -523,9 +523,9 @@ mod test {
 
     #[test]
     fn get_latest_tag_err() -> Result<()> {
-        let temp_testdir = TempDir::default();
+        let tmp = TempDir::new()?;
 
-        let path = temp_testdir.join("test_repo");
+        let path = tmp.path().join("test_repo");
         let repo = Repository::init(&path)?;
         std::fs::write(&path.join("file"), "changes")?;
         repo.add_all()?;
@@ -539,9 +539,9 @@ mod test {
 
     #[test]
     fn get_latest_tag_oid_ok() -> Result<()> {
-        let temp_testdir = TempDir::default();
+        let tmp = TempDir::new()?;
 
-        let path = temp_testdir.join("test_repo");
+        let path = tmp.path().join("test_repo");
         let repo = Repository::init(&path)?;
         std::fs::write(&path.join("file"), "changes")?;
         repo.add_all()?;
@@ -556,9 +556,9 @@ mod test {
 
     #[test]
     fn get_latest_tag_oid_err() -> Result<()> {
-        let temp_testdir = TempDir::default();
+        let tmp = TempDir::new()?;
 
-        let path = temp_testdir.join("test_repo");
+        let path = tmp.path().join("test_repo");
         let repo = Repository::init(&path)?;
         std::fs::write(&path.join("file"), "changes")?;
         repo.add_all()?;
@@ -572,9 +572,9 @@ mod test {
 
     #[test]
     fn get_head_some() -> Result<()> {
-        let temp_testdir = TempDir::default();
+        let tmp = TempDir::new()?;
 
-        let path = temp_testdir.join("test_repo");
+        let path = tmp.path().join("test_repo");
         let repo = Repository::init(&path)?;
         std::fs::write(&path.join("file"), "changes")?;
         repo.add_all()?;
@@ -588,9 +588,9 @@ mod test {
 
     #[test]
     fn get_head_none() -> Result<()> {
-        let temp_testdir = TempDir::default();
+        let tmp = TempDir::new()?;
 
-        let path = temp_testdir.join("test_repo");
+        let path = tmp.path().join("test_repo");
         let repo = Repository::init(&path)?;
         std::fs::write(&path.join("file"), "changes")?;
         repo.add_all()?;

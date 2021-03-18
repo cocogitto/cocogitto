@@ -1,7 +1,7 @@
 use anyhow::Result;
 use assert_cmd::prelude::*;
 use std::process::Command;
-use temp_testdir::TempDir;
+use tempfile::TempDir;
 
 mod helper;
 
@@ -10,10 +10,10 @@ mod helper;
 fn commit_ok() -> Result<()> {
     let current_dir = std::env::current_dir()?;
     let mut command = Command::cargo_bin("coco")?;
-    let temp_dir = TempDir::default();
+    let temp_dir = TempDir::new()?;
     std::env::set_current_dir(&temp_dir)?;
     helper::git_init(".")?;
-    std::fs::write(temp_dir.join("test_file"), "content")?;
+    std::fs::write(temp_dir.path().join("test_file"), "content")?;
     helper::git_add()?;
 
     command
@@ -33,10 +33,10 @@ fn commit_ok() -> Result<()> {
 fn unstaged_changes_commit_err() -> Result<()> {
     let current_dir = std::env::current_dir()?;
     let mut command = Command::cargo_bin("coco")?;
-    let temp_dir = TempDir::default();
+    let temp_dir = TempDir::new()?;
     std::env::set_current_dir(&temp_dir)?;
     helper::git_init(".")?;
-    std::fs::write(temp_dir.join("test_file"), "content")?;
+    std::fs::write(temp_dir.path().join("test_file"), "content")?;
 
     command
         .arg("feat")
@@ -55,13 +55,13 @@ fn unstaged_changes_commit_err() -> Result<()> {
 fn untracked_changes_commit_ok() -> Result<()> {
     let current_dir = std::env::current_dir()?;
     let mut command = Command::cargo_bin("coco")?;
-    let temp_dir = TempDir::default();
+    let temp_dir = TempDir::new()?;
     std::env::set_current_dir(&temp_dir)?;
     helper::git_init(".")?;
-    std::fs::write(temp_dir.join("staged"), "content")?;
+    std::fs::write(temp_dir.path().join("staged"), "content")?;
     helper::git_add()?;
 
-    std::fs::write(temp_dir.join("untracked"), "content")?;
+    std::fs::write(temp_dir.path().join("untracked"), "content")?;
 
     command
         .arg("feat")
@@ -80,9 +80,9 @@ fn untracked_changes_commit_ok() -> Result<()> {
 fn empty_commit_err() -> Result<()> {
     let current_dir = std::env::current_dir()?;
     let mut command = Command::cargo_bin("coco")?;
-    let temp_dir = TempDir::default();
+    let tmp = TempDir::new()?;
 
-    std::env::set_current_dir(&temp_dir.to_path_buf())?;
+    std::env::set_current_dir(&tmp.path().to_path_buf())?;
     helper::git_init(".")?;
 
     command

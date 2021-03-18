@@ -68,12 +68,12 @@ mod tests {
     use std::ops::Not;
     use std::path::PathBuf;
     use std::process::Command;
-    use temp_testdir::TempDir;
+    use tempfile::TempDir;
 
     #[test]
     fn add_pre_commit_hook() -> Result<()> {
-        let temp = TempDir::default();
-        let temp = temp.to_path_buf();
+        let temp = TempDir::new()?;
+        let temp = temp.path().to_path_buf();
         env::set_current_dir(&temp)?;
 
         Command::new("git").arg("init").output()?;
@@ -89,8 +89,8 @@ mod tests {
 
     #[test]
     fn add_pre_push_hook() -> Result<()> {
-        let temp = TempDir::default();
-        let temp = temp.to_path_buf();
+        let tmp = TempDir::new()?;
+        let temp = tmp.path().to_path_buf();
         env::set_current_dir(&temp)?;
 
         Command::new("git").arg("init").output()?;
@@ -108,9 +108,9 @@ mod tests {
 
     #[test]
     fn add_all() -> Result<()> {
-        let temp = TempDir::default();
-        let temp = temp.to_path_buf();
-        env::set_current_dir(&temp)?;
+        let tmp = TempDir::new()?;
+        let tmp = tmp.path().to_path_buf();
+        env::set_current_dir(&tmp)?;
 
         Command::new("git").arg("init").output()?;
 
@@ -128,9 +128,9 @@ mod tests {
     fn should_have_perm_755_on_unix() -> Result<()> {
         use std::os::unix::fs::PermissionsExt;
 
-        let temp = TempDir::default();
-        let temp = temp.to_path_buf();
-        env::set_current_dir(&temp)?;
+        let tmp = TempDir::new()?;
+        let tmp = tmp.path().to_path_buf();
+        env::set_current_dir(&tmp)?;
 
         Command::new("git").arg("init").output()?;
 

@@ -27,16 +27,16 @@ jobs:
           toolchain: stable
           override: true
 
-      - name: Coverage
-        uses: actions-rs/tarpaulin@v0.1
-        with:
-          args: -- --test-threads 1
-
       - name: Test
         uses: actions-rs/cargo@v1
         continue-on-error: false
         with:
           command: test
+          args: -- --test-threads 1
+
+      - name: Coverage
+        uses: actions-rs/tarpaulin@v0.1
+        with:
           args: -- --test-threads 1
 
       - name: Upload to codecov.io

@@ -108,12 +108,12 @@ mod test {
     use git2::Repository;
     use git2::StatusOptions;
     use std::fs;
-    use temp_testdir::TempDir;
+    use tempfile::TempDir;
 
     #[test]
     fn should_get_statuses_from_git_statuses() -> Result<()> {
-        let temp_testdir = TempDir::default();
-        let path = temp_testdir.join("test_repo");
+        let tmp = TempDir::new()?;
+        let path = tmp.path().join("test_repo");
         let repo = Repository::init(&path)?;
         fs::write(path.join("file"), "content")?;
 

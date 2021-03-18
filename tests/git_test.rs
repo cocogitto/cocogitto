@@ -1,14 +1,13 @@
 use anyhow::Result;
 use cocogitto::CocoGitto;
 use helper::*;
-use temp_testdir::TempDir;
-
+use tempfile::TempDir;
 mod helper;
 
 #[test]
 fn open_repo_ok() -> Result<()> {
-    let tempdir = TempDir::default();
-    std::env::set_current_dir(&tempdir)?;
+    let tempdir = TempDir::new()?;
+    std::env::set_current_dir(&tempdir.path())?;
     git_init("open_repo_ok")?;
     std::env::set_current_dir(std::env::current_dir()?.join("open_repo_ok"))?;
     create_empty_config()?;
@@ -21,9 +20,9 @@ fn open_repo_ok() -> Result<()> {
 
 #[test]
 fn open_repo_err() -> Result<()> {
-    let path = TempDir::default();
-    std::env::set_current_dir(&path)?;
-    std::fs::create_dir(&path.join("not_a_repo"))?;
+    let tmp = TempDir::new()?;
+    std::env::set_current_dir(&tmp)?;
+    std::fs::create_dir(&tmp.path().join("not_a_repo"))?;
     create_empty_config()?;
 
     let gitto = CocoGitto::get();
@@ -34,10 +33,10 @@ fn open_repo_err() -> Result<()> {
 
 #[test]
 fn check_commit_history_ok() -> Result<()> {
-    let tempdir = TempDir::default();
-    std::env::set_current_dir(&tempdir)?;
+    let tmp = TempDir::new()?;
+    std::env::set_current_dir(&tmp)?;
     git_init("commit_history_ok")?;
-    std::env::set_current_dir(&tempdir.join("commit_history_ok"))?;
+    std::env::set_current_dir(&tmp.path().join("commit_history_ok"))?;
 
     create_empty_config()?;
     git_commit("feat: a valid commit")?;
@@ -51,10 +50,10 @@ fn check_commit_history_ok() -> Result<()> {
 
 #[test]
 fn check_commit_history_err() -> Result<()> {
-    let tempdir = TempDir::default();
-    std::env::set_current_dir(&tempdir)?;
+    let tmp = TempDir::new()?;
+    std::env::set_current_dir(&tmp)?;
     git_init("commit_history_err")?;
-    std::env::set_current_dir(&tempdir.join("commit_history_err"))?;
+    std::env::set_current_dir(&tmp.path().join("commit_history_err"))?;
 
     create_empty_config()?;
     git_commit("feat: a valid commit")?;
