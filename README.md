@@ -98,20 +98,20 @@ Example installing completions:
 ```
 # Bash
 $ cog generate-completions bash > ~/.local/share/bash-completion/completions/cog
-$ coco generate-completions bash > ~ bash > ~/.local/share/bash-completion/completions/coco
+$ coco generate-completions bash > ~/.local/share/bash-completion/completions/coco
 
 # Bash (macOS/Homebrew)
-$ cog generate-completions bash > ~ bash > $(brew --prefix)/etc/bash_completion.d/cog.bash-completion
-$ coco generate-completions bash > ~ bash > $(brew --prefix)/etc/bash_completion.d/coco.bash-completion
+$ cog generate-completions bash > $(brew --prefix)/etc/bash_completion.d/cog.bash-completion
+$ coco generate-completions bash > $(brew --prefix)/etc/bash_completion.d/coco.bash-completion
 
 # Fish
 $ mkdir -p ~/.config/fish/completions
-$ cog generate-completions bash > ~ fish > ~/.config/fish/completions/cog.fish
-$ coco generate-completions bash > ~ fish > ~/.config/fish/completions/coco.fish
+$ cog generate-completions fish > ~/.config/fish/completions/cog.fish
+$ coco generate-completions fish > ~/.config/fish/completions/coco.fish
 
 # Zsh
-$ cog generate-completions bash > ~ zsh > ~/.zfunc/_cog
-$ coco generate-completions bash > ~ zsh > ~/.zfunc/_coco
+$ cog generate-completions zsh > ~/.zfunc/_cog
+$ coco generate-completions zsh > ~/.zfunc/_coco
 ```
 
 ## Coco Commits
