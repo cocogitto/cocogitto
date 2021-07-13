@@ -27,7 +27,6 @@ use conventional::version::{parse_pre_release, VersionIncrement};
 use git::repository::Repository;
 use git2::{Oid, RebaseOptions};
 use hook::Hook;
-use itertools::Itertools;
 use log::filter::CommitFilters;
 use semver::Version;
 use settings::AuthorSetting;
@@ -269,8 +268,17 @@ impl CocoGitto {
         Ok(())
     }
 
-    pub fn check(&self) -> Result<()> {
-        let from = self.repository.get_first_commit()?;
+    #[allow(unstable_name_collisions)]
+    pub fn check(&self, check_from_latest_tag: bool) -> Result<()> {
+        let from = if check_from_latest_tag {
+            self.repository.get_latest_tag_oid().unwrap_or_else(|_err| {
+                println!("No previous tag found, falling back to first commit");
+                self.repository.get_first_commit().unwrap()
+            })
+        } else {
+            self.repository.get_first_commit()?
+        };
+
         let to = self.repository.get_head_commit_oid()?;
         let commits = self.repository.get_commit_range(from, to)?;
         let errors: Vec<anyhow::Error> = commits
@@ -280,6 +288,8 @@ impl CocoGitto {
             .filter(|commit| commit.is_err())
             .map(|err| err.unwrap_err())
             .collect();
+
+        use itertools::Itertools;
 
         if errors.is_empty() {
             let msg = "No errored commits".green();

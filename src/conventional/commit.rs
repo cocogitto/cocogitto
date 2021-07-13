@@ -180,11 +180,11 @@ impl Commit {
         );
 
         Ok(CommitMessage {
-            description,
             commit_type,
             scope,
             body,
             footer,
+            description,
             is_breaking_change,
         })
     }

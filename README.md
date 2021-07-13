@@ -57,6 +57,7 @@ features related to the conventional commit specification. Anything else shall b
     - [Pre bump hooks](#pre-bump-hooks)
     - [Post bump hooks](#post-bump-hooks)
     - [Builtin git hooks](#Builtin-git-hooks)
+    - [Github action](#Github action)
 - [Contributing](#Contributing)
 - [Licence](#Licence)
 
@@ -232,6 +233,10 @@ And check our commit history again :
 ERROR - Your Mother Was A Hamster, And Your Father Smelt Of Elderberries - (c82c30)
 	cause: invalid commit format : missing `: ` separator
 ```
+
+Additionally, you can check your history, starting from the latest tag to HEAD using `from-latest-tag` flag.  
+This is useful when your git repo started to use conventional commits from a certain point in history, and you
+don't care about editing old commits. 
 
 ### Edit commit history
 
@@ -465,6 +470,10 @@ Or one by one, specifying the hook name :
     ```
     cog install-hook pre-commit
     ```
+
+## Github action
+
+You can run cog check on github action using  [cog-conventional-check](https://github.com/oknozor/cog-conventional-check)
 
 ## Contributing
 
