@@ -1,5 +1,8 @@
+use std::process::exit;
+
 use anyhow::{Context, Result};
 use clap::{App, AppSettings, Arg, Shell, SubCommand};
+
 use cocogitto::conventional::commit;
 use cocogitto::conventional::commit::CommitType;
 use cocogitto::conventional::version::VersionIncrement;
@@ -7,7 +10,6 @@ use cocogitto::git::hook::HookKind;
 use cocogitto::log::filter::{CommitFilter, CommitFilters};
 use cocogitto::log::output::Output;
 use cocogitto::CocoGitto;
-use std::process::exit;
 
 const APP_SETTINGS: &[AppSettings] = &[
     AppSettings::SubcommandRequiredElseHelp,
@@ -144,7 +146,11 @@ fn main() -> Result<()> {
                 let subcommand = matches.subcommand_matches(CHANGELOG).unwrap();
                 let from = subcommand.value_of("from");
                 let to = subcommand.value_of("to");
-                let result = cocogitto.get_colored_changelog(from, to)?;
+                let at = subcommand.value_of("at");
+                let result = match (from, to, at) {
+                    (_, _, Some(at)) => cocogitto.get_colored_changelog_at_tag(at)?,
+                    _ => cocogitto.get_colored_changelog(from, to)?,
+                };
                 println!("{}", result);
             }
 
@@ -257,6 +263,7 @@ fn app<'a, 'b>() -> App<'a, 'b> {
                 .help("Generate the changelog from this commit or tag ref, default latest tag")
                 .short("f")
                 .long("from")
+                .conflicts_with("at")
                 .takes_value(true),
         )
         .arg(
@@ -264,7 +271,16 @@ fn app<'a, 'b>() -> App<'a, 'b> {
                 .help("Generate the changelog to this commit or tag ref, default HEAD")
                 .short("t")
                 .long("to")
+                .conflicts_with("at")
                 .takes_value(true),
+        )
+        .arg(
+            Arg::with_name("at")
+                .help("Generate the changelog for a specific git tag")
+                .short("at")
+                .long("at")
+                .takes_value(true)
+                .conflicts_with_all(&["from", "to"]),
         )
         .display_order(5);
 
