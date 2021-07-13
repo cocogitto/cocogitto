@@ -129,6 +129,38 @@ impl Repository {
         }
     }
 
+    pub(crate) fn get_tag_commits(&self, target_tag: &str) -> Result<(OidOf, OidOf)> {
+        let tag_names = self.0.tag_names(None)?;
+        let oid_of_target_tag = OidOf::Tag(
+            target_tag.to_string(),
+            self.resolve_lightweight_tag(target_tag)?,
+        );
+        // Starting point is set to first commit
+        let oid_of_first_commit = OidOf::Other(self.get_first_commit()?);
+
+        let target_idx = tag_names
+            .iter()
+            .flatten()
+            .enumerate()
+            .find(|(_idx, tag)| tag == &target_tag)
+            .map(|(idx, _)| idx);
+
+        let oid_of_previous_tag = target_idx
+            .map(|idx| {
+                tag_names.get(idx - 1).map(|previous_tag| {
+                    OidOf::Tag(
+                        previous_tag.to_string(),
+                        self.resolve_lightweight_tag(previous_tag)
+                            .expect("Unexpected tag parsing error"),
+                    )
+                })
+            })
+            .flatten()
+            .unwrap_or(oid_of_first_commit);
+
+        Ok((oid_of_previous_tag, oid_of_target_tag))
+    }
+
     pub(crate) fn get_latest_tag_oid(&self) -> Result<Oid> {
         self.get_latest_tag()
             .and_then(|tag| self.resolve_lightweight_tag(&tag))

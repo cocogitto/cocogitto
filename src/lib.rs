@@ -459,6 +459,26 @@ impl CocoGitto {
         Ok(changelog.markdown(true))
     }
 
+    pub fn get_colored_changelog_at_tag(&self, tag: &str) -> Result<String> {
+        let (from, to) = self.repository.get_tag_commits(tag)?;
+        let from = from.get_oid().to_string();
+        let to = to.get_oid();
+        let to = self
+            .repository
+            .0
+            .find_commit(to)?
+            .parent(0)
+            .expect("Unexpected error : Unable to get parent commit")
+            .id()
+            .to_string();
+        let mut changelog = self.get_changelog(
+            Some(from.as_str()),
+            Some(to.as_str()),
+            Some(tag.to_string()),
+        )?;
+        Ok(changelog.markdown(true))
+    }
+
     /// ## Get a changelog between two oids
     /// - `from` default value : latest tag or else first commit
     /// - `to` default value : `HEAD` or else first commit
@@ -470,11 +490,10 @@ impl CocoGitto {
     ) -> Result<Changelog> {
         let from = self.resolve_from_arg(from)?;
         let to = self.resolve_to_arg(to)?;
-
-        let mut commits = vec![];
-
         let from_oid = from.get_oid();
         let to_oid = to.get_oid();
+
+        let mut commits = vec![];
 
         for commit in self
             .repository
