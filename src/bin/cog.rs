@@ -81,7 +81,9 @@ fn main() -> Result<()> {
 
             CHECK => {
                 let cocogitto = CocoGitto::get()?;
-                cocogitto.check()?;
+                let subcommand = matches.subcommand_matches(CHECK).unwrap();
+                let from_tag = subcommand.is_present("from-latest-tag");
+                cocogitto.check(from_tag)?;
             }
             EDIT => {
                 let cocogitto = CocoGitto::get()?;
@@ -186,6 +188,13 @@ fn app<'a, 'b>() -> App<'a, 'b> {
     let check_command = SubCommand::with_name(CHECK)
         .settings(SUBCOMMAND_SETTINGS)
         .about("Verify all commit message against the conventional commit specification")
+        .arg(
+            Arg::with_name("from-latest-tag")
+                .help("Check commit history, starting from the latest tag to HEAD")
+                .short("l")
+                .takes_value(false)
+                .long("from-latest-tag"),
+        )
         .display_order(1);
 
     let edit_command = SubCommand::with_name(EDIT)

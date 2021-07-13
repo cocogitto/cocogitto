@@ -44,7 +44,7 @@ fn check_commit_history_ok() -> Result<()> {
 
     let gitto = CocoGitto::get()?;
 
-    assert!(gitto.check().is_ok());
+    assert!(gitto.check(false).is_ok());
     Ok(())
 }
 
@@ -61,6 +61,42 @@ fn check_commit_history_err() -> Result<()> {
 
     let gitto = CocoGitto::get()?;
 
-    assert!(gitto.check().is_err());
+    assert!(gitto.check(false).is_err());
+    Ok(())
+}
+
+#[test]
+fn check_commit_ok_from_latest_tag() -> Result<()> {
+    let tmp = TempDir::new()?;
+    std::env::set_current_dir(&tmp)?;
+    git_init("commit_ok_from_tag")?;
+    std::env::set_current_dir(&tmp.path().join("commit_ok_from_tag"))?;
+
+    create_empty_config()?;
+    git_commit("this one should not be picked")?;
+    git_tag("0.1.0")?;
+    git_commit("feat: another commit")?;
+
+    let gitto = CocoGitto::get()?;
+
+    assert!(gitto.check(true).is_ok());
+    Ok(())
+}
+
+#[test]
+fn check_commit_err_from_latest_tag() -> Result<()> {
+    let tmp = TempDir::new()?;
+    std::env::set_current_dir(&tmp)?;
+    git_init("commit_err_from_tag")?;
+    std::env::set_current_dir(&tmp.path().join("commit_err_from_tag"))?;
+
+    create_empty_config()?;
+    git_commit("this one should not be picked")?;
+    git_tag("0.1.0")?;
+    git_commit("Oh no!")?;
+
+    let gitto = CocoGitto::get()?;
+
+    assert!(gitto.check(true).is_err());
     Ok(())
 }

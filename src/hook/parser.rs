@@ -60,12 +60,9 @@ impl HookExpr {
 
     fn scan_hook_entry(hook_entry: &str) -> Option<HookExpr> {
         match hook_entry.find(DELIMITER_START) {
-            Some(start) => match hook_entry.find(DELIMITER_END) {
-                Some(end) => Some(HookExpr::from_str(
-                    &hook_entry[start + DELIMITER_START.len()..end],
-                )),
-                None => None,
-            },
+            Some(start) => hook_entry
+                .find(DELIMITER_END)
+                .map(|end| HookExpr::from_str(&hook_entry[start + DELIMITER_START.len()..end])),
             None => None,
         }
     }

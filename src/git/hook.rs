@@ -1,12 +1,12 @@
 use crate::CocoGitto;
 use anyhow::Result;
-use std::path::PathBuf;
 
 use std::fs::Permissions;
 #[cfg(target_family = "unix")]
 use std::os::unix::fs::PermissionsExt;
 
 use std::fs;
+use std::path::Path;
 
 pub static PRE_PUSH_HOOK: &[u8] = include_bytes!("assets/pre-push");
 pub static PREPARE_COMMIT_HOOK: &[u8] = include_bytes!("assets/prepare-commit-msg");
@@ -40,7 +40,7 @@ impl CocoGitto {
     }
 }
 
-fn create_hook(path: &PathBuf, kind: HookKind) -> Result<()> {
+fn create_hook(path: &Path, kind: HookKind) -> Result<()> {
     let (hook_path, hook_content) = match kind {
         HookKind::PrepareCommit => (path.join(PRE_COMMIT_HOOK_PATH), PREPARE_COMMIT_HOOK),
         HookKind::PrePush => (path.join(PRE_PUSH_HOOK_PATH), PRE_PUSH_HOOK),
