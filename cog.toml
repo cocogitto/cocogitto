@@ -1,6 +1,8 @@
 # Optional github repository url, used mainly to generate changelog links
 github = "https://github.com/oknozor/cocogitto"
 
+sign_commit = true
+
 # Optional contributor list
 # intended to map git signature to github username
 # and generate changelog links to their github profiles

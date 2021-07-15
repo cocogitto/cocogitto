@@ -64,11 +64,19 @@ lazy_static! {
         }
     };
 
-        static ref AUTHORS: Vec<AuthorSetting> = {
+    static ref AUTHORS: Vec<AuthorSetting> = {
         if let Ok(repo) = Repository::open(".") {
             Settings::get(&repo, None).unwrap_or_default().authors
         } else {
             vec![]
+        }
+    };
+
+        static ref SIGN_COMMIT: bool = {
+        if let Ok(repo) = Repository::open(".") {
+            Settings::get(&repo, None).unwrap_or_default().sign_commit
+        } else {
+            false
         }
     };
 }

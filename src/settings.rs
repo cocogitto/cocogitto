@@ -27,6 +27,8 @@ pub(crate) struct Settings {
     pub authors: AuthorSettings,
     #[serde(default)]
     pub commit_types: CommitsMetadataSettings,
+    #[serde(default)]
+    pub sign_commit: bool,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -44,6 +46,7 @@ impl Default for Settings {
             post_bump_hooks: vec![],
             authors: vec![],
             github: None,
+            sign_commit: false,
         }
     }
 }

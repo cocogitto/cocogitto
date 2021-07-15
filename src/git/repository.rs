@@ -1,15 +1,18 @@
-use super::status::Statuses;
-use crate::error::ErrorKind;
-use crate::error::ErrorKind::Git;
-use crate::OidOf;
+use std::path::Path;
+
 use anyhow::Result;
 use colored::Colorize;
 use git2::{
-    Commit as Git2Commit, Diff, DiffOptions, IndexAddOption, Object, ObjectType, Oid,
-    Repository as Git2Repository, StatusOptions,
+    Commit as Git2Commit, Commit, Diff, DiffOptions, IndexAddOption, Object, ObjectType, Oid,
+    Repository as Git2Repository, Signature, StatusOptions, Tree,
 };
 use semver::Version;
-use std::path::Path;
+
+use crate::error::ErrorKind;
+use crate::error::ErrorKind::Git;
+use crate::OidOf;
+
+use super::status::Statuses;
 
 pub(crate) struct Repository(pub(crate) Git2Repository);
 
@@ -67,15 +70,10 @@ impl Repository {
             let head = &self.0.head()?;
             let head_target = head.target().expect("Cannot get HEAD target");
             let tip = &self.0.find_commit(head_target)?;
-
-            self.0
-                .commit(Some("HEAD"), &sig, &sig, &message, &tree, &[&tip])
-                .map_err(|err| anyhow!(err))
+            self.commit_or_signed_commit(&sig, &message, &tree, &[&tip])
         } else if is_empty && has_delta {
             // First repo commit
-            self.0
-                .commit(Some("HEAD"), &sig, &sig, &message, &tree, &[])
-                .map_err(|err| anyhow!(err))
+            self.commit_or_signed_commit(&sig, &message, &tree, &[])
         } else {
             Err(anyhow!(ErrorKind::NothingToCommit {
                 statuses: self.get_statuses()?
@@ -236,15 +234,68 @@ impl Repository {
         let tree = obj.peel(ObjectType::Tree)?;
         Ok(Some(tree))
     }
+
+    fn commit_or_signed_commit(
+        &self,
+        sig: &Signature,
+        commit_message: &str,
+        tree: &Tree,
+        parents: &[&Commit],
+    ) -> Result<Oid> {
+        if *crate::SIGN_COMMIT {
+            let commit_buf = self.0.commit_create_buffer(
+                sig,            // author
+                sig,            // committer
+                commit_message, // commit message
+                tree,           // tree
+                parents,
+            )?; // parents
+
+            let commit_as_str = std::str::from_utf8(&commit_buf).unwrap().to_string();
+
+            let sig = self.gpg_sign_string(&commit_as_str)?;
+
+            self.0.commit_signed(&commit_as_str, &sig, Some("gpgsig"))
+        } else {
+            self.0
+                .commit(Some("HEAD"), sig, sig, commit_message, tree, parents)
+        }
+        .map_err(|err| anyhow!(err))
+    }
+
+    pub fn gpg_sign_string(&self, commit: &String) -> Result<String> {
+        let config = self.0.config()?;
+
+        let signing_key = config.get_string("user.signingkey")?;
+
+        let mut ctx = gpgme::Context::from_protocol(gpgme::Protocol::OpenPgp)?;
+        ctx.set_armor(true);
+        let key = ctx.get_secret_key(signing_key)?;
+
+        ctx.add_signer(&key)?;
+        let mut output = Vec::new();
+        let signature = ctx.sign_detached(commit.clone(), &mut output);
+
+        if signature.is_err() {
+            return Err(anyhow!(
+                "Unable to sign commit with GPG {}",
+                signature.unwrap_err()
+            ));
+        }
+
+        return Ok(String::from_utf8(output)?);
+    }
 }
 
 #[cfg(test)]
 mod test {
-    use super::Repository;
-    use anyhow::Result;
     use std::ops::Not;
     use std::process::{Command, Stdio};
+
+    use anyhow::Result;
     use tempfile::TempDir;
+
+    use super::Repository;
 
     #[test]
     fn init_repo() -> Result<()> {
