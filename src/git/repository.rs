@@ -1,7 +1,5 @@
-use super::status::Statuses;
-use crate::error::ErrorKind;
-use crate::error::ErrorKind::Git;
-use crate::OidOf;
+use std::path::Path;
+
 use anyhow::Result;
 use colored::Colorize;
 use git2::{
@@ -9,7 +7,12 @@ use git2::{
     Repository as Git2Repository, StatusOptions,
 };
 use semver::Version;
-use std::path::Path;
+
+use crate::error::ErrorKind;
+use crate::error::ErrorKind::Git;
+use crate::OidOf;
+
+use super::status::Statuses;
 
 pub(crate) struct Repository(pub(crate) Git2Repository);
 
@@ -69,12 +72,12 @@ impl Repository {
             let tip = &self.0.find_commit(head_target)?;
 
             self.0
-                .commit(Some("HEAD"), &sig, &sig, &message, &tree, &[&tip])
+                .commit(Some("HEAD"), &sig, &sig, message, &tree, &[tip])
                 .map_err(|err| anyhow!(err))
         } else if is_empty && has_delta {
             // First repo commit
             self.0
-                .commit(Some("HEAD"), &sig, &sig, &message, &tree, &[])
+                .commit(Some("HEAD"), &sig, &sig, message, &tree, &[])
                 .map_err(|err| anyhow!(err))
         } else {
             Err(anyhow!(ErrorKind::NothingToCommit {
@@ -147,13 +150,19 @@ impl Repository {
 
         let oid_of_previous_tag = target_idx
             .map(|idx| {
-                tag_names.get(idx - 1).map(|previous_tag| {
-                    OidOf::Tag(
-                        previous_tag.to_string(),
-                        self.resolve_lightweight_tag(previous_tag)
-                            .expect("Unexpected tag parsing error"),
-                    )
-                })
+                // Are we trying to get changelog for the first tag
+                if idx > 1 {
+                    tag_names.get(idx - 1).map(|previous_tag| {
+                        OidOf::Tag(
+                            previous_tag.to_string(),
+                            self.resolve_lightweight_tag(previous_tag)
+                                .expect("Unexpected tag parsing error"),
+                        )
+                    })
+                } else {
+                    // if so fallback to repo first commit as a starting point
+                    None
+                }
             })
             .flatten()
             .unwrap_or(oid_of_first_commit);
@@ -272,11 +281,15 @@ impl Repository {
 
 #[cfg(test)]
 mod test {
-    use super::Repository;
-    use anyhow::Result;
     use std::ops::Not;
     use std::process::{Command, Stdio};
+
+    use anyhow::Result;
     use tempfile::TempDir;
+
+    use crate::OidOf;
+
+    use super::Repository;
 
     #[test]
     fn init_repo() -> Result<()> {
@@ -630,6 +643,76 @@ mod test {
         let tag = repo.get_head();
 
         assert!(tag.is_none());
+        Ok(())
+    }
+
+    #[test]
+    fn get_tag_commits() -> Result<()> {
+        let tmp = TempDir::new()?;
+
+        let path = tmp.path().join("test_repo");
+        let repo = Repository::init(&path)?;
+        std::fs::write(&path.join("file"), "changes")?;
+        repo.add_all()?;
+        let start = repo.commit("chore: init")?;
+
+        std::fs::write(&path.join("file2"), "changes")?;
+        repo.add_all()?;
+        let end = repo.commit("chore: 1.0.0")?;
+
+        repo.create_tag("1.0.0")?;
+
+        std::fs::write(&path.join("file3"), "changes")?;
+        repo.add_all()?;
+        repo.commit("feat: a commit")?;
+
+        let commit_range = repo.get_tag_commits("1.0.0")?;
+
+        assert_eq!(
+            commit_range,
+            (OidOf::Other(start), OidOf::Tag("1.0.0".to_string(), end))
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn get_branch_short_hand() -> Result<()> {
+        let tmp = TempDir::new()?;
+
+        let path = tmp.path().join("test_repo");
+        let repo = Repository::init(&path)?;
+        std::fs::write(&path.join("file"), "changes")?;
+        repo.add_all()?;
+        repo.commit("hello one")?;
+
+        let shorthand = repo.get_branch_shorthand();
+
+        assert_eq!(shorthand, Some("master".to_string()));
+        Ok(())
+    }
+
+    #[test]
+    fn should_stash_failed_bump() -> Result<()> {
+        let tmp = TempDir::new()?;
+
+        let path = tmp.path().join("test_repo");
+        let mut repo = Repository::init(&path)?;
+        std::fs::write(&path.join("file"), "changes")?;
+        repo.add_all()?;
+        repo.commit("Initial commit")?;
+
+        let statuses = repo.get_statuses()?.0;
+        assert!(statuses.is_empty());
+
+        std::fs::write(&path.join("second_file"), "more changes")?;
+        repo.add_all()?;
+        let statuses = repo.get_statuses()?.0;
+        assert_eq!(statuses.len(), 1);
+
+        repo.stash_failed_version("1.0.0")?;
+
+        let statuses = repo.get_statuses()?.0;
+        assert!(statuses.is_empty());
         Ok(())
     }
 }

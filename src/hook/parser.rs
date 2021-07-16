@@ -18,7 +18,7 @@ impl Token {
     fn parse(src: &str) -> Result<(Token, &str)> {
         if let Some(remains) = src.strip_prefix("version") {
             Ok((Token::Version, remains))
-        } else if let Some(remains) = src.strip_prefix("+") {
+        } else if let Some(remains) = src.strip_prefix('+') {
             Ok((Token::Add, remains))
         } else if let Some(remains) = src.strip_prefix("major") {
             Ok((Token::Major, remains))
@@ -161,6 +161,7 @@ mod tests {
 
     use crate::hook::parser::HookExpr;
     use crate::hook::Token;
+    use anyhow::Result;
 
     #[test]
     fn scan_exp() {
@@ -231,5 +232,20 @@ mod tests {
 
         let result = hookexpr.calculate_version(Version::new(1, 0, 0));
         assert_eq!(result.unwrap(), "1.0.33-rc");
+    }
+
+    #[test]
+    fn increment_version() -> Result<()> {
+        let version = Version::parse("0.0.0")?;
+        let version = HookExpr::increment_major(version, 1);
+        assert_eq!(version.major, 1);
+
+        let version = HookExpr::increment_minor(version, 2);
+        assert_eq!(version.minor, 2);
+
+        let version = HookExpr::increment_patch(version, 5);
+        assert_eq!(version.patch, 5);
+
+        Ok(())
     }
 }

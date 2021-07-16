@@ -17,7 +17,7 @@ impl VersionIncrement {
     pub(crate) fn bump(&self, current_version: &Version) -> Result<Version> {
         match self {
             VersionIncrement::Manual(version) => {
-                Version::parse(&version).map_err(|err| anyhow!(err))
+                Version::parse(version).map_err(|err| anyhow!(err))
             }
             VersionIncrement::Auto => self.get_auto_version(current_version),
             VersionIncrement::Major => {

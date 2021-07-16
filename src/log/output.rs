@@ -131,7 +131,7 @@ impl OutputBuilder {
     /// Separate pager_cmd into command and arguments, and ensure the command exists
     fn specified_pager(&self) -> Result<Option<(PathBuf, Vec<String>)>> {
         if let Some(pager_cmd) = self.pager_cmd.as_ref() {
-            let mut words = shell_words::split(&pager_cmd)?.into_iter();
+            let mut words = shell_words::split(pager_cmd)?.into_iter();
             let pager = words
                 .next()
                 .ok_or_else(|| anyhow!("Pager command must not be empty"))?;
@@ -194,7 +194,7 @@ impl OutputBuilder {
         if is_bat {
             self.file_name
                 .as_ref()
-                .map(|name| cmd.args(&["--file-name", &name]));
+                .map(|name| cmd.args(&["--file-name", name]));
         }
 
         cmd.args(args.iter())
