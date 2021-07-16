@@ -2,6 +2,27 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 2.1.0 - 2021-07-16
+
+
+### Features
+
+[53f5a9](https://github.com/oknozor/cocogitto/commit/53f5a91b0059917e9e9b1593b7449fb07f4aa0ad) - add check from latest tag option - [oknozor](https://github.com/oknozor)
+
+[caa6ec](https://github.com/oknozor/cocogitto/commit/caa6ec31abdcf0f9115204c968eb01ec571abdcc) - add check from latest tag option - [oknozor](https://github.com/oknozor)
+
+
+### Tests
+
+[a27c74](https://github.com/oknozor/cocogitto/commit/a27c749d75cbe0bc37d91cf5a4e2391ceee77bfc) - add missing test for changelog and check commands - [oknozor](https://github.com/oknozor)
+
+
+### Documentation
+
+[80e488](https://github.com/oknozor/cocogitto/commit/80e4887e342b5808631cbeb287ca05f6a3b30c89) - fix typo in completion commands - [oknozor](https://github.com/oknozor)
+
+
+- - -
 ## 2.0.0 - 2021-03-18
 
 
