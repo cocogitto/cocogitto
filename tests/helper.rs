@@ -18,6 +18,17 @@ pub fn git_init(path: &str) -> Result<()> {
 }
 
 #[allow(dead_code)]
+pub fn git_log() -> Result<()> {
+    Command::new("git")
+        .arg("log")
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
+        .output()?;
+
+    Ok(())
+}
+
+#[allow(dead_code)]
 pub fn git_add() -> Result<()> {
     Command::new("git")
         .arg("add")

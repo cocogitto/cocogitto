@@ -339,7 +339,7 @@ impl From<&str> for CommitType {
 impl ToString for CommitMessage {
     fn to_string(&self) -> String {
         let mut message = String::new();
-        message.push_str(&self.commit_type.as_ref());
+        message.push_str(self.commit_type.as_ref());
 
         if let Some(scope) = &self.scope {
             message.push_str(&format!("({})", scope));

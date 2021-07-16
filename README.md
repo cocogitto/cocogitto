@@ -57,7 +57,7 @@ features related to the conventional commit specification. Anything else shall b
     - [Pre bump hooks](#pre-bump-hooks)
     - [Post bump hooks](#post-bump-hooks)
     - [Builtin git hooks](#Builtin-git-hooks)
-    - [Github action](#Github action)
+    - [Github action](#Github-action)
 - [Contributing](#Contributing)
 - [Licence](#Licence)
 

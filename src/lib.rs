@@ -178,7 +178,7 @@ impl CocoGitto {
         let errored_commits: Vec<Oid> = commits
             .iter()
             .map(|commit| {
-                let conv_commit = Commit::from_git_commit(&commit);
+                let conv_commit = Commit::from_git_commit(commit);
                 (commit.id(), conv_commit)
             })
             .filter(|commit| commit.1.is_err())
@@ -313,7 +313,7 @@ impl CocoGitto {
             .iter()
             // Remove merge commits
             .filter(|commit| !commit.message().unwrap_or("").starts_with("Merge"))
-            .filter(|commit| filters.filter_git2_commit(&commit))
+            .filter(|commit| filters.filter_git2_commit(commit))
             .map(|commit| Commit::from_git_commit(commit))
             // Apply filters
             .filter(|commit| match commit {
@@ -596,6 +596,7 @@ impl CocoGitto {
 }
 
 /// A wrapper for git2 oid including tags and HEAD ref
+#[derive(Debug, PartialEq, Eq)]
 enum OidOf {
     Tag(String, Oid),
     Head(Oid),
