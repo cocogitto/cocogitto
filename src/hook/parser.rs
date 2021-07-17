@@ -4,6 +4,7 @@ use anyhow::Result;
 use semver::Version;
 
 use crate::hook::Token;
+use std::ops::Range;
 
 pub const DELIMITER_START: &str = "{{";
 pub const DELIMITER_END: &str = "}}";
@@ -42,10 +43,13 @@ impl Token {
 }
 
 impl HookExpr {
-    pub fn parse(src: &str, current_version: Version) -> Option<String> {
-        if let Some(mut expression) = HookExpr::scan_hook_entry(src) {
+    pub fn parse(src: &str, current_version: Version) -> Option<(Range<usize>, String)> {
+        if let Some((range, mut expression)) = HookExpr::scan_hook_entry(src) {
             expression.tokenize();
-            expression.calculate_version(current_version).ok()
+            expression
+                .calculate_version(current_version)
+                .ok()
+                .map(|exp| (range, exp))
         } else {
             None
         }
@@ -58,11 +62,14 @@ impl HookExpr {
         }
     }
 
-    fn scan_hook_entry(hook_entry: &str) -> Option<HookExpr> {
+    fn scan_hook_entry(hook_entry: &str) -> Option<(Range<usize>, HookExpr)> {
         match hook_entry.find(DELIMITER_START) {
-            Some(start) => hook_entry
-                .find(DELIMITER_END)
-                .map(|end| HookExpr::from_str(&hook_entry[start + DELIMITER_START.len()..end])),
+            Some(start) => hook_entry.find(DELIMITER_END).map(|end| {
+                let range = start..end + DELIMITER_END.len();
+                let expression =
+                    HookExpr::from_str(&hook_entry[start + DELIMITER_START.len()..end]);
+                (range, expression)
+            }),
             None => None,
         }
     }
@@ -167,7 +174,8 @@ mod tests {
     fn scan_exp() {
         let entry = "echo {{version+1major}}";
 
-        let expr = HookExpr::scan_hook_entry(entry).unwrap();
+        let (range, expr) = HookExpr::scan_hook_entry(entry).unwrap();
+        assert_eq!(range, 5..23);
 
         assert_eq!(
             expr,
@@ -182,8 +190,9 @@ mod tests {
     fn tokenize_exp() {
         let entry = "echo {{version+minor}}";
 
-        let mut expr = HookExpr::scan_hook_entry(entry).unwrap();
+        let (range, mut expr) = HookExpr::scan_hook_entry(entry).unwrap();
         expr.tokenize();
+        assert_eq!(range, 5..22);
         assert_eq!(expr.tokens, vec![Token::Version, Token::Add, Token::Minor])
     }
 
@@ -191,8 +200,10 @@ mod tests {
     fn tokenize_exp_with_amount() {
         let entry = "echo {{version+2major}}";
 
-        let mut expr = HookExpr::scan_hook_entry(entry).unwrap();
+        let (range, mut expr) = HookExpr::scan_hook_entry(entry).unwrap();
         expr.tokenize();
+
+        assert_eq!(range, 5..23);
         assert_eq!(
             expr.tokens,
             vec![Token::Version, Token::Add, Token::Amount(2), Token::Major]
@@ -203,8 +214,10 @@ mod tests {
     fn tokenize_exp_with_alpha() {
         let entry = "echo {{version+33patch-rc}}";
 
-        let mut expr = HookExpr::scan_hook_entry(entry).unwrap();
+        let (range, mut expr) = HookExpr::scan_hook_entry(entry).unwrap();
         expr.tokenize();
+
+        assert_eq!(range, 5..27);
         assert_eq!(
             expr.tokens,
             vec![
