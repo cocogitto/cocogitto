@@ -5,7 +5,7 @@ use std::str::FromStr;
 use anyhow::Result;
 use semver::Version;
 
-use crate::hook::parser::{HookExpr, DELIMITER_END, DELIMITER_START};
+use crate::hook::parser::HookExpr;
 
 mod parser;
 
@@ -27,31 +27,7 @@ impl FromStr for Hook {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         ensure!(!s.is_empty(), "hook must not be an empty string");
-
-        let words = shell_words::split(s)?;
-        let mut output = vec![];
-        for word in words {
-            let delimiters = (word.find(DELIMITER_START), word.find(DELIMITER_END));
-
-            if let (Some(start), Some(end)) = delimiters {
-                let before_exp = &word[0..start];
-                let after_exp = &word[end + DELIMITER_END.len()..word.len()];
-
-                if !before_exp.is_empty() {
-                    output.push(before_exp.to_string());
-                }
-
-                output.push(word[start..end + DELIMITER_END.len()].to_string());
-
-                if !after_exp.is_empty() {
-                    output.push(after_exp.to_string());
-                }
-            } else {
-                output.push(word);
-            }
-        }
-
-        Ok(Hook(output))
+        Ok(Hook(shell_words::split(s)?))
     }
 }
 
@@ -65,8 +41,8 @@ impl fmt::Display for Hook {
 impl Hook {
     pub fn insert_version(&mut self, value: &str) -> Result<()> {
         for i in 0..self.0.len() {
-            if let Some(version) = HookExpr::parse(&self.0[i], Version::from_str(value)?) {
-                self.0[i] = version
+            if let Some((range, version)) = HookExpr::parse(&self.0[i], Version::from_str(value)?) {
+                self.0[i].replace_range(range, &version);
             }
         }
 
@@ -123,15 +99,7 @@ mod test {
         let mut hook = Hook::from_str("mvn versions:set -DnewVersion={{version}}")?;
         hook.insert_version("1.0.0").unwrap();
 
-        assert_eq!(
-            &hook.0,
-            &[
-                "mvn".to_string(),
-                "versions:set".into(),
-                "-DnewVersion=".into(),
-                "1.0.0".into()
-            ]
-        );
+        assert_eq!(&hook.0, &["mvn", "versions:set", "-DnewVersion=1.0.0"]);
         Ok(())
     }
 
@@ -142,12 +110,7 @@ mod test {
 
         assert_eq!(
             &hook.0,
-            &[
-                "mvn".to_string(),
-                "versions:set".into(),
-                "-DnewVersion=".into(),
-                "1.1.0-SNAPSHOT".into()
-            ]
+            &["mvn", "versions:set", "-DnewVersion=1.1.0-SNAPSHOT"]
         );
         Ok(())
     }
@@ -157,7 +120,7 @@ mod test {
         let mut hook = Hook::from_str("echo \"Hello World\"")?;
         hook.insert_version("1.0.0").unwrap();
 
-        assert_eq!(&hook.0, &["echo".to_string(), "Hello World".into()]);
+        assert_eq!(&hook.0, &["echo", "Hello World"]);
         Ok(())
     }
 
@@ -166,7 +129,25 @@ mod test {
         let mut hook = Hook::from_str("echo \"{{version}}\"")?;
         hook.insert_version("1.0.0").unwrap();
 
-        assert_eq!(&hook.0, &["echo".to_string(), "1.0.0".into()]);
+        assert_eq!(&hook.0, &["echo", "1.0.0"]);
+        Ok(())
+    }
+
+    #[test]
+    fn replace_version_with_nested_simple_quoted_arg() -> Result<()> {
+        let mut hook = Hook::from_str("coco chore 'bump snapshot to {{version+1minor-pre}}'")?;
+        hook.insert_version("1.0.0").unwrap();
+
+        assert_eq!(&hook.0, &["coco", "chore", "bump snapshot to 1.1.0-pre"]);
+        Ok(())
+    }
+
+    #[test]
+    fn replace_version_with_nested_double_quoted_arg() -> Result<()> {
+        let mut hook = Hook::from_str("coco chore \"bump snapshot to {{version+1minor-pre}}\"")?;
+        hook.insert_version("1.0.0").unwrap();
+
+        assert_eq!(&hook.0, &["coco", "chore", "bump snapshot to 1.1.0-pre"]);
         Ok(())
     }
 }
