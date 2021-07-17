@@ -473,7 +473,7 @@ Or one by one, specifying the hook name :
 
 ## Github action
 
-You can run cog check on github action using  [cog-conventional-check](https://github.com/oknozor/cog-conventional-check)
+You can run cog check on github action using  [cocogitto-action](https://github.com/oknozor/cocogitto-action).
 
 ## Contributing
 
