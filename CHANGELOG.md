@@ -2,6 +2,15 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 2.1.1 - 2021-07-17
+
+
+### Bug Fixes
+
+[acf354](https://github.com/oknozor/cocogitto/commit/acf354b554d9c7cdc8284abecfc65e9c61006db0) - use range to replace version expression in hooks - [oknozor](https://github.com/oknozor)
+
+
+- - -
 ## 2.1.0 - 2021-07-16
 
 
