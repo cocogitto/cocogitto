@@ -82,7 +82,7 @@ fn empty_commit_err() -> Result<()> {
     let mut command = Command::cargo_bin("coco")?;
     let tmp = TempDir::new()?;
 
-    std::env::set_current_dir(&tmp.path().to_path_buf())?;
+    std::env::set_current_dir(tmp.path())?;
     helper::git_init(".")?;
 
     command

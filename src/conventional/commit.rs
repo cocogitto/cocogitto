@@ -280,14 +280,14 @@ impl Commit {
             "{}{} ({}) - {}\n\t{} {}\n\t{} {}\n\t{} {}\n",
             breaking_change,
             message_display,
-            &self.shorthand().bold(),
+            self.shorthand().bold(),
             elapsed,
             author_format,
-            &self.author,
+            self.author,
             type_format,
-            &self.message.commit_type,
+            self.message.commit_type,
             scope_format,
-            &self.message.scope.as_ref().unwrap_or(&"none".to_string()),
+            self.message.scope.as_deref().unwrap_or("none"),
         )
     }
 }
@@ -300,7 +300,7 @@ impl fmt::Display for Commit {
 
 impl AsRef<str> for CommitType {
     fn as_ref(&self) -> &str {
-        match &self {
+        match self {
             Feature => "feat",
             BugFix => "fix",
             Chore => "chore",

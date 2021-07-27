@@ -33,7 +33,7 @@ impl FromStr for Hook {
 
 impl fmt::Display for Hook {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let command = shell_words::join(self.0.iter());
+        let command = shell_words::join(&self.0);
         f.write_str(&command)
     }
 }
@@ -75,10 +75,7 @@ mod test {
     #[test]
     fn parse_valid_string() -> Result<()> {
         let hook = Hook::from_str("cargo bump {{version}}")?;
-        assert_eq!(
-            &hook.0,
-            &["cargo".to_string(), "bump".into(), "{{version}}".into()]
-        );
+        assert_eq!(&hook.0, &["cargo", "bump", "{{version}}"]);
         Ok(())
     }
 
@@ -87,10 +84,7 @@ mod test {
         let mut hook = Hook::from_str("cargo bump {{version}}")?;
         hook.insert_version("1.0.0").unwrap();
 
-        assert_eq!(
-            &hook.0,
-            &["cargo".to_string(), "bump".into(), "1.0.0".into()]
-        );
+        assert_eq!(&hook.0, &["cargo", "bump", "1.0.0"]);
         Ok(())
     }
 

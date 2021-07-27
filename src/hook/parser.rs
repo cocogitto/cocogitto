@@ -123,8 +123,7 @@ impl HookExpr {
             match token {
                 Token::Add => version = self.calculate_increment(version)?,
                 Token::AlphaNumeric(string) => {
-                    let mut output = version.to_string();
-                    output.push_str(&string);
+                    let output = [version.to_string(), string].join("");
                     return Ok(output);
                 }
                 _ => return Err(anyhow!("Unexpected token in hook expression : {:?}", token)),
@@ -193,7 +192,7 @@ mod tests {
         let (range, mut expr) = HookExpr::scan_hook_entry(entry).unwrap();
         expr.tokenize();
         assert_eq!(range, 5..22);
-        assert_eq!(expr.tokens, vec![Token::Version, Token::Add, Token::Minor])
+        assert_eq!(expr.tokens, [Token::Version, Token::Add, Token::Minor])
     }
 
     #[test]
@@ -206,7 +205,7 @@ mod tests {
         assert_eq!(range, 5..23);
         assert_eq!(
             expr.tokens,
-            vec![Token::Version, Token::Add, Token::Amount(2), Token::Major]
+            [Token::Version, Token::Add, Token::Amount(2), Token::Major]
         )
     }
 
@@ -220,7 +219,7 @@ mod tests {
         assert_eq!(range, 5..27);
         assert_eq!(
             expr.tokens,
-            vec![
+            [
                 Token::Version,
                 Token::Add,
                 Token::Amount(33),

@@ -27,9 +27,11 @@ use conventional::version::{parse_pre_release, VersionIncrement};
 use git::repository::Repository;
 use git2::{Oid, RebaseOptions};
 use hook::Hook;
+use itertools::Itertools;
 use log::filter::CommitFilters;
 use semver::Version;
 use settings::AuthorSetting;
+use std::collections::HashMap;
 use std::fmt::Display;
 use std::fmt::Formatter;
 use std::fmt::Write as FmtWrite;
@@ -37,7 +39,6 @@ use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{exit, Command, Stdio};
-use std::{collections::HashMap, str::FromStr};
 use tempfile::TempDir;
 
 pub type CommitsMetadata = HashMap<CommitType, CommitConfig>;
@@ -223,7 +224,7 @@ impl CocoGitto {
                             original_commit.id()
                         );
 
-                        let mut message_bytes: Vec<u8> = hint.as_bytes().to_vec();
+                        let mut message_bytes: Vec<u8> = hint.clone().into();
                         message_bytes.extend_from_slice(original_commit.message_bytes());
                         file.write_all(&message_bytes)?;
 
@@ -234,11 +235,11 @@ impl CocoGitto {
                             .stderr(Stdio::inherit())
                             .output()?;
 
-                        let new_message = std::fs::read_to_string(&file_path)?
+                        let new_message: String = std::fs::read_to_string(&file_path)?
                             .lines()
                             .filter(|line| !line.starts_with('#'))
                             .filter(|line| !line.trim().is_empty())
-                            .collect::<String>();
+                            .collect();
 
                         rebase.commit(None, &original_commit.committer(), Some(&new_message))?;
                         match verify(self.repository.get_author().ok(), &new_message) {
@@ -288,8 +289,6 @@ impl CocoGitto {
             .filter(|commit| commit.is_err())
             .map(|err| err.unwrap_err())
             .collect();
-
-        use itertools::Itertools;
 
         if errors.is_empty() {
             let msg = "No errored commits".green();
@@ -467,9 +466,8 @@ impl CocoGitto {
             .repository
             .0
             .find_commit(to)?
-            .parent(0)
+            .parent_id(0)
             .expect("Unexpected error : Unable to get parent commit")
-            .id()
             .to_string();
         let mut changelog = self.get_changelog(
             Some(from.as_str()),
@@ -515,7 +513,7 @@ impl CocoGitto {
             match Commit::from_git_commit(&commit) {
                 Ok(commit) => commits.push(commit),
                 Err(err) => {
-                    let err = format!("{}", err).red();
+                    let err = err.to_string().red();
                     eprintln!("{}", err);
                 }
             };
@@ -577,18 +575,17 @@ impl CocoGitto {
     ) -> Result<()> {
         let settings = Settings::get(&self.repository, hooks_config)?;
 
-        let hooks = settings
+        let hooks: Vec<Hook> = settings
             .get_hooks(hook_type)
             .iter()
-            .map(String::as_str)
-            .map(Hook::from_str)
+            .map(|s| s.parse())
             .enumerate()
             .map(|(idx, result)| result.context(format!("Cannot parse hook at index {}", idx)))
-            .collect::<Result<Vec<Hook>>>()?;
+            .try_collect()?;
 
         for mut hook in hooks {
             hook.insert_version(next_version)?;
-            hook.run().context(format!("{}", hook))?;
+            hook.run().context(hook.to_string())?;
         }
 
         Ok(())

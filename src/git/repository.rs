@@ -55,7 +55,7 @@ impl Repository {
 
     pub(crate) fn add_all(&self) -> Result<()> {
         let mut index = self.0.index()?;
-        index.add_all(["*"].iter(), IndexAddOption::DEFAULT, None)?;
+        index.add_all(["*"], IndexAddOption::DEFAULT, None)?;
         index.write().map_err(|err| anyhow!(err))
     }
 
@@ -107,10 +107,9 @@ impl Repository {
     pub(crate) fn get_head_commit(&self) -> Result<Git2Commit> {
         let head_ref = self.0.head();
         match head_ref {
-            Ok(head) => match head.peel_to_commit() {
-                Ok(head_commit) => Ok(head_commit),
-                Err(err) => Err(anyhow!("Could not peel head to commit {}", err)),
-            },
+            Ok(head) => head
+                .peel_to_commit()
+                .map_err(|err| anyhow!("Could not peel head to commit {}", err)),
             Err(err) => Err(anyhow!("Repo as not HEAD : {}", err)),
         }
     }
