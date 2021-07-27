@@ -66,9 +66,7 @@ impl Changelog {
             let meta = &COMMITS_METADATA[&commit_type];
 
             write!(&mut out, "\n### {}\n\n", meta.changelog_title).unwrap();
-            for description in commits {
-                out.push_str(&description);
-            }
+            out.extend(commits);
         }
 
         out
@@ -90,9 +88,7 @@ impl Changelog {
     }
 
     fn changelog_template() -> String {
-        let mut content = Changelog::default_header();
-        content.push_str(&Changelog::default_footer());
-        content
+        [Changelog::default_header(), Changelog::default_footer()].join("")
     }
 }
 

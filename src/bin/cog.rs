@@ -4,7 +4,6 @@ use anyhow::{Context, Result};
 use clap::{App, AppSettings, Arg, Shell, SubCommand};
 
 use cocogitto::conventional::commit;
-use cocogitto::conventional::commit::CommitType;
 use cocogitto::conventional::version::VersionIncrement;
 use cocogitto::git::hook::HookKind;
 use cocogitto::log::filter::{CommitFilter, CommitFilters};
@@ -94,10 +93,8 @@ fn main() -> Result<()> {
             LOG => {
                 let cocogitto = CocoGitto::get()?;
 
-                let repo_tag_name = match cocogitto.get_repo_tag_name() {
-                    Some(name) => name,
-                    None => "cog log".to_string(),
-                };
+                let repo_tag_name = cocogitto.get_repo_tag_name();
+                let repo_tag_name = repo_tag_name.as_deref().unwrap_or("cog log");
 
                 let mut output = Output::builder()
                     .with_pager_from_env("PAGER")
@@ -108,21 +105,17 @@ fn main() -> Result<()> {
 
                 let mut filters = vec![];
                 if let Some(commit_types) = subcommand.values_of("type") {
-                    commit_types.for_each(|commit_type| {
-                        filters.push(CommitFilter::Type(CommitType::from(commit_type)));
-                    });
+                    filters.extend(
+                        commit_types.map(|commit_type| CommitFilter::Type(commit_type.into())),
+                    );
                 }
 
                 if let Some(scopes) = subcommand.values_of("scope") {
-                    scopes.for_each(|scope| {
-                        filters.push(CommitFilter::Scope(scope.to_string()));
-                    });
+                    filters.extend(scopes.map(|scope| CommitFilter::Scope(scope.to_string())));
                 }
 
                 if let Some(authors) = subcommand.values_of("author") {
-                    authors.for_each(|author| {
-                        filters.push(CommitFilter::Author(author.to_string()));
-                    });
+                    filters.extend(authors.map(|author| CommitFilter::Author(author.to_string())));
                 }
 
                 if subcommand.is_present("breaking-change") {
@@ -144,12 +137,14 @@ fn main() -> Result<()> {
             CHANGELOG => {
                 let cocogitto = CocoGitto::get()?;
                 let subcommand = matches.subcommand_matches(CHANGELOG).unwrap();
-                let from = subcommand.value_of("from");
-                let to = subcommand.value_of("to");
                 let at = subcommand.value_of("at");
-                let result = match (from, to, at) {
-                    (_, _, Some(at)) => cocogitto.get_colored_changelog_at_tag(at)?,
-                    _ => cocogitto.get_colored_changelog(from, to)?,
+                let result = match at {
+                    Some(at) => cocogitto.get_colored_changelog_at_tag(at)?,
+                    None => {
+                        let from = subcommand.value_of("from");
+                        let to = subcommand.value_of("to");
+                        cocogitto.get_colored_changelog(from, to)?
+                    }
                 };
                 println!("{}", result);
             }
@@ -364,7 +359,7 @@ fn app<'a, 'b>() -> App<'a, 'b> {
         .version(env!("CARGO_PKG_VERSION"))
         .author("Paul D. <paul.delafosse@protonmail.com>")
         .about("A command line tool for the conventional commits and semver specifications")
-        .subcommands(vec![
+        .subcommands([
             verify_command,
             init_subcommand,
             check_command,

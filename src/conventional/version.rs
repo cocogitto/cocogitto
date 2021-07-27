@@ -62,7 +62,7 @@ impl VersionIncrement {
             .map(Result::unwrap)
             .collect();
 
-        VersionIncrement::get_next_auto_version(current_version, conventional_commits.as_slice())
+        VersionIncrement::get_next_auto_version(current_version, &conventional_commits)
     }
 
     fn get_next_auto_version(current_version: &Version, commits: &[Commit]) -> Result<Version> {

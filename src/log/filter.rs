@@ -20,14 +20,14 @@ impl CommitFilters {
 
     pub(crate) fn filter_git2_commit(&self, commit: &Git2Commit) -> bool {
         // Author filters
-        let authors = self
+        let authors: Vec<&String> = self
             .0
             .iter()
             .filter_map(|filter| match filter {
                 CommitFilter::Author(author) => Some(author),
                 _ => None,
             })
-            .collect::<Vec<&String>>();
+            .collect();
 
         let filter_authors = if authors.is_empty() {
             true
@@ -42,14 +42,14 @@ impl CommitFilters {
 
     pub(crate) fn filters(&self, commit: &Commit) -> bool {
         // Commit type filters
-        let types = self
+        let types: Vec<&CommitType> = self
             .0
             .iter()
             .filter_map(|filter| match filter {
                 CommitFilter::Type(commit_type) => Some(commit_type),
                 _ => None,
             })
-            .collect::<Vec<&CommitType>>();
+            .collect();
 
         let filter_type = if types.is_empty() {
             true
@@ -60,21 +60,21 @@ impl CommitFilters {
         };
 
         // Scope filters
-        let scopes = self
+        let scopes: Vec<&String> = self
             .0
             .iter()
             .filter_map(|filter| match filter {
                 CommitFilter::Scope(scope) => Some(scope),
                 _ => None,
             })
-            .collect::<Vec<&String>>();
+            .collect();
 
         let filter_scopes = if scopes.is_empty() {
             true
         } else {
             scopes
                 .iter()
-                .any(|scope| Some(*scope) == commit.message.scope.as_ref())
+                .any(|&scope| Some(scope) == commit.message.scope.as_ref())
         };
 
         // Breaking changes filters

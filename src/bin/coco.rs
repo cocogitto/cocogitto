@@ -56,10 +56,10 @@ fn main() -> Result<()> {
 }
 
 fn app<'a, 'b>() -> App<'a, 'b> {
-    let keys = CocoGitto::get_commit_metadata()
+    let keys: Vec<&str> = CocoGitto::get_commit_metadata()
         .iter()
         .map(|(commit_type, _)| commit_type.as_ref())
-        .collect::<Vec<&str>>();
+        .collect();
 
     App::new("Coco")
         .settings(APP_SETTINGS)
@@ -69,7 +69,7 @@ fn app<'a, 'b>() -> App<'a, 'b> {
         .arg(
             Arg::with_name("type")
                 .help("The type of the commit message")
-                .possible_values(keys.as_slice())
+                .possible_values(&keys)
                 .required(true),
         )
         .arg(

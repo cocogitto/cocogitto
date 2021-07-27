@@ -119,7 +119,7 @@ impl OutputBuilder {
                 "must have a value, as ensured by checking existence of at least one default pager",
             );
 
-        let mut cmd = self.make_pager_command(&pager, &args[..]);
+        let mut cmd = self.make_pager_command(&pager, &args);
         let output = cmd
             .spawn()
             .map(Output::Pager)
@@ -194,10 +194,10 @@ impl OutputBuilder {
         if is_bat {
             self.file_name
                 .as_ref()
-                .map(|name| cmd.args(&["--file-name", name]));
+                .map(|name| cmd.args(["--file-name", name]));
         }
 
-        cmd.args(args.iter())
+        cmd.args(args)
             .env("LESSANSIENDCHARS", "mK")
             .stdin(Stdio::piped());
 
