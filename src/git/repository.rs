@@ -6,6 +6,7 @@ use git2::{
     Commit as Git2Commit, Diff, DiffOptions, IndexAddOption, Object, ObjectType, Oid,
     Repository as Git2Repository, StatusOptions,
 };
+use itertools::Itertools;
 use semver::Version;
 
 use crate::error::ErrorKind;
@@ -140,30 +141,19 @@ impl Repository {
         // Starting point is set to first commit
         let oid_of_first_commit = OidOf::Other(self.get_first_commit()?);
 
-        let target_idx = tag_names
+        let oid_of_previous_tag = tag_names
             .iter()
             .flatten()
-            .enumerate()
-            .find(|(_idx, tag)| tag == &target_tag)
-            .map(|(idx, _)| idx);
-
-        let oid_of_previous_tag = target_idx
-            .map(|idx| {
-                // Are we trying to get changelog for the first tag
-                if idx > 1 {
-                    tag_names.get(idx - 1).map(|previous_tag| {
-                        OidOf::Tag(
-                            previous_tag.to_string(),
-                            self.resolve_lightweight_tag(previous_tag)
-                                .expect("Unexpected tag parsing error"),
-                        )
-                    })
-                } else {
-                    // if so fallback to repo first commit as a starting point
-                    None
-                }
+            .sorted()
+            .tuple_windows()
+            .find(|&(_, cur)| cur == target_tag)
+            .map(|(prev, _)| {
+                OidOf::Tag(
+                    prev.to_string(),
+                    self.resolve_lightweight_tag(prev)
+                        .expect("Unexpected tag parsing error"),
+                )
             })
-            .flatten()
             .unwrap_or(oid_of_first_commit);
 
         Ok((oid_of_previous_tag, oid_of_target_tag))
