@@ -95,7 +95,8 @@ impl Changelog {
 #[cfg(test)]
 mod test {
     use crate::conventional::changelog::Changelog;
-    use crate::conventional::commit::{Commit, CommitMessage, CommitType};
+    use crate::conventional::commit::Commit;
+    use conventional_commit_parser::commit::{CommitType, ConventionalCommit};
     use crate::OidOf;
     use anyhow::Result;
     use chrono::Utc;
@@ -112,26 +113,26 @@ mod test {
             commits: vec![
                 Commit {
                     oid: "5375e15770ddf8821d0c1ad393d315e243014c15".to_string(),
-                    message: CommitMessage {
+                    message: ConventionalCommit {
                         commit_type: CommitType::Feature,
                         scope: None,
                         body: None,
-                        footer: None,
-                        description: "this is a commit message".to_string(),
+                        summary: "this is a commit message".to_string(),
                         is_breaking_change: false,
+                        footers: vec![]
                     },
                     author: "coco".to_string(),
                     date: Utc::now().naive_local(),
                 },
                 Commit {
                     oid: "5375e15770ddf8821d0c1ad393d315e243014c15".to_string(),
-                    message: CommitMessage {
+                    message: ConventionalCommit {
                         commit_type: CommitType::Feature,
                         scope: None,
                         body: None,
-                        footer: None,
-                        description: "this is an other commit message".to_string(),
+                        summary: "this is an other commit message".to_string(),
                         is_breaking_change: false,
+                        footers: vec![]
                     },
                     author: "cogi".to_string(),
                     date: Utc::now().naive_local(),

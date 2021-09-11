@@ -1,7 +1,5 @@
-use crate::conventional::commit::CommitType::*;
 use crate::error::ErrorKind::CommitFormat;
 use crate::AUTHORS;
-use crate::COMMITS_METADATA;
 use crate::REMOTE_URL;
 use anyhow::Result;
 use chrono::{NaiveDateTime, Utc};
@@ -10,39 +8,14 @@ use git2::Commit as Git2Commit;
 use std::cmp::Ordering;
 use std::fmt;
 use std::fmt::Formatter;
+use conventional_commit_parser::commit::{ConventionalCommit};
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct Commit {
     pub(crate) oid: String,
-    pub(crate) message: CommitMessage,
+    pub(crate) message: ConventionalCommit,
     pub(crate) author: String,
     pub(crate) date: NaiveDateTime,
-}
-
-#[derive(Hash, Eq, PartialEq, Debug, Clone)]
-pub enum CommitType {
-    Feature,
-    BugFix,
-    Chore,
-    Revert,
-    Performances,
-    Documentation,
-    Style,
-    Refactoring,
-    Test,
-    Build,
-    Ci,
-    Custom(String),
-}
-
-#[derive(Debug, Eq, PartialEq)]
-pub struct CommitMessage {
-    pub(crate) commit_type: CommitType,
-    pub(crate) scope: Option<String>,
-    pub(crate) body: Option<String>,
-    pub(crate) footer: Option<String>,
-    pub(crate) description: String,
-    pub(crate) is_breaking_change: bool,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -67,15 +40,20 @@ impl Commit {
         let message = commit.message();
         let git2_message = message.unwrap().to_owned();
         let author = commit.author().name().unwrap_or("").to_string();
-        let message = Commit::parse_commit_message(&git2_message);
 
-        match message {
-            Ok(message) => Ok(Commit {
-                oid,
-                message,
-                author,
-                date,
-            }),
+        // FIXME : Why suddenly commit message start and finish with '\n'
+        let message = git2_message.trim_end().trim_start();
+        let conventional_commit = conventional_commit_parser::parse(message);
+
+        match conventional_commit {
+            Ok(message) => {
+                Ok(Commit {
+                    oid,
+                    message,
+                    author,
+                    date,
+                })
+            },
             Err(err) => {
                 let additional_info = if commit.parent_count() == 0 {
                     format!(
@@ -115,86 +93,12 @@ impl Commit {
         }
     }
 
-    // Todo extract to ParseError
-    pub(crate) fn parse_commit_message(message: &str) -> Result<CommitMessage> {
-        let type_separator = message.find(": ");
-        ensure!(
-            type_separator.is_some(),
-            "invalid commit format: missing `{}` separator",
-            ": ".yellow()
-        );
-
-        let idx = type_separator.unwrap();
-
-        let mut type_and_scope = &message[0..idx];
-        let mut is_breaking_change = type_and_scope.ends_with('!');
-
-        if is_breaking_change {
-            type_and_scope = &type_and_scope[0..type_and_scope.len() - 1];
-        }
-
-        let commit_type_str;
-
-        let scope: Option<String> = if let Some(left_par_idx) = type_and_scope.find('(') {
-            commit_type_str = &type_and_scope[0..left_par_idx];
-
-            Some(
-                type_and_scope
-                    .find(')')
-                    .ok_or_else(|| anyhow!("missing closing parenthesis"))
-                    .map(|right_par_idx| {
-                        type_and_scope[left_par_idx + 1..right_par_idx].to_string()
-                    })?,
-            )
-        } else {
-            commit_type_str = type_and_scope;
-            None
-        };
-
-        let contents = &message[idx + 2..message.len()];
-        let contents: Vec<&str> = contents.split('\n').collect();
-
-        let description = contents.get(0).map(|desc| desc.to_string());
-
-        ensure!(description.is_some(), "missing commit description");
-
-        let description = description.unwrap();
-
-        let body = contents.get(1).map(|desc| desc.to_string());
-
-        let footer = contents.get(2).map(|desc| desc.to_string());
-
-        if let Some(footer) = &footer {
-            is_breaking_change = is_breaking_change
-                || footer.contains("BREAKING CHANGE")
-                || footer.contains("BREAKING-CHANGE")
-        }
-
-        let commit_type = CommitType::from(commit_type_str);
-        let allowed_commit = COMMITS_METADATA.get(&commit_type);
-
-        ensure!(
-            allowed_commit.is_some(),
-            "unknown commit type `{}`",
-            commit_type_str.red()
-        );
-
-        Ok(CommitMessage {
-            commit_type,
-            scope,
-            body,
-            footer,
-            description,
-            is_breaking_change,
-        })
-    }
-
     pub fn to_markdown(&self, colored: bool) -> String {
         if colored {
             format!(
                 "{} - {} - {}\n",
                 self.shorthand().yellow(),
-                self.message.description,
+                self.message.summary,
                 self.author.blue()
             )
         } else {
@@ -213,14 +117,14 @@ impl Commit {
             format!(
                 "{} - {} - {}\n\n",
                 oid.unwrap_or_else(|| self.oid[0..6].into()),
-                self.message.description,
+                self.message.summary,
                 github_author.unwrap_or_else(|| self.author.to_string())
             )
         }
     }
 
     pub fn get_log(&self) -> String {
-        let message_display = self.message.description.replace("\n", " ");
+        let message_display = self.message.summary.replace("\n", " ");
         let message_display = if message_display.len() > 80 {
             format!("{}{}", &message_display[0..80], "...").yellow()
         } else {
@@ -298,77 +202,6 @@ impl fmt::Display for Commit {
     }
 }
 
-impl AsRef<str> for CommitType {
-    fn as_ref(&self) -> &str {
-        match self {
-            Feature => "feat",
-            BugFix => "fix",
-            Chore => "chore",
-            Revert => "revert",
-            Performances => "perf",
-            Documentation => "docs",
-            Style => "style",
-            Refactoring => "refactor",
-            Test => "test",
-            Build => "build",
-            Ci => "ci",
-            Custom(key) => key,
-        }
-    }
-}
-
-impl From<&str> for CommitType {
-    fn from(commit_type: &str) -> Self {
-        match commit_type {
-            "feat" => Feature,
-            "fix" => BugFix,
-            "chore" => Chore,
-            "revert" => Revert,
-            "perf" => Performances,
-            "docs" => Documentation,
-            "style" => Style,
-            "refactor" => Refactoring,
-            "test" => Test,
-            "build" => Build,
-            "ci" => Ci,
-            other => Custom(other.to_string()),
-        }
-    }
-}
-
-impl ToString for CommitMessage {
-    fn to_string(&self) -> String {
-        let mut message = String::new();
-        message.push_str(self.commit_type.as_ref());
-
-        if let Some(scope) = &self.scope {
-            message.push_str(&format!("({})", scope));
-        }
-
-        if self.is_breaking_change {
-            message.push('!');
-        }
-
-        message.push_str(&format!(": {}", &self.description));
-
-        if let Some(body) = &self.body {
-            message.push_str(&format!("\n\n{}", body));
-        }
-
-        if let Some(footer) = &self.footer {
-            message.push_str(&format!("\n\n{}", footer));
-        }
-
-        message
-    }
-}
-
-impl fmt::Display for CommitType {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.as_ref())
-    }
-}
-
 impl PartialOrd for Commit {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         self.message.scope.partial_cmp(&other.message.scope)
@@ -382,7 +215,7 @@ impl Ord for Commit {
 }
 
 pub fn verify(author: Option<String>, message: &str) -> Result<()> {
-    let commit = Commit::parse_commit_message(message);
+    let commit = conventional_commit_parser::parse(message);
 
     match commit {
         Ok(message) => {
@@ -403,8 +236,8 @@ pub fn verify(author: Option<String>, message: &str) -> Result<()> {
 
 #[cfg(test)]
 mod test {
-    use super::Commit;
-    use crate::conventional::commit::{verify, CommitType};
+    use crate::conventional::commit::verify;
+    use conventional_commit_parser::commit::CommitType;
 
     #[test]
     fn should_map_conventional_commit_message_to_struct() {
@@ -412,16 +245,16 @@ mod test {
         let message = "feat(database): add postgresql driver";
 
         // Act
-        let commit = Commit::parse_commit_message(message);
+        let commit = conventional_commit_parser::parse(message);
 
         // Assert
         let commit = commit.unwrap();
         assert_eq!(commit.commit_type, CommitType::Feature);
         assert_eq!(commit.scope, Some("database".to_owned()));
-        assert_eq!(commit.description, "add postgresql driver".to_owned());
+        assert_eq!(commit.summary, "add postgresql driver".to_owned());
         assert!(!commit.is_breaking_change);
         assert!(commit.body.is_none());
-        assert!(commit.footer.is_none());
+        assert!(commit.footers.is_empty());
     }
 
     #[test]

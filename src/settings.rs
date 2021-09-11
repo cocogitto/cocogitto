@@ -1,10 +1,11 @@
-use crate::conventional::commit::{CommitConfig, CommitType};
+use crate::conventional::commit::CommitConfig;
 use crate::git::repository::Repository;
 use crate::{CommitsMetadata, CONFIG_PATH};
 use anyhow::Result;
 use config::{Config, File};
 use std::collections::HashMap;
 use std::path::PathBuf;
+use conventional_commit_parser::commit::CommitType;
 
 type CommitsMetadataSettings = HashMap<String, CommitConfig>;
 pub(crate) type AuthorSettings = Vec<AuthorSetting>;
@@ -97,7 +98,7 @@ impl Settings {
             CommitConfig::new("Documentation"),
         );
         default_types.insert(CommitType::Style, CommitConfig::new("Style"));
-        default_types.insert(CommitType::Refactoring, CommitConfig::new("Refactoring"));
+        default_types.insert(CommitType::Refactor, CommitConfig::new("Refactoring"));
         default_types.insert(CommitType::Test, CommitConfig::new("Tests"));
 
         default_types.insert(CommitType::Build, CommitConfig::new("Build system"));

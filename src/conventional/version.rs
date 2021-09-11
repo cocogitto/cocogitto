@@ -1,9 +1,10 @@
-use crate::conventional::commit::{Commit, CommitType};
+use crate::conventional::commit::Commit;
 use crate::git::repository::Repository;
 use anyhow::Result;
 use colored::*;
 use git2::Commit as Git2Commit;
 use semver::{Identifier, Version};
+use conventional_commit_parser::commit::CommitType;
 
 pub enum VersionIncrement {
     Major,
@@ -58,8 +59,7 @@ impl VersionIncrement {
         let conventional_commits: Vec<Commit> = commits
             .iter()
             .map(|commit| Commit::from_git_commit(commit))
-            .filter(|commit| commit.is_ok())
-            .map(Result::unwrap)
+            .filter_map(Result::ok)
             .collect();
 
         VersionIncrement::get_next_auto_version(current_version, &conventional_commits)
@@ -160,11 +160,12 @@ pub fn parse_pre_release(string: &str) -> Result<Vec<Identifier>> {
 
 #[cfg(test)]
 mod test {
-    use crate::conventional::commit::{Commit, CommitMessage, CommitType};
+    use crate::conventional::commit::Commit;
     use crate::conventional::version::{parse_pre_release, VersionIncrement};
     use anyhow::Result;
     use chrono::Utc;
     use semver::{Identifier, Version};
+    use conventional_commit_parser::commit::{CommitType, ConventionalCommit};
 
     // Auto version tests resides in test/ dir since it rely on git log
     // To generate the version
@@ -208,13 +209,13 @@ mod test {
     fn should_get_next_auto_version_patch() {
         let patch = Commit {
             oid: "1234".to_string(),
-            message: CommitMessage {
+            message: ConventionalCommit {
                 commit_type: CommitType::BugFix,
                 scope: None,
+                summary: "fix".to_string(),
                 body: None,
-                footer: None,
-                description: "fix".to_string(),
                 is_breaking_change: false,
+                footers: vec![]
             },
             author: "".to_string(),
             date: Utc::now().naive_local(),
@@ -230,13 +231,13 @@ mod test {
     fn should_get_next_auto_version_breaking_changes() {
         let feature = Commit {
             oid: "1234".to_string(),
-            message: CommitMessage {
+            message: ConventionalCommit {
                 commit_type: CommitType::Feature,
                 scope: None,
                 body: None,
-                footer: None,
-                description: "feature".to_string(),
+                summary: "feature".to_string(),
                 is_breaking_change: false,
+                footers: vec![]
             },
             author: "".to_string(),
             date: Utc::now().naive_local(),
@@ -244,13 +245,13 @@ mod test {
 
         let breaking_change = Commit {
             oid: "1234".to_string(),
-            message: CommitMessage {
+            message: ConventionalCommit {
                 commit_type: CommitType::Feature,
                 scope: None,
                 body: None,
-                footer: None,
-                description: "feature".to_string(),
+                summary: "feature".to_string(),
                 is_breaking_change: true,
+                footers: vec![]
             },
             author: "".to_string(),
             date: Utc::now().naive_local(),
@@ -268,13 +269,13 @@ mod test {
     fn should_get_next_auto_version_breaking_changes_on_initial_dev_version() {
         let feature = Commit {
             oid: "1234".to_string(),
-            message: CommitMessage {
+            message: ConventionalCommit {
                 commit_type: CommitType::Feature,
                 scope: None,
                 body: None,
-                footer: None,
-                description: "feature".to_string(),
+                summary: "feature".to_string(),
                 is_breaking_change: false,
+                footers: vec![]
             },
             author: "".to_string(),
             date: Utc::now().naive_local(),
@@ -282,13 +283,13 @@ mod test {
 
         let breaking_change = Commit {
             oid: "1234".to_string(),
-            message: CommitMessage {
+            message: ConventionalCommit {
                 commit_type: CommitType::Feature,
                 scope: None,
                 body: None,
-                footer: None,
-                description: "feature".to_string(),
+                summary: "feature".to_string(),
                 is_breaking_change: true,
+                footers: vec![]
             },
             author: "".to_string(),
             date: Utc::now().naive_local(),
@@ -306,13 +307,13 @@ mod test {
     fn should_get_next_auto_version_minor() {
         let patch = Commit {
             oid: "1234".to_string(),
-            message: CommitMessage {
+            message: ConventionalCommit {
                 commit_type: CommitType::BugFix,
                 scope: None,
                 body: None,
-                footer: None,
-                description: "fix".to_string(),
+                summary: "fix".to_string(),
                 is_breaking_change: false,
+                footers: vec![]
             },
             author: "".to_string(),
             date: Utc::now().naive_local(),
@@ -320,13 +321,13 @@ mod test {
 
         let feature = Commit {
             oid: "1234".to_string(),
-            message: CommitMessage {
+            message: ConventionalCommit {
                 commit_type: CommitType::Feature,
                 scope: None,
                 body: None,
-                footer: None,
-                description: "feature".to_string(),
+                summary: "feature".to_string(),
                 is_breaking_change: false,
+                footers: vec![]
             },
             author: "".to_string(),
             date: Utc::now().naive_local(),

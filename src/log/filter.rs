@@ -1,6 +1,6 @@
 use crate::conventional::commit::Commit;
-use crate::conventional::commit::CommitType;
 use git2::Commit as Git2Commit;
+use conventional_commit_parser::commit::CommitType;
 
 #[derive(Eq, PartialEq)]
 pub enum CommitFilter {
