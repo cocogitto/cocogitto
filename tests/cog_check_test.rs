@@ -30,7 +30,7 @@ fn cog_check_ok() -> Result<()> {
 
 #[test]
 #[cfg(not(tarpaulin))]
-fn cog_check_failure() -> Result<()> {
+fn  cog_check_failure() -> Result<()> {
     let current_dir = std::env::current_dir()?;
     let mut command = Command::cargo_bin("cog")?;
     command.arg("check");
@@ -46,7 +46,7 @@ fn cog_check_failure() -> Result<()> {
     command
         .assert()
         .failure()
-        .stderr(predicate::str::contains("unknown commit type `toto`"));
+        .stderr(predicate::str::contains("Commit type `toto` not allowed"));
 
     Ok(std::env::set_current_dir(current_dir)?)
 }
@@ -99,7 +99,7 @@ fn cog_check_from_latest_tag_failure() -> Result<()> {
     command
         .assert()
         .failure()
-        .stderr(predicate::str::contains("unknown commit type `toto`"));
+        .stderr(predicate::str::contains("Commit type `toto` not allowed"));
 
     Ok(std::env::set_current_dir(current_dir)?)
 }

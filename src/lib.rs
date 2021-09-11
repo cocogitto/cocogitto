@@ -17,12 +17,12 @@ use crate::conventional::commit::verify;
 use crate::error::ErrorKind::Semver;
 use crate::error::PreHookError;
 use crate::settings::{HookType, Settings};
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, Error};
 use chrono::Utc;
 use colored::*;
 use conventional::changelog::{Changelog, ChangelogWriter};
 use conventional::commit::Commit;
-use conventional::commit::{CommitConfig, CommitMessage, CommitType};
+use conventional::commit::CommitConfig;
 use conventional::version::{parse_pre_release, VersionIncrement};
 use git::repository::Repository;
 use git2::{Oid, RebaseOptions};
@@ -40,6 +40,7 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{exit, Command, Stdio};
 use tempfile::TempDir;
+use conventional_commit_parser::commit::{CommitType, ConventionalCommit, Footer};
 
 pub type CommitsMetadata = HashMap<CommitType, CommitConfig>;
 
@@ -112,7 +113,7 @@ pub fn init<S: AsRef<Path> + ?Sized>(path: &S) -> Result<()> {
             toml::to_string(&settings)
                 .map_err(|err| anyhow!("Failed to serialize {} : {}", CONFIG_PATH, err))?,
         )
-        .map_err(|err| anyhow!("Could not write file `{:?}` : {}", &settings_path, err))?;
+            .map_err(|err| anyhow!("Could not write file `{:?}` : {}", &settings_path, err))?;
     }
 
     // TODO : add coco only"
@@ -269,7 +270,6 @@ impl CocoGitto {
         Ok(())
     }
 
-    #[allow(unstable_name_collisions)]
     pub fn check(&self, check_from_latest_tag: bool) -> Result<()> {
         let from = if check_from_latest_tag {
             self.repository.get_latest_tag_oid().unwrap_or_else(|_err| {
@@ -282,23 +282,39 @@ impl CocoGitto {
 
         let to = self.repository.get_head_commit_oid()?;
         let commits = self.repository.get_commit_range(from, to)?;
-        let errors: Vec<anyhow::Error> = commits
+
+        let conventional_commits: Vec<Result<Commit>> = commits
             .iter()
             .filter(|commit| !commit.message().unwrap_or("").starts_with("Merge "))
-            .map(|commit| Commit::from_git_commit(commit))
-            .filter(|commit| commit.is_err())
-            .map(|err| err.unwrap_err())
+            .map(Commit::from_git_commit)
             .collect();
+
+        let (successes, mut errors): (Vec<_>, Vec<_>)  = conventional_commits
+            .into_iter()
+            .partition_result();
+
+        let type_errors: Vec<Error> = successes.iter()
+            .map(|commit| {
+                let commit_type = &commit.message.commit_type;
+                match &COMMITS_METADATA.get(commit_type) {
+                    Some(_) => Ok(()),
+                    None => Err(anyhow!("Commit type `{}` not allowed", commit_type))
+                }
+            })
+            .filter_map(Result::err)
+            .collect();
+
+        errors.extend(type_errors);
 
         if errors.is_empty() {
             let msg = "No errored commits".green();
             println!("{}", msg);
             Ok(())
         } else {
-            let err: String = errors
-                .iter()
-                .map(|err| err.to_string())
-                .intersperse("\n".to_string())
+            let err: String = itertools::Itertools::intersperse(
+                errors
+                    .iter()
+                    .map(|err| err.to_string()), "\n".to_string())
                 .collect();
             Err(anyhow!("{}", err))
         }
@@ -334,22 +350,26 @@ impl CocoGitto {
         &self,
         commit_type: &str,
         scope: Option<String>,
-        description: String,
+        summary: String,
         body: Option<String>,
         footer: Option<String>,
         is_breaking_change: bool,
     ) -> Result<()> {
         let commit_type = CommitType::from(commit_type);
 
-        let message = CommitMessage {
+        let message = ConventionalCommit {
             commit_type,
             scope,
             body,
-            footer,
-            description,
+            // FIXME
+            footers: vec![Footer {
+                token: "".to_string(),
+                content: "".to_string(),
+            }],
+            summary,
             is_breaking_change,
         }
-        .to_string();
+            .to_string();
 
         let oid = self.repository.commit(&message)?;
         let commit = self.repository.0.find_commit(oid)?;

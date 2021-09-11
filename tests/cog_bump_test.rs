@@ -2,6 +2,7 @@ use anyhow::Result;
 use assert_cmd::prelude::*;
 use std::process::Command;
 use tempfile::TempDir;
+
 mod helper;
 
 #[test]
@@ -17,7 +18,10 @@ fn auto_bump_from_start_ok() -> Result<()> {
     helper::git_commit("feat(taef): feature")?;
     helper::git_commit("fix: bug fix")?;
 
-    command.assert().success();
+    command
+        .assert()
+        .success();
+
     assert!(temp_dir.path().join("CHANGELOG.md").exists());
     helper::assert_tag("0.1.0")?;
 
