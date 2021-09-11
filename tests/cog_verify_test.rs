@@ -2,30 +2,24 @@ use anyhow::Result;
 use assert_cmd::prelude::*;
 use std::process::Command;
 
+mod helper;
+
 #[test]
 #[cfg(not(tarpaulin))]
 fn verify_ok() -> Result<()> {
     let message = "chore: a commit message";
-    let username = Command::new("git")
-        .arg("config")
-        .arg("user.name")
-        .output()?
-        .stdout;
-
-    let username = String::from_utf8(username)?;
-    let user = username.trim_end();
+    let username = helper::get_git_user_name()?;
 
     let mut command = Command::cargo_bin("cog")?;
     command.arg("verify").arg(message);
-
     command.assert().success().stdout(format!(
         r#"a commit message (not committed) - now
-	Author: {username}
+	Author: {}
 	Type: chore
 	Scope: none
 
 "#,
-        username = user
+        username
     ));
 
     Ok(())
@@ -35,26 +29,19 @@ fn verify_ok() -> Result<()> {
 #[cfg(not(tarpaulin))]
 fn verify_with_scope() -> Result<()> {
     let message = "feat(feature): a commit message";
-    let username = Command::new("git")
-        .arg("config")
-        .arg("user.name")
-        .output()?
-        .stdout;
-
-    let username = String::from_utf8(username)?;
-    let user = username.trim_end();
+    let username = helper::get_git_user_name()?;
 
     let mut command = Command::cargo_bin("cog")?;
     command.arg("verify").arg(message);
 
     command.assert().success().stdout(format!(
         r#"a commit message (not committed) - now
-	Author: {username}
+	Author: {}
 	Type: feat
 	Scope: feature
 
 "#,
-        username = user
+        username
     ));
 
     Ok(())
