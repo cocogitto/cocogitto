@@ -2,6 +2,7 @@ use anyhow::Result;
 use cocogitto::CocoGitto;
 use helper::*;
 use tempfile::TempDir;
+
 mod helper;
 
 #[test]
