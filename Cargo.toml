@@ -30,7 +30,7 @@ which = "^4"
 lazy_static = "^1"
 toml = "^0"
 clap = { version = "^2", optional = true }
-conventional_commit_parser = "0.2.0"
+conventional_commit_parser = "^0"
 
 [dev-dependencies]
 assert_cmd = "1.0.3"

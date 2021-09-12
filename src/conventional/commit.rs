@@ -4,11 +4,12 @@ use crate::REMOTE_URL;
 use anyhow::Result;
 use chrono::{NaiveDateTime, Utc};
 use colored::*;
+use conventional_commit_parser::commit::ConventionalCommit;
+use conventional_commit_parser::error::ParseError;
 use git2::Commit as Git2Commit;
 use std::cmp::Ordering;
 use std::fmt;
 use std::fmt::Formatter;
-use conventional_commit_parser::commit::{ConventionalCommit};
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct Commit {
@@ -46,14 +47,12 @@ impl Commit {
         let conventional_commit = conventional_commit_parser::parse(message);
 
         match conventional_commit {
-            Ok(message) => {
-                Ok(Commit {
-                    oid,
-                    message,
-                    author,
-                    date,
-                })
-            },
+            Ok(message) => Ok(Commit {
+                oid,
+                message,
+                author,
+                date,
+            }),
             Err(err) => {
                 let additional_info = if commit.parent_count() == 0 {
                     format!(
@@ -214,7 +213,7 @@ impl Ord for Commit {
     }
 }
 
-pub fn verify(author: Option<String>, message: &str) -> Result<()> {
+pub fn verify(author: Option<String>, message: &str) -> Result<(), ParseError> {
     let commit = conventional_commit_parser::parse(message);
 
     match commit {

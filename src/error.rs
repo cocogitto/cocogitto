@@ -22,7 +22,7 @@ pub(crate) enum ErrorKind {
     Git { level: String, cause: String },
 }
 
-// This is not meant to be unwrap like other errors
+// This is not meant to be unwrapped like other errors
 // just to emit a warning on hook failure
 pub(crate) struct PreHookError {
     pub(crate) cause: String,
