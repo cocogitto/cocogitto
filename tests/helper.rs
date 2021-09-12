@@ -87,9 +87,7 @@ pub fn get_git_user_name() -> Result<String> {
         .output()?
         .stdout;
 
-    Ok(String::from_utf8(username)?
-        .trim_end()
-        .to_string())
+    Ok(String::from_utf8(username)?.trim_end().to_string())
 }
 
 pub fn create_empty_config() -> Result<()> {

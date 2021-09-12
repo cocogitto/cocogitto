@@ -3,9 +3,9 @@ use crate::git::repository::Repository;
 use crate::{CommitsMetadata, CONFIG_PATH};
 use anyhow::Result;
 use config::{Config, File};
+use conventional_commit_parser::commit::CommitType;
 use std::collections::HashMap;
 use std::path::PathBuf;
-use conventional_commit_parser::commit::CommitType;
 
 type CommitsMetadataSettings = HashMap<String, CommitConfig>;
 pub(crate) type AuthorSettings = Vec<AuthorSetting>;

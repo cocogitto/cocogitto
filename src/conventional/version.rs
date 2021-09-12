@@ -2,9 +2,9 @@ use crate::conventional::commit::Commit;
 use crate::git::repository::Repository;
 use anyhow::Result;
 use colored::*;
+use conventional_commit_parser::commit::CommitType;
 use git2::Commit as Git2Commit;
 use semver::{Identifier, Version};
-use conventional_commit_parser::commit::CommitType;
 
 pub enum VersionIncrement {
     Major,
@@ -164,8 +164,8 @@ mod test {
     use crate::conventional::version::{parse_pre_release, VersionIncrement};
     use anyhow::Result;
     use chrono::Utc;
-    use semver::{Identifier, Version};
     use conventional_commit_parser::commit::{CommitType, ConventionalCommit};
+    use semver::{Identifier, Version};
 
     // Auto version tests resides in test/ dir since it rely on git log
     // To generate the version
@@ -215,7 +215,7 @@ mod test {
                 summary: "fix".to_string(),
                 body: None,
                 is_breaking_change: false,
-                footers: vec![]
+                footers: vec![],
             },
             author: "".to_string(),
             date: Utc::now().naive_local(),
@@ -237,7 +237,7 @@ mod test {
                 body: None,
                 summary: "feature".to_string(),
                 is_breaking_change: false,
-                footers: vec![]
+                footers: vec![],
             },
             author: "".to_string(),
             date: Utc::now().naive_local(),
@@ -251,7 +251,7 @@ mod test {
                 body: None,
                 summary: "feature".to_string(),
                 is_breaking_change: true,
-                footers: vec![]
+                footers: vec![],
             },
             author: "".to_string(),
             date: Utc::now().naive_local(),
@@ -275,7 +275,7 @@ mod test {
                 body: None,
                 summary: "feature".to_string(),
                 is_breaking_change: false,
-                footers: vec![]
+                footers: vec![],
             },
             author: "".to_string(),
             date: Utc::now().naive_local(),
@@ -289,7 +289,7 @@ mod test {
                 body: None,
                 summary: "feature".to_string(),
                 is_breaking_change: true,
-                footers: vec![]
+                footers: vec![],
             },
             author: "".to_string(),
             date: Utc::now().naive_local(),
@@ -313,7 +313,7 @@ mod test {
                 body: None,
                 summary: "fix".to_string(),
                 is_breaking_change: false,
-                footers: vec![]
+                footers: vec![],
             },
             author: "".to_string(),
             date: Utc::now().naive_local(),
@@ -327,7 +327,7 @@ mod test {
                 body: None,
                 summary: "feature".to_string(),
                 is_breaking_change: false,
-                footers: vec![]
+                footers: vec![],
             },
             author: "".to_string(),
             date: Utc::now().naive_local(),

@@ -30,7 +30,7 @@ fn cog_check_ok() -> Result<()> {
 
 #[test]
 #[cfg(not(tarpaulin))]
-fn  cog_check_failure() -> Result<()> {
+fn cog_check_failure() -> Result<()> {
     let current_dir = std::env::current_dir()?;
     let mut command = Command::cargo_bin("cog")?;
     command.arg("check");

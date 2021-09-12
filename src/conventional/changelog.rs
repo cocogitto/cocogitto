@@ -73,7 +73,7 @@ impl Changelog {
     }
 
     pub(crate) const fn default_header() -> &'static str {
-            "# Changelog\nAll notable changes to this project will be documented in this file. \
+        "# Changelog\nAll notable changes to this project will be documented in this file. \
         See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.\n\n- - -\n"
     }
 
@@ -90,10 +90,10 @@ impl Changelog {
 mod test {
     use crate::conventional::changelog::Changelog;
     use crate::conventional::commit::Commit;
-    use conventional_commit_parser::commit::{CommitType, ConventionalCommit};
     use crate::OidOf;
     use anyhow::Result;
     use chrono::Utc;
+    use conventional_commit_parser::commit::{CommitType, ConventionalCommit};
     use git2::Oid;
 
     #[test]
@@ -113,7 +113,7 @@ mod test {
                         body: None,
                         summary: "this is a commit message".to_string(),
                         is_breaking_change: false,
-                        footers: vec![]
+                        footers: vec![],
                     },
                     author: "coco".to_string(),
                     date: Utc::now().naive_local(),
@@ -126,7 +126,7 @@ mod test {
                         body: None,
                         summary: "this is an other commit message".to_string(),
                         is_breaking_change: false,
-                        footers: vec![]
+                        footers: vec![],
                     },
                     author: "cogi".to_string(),
                     date: Utc::now().naive_local(),
