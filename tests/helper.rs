@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+#![cfg(not(tarpaulin_include))]
 
 use anyhow::Result;
 use cocogitto::CONFIG_PATH;
