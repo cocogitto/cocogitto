@@ -1,6 +1,7 @@
 use anyhow::Result;
 use clap::{App, AppSettings, Arg, Shell, SubCommand};
 use cocogitto::CocoGitto;
+use cocogitto::COMMITS_METADATA;
 
 const APP_SETTINGS: &[AppSettings] = &[
     AppSettings::ArgsNegateSubcommands,
@@ -56,7 +57,7 @@ fn main() -> Result<()> {
 }
 
 fn app<'a, 'b>() -> App<'a, 'b> {
-    let keys: Vec<&str> = CocoGitto::get_commit_metadata()
+    let keys: Vec<&str> = COMMITS_METADATA
         .iter()
         .map(|(commit_type, _)| commit_type.as_ref())
         .collect();
