@@ -40,7 +40,7 @@ fn main() -> Result<()> {
         let message = matches.value_of("message").unwrap().to_string();
         let scope = matches.value_of("scope").map(|scope| scope.to_string());
         let body = matches.value_of("body").map(|body| body.to_string());
-        let footer = matches.value_of("footer").map(|footer| footer.to_string());
+        let footers = matches.value_of("footer").map(|footer| footer.to_string());
         let breaking_change = matches.is_present("breaking-change");
 
         cocogitto.conventional_commit(
@@ -48,7 +48,7 @@ fn main() -> Result<()> {
             scope,
             message,
             body,
-            footer,
+            footers,
             breaking_change,
         )?;
     }
