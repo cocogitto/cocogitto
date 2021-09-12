@@ -24,7 +24,7 @@ use conventional::changelog::{Changelog, ChangelogWriter};
 use conventional::commit::Commit;
 use conventional::commit::CommitConfig;
 use conventional::version::{parse_pre_release, VersionIncrement};
-use conventional_commit_parser::commit::{CommitType, ConventionalCommit, Footer};
+use conventional_commit_parser::commit::{CommitType, ConventionalCommit};
 use git::repository::Repository;
 use git2::{Oid, RebaseOptions};
 use hook::Hook;
@@ -41,6 +41,7 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{exit, Command, Stdio};
 use tempfile::TempDir;
+use conventional_commit_parser::parse_footers;
 
 pub type CommitsMetadata = HashMap<CommitType, CommitConfig>;
 
@@ -348,25 +349,32 @@ impl CocoGitto {
         footer: Option<String>,
         is_breaking_change: bool,
     ) -> Result<()> {
+
+        // Ensure commit type is known
         let commit_type = CommitType::from(commit_type);
 
-        let message = ConventionalCommit {
+        // Ensure footers are correctly formatted
+        let footers = match footer {
+            Some(footers) => parse_footers(&footers)?,
+            None => Vec::with_capacity(0),
+        };
+
+        let conventional_message = ConventionalCommit {
             commit_type,
             scope,
             body,
-            // FIXME
-            footers: vec![Footer {
-                token: "".to_string(),
-                content: "".to_string(),
-            }],
+            footers,
             summary,
             is_breaking_change,
-        }
-        .to_string();
+        }.to_string();
 
-        conventional_commit_parser::parse(&message)?;
+        // Validate the message
+        conventional_commit_parser::parse(&conventional_message)?;
 
-        let oid = self.repository.commit(&message)?;
+        // Git commit
+        let oid = self.repository.commit(&conventional_message)?;
+
+        // Pretty print a conventional commit summary
         let commit = self.repository.0.find_commit(oid)?;
         let commit = Commit::from_git_commit(&commit)?;
         println!("{}", commit);
