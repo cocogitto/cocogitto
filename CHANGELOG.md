@@ -2,6 +2,43 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 3.0.0 - 2021-09-13
+
+
+### Bug Fixes
+
+[2f95cf](https://github.com/oknozor/cocogitto/commit/2f95cf805df2d354785f5f0be426aade3689b44b) - validate footers on commit - [oknozor](https://github.com/oknozor)
+
+[4bdcb3](https://github.com/oknozor/cocogitto/commit/4bdcb3d7697476dfca40bd9e8eabd6cf3f9adb27) - parse commit message before creating a commit - [oknozor](https://github.com/oknozor)
+
+[4f5bd9](https://github.com/oknozor/cocogitto/commit/4f5bd95716e3ccbb05f9c8e313b71d0e99eaaf07) - sort tag names before searching - [tranzystorek-io](https://github.com/tranzystorek-io)
+
+
+### Tests
+
+[1ea9d0](https://github.com/oknozor/cocogitto/commit/1ea9d0f2d88087fff7d28d6661a9f1ad66d9da25) - ignore test helpers in coverage results - [oknozor](https://github.com/oknozor)
+
+
+### Features
+
+[53f23d](https://github.com/oknozor/cocogitto/commit/53f23d9ad21d5d165ed21c60fe18e37ea6e14203) - use conventional commit parser instead of custom implementation - [oknozor](https://github.com/oknozor)
+
+
+### Continuous Integration
+
+[434c22](https://github.com/oknozor/cocogitto/commit/434c22295390fda0f276e3a3ee32fa4658489c5d) - use cocogitto github action - [oknozor](https://github.com/oknozor)
+
+
+### Refactoring
+
+[4379e2](https://github.com/oknozor/cocogitto/commit/4379e2f1111cdce03f2d6ce9d31228045df550af) - remove useless fonction to access metadata - [oknozor](https://github.com/oknozor)
+
+[f7c639](https://github.com/oknozor/cocogitto/commit/f7c639ea72c142a1ffbc8e613693384d8cc0a7c5) - refactor test helpers - [oknozor](https://github.com/oknozor)
+
+[8b2aaf](https://github.com/oknozor/cocogitto/commit/8b2aafa10606ee69622ee7ed417d692b3013cef9) - clean up minor code details - [tranzystorek-io](https://github.com/tranzystorek-io)
+
+
+- - -
 ## 2.1.1 - 2021-07-17
 
 
