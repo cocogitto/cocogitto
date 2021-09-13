@@ -1,0 +1,14 @@
+{
+  "name": "docs",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "devDependencies": {
+    "vuepress": "^2.0.0-beta.26"
+  },
+
+  "scripts": {
+    "website:dev": "vuepress dev website",
+    "website:build": "vuepress build website"
+  }
+}
