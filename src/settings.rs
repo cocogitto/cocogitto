@@ -28,6 +28,8 @@ pub(crate) struct Settings {
     pub authors: AuthorSettings,
     #[serde(default)]
     pub commit_types: CommitsMetadataSettings,
+    #[serde(default)]
+    pub bump_profiles: HashMap<String, BumpProfile>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -40,21 +42,30 @@ impl Default for Settings {
     fn default() -> Self {
         Settings {
             changelog_path: Some(PathBuf::from("CHANGELOG.md")),
+            github: Default::default(),
+            pre_bump_hooks: Default::default(),
+            post_bump_hooks: Default::default(),
+            authors: Default::default(),
             commit_types: Default::default(),
-            pre_bump_hooks: vec![],
-            post_bump_hooks: vec![],
-            authors: vec![],
-            github: None,
+            bump_profiles: Default::default(),
         }
     }
 }
 
+#[derive(Debug, Deserialize, Serialize, Default)]
+pub struct BumpProfile {
+    #[serde(default)]
+    pub pre_bump_hooks: Vec<String>,
+    #[serde(default)]
+    pub post_bump_hooks: Vec<String>,
+}
+
 impl Settings {
     // Fails only if config exists and is malformed
-    pub(crate) fn get(repository: &Repository, config_path: Option<&str>) -> Result<Self> {
+    pub(crate) fn get(repository: &Repository) -> Result<Self> {
         match repository.get_repo_dir() {
             Some(repo_path) => {
-                let settings_path = repo_path.join(config_path.unwrap_or(CONFIG_PATH));
+                let settings_path = repo_path.join(CONFIG_PATH);
                 if settings_path.exists() {
                     let mut s = Config::new();
                     s.merge(File::from(settings_path))?;
@@ -112,6 +123,17 @@ impl Settings {
         match hook_type {
             HookType::PreBump => &self.pre_bump_hooks,
             HookType::PostBump => &self.post_bump_hooks,
+        }
+    }
+
+    pub fn get_profile_hook(&self, profile: &str, hook_type: HookType) -> &Vec<String> {
+        let profile = self
+            .bump_profiles
+            .get(profile)
+            .expect("Bump profile not found");
+        match hook_type {
+            HookType::PreBump => &profile.pre_bump_hooks,
+            HookType::PostBump => &profile.post_bump_hooks,
         }
     }
 }
