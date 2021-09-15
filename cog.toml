@@ -11,7 +11,7 @@ authors = [
     { signature = "Marcin Puc", username = "tranzystorek-io" },
     { signature = "Renault Fernandes", username = "renaultfernandes" },
     { signature = "Pieter Joost van de Sande", username = "pjvds" },
-    { signature = "Orhun Parmaksız", username = "orhun" },
+    { signature = "orhun", username = "orhun" },
 ]
 
 
