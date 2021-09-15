@@ -53,7 +53,7 @@ lazy_static! {
     // unwrapping in case of error.
     pub     static ref COMMITS_METADATA: CommitsMetadata = {
         if let Ok(repo) = Repository::open(".") {
-            Settings::get(&repo, None).unwrap_or_default().commit_types()
+            Settings::get(&repo).unwrap_or_default().commit_types()
         } else {
             Settings::default().commit_types()
         }
@@ -61,7 +61,7 @@ lazy_static! {
 
     static ref REMOTE_URL: Option<String> = {
         if let Ok(repo) = Repository::open(".") {
-            Settings::get(&repo, None).unwrap_or_default().github
+            Settings::get(&repo).unwrap_or_default().github
         } else {
             None
         }
@@ -69,7 +69,7 @@ lazy_static! {
 
         static ref AUTHORS: Vec<AuthorSetting> = {
         if let Ok(repo) = Repository::open(".") {
-            Settings::get(&repo, None).unwrap_or_default().authors
+            Settings::get(&repo).unwrap_or_default().authors
         } else {
             vec![]
         }
@@ -137,7 +137,7 @@ pub struct CocoGitto {
 impl CocoGitto {
     pub fn get() -> Result<Self> {
         let repository = Repository::open(&std::env::current_dir()?)?;
-        let settings = Settings::get(&repository, None)?;
+        let settings = Settings::get(&repository)?;
         let changelog_path = settings
             .changelog_path
             .unwrap_or_else(|| PathBuf::from("CHANGELOG.md"));
@@ -594,17 +594,31 @@ impl CocoGitto {
         &self,
         hook_type: HookType,
         next_version: &str,
-        hooks_config: Option<&str>,
+        hook_profile: Option<&str>,
     ) -> Result<()> {
-        let settings = Settings::get(&self.repository, hooks_config)?;
+        let settings = Settings::get(&self.repository)?;
 
-        let hooks: Vec<Hook> = settings
-            .get_hooks(hook_type)
-            .iter()
-            .map(|s| s.parse())
-            .enumerate()
-            .map(|(idx, result)| result.context(format!("Cannot parse hook at index {}", idx)))
-            .try_collect()?;
+        let hooks: Vec<Hook> = match hook_profile {
+            Some(profile) => settings
+                .get_profile_hook(profile, hook_type)
+                .iter()
+                .map(|s| s.parse())
+                .enumerate()
+                .map(|(idx, result)| {
+                    result.context(format!(
+                        "Cannot parse bump profile {} hook at index {}",
+                        profile, idx
+                    ))
+                })
+                .try_collect()?,
+            None => settings
+                .get_hooks(hook_type)
+                .iter()
+                .map(|s| s.parse())
+                .enumerate()
+                .map(|(idx, result)| result.context(format!("Cannot parse hook at index {}", idx)))
+                .try_collect()?,
+        };
 
         for mut hook in hooks {
             hook.insert_version(next_version)?;

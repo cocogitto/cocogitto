@@ -59,10 +59,10 @@ fn main() -> Result<()> {
                 };
 
                 let pre = subcommand.value_of("pre");
-                let hooks_config = subcommand.value_of("config");
+                let hooks_profile = subcommand.value_of("hook-profile");
 
                 // TODO mode to cli
-                cocogitto.create_version(increment, pre, hooks_config)?
+                cocogitto.create_version(increment, pre, hooks_profile)?
             }
             VERIFY => {
                 let subcommand = matches.subcommand_matches(VERIFY).unwrap();
@@ -325,10 +325,10 @@ fn app<'a, 'b>() -> App<'a, 'b> {
                 .takes_value(true),
         )
         .arg(
-            Arg::with_name("config")
-                .help("Specify path to hooks config file")
-                .short("c")
-                .long("config")
+            Arg::with_name("hook-profile")
+                .help("Specify the bump profile hooks to run")
+                .short("hp")
+                .long("hook-profile")
                 .takes_value(true),
         )
         .display_order(6);
