@@ -1,98 +1,95 @@
 use anyhow::Result;
 use assert_cmd::prelude::*;
 use std::process::Command;
-use tempfile::TempDir;
 
 mod helper;
+use helper::run_test_with_context;
 
 #[test]
 #[cfg(not(tarpaulin))]
 fn commit_ok() -> Result<()> {
-    let current_dir = std::env::current_dir()?;
-    let mut command = Command::cargo_bin("coco")?;
-    let temp_dir = TempDir::new()?;
-    std::env::set_current_dir(&temp_dir)?;
-    helper::git_init(".")?;
-    std::fs::write(temp_dir.path().join("test_file"), "content")?;
-    helper::git_add()?;
+    run_test_with_context(|context| {
+        // Arrange
+        helper::git_init(".")?;
+        std::fs::write(context.test_dir.join("test_file"), "content")?;
+        helper::git_add()?;
 
-    command
-        .arg("feat")
-        .arg("this is a commit message")
-        .arg("scope")
-        .arg("this is the body")
-        .arg("this is the footer");
-
-    command.assert().success();
-
-    Ok(std::env::set_current_dir(current_dir)?)
+        // Act
+        Command::cargo_bin("coco")?
+            .arg("feat")
+            .arg("this is a commit message")
+            .arg("scope")
+            .arg("this is the body")
+            .arg("this is the footer")
+            // Assert
+            .assert().success();
+        Ok(())
+    })
 }
 
 #[test]
 #[cfg(not(tarpaulin))]
 fn unstaged_changes_commit_err() -> Result<()> {
-    let current_dir = std::env::current_dir()?;
-    let mut command = Command::cargo_bin("coco")?;
-    let temp_dir = TempDir::new()?;
-    std::env::set_current_dir(&temp_dir)?;
-    helper::git_init(".")?;
-    std::fs::write(temp_dir.path().join("test_file"), "content")?;
+    run_test_with_context(|context| {
+        // Arrange
+        helper::git_init(".")?;
+        std::fs::write(context.test_dir.join("test_file"), "content")?;
 
-    command
-        .arg("feat")
-        .arg("this is a commit message")
-        .arg("scope")
-        .arg("this is the body")
-        .arg("this is the footer");
-
-    command.assert().failure();
-
-    Ok(std::env::set_current_dir(current_dir)?)
+        // Act
+        Command::cargo_bin("coco")?
+            .arg("feat")
+            .arg("this is a commit message")
+            .arg("scope")
+            .arg("this is the body")
+            .arg("this is the footer")
+            // Assert
+            .assert()
+            .failure();
+        Ok(())
+    })
 }
 
 #[test]
 #[cfg(not(tarpaulin))]
 fn untracked_changes_commit_ok() -> Result<()> {
-    let current_dir = std::env::current_dir()?;
-    let mut command = Command::cargo_bin("coco")?;
-    let temp_dir = TempDir::new()?;
-    std::env::set_current_dir(&temp_dir)?;
-    helper::git_init(".")?;
-    std::fs::write(temp_dir.path().join("staged"), "content")?;
-    helper::git_add()?;
+    run_test_with_context(|context| {
+        // Arrange
+        helper::git_init(".")?;
+        std::fs::write(context.test_dir.join("staged"), "content")?;
+        helper::git_add()?;
+        std::fs::write(context.test_dir.join("untracked"), "content")?;
 
-    std::fs::write(temp_dir.path().join("untracked"), "content")?;
-
-    command
-        .arg("feat")
-        .arg("this is a commit message")
-        .arg("scope")
-        .arg("this is the body")
-        .arg("this is the footer");
-
-    command.assert().success();
-
-    Ok(std::env::set_current_dir(current_dir)?)
+        // Act
+        Command::cargo_bin("coco")?
+            .arg("feat")
+            .arg("this is a commit message")
+            .arg("scope")
+            .arg("this is the body")
+            .arg("this is the footer")
+            // Assert
+            .assert()
+            .success();
+        Ok(())
+    })
 }
 
 #[test]
 #[cfg(not(tarpaulin))]
 fn empty_commit_err() -> Result<()> {
-    let current_dir = std::env::current_dir()?;
-    let mut command = Command::cargo_bin("coco")?;
-    let tmp = TempDir::new()?;
+    run_test_with_context(|_context| {
+        // Arrange
+        helper::git_init(".")?;
 
-    std::env::set_current_dir(tmp.path())?;
-    helper::git_init(".")?;
-
-    command
-        .arg("feat")
-        .arg("this is a commit message")
-        .arg("scope")
-        .arg("this is the body")
-        .arg("this is the footer");
-
-    command.assert().failure();
-
-    Ok(std::env::set_current_dir(current_dir)?)
+        // Act
+        Command::cargo_bin("coco")?
+            .arg("feat")
+            .arg("this is a commit message")
+            .arg("scope")
+            .arg("this is the body")
+            .arg("this is the footer")
+            // Assert
+            .assert()
+            .failure();
+        Ok(())
+    })
 }
