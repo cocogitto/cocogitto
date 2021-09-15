@@ -1,61 +1,78 @@
 use anyhow::Result;
 use assert_cmd::prelude::*;
 use std::process::Command;
+use indoc::indoc;
 
 mod helper;
+
+use helper::run_test_with_context;
 
 #[test]
 #[cfg(not(tarpaulin))]
 fn verify_ok() -> Result<()> {
-    let message = "chore: a commit message";
-    let username = helper::get_git_user_name()?;
+    run_test_with_context(|_| {
+        // Arrange
+        helper::git_init()?;
+        let message = "chore: a commit message";
+        let expected = indoc!(
+        "a commit message (not committed) - now
+	            Author: Tom
+	            Type: chore
+	            Scope: none",
+        );
 
-    let mut command = Command::cargo_bin("cog")?;
-    command.arg("verify").arg(message);
-    command.assert().success().stdout(format!(
-        r#"a commit message (not committed) - now
-	Author: {}
-	Type: chore
-	Scope: none
+        // Act
+        Command::cargo_bin("cog")?
+            .arg("verify").arg(message)
+            // Assert
+            .assert().success()
+            .stdout(expected);
 
-"#,
-        username
-    ));
-
-    Ok(())
+        Ok(())
+    })
 }
 
 #[test]
 #[cfg(not(tarpaulin))]
 fn verify_with_scope() -> Result<()> {
-    let message = "feat(feature): a commit message";
-    let username = helper::get_git_user_name()?;
+    run_test_with_context(|context| {
+        // Arrange
+        helper::git_init()?;
+        println!("{:?}", std::fs::read_to_string(context.test_dir.join(".git/config")));
+        let message = "feat(feature): a commit message";
+        let expected = indoc! {
+            "a commit message (not committed) - now
+	            Author: Tom
+	            Type: feat
+	            Scope: feature
+	        "
+        };
 
-    let mut command = Command::cargo_bin("cog")?;
-    command.arg("verify").arg(message);
-
-    command.assert().success().stdout(format!(
-        r#"a commit message (not committed) - now
-	Author: {}
-	Type: feat
-	Scope: feature
-
-"#,
-        username
-    ));
-
-    Ok(())
+        // Act
+        Command::cargo_bin("cog")?
+            .arg("verify")
+            .arg(message)
+            // Assert
+            .assert()
+            .success().
+            stdout(expected);
+        Ok(())
+    })
 }
 
 #[test]
 #[cfg(not(tarpaulin))]
 fn verify_fails() -> Result<()> {
+    // Arrange
     let message = "invalid message";
 
-    let mut command = Command::cargo_bin("cog")?;
-    command.arg("verify").arg(message);
-
-    command.assert().failure();
+    // Act
+    Command::cargo_bin("cog")?
+        .arg("verify")
+        .arg(message)
+        // Assert
+        .assert()
+        .failure();
 
     Ok(())
 }

@@ -19,6 +19,8 @@ impl Token {
     fn parse(src: &str) -> Result<(Token, &str)> {
         if let Some(remains) = src.strip_prefix("version") {
             Ok((Token::Version, remains))
+        } else if let Some(remains) = src.strip_prefix("latest") {
+            Ok((Token::LatestVersion, remains))
         } else if let Some(remains) = src.strip_prefix('+') {
             Ok((Token::Add, remains))
         } else if let Some(remains) = src.strip_prefix("major") {
@@ -43,11 +45,15 @@ impl Token {
 }
 
 impl HookExpr {
-    pub fn parse(src: &str, current_version: Version) -> Option<(Range<usize>, String)> {
+    pub fn parse_version(
+        src: &str,
+        current_version: Option<Version>,
+        next_version: Version,
+    ) -> Option<(Range<usize>, String)> {
         if let Some((range, mut expression)) = HookExpr::scan_hook_entry(src) {
             expression.tokenize();
             expression
-                .calculate_version(current_version)
+                .calculate_version(current_version, next_version)
                 .ok()
                 .map(|exp| (range, exp))
         } else {
@@ -111,14 +117,22 @@ impl HookExpr {
         version
     }
 
-    fn calculate_version(&mut self, current_version: Version) -> Result<String> {
+    fn calculate_version(
+        &mut self,
+        current_version: Option<Version>,
+        next_version: Version,
+    ) -> Result<String> {
         ensure!(!self.tokens.is_empty(), "Hook expression must not be empty");
-        ensure!(
-            self.tokens.pop_front() == Some(Token::Version),
-            "Hook expression must start with \"version\""
-        );
 
-        let mut version = current_version;
+        let mut version = match self.tokens.pop_front() {
+            Some(Token::Version) => Ok(next_version),
+            Some(Token::LatestVersion) => current_version
+                .ok_or_else(|| anyhow!("Not previous tag found to replace {{latest}} version")),
+            _ => Err(anyhow!(
+                "Hook expression must start with \"version\" or \"latest\""
+            )),
+        }?;
+
         while let Some(token) = self.tokens.pop_front() {
             match token {
                 Token::Add => version = self.calculate_increment(version)?,
@@ -196,6 +210,16 @@ mod tests {
     }
 
     #[test]
+    fn tokenize_latest_version() {
+        let entry = "echo {{latest}}";
+
+        let (range, mut expr) = HookExpr::scan_hook_entry(entry).unwrap();
+        expr.tokenize();
+        assert_eq!(range, 5..15);
+        assert_eq!(expr.tokens, [Token::LatestVersion])
+    }
+
+    #[test]
     fn tokenize_exp_with_amount() {
         let entry = "echo {{version+2major}}";
 
@@ -242,7 +266,7 @@ mod tests {
             ]),
         };
 
-        let result = hookexpr.calculate_version(Version::new(1, 0, 0));
+        let result = hookexpr.calculate_version(None, Version::new(1, 0, 0));
         assert_eq!(result.unwrap(), "1.0.33-rc");
     }
 
