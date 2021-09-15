@@ -22,8 +22,6 @@ const SUBCOMMAND_SETTINGS: &[AppSettings] = &[
 const GENERATE_COMPLETIONS: &str = "generate-completions";
 
 fn main() -> Result<()> {
-    let cocogitto = CocoGitto::get()?;
-
     let matches = app().get_matches();
 
     if let Some(subcommand) = matches.subcommand_matches(GENERATE_COMPLETIONS) {
@@ -36,6 +34,8 @@ fn main() -> Result<()> {
         };
         app().gen_completions_to("coco", for_shell, &mut std::io::stdout());
     } else {
+        let cocogitto = CocoGitto::get()?;
+
         let commit_type = matches.value_of("type").unwrap().to_string();
         let message = matches.value_of("message").unwrap().to_string();
         let scope = matches.value_of("scope").map(|scope| scope.to_string());
