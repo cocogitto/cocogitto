@@ -5,8 +5,79 @@ use anyhow::Result;
 use cocogitto::CONFIG_PATH;
 use rand::Rng;
 use std::process::{Command, Stdio};
+use tempfile::TempDir;
+use std::path::PathBuf;
+use std::panic;
 
-pub fn git_init(path: &str) -> Result<()> {
+pub struct TestContext {
+    pub current_dir: PathBuf,
+    pub test_dir: PathBuf,
+}
+
+// Save the current directory in the test context
+// Change current dir to a temp directory
+// Execute the test in context
+// Reset temp directory
+pub fn run_test_with_context<T>(test: T) -> Result<()>
+    where T: FnOnce(&TestContext) -> Result<()> + panic::UnwindSafe
+{
+    let current_dir = std::env::current_dir()?;
+    let temp_dir = TempDir::new()?;
+    std::env::set_current_dir(&temp_dir)?;
+
+    let context = TestContext{
+        current_dir,
+        test_dir: temp_dir.into_path()
+    };
+
+    let result = panic::catch_unwind(|| {
+        test(&context)
+    });
+
+    assert!(result.is_ok());
+
+    Ok(std::env::set_current_dir(context.current_dir)?)
+}
+
+fn setup_git_config() -> Result<()> {
+    println!("Hello tom");
+    Command::new("git")
+        .arg("config")
+        .arg("--local")
+        .arg("user.name")
+        .arg("Tom")
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .output()?;
+
+    Command::new("git")
+        .arg("config")
+        .arg("--local")
+        .arg("user.email")
+        .arg("toml.bombadil@themail.org")
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .output()?;
+
+    println!("{}", std::fs::read_to_string(".git/config")?);
+
+    Ok(())
+}
+
+pub fn git_init() -> Result<()> {
+    setup_git_config()?;
+
+    Command::new("git")
+        .arg("init")
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .output()?;
+
+    Ok(())
+}
+
+pub fn git_init_with_path(path: &str) -> Result<()> {
+    setup_git_config()?;
     Command::new("git")
         .arg("init")
         .arg(path)
@@ -94,4 +165,8 @@ pub fn get_git_user_name() -> Result<String> {
 pub fn create_empty_config() -> Result<()> {
     std::fs::File::create(CONFIG_PATH)?;
     Ok(())
+}
+
+pub fn assert_file_exists(path: PathBuf) {
+    assert!(path.exists())
 }

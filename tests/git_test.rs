@@ -4,12 +4,13 @@ use helper::*;
 use tempfile::TempDir;
 
 mod helper;
+use helper::run_test_with_context;
 
 #[test]
 fn open_repo_ok() -> Result<()> {
     let tempdir = TempDir::new()?;
     std::env::set_current_dir(&tempdir.path())?;
-    git_init("open_repo_ok")?;
+    git_init_with_path("open_repo_ok")?;
     std::env::set_current_dir(std::env::current_dir()?.join("open_repo_ok"))?;
     create_empty_config()?;
 
@@ -36,7 +37,7 @@ fn open_repo_err() -> Result<()> {
 fn check_commit_history_ok() -> Result<()> {
     let tmp = TempDir::new()?;
     std::env::set_current_dir(&tmp)?;
-    git_init("commit_history_ok")?;
+    git_init_with_path("commit_history_ok")?;
     std::env::set_current_dir(&tmp.path().join("commit_history_ok"))?;
 
     create_empty_config()?;
@@ -53,7 +54,7 @@ fn check_commit_history_ok() -> Result<()> {
 fn check_commit_history_err() -> Result<()> {
     let tmp = TempDir::new()?;
     std::env::set_current_dir(&tmp)?;
-    git_init("commit_history_err")?;
+    git_init_with_path("commit_history_err")?;
     std::env::set_current_dir(&tmp.path().join("commit_history_err"))?;
 
     create_empty_config()?;
@@ -70,7 +71,7 @@ fn check_commit_history_err() -> Result<()> {
 fn check_commit_ok_from_latest_tag() -> Result<()> {
     let tmp = TempDir::new()?;
     std::env::set_current_dir(&tmp)?;
-    git_init("commit_ok_from_tag")?;
+    git_init_with_path("commit_ok_from_tag")?;
     std::env::set_current_dir(&tmp.path().join("commit_ok_from_tag"))?;
 
     create_empty_config()?;
@@ -88,7 +89,7 @@ fn check_commit_ok_from_latest_tag() -> Result<()> {
 fn check_commit_err_from_latest_tag() -> Result<()> {
     let tmp = TempDir::new()?;
     std::env::set_current_dir(&tmp)?;
-    git_init("commit_err_from_tag")?;
+    git_init_with_path("commit_err_from_tag")?;
     std::env::set_current_dir(&tmp.path().join("commit_err_from_tag"))?;
 
     create_empty_config()?;
