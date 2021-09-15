@@ -620,8 +620,10 @@ impl CocoGitto {
                 .try_collect()?,
         };
 
+        let current_version = self.repository.get_latest_tag().ok();
+
         for mut hook in hooks {
-            hook.insert_version(next_version)?;
+            hook.insert_versions(current_version.clone(), next_version)?;
             hook.run().context(hook.to_string())?;
         }
 

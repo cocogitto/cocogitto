@@ -12,6 +12,7 @@ mod parser;
 #[derive(Debug, Eq, PartialEq)]
 enum Token {
     Version,
+    LatestVersion,
     Amount(u32),
     Add,
     Major,
@@ -39,9 +40,21 @@ impl fmt::Display for Hook {
 }
 
 impl Hook {
-    pub fn insert_version(&mut self, value: &str) -> Result<()> {
+    pub fn insert_versions(
+        &mut self,
+        current_version: Option<String>,
+        next_version: &str,
+    ) -> Result<()> {
+        let next_version = Version::from_str(next_version)?;
+        let current_version = current_version
+            .map(|version| Version::from_str(&version))
+            .map(Result::ok)
+            .flatten();
+
         for i in 0..self.0.len() {
-            if let Some((range, version)) = HookExpr::parse(&self.0[i], Version::from_str(value)?) {
+            if let Some((range, version)) =
+                HookExpr::parse_version(&self.0[i], current_version.clone(), next_version.clone())
+            {
                 self.0[i].replace_range(range, &version);
             }
         }
@@ -82,7 +95,7 @@ mod test {
     #[test]
     fn replace_version_cargo() -> Result<()> {
         let mut hook = Hook::from_str("cargo bump {{version}}")?;
-        hook.insert_version("1.0.0").unwrap();
+        hook.insert_versions(None, "1.0.0").unwrap();
 
         assert_eq!(&hook.0, &["cargo", "bump", "1.0.0"]);
         Ok(())
@@ -91,7 +104,7 @@ mod test {
     #[test]
     fn replace_maven_version() -> Result<()> {
         let mut hook = Hook::from_str("mvn versions:set -DnewVersion={{version}}")?;
-        hook.insert_version("1.0.0").unwrap();
+        hook.insert_versions(None, "1.0.0").unwrap();
 
         assert_eq!(&hook.0, &["mvn", "versions:set", "-DnewVersion=1.0.0"]);
         Ok(())
@@ -100,7 +113,7 @@ mod test {
     #[test]
     fn replace_maven_version_with_expression() -> Result<()> {
         let mut hook = Hook::from_str("mvn versions:set -DnewVersion={{version+1minor-SNAPSHOT}}")?;
-        hook.insert_version("1.0.0").unwrap();
+        hook.insert_versions(None, "1.0.0").unwrap();
 
         assert_eq!(
             &hook.0,
@@ -112,7 +125,7 @@ mod test {
     #[test]
     fn leave_hook_untouched_when_no_version() -> Result<()> {
         let mut hook = Hook::from_str("echo \"Hello World\"")?;
-        hook.insert_version("1.0.0").unwrap();
+        hook.insert_versions(None, "1.0.0").unwrap();
 
         assert_eq!(&hook.0, &["echo", "Hello World"]);
         Ok(())
@@ -121,7 +134,7 @@ mod test {
     #[test]
     fn replace_quoted_version() -> Result<()> {
         let mut hook = Hook::from_str("echo \"{{version}}\"")?;
-        hook.insert_version("1.0.0").unwrap();
+        hook.insert_versions(None, "1.0.0").unwrap();
 
         assert_eq!(&hook.0, &["echo", "1.0.0"]);
         Ok(())
@@ -130,7 +143,7 @@ mod test {
     #[test]
     fn replace_version_with_nested_simple_quoted_arg() -> Result<()> {
         let mut hook = Hook::from_str("coco chore 'bump snapshot to {{version+1minor-pre}}'")?;
-        hook.insert_version("1.0.0").unwrap();
+        hook.insert_versions(None, "1.0.0").unwrap();
 
         assert_eq!(&hook.0, &["coco", "chore", "bump snapshot to 1.1.0-pre"]);
         Ok(())
@@ -139,7 +152,7 @@ mod test {
     #[test]
     fn replace_version_with_nested_double_quoted_arg() -> Result<()> {
         let mut hook = Hook::from_str("coco chore \"bump snapshot to {{version+1minor-pre}}\"")?;
-        hook.insert_version("1.0.0").unwrap();
+        hook.insert_versions(None, "1.0.0").unwrap();
 
         assert_eq!(&hook.0, &["coco", "chore", "bump snapshot to 1.1.0-pre"]);
         Ok(())

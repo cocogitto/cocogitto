@@ -3,81 +3,87 @@ use assert_cmd::prelude::*;
 use cocogitto::CONFIG_PATH;
 use helper::*;
 use std::process::Command;
-use tempfile::TempDir;
 
 mod helper;
+use helper::run_test_with_context;
 
 #[test]
 #[cfg(not(tarpaulin))]
 fn init_empty_repo_in_target_dir() -> Result<()> {
-    // Current dir needs to be reset at the end of each test to get
-    // tests to pass on github actions CI
-    let current_dir = std::env::current_dir()?;
-    let mut command = Command::cargo_bin("cog")?;
-    command.arg("init").arg("test_repo");
+    // Arrange
+    run_test_with_context(|context| {
+        // Act
+        Command::cargo_bin("cog")?
+            .arg("init")
+            .arg("test_repo")
+            .assert()
+            .success();
 
-    let temp_dir = TempDir::new()?;
-    std::env::set_current_dir(&temp_dir.path())?;
-
-    command.assert().success();
-    Ok(std::env::set_current_dir(current_dir)?)
+        // Assert
+        let repo_directory = context.test_dir.join("test_repo");
+        assert_file_exists(repo_directory);
+        Ok(())
+    })
 }
 
 #[test]
 #[cfg(not(tarpaulin))]
 fn init_existing_repo() -> Result<()> {
-    let current_dir = std::env::current_dir()?;
-    let mut command = Command::cargo_bin("cog")?;
-    command.arg("init").arg("test_repo_existing");
+    run_test_with_context(|context| {
+        // Arrange
+        git_init_with_path("test_repo_existing")?;
+        assert_file_exists(context.test_dir.join("test_repo_existing"));
+        helper::git_commit("chore: test commit")?;
 
-    // Create repo with commits
-    let temp_dir = TempDir::new()?;
-    std::env::set_current_dir(&temp_dir)?;
-    git_init("test_repo_existing")?;
-    std::env::set_current_dir(temp_dir.path().join("test_repo_existing"))?;
-
-    helper::git_commit("chore: test commit")?;
-
-    command.assert().success();
-    Ok(std::env::set_current_dir(current_dir)?)
+        // Act
+        Command::cargo_bin("cog")?
+            .arg("init")
+            .arg("test_repo_existing")
+            // Assert
+            .assert()
+            .success();
+        Ok(())
+    })
 }
 
 #[test]
 #[cfg(not(tarpaulin))]
 fn fail_if_config_exist() -> Result<()> {
-    let current_dir = std::env::current_dir()?;
-    let temp_dir = TempDir::new()?;
+    run_test_with_context(|context| {
+        // Arrange
+        helper::git_init_with_path("test_repo_existing")?;
+        std::fs::write(
+            &context.test_dir.join("test_repo_existing").join(CONFIG_PATH),
+            "[hooks]",
+        )?;
+        helper::git_commit("chore: test commit")?;
 
-    let mut command = Command::cargo_bin("cog")?;
-    command.arg("init").arg("test_repo_existing");
-
-    // Create repo with commits
-    std::env::set_current_dir(&temp_dir)?;
-    helper::git_init("test_repo_existing")?;
-    std::fs::write(
-        &temp_dir.path().join("test_repo_existing").join(CONFIG_PATH),
-        "[hooks]",
-    )?;
-    helper::git_commit("chore: test commit")?;
-
-    command.assert().failure();
-
-    Ok(std::env::set_current_dir(current_dir)?)
+        // Act
+        Command::cargo_bin("cog")?
+            .arg("init")
+            .arg("test_repo_existing")
+            // Assert
+            .assert()
+            .failure();
+        Ok(())
+    })
 }
 
 #[test]
 #[cfg(not(tarpaulin))]
 fn init_current_dir_with_no_arg() -> Result<()> {
-    let current_dir = std::env::current_dir()?;
-    let mut command = Command::cargo_bin("cog")?;
-    command.arg("init");
+    run_test_with_context(|context| {
+        // Arrange
+        let path = context.test_dir.join("test_repo_no_args");
+        std::fs::create_dir(&path)?;
+        std::env::set_current_dir(&path)?;
 
-    let temp_dir = TempDir::new()?;
-    let path = temp_dir.path().join("test_repo_no_args");
-    std::fs::create_dir(&path)?;
-    std::env::set_current_dir(&path)?;
+        // Act
+        Command::cargo_bin("cog")?
+            .arg("init")
+            // Assert
+            .assert().success();
+        Ok(())
+    })
 
-    command.assert().success();
-
-    Ok(std::env::set_current_dir(current_dir)?)
 }
