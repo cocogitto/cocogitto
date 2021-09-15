@@ -1,16 +1,10 @@
-const {description} = require('../../../site/package.json')
+const {description} = require('../../package.json')
 
 module.exports = {
-    /**
-     * Ref：https://v1.vuepress.vuejs.org/config/#title
-     */
     title: 'Cocogitto',
-
-    /**
-     * Ref：https://v1.vuepress.vuejs.org/config/#description
-     */
+    docsDir: 'docs',
+    base: "/cocogitto/",
     description: description,
-
     markdown: {
         code: {
             lineNumbers: false
@@ -35,7 +29,6 @@ module.exports = {
     themeConfig: {
         repo: 'https://github.com/oknozor/cocogitto',
         editLinks: false,
-        docsDir: '',
         editLinkText: '',
         lastUpdated: false,
         navbar: [
