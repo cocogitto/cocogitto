@@ -1,7 +1,7 @@
 use anyhow::Result;
 use assert_cmd::prelude::*;
-use std::process::Command;
 use indoc::indoc;
+use std::process::Command;
 
 mod helper;
 
@@ -15,7 +15,7 @@ fn verify_ok() -> Result<()> {
         helper::git_init()?;
         let message = "chore: a commit message";
         let expected = indoc!(
-        "a commit message (not committed) - now
+            "a commit message (not committed) - now
 	            Author: Tom
 	            Type: chore
 	            Scope: none",
@@ -23,9 +23,11 @@ fn verify_ok() -> Result<()> {
 
         // Act
         Command::cargo_bin("cog")?
-            .arg("verify").arg(message)
+            .arg("verify")
+            .arg(message)
             // Assert
-            .assert().success()
+            .assert()
+            .success()
             .stdout(expected);
 
         Ok(())
@@ -38,7 +40,10 @@ fn verify_with_scope() -> Result<()> {
     run_test_with_context(|context| {
         // Arrange
         helper::git_init()?;
-        println!("{:?}", std::fs::read_to_string(context.test_dir.join(".git/config")));
+        println!(
+            "{:?}",
+            std::fs::read_to_string(context.test_dir.join(".git/config"))
+        );
         let message = "feat(feature): a commit message";
         let expected = indoc! {
             "a commit message (not committed) - now
@@ -54,8 +59,8 @@ fn verify_with_scope() -> Result<()> {
             .arg(message)
             // Assert
             .assert()
-            .success().
-            stdout(expected);
+            .success()
+            .stdout(expected);
         Ok(())
     })
 }

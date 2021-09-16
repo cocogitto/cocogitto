@@ -31,7 +31,7 @@ fn init_empty_repo_in_target_dir() -> Result<()> {
 fn init_existing_repo() -> Result<()> {
     run_test_with_context(|context| {
         // Arrange
-        git_init_with_path("test_repo_existing")?;
+        git_init_and_set_current_path("test_repo_existing")?;
         assert_file_exists(context.test_dir.join("test_repo_existing"));
         helper::git_commit("chore: test commit")?;
 
@@ -51,9 +51,12 @@ fn init_existing_repo() -> Result<()> {
 fn fail_if_config_exist() -> Result<()> {
     run_test_with_context(|context| {
         // Arrange
-        helper::git_init_with_path("test_repo_existing")?;
+        helper::git_init_and_set_current_path("test_repo_existing")?;
         std::fs::write(
-            &context.test_dir.join("test_repo_existing").join(CONFIG_PATH),
+            &context
+                .test_dir
+                .join("test_repo_existing")
+                .join(CONFIG_PATH),
             "[hooks]",
         )?;
         helper::git_commit("chore: test commit")?;
@@ -82,8 +85,8 @@ fn init_current_dir_with_no_arg() -> Result<()> {
         Command::cargo_bin("cog")?
             .arg("init")
             // Assert
-            .assert().success();
+            .assert()
+            .success();
         Ok(())
     })
-
 }
