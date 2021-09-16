@@ -13,7 +13,7 @@ fn auto_bump_from_start_ok() -> Result<()> {
     run_test_with_context(|context| {
         let mut command = Command::cargo_bin("cog")?;
         command.arg("bump").arg("--auto");
-        helper::git_init(".")?;
+        helper::git_init()?;
         helper::git_commit("chore: init")?;
         helper::git_commit("feat(taef): feature")?;
         helper::git_commit("fix: bug fix")?;
@@ -33,7 +33,7 @@ fn auto_bump_minor_from_latest_tag() -> Result<()> {
         let mut command = Command::cargo_bin("cog")?;
         command.arg("bump").arg("--auto");
 
-        helper::git_init(".")?;
+        helper::git_init()?;
         helper::git_commit("chore: init")?;
         helper::git_commit("feat(taef): feature")?;
         helper::git_commit("fix: bug fix")?;
@@ -56,7 +56,7 @@ fn auto_bump_major_from_latest_tag() -> Result<()> {
         let mut command = Command::cargo_bin("cog")?;
 
         command.arg("bump").arg("--auto");
-        helper::git_init(".")?;
+        helper::git_init()?;
         helper::git_commit("chore: init")?;
         helper::git_commit("feat(taef): feature")?;
         helper::git_commit("fix: bug fix")?;
@@ -79,7 +79,7 @@ fn auto_bump_patch_from_latest_tag() -> Result<()> {
         let mut command = Command::cargo_bin("cog")?;
         command.arg("bump").arg("--auto");
 
-        helper::git_init(".")?;
+        helper::git_init()?;
         helper::git_commit("chore: init")?;
         helper::git_commit("feat(taef): feature")?;
         helper::git_commit("fix: bug fix")?;
@@ -102,7 +102,7 @@ fn auto_bump_respect_semver_sorting() -> Result<()> {
         let mut command = Command::cargo_bin("cog")?;
         command.arg("bump").arg("--auto");
 
-        helper::git_init(".")?;
+        helper::git_init()?;
         helper::git_commit("chore: init")?;
         helper::git_commit("feat(taef): feature")?;
         helper::git_commit("fix: bug fix")?;
@@ -126,7 +126,7 @@ fn minor_bump() -> Result<()> {
         let mut command = Command::cargo_bin("cog")?;
         command.arg("bump").arg("--minor");
 
-        helper::git_init(".")?;
+        helper::git_init()?;
         helper::git_commit("chore: init")?;
         helper::git_tag("1.0.0")?;
         helper::git_commit("feat: feature")?;
@@ -145,7 +145,7 @@ fn major_bump() -> Result<()> {
         let mut command = Command::cargo_bin("cog")?;
         command.arg("bump").arg("--major");
 
-        helper::git_init(".")?;
+        helper::git_init()?;
         helper::git_commit("chore: init")?;
         helper::git_tag("1.0.0")?;
         helper::git_commit("feat: feature")?;
@@ -164,7 +164,7 @@ fn patch_bump() -> Result<()> {
         let mut command = Command::cargo_bin("cog")?;
         command.arg("bump").arg("--patch");
 
-        helper::git_init(".")?;
+        helper::git_init()?;
         helper::git_commit("chore: init")?;
         helper::git_tag("1.0.0")?;
         helper::git_commit("feat: feature")?;
@@ -183,7 +183,7 @@ fn pre_release_bump() -> Result<()> {
         let mut command = Command::cargo_bin("cog")?;
         command.arg("bump").arg("--major").arg("--pre").arg("alpha");
 
-        helper::git_init(".")?;
+        helper::git_init()?;
         helper::git_commit("chore: init")?;
         helper::git_tag("1.0.0")?;
         helper::git_commit("feat: feature")?;
@@ -203,7 +203,7 @@ fn bump_with_hook() -> Result<()> {
         // Arrange
         std::fs::write("cog.toml", r#"pre_bump_hooks = ["touch {{version}}"]"#)?;
 
-        helper::git_init(".")?;
+        helper::git_init()?;
         helper::git_commit("chore: init")?;
         helper::git_tag("1.0.0")?;
         helper::git_commit("feat: feature")?;
@@ -229,25 +229,25 @@ fn bump_with_profile_hook() -> Result<()> {
     run_test_with_context(|_context| {
         // Arrange
         let config = indoc! {
-        "[bump_profiles.custom]
+            "[bump_profiles.custom]
             pre_bump_hooks = [ \"echo current {{latest}}\" ]
             post_bump_hooks = [ \"echo next {{version}}\" ]
         "
-    };
+        };
 
         std::fs::write("cog.toml", config)?;
 
-        helper::git_init(".")?;
+        helper::git_init()?;
         helper::git_commit("chore: init")?;
         helper::git_tag("1.0.0")?;
         helper::git_commit("feat: feature")?;
 
         let expected = indoc! {
-        "current 1.0.0
+            "current 1.0.0
         next 1.0.1
         Bumped version : 1.0.0 -> 1.0.1
         "
-    };
+        };
 
         // Act
         Command::cargo_bin("cog")?
@@ -265,4 +265,3 @@ fn bump_with_profile_hook() -> Result<()> {
         Ok(())
     })
 }
-

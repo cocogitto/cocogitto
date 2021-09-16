@@ -10,7 +10,7 @@ use helper::run_test_with_context;
 fn get_changelog_from_untagged_repo() -> Result<()> {
     run_test_with_context(|_| {
         // Arrange
-        helper::git_init(".")?;
+        helper::git_init()?;
         helper::git_commit("chore: init")?;
         helper::git_commit("feat(taef): feature")?;
         helper::git_commit("fix: bug fix")?;
@@ -32,7 +32,7 @@ fn get_changelog_from_untagged_repo() -> Result<()> {
 fn get_changelog_from_tagged_repo() -> Result<()> {
     run_test_with_context(|_| {
         // Arrange
-        helper::git_init(".")?;
+        helper::git_init()?;
         helper::git_commit("chore: init")?;
         helper::git_commit("feat(taef): feature")?;
         helper::git_tag("1.0.0")?;
@@ -55,7 +55,7 @@ fn get_changelog_from_tagged_repo() -> Result<()> {
 fn get_changelog_from_at_tag() -> Result<()> {
     run_test_with_context(|_| {
         // Arrange
-        helper::git_init(".")?;
+        helper::git_init()?;
         helper::git_commit("chore: init")?;
         helper::git_commit("feat(taef): feature")?;
         helper::git_commit("feat: feature 2")?;
