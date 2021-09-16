@@ -2,7 +2,7 @@ use anyhow::Result;
 use assert_cmd::Command;
 use predicates::prelude::{predicate, PredicateBooleanExt};
 
-mod helper;
+pub mod helper;
 use helper::run_test_with_context;
 
 #[test]
