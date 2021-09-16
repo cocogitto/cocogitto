@@ -4,10 +4,10 @@
 use anyhow::Result;
 use cocogitto::CONFIG_PATH;
 use rand::Rng;
+use std::panic;
+use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use tempfile::TempDir;
-use std::path::PathBuf;
-use std::panic;
 
 pub struct TestContext {
     pub current_dir: PathBuf,
@@ -19,20 +19,19 @@ pub struct TestContext {
 // Execute the test in context
 // Reset temp directory
 pub fn run_test_with_context<T>(test: T) -> Result<()>
-    where T: FnOnce(&TestContext) -> Result<()> + panic::UnwindSafe
+where
+    T: FnOnce(&TestContext) -> Result<()> + panic::UnwindSafe,
 {
     let current_dir = std::env::current_dir()?;
     let temp_dir = TempDir::new()?;
     std::env::set_current_dir(&temp_dir)?;
 
-    let context = TestContext{
+    let context = TestContext {
         current_dir,
-        test_dir: temp_dir.into_path()
+        test_dir: temp_dir.into_path(),
     };
 
-    let result = panic::catch_unwind(|| {
-        test(&context)
-    });
+    let result = panic::catch_unwind(|| test(&context));
 
     assert!(result.is_ok());
 
@@ -40,7 +39,6 @@ pub fn run_test_with_context<T>(test: T) -> Result<()>
 }
 
 fn setup_git_config() -> Result<()> {
-    println!("Hello tom");
     Command::new("git")
         .arg("config")
         .arg("--local")
@@ -59,7 +57,7 @@ fn setup_git_config() -> Result<()> {
         .stderr(Stdio::null())
         .output()?;
 
-    println!("{}", std::fs::read_to_string(".git/config")?);
+    std::fs::File::open(".git/config")?.sync_all()?;
 
     Ok(())
 }
@@ -76,8 +74,10 @@ pub fn git_init() -> Result<()> {
     Ok(())
 }
 
-pub fn git_init_with_path(path: &str) -> Result<()> {
+pub fn git_init_and_set_current_path(path: &str) -> Result<()> {
     setup_git_config()?;
+    std::env::set_current_dir(std::env::current_dir()?.join("open_repo_ok"))?;
+
     Command::new("git")
         .arg("init")
         .arg(path)
