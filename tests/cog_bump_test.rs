@@ -2,7 +2,7 @@ use anyhow::Result;
 use assert_cmd::prelude::*;
 use std::process::Command;
 
-mod helper;
+pub mod helper;
 
 use helper::run_test_with_context;
 use indoc::indoc;
