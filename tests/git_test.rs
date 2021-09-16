@@ -2,7 +2,7 @@ use anyhow::Result;
 use cocogitto::CocoGitto;
 use helper::*;
 
-mod helper;
+pub mod helper;
 
 use helper::run_test_with_context;
 

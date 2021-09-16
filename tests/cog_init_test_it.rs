@@ -4,7 +4,7 @@ use cocogitto::CONFIG_PATH;
 use helper::*;
 use std::process::Command;
 
-mod helper;
+pub mod helper;
 use helper::run_test_with_context;
 
 #[test]
