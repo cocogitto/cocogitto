@@ -81,9 +81,12 @@ impl Repository {
                 .commit(Some("HEAD"), &sig, &sig, message, &tree, &[])
                 .map_err(|err| anyhow!(err))
         } else {
-            Err(anyhow!(ErrorKind::NothingToCommit {
-                statuses: self.get_statuses()?
-            }))
+            let err = self
+                .get_branch_shorthand()
+                .map(|branch| ErrorKind::NothingToCommitWithBranch { branch })
+                .unwrap_or_else(|| ErrorKind::NothingToCommit);
+
+            Err(anyhow!(err))
         }
     }
 
