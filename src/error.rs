@@ -1,4 +1,3 @@
-use crate::git::status::Statuses;
 use colored::*;
 use std::fmt;
 use std::fmt::Formatter;
@@ -14,8 +13,10 @@ pub(crate) enum ErrorKind {
         cause: String,
         additional_info: String,
     },
-    #[error("{statuses}")]
-    NothingToCommit { statuses: Statuses },
+    #[error("On branch {branch}\nNothing to commit")]
+    NothingToCommitWithBranch { branch: String },
+    #[error("Nothing to commit")]
+    NothingToCommit,
     #[error("{level}:\n\t{cause}\n")]
     Semver { level: String, cause: String },
     #[error("{level}:\n\t{cause}\n")]
