@@ -6,6 +6,7 @@ use std::process::Command;
 
 pub mod helper;
 use helper::run_test_with_context;
+use std::path::PathBuf;
 
 #[test]
 #[cfg(not(tarpaulin))]
@@ -67,7 +68,10 @@ fn fail_if_config_exist() -> Result<()> {
             .arg("test_repo_existing")
             // Assert
             .assert()
-            .failure();
+            .stdout("Found git repository in \"test_repo_existing\", skipping initialisation\n")
+            .success();
+
+        assert_file_exists(PathBuf::from("cog.toml"));
         Ok(())
     })
 }

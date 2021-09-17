@@ -16,9 +16,11 @@ fn verify_ok() -> Result<()> {
         let message = "chore: a commit message";
         let expected = indoc!(
             "a commit message (not committed) - now
-	            Author: Tom
-	            Type: chore
-	            Scope: none",
+            \tAuthor: Tom
+            \tType: chore
+            \tScope: none
+
+            ",
         );
 
         // Act
@@ -45,13 +47,14 @@ fn verify_with_scope() -> Result<()> {
             std::fs::read_to_string(context.test_dir.join(".git/config"))
         );
         let message = "feat(feature): a commit message";
-        let expected = indoc! {
+        let expected = indoc!(
             "a commit message (not committed) - now
-	            Author: Tom
-	            Type: feat
-	            Scope: feature
-	        "
-        };
+            \tAuthor: Tom
+            \tType: feat
+            \tScope: feature
+
+            ",
+        );
 
         // Act
         Command::cargo_bin("cog")?
