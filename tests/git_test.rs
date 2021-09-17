@@ -4,6 +4,7 @@ use helper::*;
 
 pub mod helper;
 
+use conventional_commit_parser::commit::CommitType;
 use helper::run_test_with_context;
 
 #[test]
@@ -100,15 +101,17 @@ fn check_commit_ok_from_latest_tag() -> Result<()> {
 #[test]
 fn check_commit_err_from_latest_tag() -> Result<()> {
     run_test_with_context(|_| {
+        // Arrange
         git_init_and_set_current_path("commit_err_from_tag")?;
-
         create_empty_config()?;
         git_commit("this one should not be picked")?;
         git_tag("0.1.0")?;
         git_commit("Oh no!")?;
 
+        // Act
         let cocogitto = CocoGitto::get()?;
 
+        // Assert
         assert!(cocogitto.check(true).is_err());
         Ok(())
     })
