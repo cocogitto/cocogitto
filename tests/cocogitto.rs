@@ -4,7 +4,6 @@ use helper::*;
 
 pub mod helper;
 
-use conventional_commit_parser::commit::CommitType;
 use helper::run_test_with_context;
 
 #[test]
@@ -113,6 +112,26 @@ fn check_commit_err_from_latest_tag() -> Result<()> {
 
         // Assert
         assert!(cocogitto.check(true).is_err());
+        Ok(())
+    })
+}
+
+#[test]
+fn long_commit_summary_does_not_panic() -> Result<()> {
+    run_test_with_context(|_| {
+        helper::git_init()?;
+        let message =
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…"
+                .to_string();
+
+        let cocogitto = CocoGitto::get()?;
+        std::fs::write("file", "Hello")?;
+        helper::git_add()?;
+        cocogitto.conventional_commit("feat", None, message, None, None, false)?;
+
+        let result = cocogitto.check(false);
+
+        assert!(result.is_ok());
         Ok(())
     })
 }
