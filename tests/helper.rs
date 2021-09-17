@@ -29,9 +29,7 @@ where
         test_dir: temp_dir.into_path(),
     };
 
-    let result = panic::catch_unwind(|| test(&context));
-
-    assert!(result.is_ok());
+    test(&context)?;
 
     Ok(std::env::set_current_dir(context.current_dir)?)
 }
@@ -44,7 +42,8 @@ fn setup_git_config() -> Result<()> {
         .arg("Tom")
         .stdout(Stdio::null())
         .stderr(Stdio::null())
-        .output()?;
+        .output()
+        .expect("Unable to set local git user");
 
     Command::new("git")
         .arg("config")
@@ -53,35 +52,50 @@ fn setup_git_config() -> Result<()> {
         .arg("toml.bombadil@themail.org")
         .stdout(Stdio::null())
         .stderr(Stdio::null())
-        .output()?;
+        .output()
+        .expect("Unable to set local git user email");
 
-    std::fs::File::open(".git/config")?.sync_all()?;
+    std::fs::File::open(".git/config")?
+        .sync_all()
+        .expect("Error syncing `.git/config` file");
 
     Ok(())
 }
 
 pub fn git_init() -> Result<()> {
-    setup_git_config()?;
-
     Command::new("git")
         .arg("init")
         .stdout(Stdio::null())
         .stderr(Stdio::null())
-        .output()?;
+        .output()
+        .expect("Error initializing empty test repository in current directory");
+
+    setup_git_config().expect("Error setting local git config");
 
     Ok(())
 }
 
 pub fn git_init_and_set_current_path(path: &str) -> Result<()> {
-    setup_git_config()?;
-    std::env::set_current_dir(std::env::current_dir()?.join("open_repo_ok"))?;
-
     Command::new("git")
         .arg("init")
         .arg(path)
         .stdout(Stdio::null())
         .stderr(Stdio::null())
-        .output()?;
+        .output()
+        .expect("Error creating empty repo with target path");
+
+    std::fs::File::open(path)
+        .expect("Error opening test repository")
+        .sync_all()
+        .expect("Error syncing file system while creating test repository");
+
+    let repo_dir = std::env::current_dir()
+        .expect("Unable to get current directory in test context")
+        .join(path);
+
+    std::env::set_current_dir(repo_dir).expect("Unable to move into to test repository");
+
+    setup_git_config().expect("Error setting up local git config for test");
 
     Ok(())
 }
