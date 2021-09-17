@@ -64,12 +64,7 @@ impl Commit {
                 };
 
                 let message = git2_message.trim_end();
-                let commit_message = if message.len() > 80 {
-                    format!("{}{}", &message[0..80], "...").red()
-                } else {
-                    message.red()
-                }
-                .to_string();
+                let commit_message = Commit::format_summary(message).red().to_string();
 
                 let cause = format!("{} {}", "cause:".magenta(), err);
                 let level = "ERROR".red().bold().to_string();
@@ -123,21 +118,12 @@ impl Commit {
     }
 
     pub fn get_log(&self) -> String {
-        let message_display = self.message.summary.replace("\n", " ");
-        let message_display = if message_display.len() > 80 {
-            format!("{}{}", &message_display[0..80], "...").yellow()
-        } else {
-            message_display.yellow()
-        };
-
+        let summary = &self.message.summary;
+        let message_display = Commit::format_summary(summary).yellow();
         let author_format = "Author:".green().bold();
         let type_format = "Type:".green().bold();
         let scope_format = "Scope:".green().bold();
-        let breaking_change = if self.message.is_breaking_change {
-            format!("{} - ", "BREAKING CHANGE".red().bold())
-        } else {
-            "".to_string()
-        };
+        let breaking_change = self.format_breaking_change();
         let now = Utc::now().naive_utc();
         let elapsed = now - self.date;
         let elapsed = if elapsed.num_weeks() > 0 {
@@ -192,6 +178,24 @@ impl Commit {
             scope_format,
             self.message.scope.as_deref().unwrap_or("none"),
         )
+    }
+
+    fn format_breaking_change(&self) -> String {
+        if self.message.is_breaking_change {
+            format!("{} - ", "BREAKING CHANGE".red().bold())
+        } else {
+            "".to_string()
+        }
+    }
+
+    fn format_summary(summary: &str) -> String {
+        if summary.len() > 80 {
+            // display a maximum of 80 char (77 char + ...)
+            let message = summary.chars().take(77).collect::<String>();
+            format!("{}{}", message, "...")
+        } else {
+            summary.to_string()
+        }
     }
 }
 
