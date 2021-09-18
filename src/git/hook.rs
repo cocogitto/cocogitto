@@ -63,9 +63,9 @@ mod tests {
     use crate::git::hook::HookKind;
     use crate::CocoGitto;
     use anyhow::Result;
+    use speculoos::prelude::*;
     use std::env;
     use std::fs::File;
-    use std::ops::Not;
     use std::path::PathBuf;
     use std::process::Command;
     use tempfile::TempDir;
@@ -82,8 +82,8 @@ mod tests {
 
         cog.install_hook(HookKind::PrepareCommit)?;
 
-        assert!(PathBuf::from(".git/hooks/prepare-commit-msg").exists());
-        assert!(PathBuf::from(".git/hooks/pre-push").exists().not());
+        assert_that!(PathBuf::from(".git/hooks/prepare-commit-msg")).exists();
+        assert_that!(PathBuf::from(".git/hooks/pre-push")).does_not_exist();
         Ok(())
     }
 
@@ -99,10 +99,8 @@ mod tests {
 
         cog.install_hook(HookKind::PrePush)?;
 
-        assert!(PathBuf::from(".git/hooks/pre-push").exists());
-        assert!(PathBuf::from(".git/hooks/prepare-commit-msg")
-            .exists()
-            .not());
+        assert_that!(PathBuf::from(".git/hooks/pre-push")).exists();
+        assert_that!(PathBuf::from(".git/hooks/prepare-commit-msg")).does_not_exist();
         Ok(())
     }
 
@@ -118,8 +116,8 @@ mod tests {
 
         cog.install_hook(HookKind::All)?;
 
-        assert!(PathBuf::from(".git/hooks/pre-push").exists());
-        assert!(PathBuf::from(".git/hooks/prepare-commit-msg").exists());
+        assert_that!(PathBuf::from(".git/hooks/pre-push")).exists();
+        assert_that!(PathBuf::from(".git/hooks/prepare-commit-msg")).exists();
         Ok(())
     }
 
@@ -140,8 +138,8 @@ mod tests {
 
         let prepush = File::open(".git/hooks/pre-push")?;
         let metadata = prepush.metadata()?;
-        assert!(PathBuf::from(".git/hooks/pre-push").exists());
-        assert_eq!(metadata.permissions().mode() & 0o777, 0o755);
+        assert_that!(PathBuf::from(".git/hooks/pre-push")).exists();
+        assert_that!(metadata.permissions().mode() & 0o777).is_equal_to(0o755);
         Ok(())
     }
 }

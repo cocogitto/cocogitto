@@ -166,6 +166,7 @@ mod test {
     use chrono::Utc;
     use conventional_commit_parser::commit::{CommitType, ConventionalCommit};
     use semver::{Identifier, Version};
+    use speculoos::prelude::*;
 
     // Auto version tests resides in test/ dir since it rely on git log
     // To generate the version
@@ -173,35 +174,32 @@ mod test {
     #[test]
     fn major_bump() -> Result<()> {
         let version = VersionIncrement::Major.bump(&Version::new(1, 0, 0))?;
-        assert_eq!(version, Version::new(2, 0, 0));
+        assert_that!(version).is_equal_to(Version::new(2, 0, 0));
         Ok(())
     }
 
     #[test]
     fn minor_bump() -> Result<()> {
         let version = VersionIncrement::Minor.bump(&Version::new(1, 0, 0))?;
-        assert_eq!(version, Version::new(1, 1, 0));
+        assert_that!(version).is_equal_to(Version::new(1, 1, 0));
         Ok(())
     }
 
     #[test]
     fn patch_bump() -> Result<()> {
         let version = VersionIncrement::Patch.bump(&Version::new(1, 0, 0))?;
-        assert_eq!(version, Version::new(1, 0, 1));
+        assert_that!(version).is_equal_to(Version::new(1, 0, 1));
         Ok(())
     }
 
     #[test]
     fn parse_pre_release_valid() -> Result<()> {
         let idents = parse_pre_release("alpha.0-dev.1")?;
-        assert_eq!(
-            &idents,
-            &[
-                Identifier::AlphaNumeric("alpha".into()),
-                Identifier::AlphaNumeric("0-dev".into()),
-                Identifier::Numeric(1),
-            ]
-        );
+        assert_that!(idents).is_equal_to(&vec![
+            Identifier::AlphaNumeric("alpha".into()),
+            Identifier::AlphaNumeric("0-dev".into()),
+            Identifier::Numeric(1),
+        ]);
         Ok(())
     }
 
@@ -224,7 +222,9 @@ mod test {
         let version =
             VersionIncrement::get_next_auto_version(&Version::parse("1.0.0").unwrap(), &[patch]);
 
-        assert_eq!(version.unwrap(), Version::new(1, 0, 1))
+        assert_that!(version)
+            .is_ok()
+            .is_equal_to(Version::new(1, 0, 1))
     }
 
     #[test]
@@ -262,7 +262,9 @@ mod test {
             &[breaking_change, feature],
         );
 
-        assert_eq!(version.unwrap(), Version::new(2, 0, 0))
+        assert_that!(version)
+            .is_ok()
+            .is_equal_to(Version::new(2, 0, 0))
     }
 
     #[test]
@@ -300,7 +302,9 @@ mod test {
             &[breaking_change, feature],
         );
 
-        assert_eq!(version.unwrap(), Version::new(0, 2, 0))
+        assert_that!(version)
+            .is_ok()
+            .is_equal_to(Version::new(0, 2, 0))
     }
 
     #[test]
@@ -338,23 +342,25 @@ mod test {
             &[patch, feature],
         );
 
-        assert_eq!(version.unwrap(), Version::new(1, 1, 0))
+        assert_that!(version)
+            .is_ok()
+            .is_equal_to(Version::new(1, 1, 0))
     }
 
     #[test]
     fn parse_pre_release_non_ascii() {
-        assert!(parse_pre_release("РАСТ").is_err());
+        assert_that!(parse_pre_release("РАСТ")).is_err();
     }
 
     #[test]
     fn parse_pre_release_illegal_ascii() {
-        assert!(parse_pre_release("alpha$5").is_err());
+        assert_that!(parse_pre_release("alpha$5")).is_err();
     }
 
     #[test]
     fn parse_pre_release_empty_ident() {
-        assert!(parse_pre_release(".alpha.5").is_err());
-        assert!(parse_pre_release("alpha..5").is_err());
-        assert!(parse_pre_release("alpha.5.").is_err());
+        assert_that!(parse_pre_release(".alpha.5")).is_err();
+        assert_that!(parse_pre_release("alpha..5")).is_err();
+        assert_that!(parse_pre_release("alpha.5.")).is_err();
     }
 }
