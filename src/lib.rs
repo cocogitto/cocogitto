@@ -51,11 +51,22 @@ lazy_static! {
     // This cannot be carried by `Cocogitto` struct since we need it to be available in `Changelog`,
     // `Commit` etc. Be ensure that `CocoGitto::new` is called before using this  in order to bypass
     // unwrapping in case of error.
-    pub     static ref COMMITS_METADATA: CommitsMetadata = {
+    pub static ref COMMITS_METADATA: CommitsMetadata = {
         if let Ok(repo) = Repository::open(".") {
             Settings::get(&repo).unwrap_or_default().commit_types()
         } else {
             Settings::default().commit_types()
+        }
+    };
+
+        pub static ref HOOK_PROFILES: Vec<String> = {
+        if let Ok(repo) = Repository::open(".") {
+            Settings::get(&repo).unwrap_or_default().bump_profiles
+            .keys()
+            .cloned()
+            .collect()
+        } else {
+            vec![]
         }
     };
 

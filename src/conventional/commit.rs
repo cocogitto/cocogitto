@@ -87,10 +87,10 @@ impl Commit {
             let username = AUTHORS
                 .iter()
                 .find(|author| author.signature == self.author);
-            let github_author = username.map(|username| {
+            let github_author = username.map(|user| {
                 format!(
-                    "[{}](https://github.com/{})",
-                    &username.username, &username.username
+                    "[{username}](https://github.com/{username})",
+                    username = &user.username
                 )
             });
             let oid = REMOTE_URL.as_ref().map(|remote_url| {
