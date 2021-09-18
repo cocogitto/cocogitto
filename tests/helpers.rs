@@ -1,7 +1,6 @@
 #![cfg(not(tarpaulin_include))]
 use anyhow::Result;
 use cocogitto::CONFIG_PATH;
-use rand::Rng;
 use std::panic;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
@@ -122,11 +121,6 @@ pub fn git_add() -> Result<()> {
 }
 
 pub fn git_commit(message: &str) -> Result<()> {
-    let mut rng = rand::thread_rng();
-    let random: f64 = rng.gen();
-    std::fs::write(random.to_string(), "dummy")?;
-
-    println!("git add .");
     Command::new("git")
         .arg("add")
         .arg(".")
@@ -137,6 +131,7 @@ pub fn git_commit(message: &str) -> Result<()> {
     println!("git commit -m \"{}\"", message);
     Command::new("git")
         .arg("commit")
+        .arg("--allow-empty")
         .arg("-m")
         .arg(message)
         .stdout(Stdio::null())
@@ -177,8 +172,4 @@ pub fn get_git_user_name() -> Result<String> {
 pub fn create_empty_config() -> Result<()> {
     std::fs::File::create(CONFIG_PATH)?;
     Ok(())
-}
-
-pub fn assert_file_exists(path: PathBuf) {
-    assert!(path.exists())
 }
