@@ -8,7 +8,7 @@ use cocogitto::conventional::version::VersionIncrement;
 use cocogitto::git::hook::HookKind;
 use cocogitto::log::filter::{CommitFilter, CommitFilters};
 use cocogitto::log::output::Output;
-use cocogitto::CocoGitto;
+use cocogitto::{CocoGitto, HOOK_PROFILES};
 
 const APP_SETTINGS: &[AppSettings] = &[
     AppSettings::SubcommandRequiredElseHelp,
@@ -186,6 +186,11 @@ fn main() -> Result<()> {
 }
 
 fn app<'a, 'b>() -> App<'a, 'b> {
+    let hook_profiles: Vec<&str> = HOOK_PROFILES
+        .iter()
+        .map(|profile| profile.as_ref())
+        .collect();
+
     let check_command = SubCommand::with_name(CHECK)
         .settings(SUBCOMMAND_SETTINGS)
         .about("Verify all commit message against the conventional commit specification")
@@ -329,6 +334,7 @@ fn app<'a, 'b>() -> App<'a, 'b> {
                 .help("Specify the bump profile hooks to run")
                 .short("hp")
                 .long("hook-profile")
+                .possible_values(&hook_profiles)
                 .takes_value(true),
         )
         .display_order(6);

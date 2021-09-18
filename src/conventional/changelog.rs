@@ -63,10 +63,10 @@ impl Changelog {
             .into_group_map();
 
         for (commit_type, commits) in grouped {
-            let meta = &COMMITS_METADATA[&commit_type];
-
-            write!(&mut out, "\n### {}\n\n", meta.changelog_title).unwrap();
-            out.extend(commits);
+            if let Some(meta) = COMMITS_METADATA.get(&commit_type) {
+                write!(&mut out, "\n### {}\n\n", meta.changelog_title).unwrap();
+                out.extend(commits);
+            }
         }
 
         out
@@ -137,14 +137,16 @@ mod test {
 
         // Act
         let content = ch.markdown(false);
+        println!("{}", content);
 
         // Assert
-        println!("{}", content);
-        assert_that(&content)
+        assert_that!(content)
             .contains("[5375e1](https://github.com/oknozor/cocogitto/commit/5375e15770ddf8821d0c1ad393d315e243014c15) - this is a commit message - coco");
+
         assert_that!(content).contains(
             "[5375e1](https://github.com/oknozor/cocogitto/commit/5375e15770ddf8821d0c1ad393d315e243014c15) - this is an other commit message - cogi"
         );
+
         assert_that!(content).contains("## 5375e1..35085f -");
         assert_that!(content).contains("### Features");
         assert_that!(content).does_not_contain("### Tests");

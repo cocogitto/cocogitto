@@ -30,7 +30,6 @@ pre_bump_hooks = [
     "cargo bump {{version}}",
 ]
 
-
 # A list of command to run AFTER creating a version.
 # `{{version}}` will be interpretted as your target version
 post_bump_hooks = [
@@ -38,6 +37,16 @@ post_bump_hooks = [
     "git push origin {{version}}",
     "cargo package",
     "cargo publish"
+]
+
+# A custom named bump profile, the inner post/pre bump hook will be used
+# instead of the main ones when running `cog bump --hook-profile example --auto`
+[bump_profiles.example]
+pre_bump_hooks = [
+    "echo 'bumping from {{latest}} to {{version}} using a named profile'"
+]
+post_bump_hooks = [
+    "echo 'we are done'"
 ]
 
 # An optional list of additional allowed commit type
