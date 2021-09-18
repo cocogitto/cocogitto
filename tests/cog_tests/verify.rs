@@ -1,18 +1,16 @@
+use crate::helpers::*;
+
 use anyhow::Result;
 use assert_cmd::prelude::*;
 use indoc::indoc;
 use std::process::Command;
-
-pub mod helper;
-
-use helper::run_test_with_context;
 
 #[test]
 #[cfg(not(tarpaulin))]
 fn verify_ok() -> Result<()> {
     run_test_with_context(|_| {
         // Arrange
-        helper::git_init()?;
+        git_init()?;
         let message = "chore: a commit message";
         let expected = indoc!(
             "a commit message (not committed) - now
@@ -41,7 +39,7 @@ fn verify_ok() -> Result<()> {
 fn verify_with_scope() -> Result<()> {
     run_test_with_context(|context| {
         // Arrange
-        helper::git_init()?;
+        git_init()?;
         println!(
             "{:?}",
             std::fs::read_to_string(context.test_dir.join(".git/config"))

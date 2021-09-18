@@ -1,11 +1,11 @@
 use anyhow::Result;
 use assert_cmd::prelude::*;
 use cocogitto::CONFIG_PATH;
-use helper::*;
 use std::process::Command;
 
-pub mod helper;
-use helper::run_test_with_context;
+use crate::helpers::*;
+
+use speculoos::prelude::*;
 use std::path::PathBuf;
 
 #[test]
@@ -22,7 +22,7 @@ fn init_empty_repo_in_target_dir() -> Result<()> {
 
         // Assert
         let repo_directory = context.test_dir.join("test_repo");
-        assert_file_exists(repo_directory);
+        assert_that(&repo_directory).exists();
         Ok(())
     })
 }
@@ -33,8 +33,8 @@ fn init_existing_repo() -> Result<()> {
     run_test_with_context(|context| {
         // Arrange
         git_init_and_set_current_path("test_repo_existing")?;
-        assert_file_exists(context.test_dir.join("test_repo_existing"));
-        helper::git_commit("chore: test commit")?;
+        assert_that(&context.test_dir.join("test_repo_existing")).exists();
+        git_commit("chore: test commit")?;
 
         // Act
         Command::cargo_bin("cog")?
@@ -52,7 +52,7 @@ fn init_existing_repo() -> Result<()> {
 fn fail_if_config_exist() -> Result<()> {
     run_test_with_context(|context| {
         // Arrange
-        helper::git_init_and_set_current_path("test_repo_existing")?;
+        git_init_and_set_current_path("test_repo_existing")?;
         std::fs::write(
             &context
                 .test_dir
@@ -60,7 +60,7 @@ fn fail_if_config_exist() -> Result<()> {
                 .join(CONFIG_PATH),
             "[hooks]",
         )?;
-        helper::git_commit("chore: test commit")?;
+        git_commit("chore: test commit")?;
 
         // Act
         Command::cargo_bin("cog")?
@@ -71,7 +71,7 @@ fn fail_if_config_exist() -> Result<()> {
             .stdout("Found git repository in \"test_repo_existing\", skipping initialisation\n")
             .success();
 
-        assert_file_exists(PathBuf::from("cog.toml"));
+        assert_that(&PathBuf::from("cog.toml")).exists();
         Ok(())
     })
 }

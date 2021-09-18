@@ -1,19 +1,17 @@
+use crate::helpers::*;
 use anyhow::Result;
 use assert_cmd::Command;
 use predicates::prelude::{predicate, PredicateBooleanExt};
-
-pub mod helper;
-use helper::run_test_with_context;
 
 #[test]
 #[cfg(not(tarpaulin))]
 fn get_changelog_from_untagged_repo() -> Result<()> {
     run_test_with_context(|_| {
         // Arrange
-        helper::git_init()?;
-        helper::git_commit("chore: init")?;
-        helper::git_commit("feat(taef): feature")?;
-        helper::git_commit("fix: bug fix")?;
+        git_init()?;
+        git_commit("chore: init")?;
+        git_commit("feat(taef): feature")?;
+        git_commit("fix: bug fix")?;
 
         // Act
         Command::cargo_bin("cog")?
@@ -32,11 +30,11 @@ fn get_changelog_from_untagged_repo() -> Result<()> {
 fn get_changelog_from_tagged_repo() -> Result<()> {
     run_test_with_context(|_| {
         // Arrange
-        helper::git_init()?;
-        helper::git_commit("chore: init")?;
-        helper::git_commit("feat(taef): feature")?;
-        helper::git_tag("1.0.0")?;
-        helper::git_commit("fix: bug fix")?;
+        git_init()?;
+        git_commit("chore: init")?;
+        git_commit("feat(taef): feature")?;
+        git_tag("1.0.0")?;
+        git_commit("fix: bug fix")?;
 
         // Act
         Command::cargo_bin("cog")?
@@ -55,13 +53,13 @@ fn get_changelog_from_tagged_repo() -> Result<()> {
 fn get_changelog_from_at_tag() -> Result<()> {
     run_test_with_context(|_| {
         // Arrange
-        helper::git_init()?;
-        helper::git_commit("chore: init")?;
-        helper::git_commit("feat(taef): feature")?;
-        helper::git_commit("feat: feature 2")?;
-        helper::git_tag("1.0.0")?;
-        helper::git_commit("fix: bug fix")?;
-        helper::git_log()?;
+        git_init()?;
+        git_commit("chore: init")?;
+        git_commit("feat(taef): feature")?;
+        git_commit("feat: feature 2")?;
+        git_tag("1.0.0")?;
+        git_commit("fix: bug fix")?;
+        git_log()?;
 
         // Act
         Command::cargo_bin("cog")?
