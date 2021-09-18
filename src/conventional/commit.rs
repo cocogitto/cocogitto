@@ -1,4 +1,4 @@
-use crate::error::ErrorKind::CommitFormat;
+use crate::error::CocogittoError::CommitFormat;
 use crate::AUTHORS;
 use crate::REMOTE_URL;
 use anyhow::Result;
@@ -54,26 +54,14 @@ impl Commit {
                 date,
             }),
             Err(err) => {
-                let additional_info = if commit.parent_count() == 0 {
-                    format!(
-                        "{} Init commit or commit with no parent cannot be edited",
-                        "warning:".yellow()
-                    )
-                } else {
-                    "".to_string()
-                };
-
                 let message = git2_message.trim_end();
-                let commit_message = Commit::format_summary(message).red().to_string();
+                let summary = Commit::short_summary_from_str(message);
 
-                let cause = format!("{} {}", "cause:".magenta(), err);
-                let level = "ERROR".red().bold().to_string();
                 Err(anyhow!(CommitFormat {
-                    level,
-                    shorthand: oid[0..6].into(),
-                    commit_message,
-                    additional_info,
-                    cause
+                    oid,
+                    summary,
+                    author,
+                    cause: err.to_string()
                 }))
             }
         }
@@ -119,7 +107,7 @@ impl Commit {
 
     pub fn get_log(&self) -> String {
         let summary = &self.message.summary;
-        let message_display = Commit::format_summary(summary).yellow();
+        let message_display = Commit::short_summary_from_str(summary).yellow();
         let author_format = "Author:".green().bold();
         let type_format = "Type:".green().bold();
         let scope_format = "Scope:".green().bold();
@@ -188,7 +176,19 @@ impl Commit {
         }
     }
 
-    fn format_summary(summary: &str) -> String {
+    pub(crate) fn format_summary(&self) -> String {
+        match &self.message.scope {
+            None => format!("{}: {}", self.message.commit_type, self.message.summary,),
+            Some(scope) => {
+                format!(
+                    "{}({}): {}",
+                    self.message.commit_type, scope, self.message.summary,
+                )
+            }
+        }
+    }
+
+    fn short_summary_from_str(summary: &str) -> String {
         if summary.len() > 80 {
             // display a maximum of 80 char (77 char + ...)
             let message = summary.chars().take(77).collect::<String>();
@@ -239,8 +239,10 @@ pub fn verify(author: Option<String>, message: &str) -> Result<(), ParseError> {
 
 #[cfg(test)]
 mod test {
-    use crate::conventional::commit::verify;
-    use conventional_commit_parser::commit::CommitType;
+    use crate::conventional::commit::{verify, Commit};
+    use chrono::NaiveDateTime;
+    use conventional_commit_parser::commit::{CommitType, ConventionalCommit};
+    use speculoos::prelude::*;
 
     #[test]
     fn should_map_conventional_commit_message_to_struct() {
@@ -282,5 +284,55 @@ mod test {
 
         // Assert
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn format_summary() {
+        // Arrange
+        let commit = Commit {
+            oid: "1234567".to_string(),
+            message: ConventionalCommit {
+                commit_type: CommitType::BugFix,
+                scope: Some("scope".to_string()),
+                summary: "this is the message".to_string(),
+                body: None,
+                footers: vec![],
+                is_breaking_change: false,
+            },
+
+            author: "".to_string(),
+            date: NaiveDateTime::from_timestamp(0, 0),
+        };
+
+        // Act
+        let summary = commit.format_summary();
+
+        // Assert
+        assert_that(&summary).is_equal_to("fix(scope): this is the message".to_string());
+    }
+
+    #[test]
+    fn format_summary_without_scope() {
+        // Arrange
+        let commit = Commit {
+            oid: "1234567".to_string(),
+            message: ConventionalCommit {
+                commit_type: CommitType::BugFix,
+                scope: None,
+                summary: "this is the message".to_string(),
+                body: None,
+                footers: vec![],
+                is_breaking_change: false,
+            },
+
+            author: "".to_string(),
+            date: NaiveDateTime::from_timestamp(0, 0),
+        };
+
+        // Act
+        let summary = commit.format_summary();
+
+        // Assert
+        assert_that(&summary).is_equal_to("fix: this is the message".to_string());
     }
 }
