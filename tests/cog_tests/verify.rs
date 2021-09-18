@@ -6,7 +6,6 @@ use indoc::indoc;
 use std::process::Command;
 
 #[test]
-#[cfg(not(tarpaulin))]
 fn verify_ok() -> Result<()> {
     run_test_with_context(|_| {
         // Arrange
@@ -35,7 +34,6 @@ fn verify_ok() -> Result<()> {
 }
 
 #[test]
-#[cfg(not(tarpaulin))]
 fn verify_with_scope() -> Result<()> {
     run_test_with_context(|context| {
         // Arrange
@@ -67,7 +65,6 @@ fn verify_with_scope() -> Result<()> {
 }
 
 #[test]
-#[cfg(not(tarpaulin))]
 fn verify_fails() -> Result<()> {
     // Arrange
     let message = "invalid message";

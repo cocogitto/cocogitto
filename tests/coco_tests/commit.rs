@@ -5,7 +5,6 @@ use assert_cmd::prelude::*;
 use std::process::Command;
 
 #[test]
-#[cfg(not(tarpaulin))]
 fn commit_ok() -> Result<()> {
     run_test_with_context(|context| {
         // Arrange
@@ -28,7 +27,6 @@ fn commit_ok() -> Result<()> {
 }
 
 #[test]
-#[cfg(not(tarpaulin))]
 fn unstaged_changes_commit_err() -> Result<()> {
     run_test_with_context(|context| {
         // Arrange
@@ -50,7 +48,6 @@ fn unstaged_changes_commit_err() -> Result<()> {
 }
 
 #[test]
-#[cfg(not(tarpaulin))]
 fn untracked_changes_commit_ok() -> Result<()> {
     run_test_with_context(|context| {
         // Arrange
@@ -74,7 +71,6 @@ fn untracked_changes_commit_ok() -> Result<()> {
 }
 
 #[test]
-#[cfg(not(tarpaulin))]
 fn empty_commit_err() -> Result<()> {
     run_test_with_context(|_context| {
         // Arrange
