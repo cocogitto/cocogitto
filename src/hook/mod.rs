@@ -21,6 +21,7 @@ enum Token {
     AlphaNumeric(String),
 }
 
+#[derive(Debug)]
 pub struct Hook(Vec<String>);
 
 impl FromStr for Hook {
@@ -75,14 +76,15 @@ impl Hook {
 
 #[cfg(test)]
 mod test {
-    use std::str::FromStr;
-
     use crate::Hook;
     use crate::Result;
+    use speculoos::prelude::*;
+    use std::str::FromStr;
 
     #[test]
     fn parse_empty_string() {
-        assert!(Hook::from_str("").is_err())
+        let empty_hook = Hook::from_str("");
+        assert_that(&empty_hook).is_err();
     }
 
     #[test]
@@ -97,7 +99,11 @@ mod test {
         let mut hook = Hook::from_str("cargo bump {{version}}")?;
         hook.insert_versions(None, "1.0.0").unwrap();
 
-        assert_eq!(&hook.0, &["cargo", "bump", "1.0.0"]);
+        assert_that(&hook.0).contains_all_of(&vec![
+            &"cargo".to_string(),
+            &"bump".to_string(),
+            &"1.0.0".to_string(),
+        ]);
         Ok(())
     }
 
