@@ -152,8 +152,8 @@ fn get_unfiltered_logs() -> Result<()> {
         let logs = cocogitto.get_log(filters)?;
 
         // Assert
-        assert_that(&logs).contains("ERROR - I am afraid I can't do that Dave");
-        assert_that(&logs).contains("cause: Missing commit type separator `:`");
+        assert_that(&logs).contains("Commit message : 'I am afraid I can't do that Dave'");
+        assert_that(&logs).contains("Cause : Missing commit type separator `:`");
 
         Ok(())
     })
@@ -175,8 +175,9 @@ fn get_log_with_no_errors() -> Result<()> {
         let logs = cocogitto.get_log(filters)?;
 
         // Assert
-        assert_that(&logs).does_not_contain("ERROR - I am afraid I can't do that Dave");
-        assert_that(&logs).does_not_contain("cause: Missing commit type separator `:`");
+        assert_that(&logs).does_not_contain("Errored commit : ");
+        assert_that(&logs).does_not_contain("Commit message : 'I am afraid I can't do that Dave'");
+        assert_that(&logs).does_not_contain("Missing commit type separator `:`");
 
         Ok(())
     })

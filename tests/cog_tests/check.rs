@@ -41,7 +41,7 @@ fn cog_check_failure() -> Result<()> {
             // Assert
             .assert()
             .failure()
-            .stderr(predicate::str::contains("Commit type `toto` not allowed"));
+            .stderr(predicate::str::contains("Found 1 non compliant commits"));
         Ok(())
     })
 }
@@ -90,7 +90,7 @@ fn cog_check_from_latest_tag_failure() -> Result<()> {
             // Assert
             .assert()
             .failure()
-            .stderr(predicate::str::contains("Commit type `toto` not allowed"));
+            .stderr(predicate::str::contains("Found 1 non compliant commits"));
         Ok(())
     })
 }
