@@ -14,8 +14,8 @@ pub mod log;
 pub mod settings;
 
 use crate::conventional::commit::verify;
-use crate::error::ErrorKind::Semver;
 use crate::error::PreHookError;
+use crate::error::{CocogittoError, CogCheckReport};
 use crate::settings::{HookType, Settings};
 use anyhow::{Context, Error, Result};
 use chrono::Utc;
@@ -269,16 +269,18 @@ impl CocoGitto {
 
     pub fn check(&self, check_from_latest_tag: bool) -> Result<()> {
         let from = if check_from_latest_tag {
-            self.repository.get_latest_tag_oid().unwrap_or_else(|_err| {
-                println!("No previous tag found, falling back to first commit");
-                self.repository.get_first_commit().unwrap()
-            })
+            self.repository
+                .get_latest_tag_oidof()
+                .unwrap_or_else(|_err| {
+                    println!("No previous tag found, falling back to first commit");
+                    self.repository.get_first_commit_oidof().unwrap()
+                })
         } else {
-            self.repository.get_first_commit()?
+            self.repository.get_first_commit_oidof()?
         };
 
         let to = self.repository.get_head_commit_oid()?;
-        let commits = self.repository.get_commit_range(from, to)?;
+        let commits = self.repository.get_commit_range(from.get_oid(), to)?;
 
         let (successes, mut errors): (Vec<_>, Vec<_>) = commits
             .iter()
@@ -292,7 +294,12 @@ impl CocoGitto {
                 let commit_type = &commit.message.commit_type;
                 match &COMMITS_METADATA.get(commit_type) {
                     Some(_) => Ok(()),
-                    None => Err(anyhow!("Commit type `{}` not allowed", commit_type)),
+                    None => Err(anyhow!(CocogittoError::CommitTypeNotAllowed {
+                        oid: commit.oid.clone(),
+                        summary: commit.format_summary(),
+                        commit_type: commit.message.commit_type.to_string(),
+                        author: commit.author.clone()
+                    })),
                 }
             })
             .filter_map(Result::err)
@@ -305,12 +312,8 @@ impl CocoGitto {
             println!("{}", msg);
             Ok(())
         } else {
-            let err: String = itertools::Itertools::intersperse(
-                errors.iter().map(|err| err.to_string()),
-                "\n".to_string(),
-            )
-            .collect();
-            Err(anyhow!("{}", err))
+            let report = CogCheckReport { from, errors };
+            Err(anyhow!("{}", report))
         }
     }
 
@@ -412,7 +415,7 @@ impl CocoGitto {
                 cause_key, comparison
             );
 
-            bail!(Semver {
+            bail!(CocogittoError::Semver {
                 level: "SemVer Error".red().to_string(),
                 cause
             });
