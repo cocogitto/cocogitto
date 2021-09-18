@@ -129,6 +129,7 @@ pub fn init<S: AsRef<Path> + ?Sized>(path: &S) -> Result<()> {
     Ok(())
 }
 
+#[derive(Debug)]
 pub struct CocoGitto {
     repository: Repository,
     changelog_path: PathBuf,

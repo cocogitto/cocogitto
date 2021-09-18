@@ -1,6 +1,7 @@
 use crate::helpers::*;
 use anyhow::Result;
 use assert_cmd::prelude::*;
+use speculoos::prelude::*;
 use std::process::Command;
 
 use indoc::indoc;
@@ -18,7 +19,7 @@ fn auto_bump_from_start_ok() -> Result<()> {
 
         command.assert().success();
 
-        assert!(context.test_dir.join("CHANGELOG.md").exists());
+        assert_that(&context.test_dir.join("CHANGELOG.md")).exists();
         assert_tag("0.1.0")?;
         Ok(())
     })
@@ -41,7 +42,7 @@ fn auto_bump_minor_from_latest_tag() -> Result<()> {
         git_commit("feat: feature 2")?;
 
         command.assert().success();
-        assert!(context.test_dir.join("CHANGELOG.md").exists());
+        assert_that(&context.test_dir.join("CHANGELOG.md")).exists();
         assert_tag("1.1.0")?;
         Ok(())
     })
@@ -64,7 +65,7 @@ fn auto_bump_major_from_latest_tag() -> Result<()> {
         git_commit("feat: feature 2")?;
 
         command.assert().success();
-        assert!(context.test_dir.join("CHANGELOG.md").exists());
+        assert_that(&context.test_dir.join("CHANGELOG.md")).exists();
         assert_tag("2.0.0")?;
         Ok(())
     })
@@ -87,7 +88,7 @@ fn auto_bump_patch_from_latest_tag() -> Result<()> {
         git_commit("fix: fix 2")?;
 
         command.assert().success();
-        assert!(context.test_dir.join("CHANGELOG.md").exists());
+        assert_that(&context.test_dir.join("CHANGELOG.md")).exists();
         assert_tag("1.0.1")?;
         Ok(())
     })
@@ -111,7 +112,7 @@ fn auto_bump_respect_semver_sorting() -> Result<()> {
         git_commit("fix: fix 2")?;
 
         command.assert().success();
-        assert!(context.test_dir.join("CHANGELOG.md").exists());
+        assert_that(&context.test_dir.join("CHANGELOG.md")).exists();
         assert_tag("0.10.1")?;
         Ok(())
     })
@@ -130,7 +131,7 @@ fn minor_bump() -> Result<()> {
         git_commit("feat: feature")?;
 
         command.assert().success();
-        assert!(context.test_dir.join("CHANGELOG.md").exists());
+        assert_that(&context.test_dir.join("CHANGELOG.md")).exists();
         assert_tag("1.1.0")?;
         Ok(())
     })
@@ -149,7 +150,7 @@ fn major_bump() -> Result<()> {
         git_commit("feat: feature")?;
 
         command.assert().success();
-        assert!(context.test_dir.join("CHANGELOG.md").exists());
+        assert_that(&context.test_dir.join("CHANGELOG.md")).exists();
         assert_tag("2.0.0")?;
         Ok(())
     })
@@ -168,7 +169,7 @@ fn patch_bump() -> Result<()> {
         git_commit("feat: feature")?;
 
         command.assert().success();
-        assert!(context.test_dir.join("CHANGELOG.md").exists());
+        assert_that(&context.test_dir.join("CHANGELOG.md")).exists();
         assert_tag("1.0.1")?;
         Ok(())
     })
@@ -187,7 +188,7 @@ fn pre_release_bump() -> Result<()> {
         git_commit("feat: feature")?;
 
         command.assert().success();
-        assert!(context.test_dir.join("CHANGELOG.md").exists());
+        assert_that(&context.test_dir.join("CHANGELOG.md")).exists();
         assert_tag("2.0.0-alpha")?;
         Ok(())
     })
@@ -214,7 +215,7 @@ fn bump_with_hook() -> Result<()> {
             .assert()
             .success();
 
-        assert!(context.test_dir.join("2.0.0").exists());
+        assert_that(&context.test_dir.join("2.0.0")).exists();
         assert_tag("2.0.0")?;
         Ok(())
     })

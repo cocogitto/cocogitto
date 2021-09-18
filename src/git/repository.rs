@@ -14,6 +14,7 @@ use crate::error::CocogittoError::Git;
 use crate::OidOf;
 
 use super::status::Statuses;
+use std::fmt::{Debug, Formatter};
 
 pub(crate) struct Repository(pub(crate) Git2Repository);
 
@@ -275,17 +276,22 @@ impl Repository {
     }
 }
 
+impl Debug for Repository {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "Repository {{ 0: {:?}}}", self.0.path())
+    }
+}
+
 #[cfg(test)]
 mod test {
-    use std::ops::Not;
     use std::process::{Command, Stdio};
 
     use anyhow::Result;
     use tempfile::TempDir;
 
-    use crate::OidOf;
-
     use super::Repository;
+    use crate::OidOf;
+    use speculoos::prelude::*;
 
     #[test]
     fn init_repo() -> Result<()> {
@@ -293,7 +299,7 @@ mod test {
 
         let repo = Repository::init(&tmp.path().join("test_repo"));
 
-        assert!(repo.is_ok());
+        assert_that!(repo).is_ok();
         Ok(())
     }
 
@@ -306,7 +312,7 @@ mod test {
         std::fs::write(&path.join("file"), "changes")?;
         repo.add_all()?;
 
-        assert!(repo.commit("feat: a test commit").is_ok());
+        assert_that!(repo.commit("feat: a test commit")).is_ok();
         Ok(())
     }
 
@@ -317,7 +323,7 @@ mod test {
         let path = tmp.path().join("test_repo");
         let repo = Repository::init(&path)?;
 
-        assert!(repo.commit("feat: a test commit").is_err());
+        assert_that!(repo.commit("feat: a test commit")).is_err();
         Ok(())
     }
 
@@ -329,7 +335,7 @@ mod test {
         let repo = Repository::init(&path)?;
         std::fs::write(&path.join("file"), "changes")?;
 
-        assert!(repo.commit("feat: a test commit").is_err());
+        assert_that!(repo.commit("feat: a test commit")).is_err();
         Ok(())
     }
 
@@ -343,7 +349,7 @@ mod test {
         std::fs::create_dir(dir)?;
         std::env::set_current_dir(dir)?;
 
-        assert_eq!(repo.get_repo_dir(), Some(path.as_path()));
+        assert_that!(repo.get_repo_dir()).is_equal_to(Some(path.as_path()));
         Ok(())
     }
 
@@ -412,7 +418,7 @@ mod test {
 
         let repo = Repository::open(tmp);
 
-        assert!(repo.is_err());
+        assert_that!(repo).is_err();
         Ok(())
     }
 
@@ -425,7 +431,7 @@ mod test {
 
         let statuses = repo.get_statuses()?;
 
-        assert!(statuses.0.is_empty());
+        assert_that!(statuses.0).has_length(0);
         Ok(())
     }
 
@@ -439,7 +445,7 @@ mod test {
 
         let statuses = repo.get_statuses()?;
 
-        assert!(statuses.0.is_empty().not());
+        assert_that!(statuses.0).has_length(1);
         Ok(())
     }
 
@@ -455,8 +461,8 @@ mod test {
 
         let oid = repo.get_head_commit_oid();
 
-        assert!(oid.is_ok());
-        assert_eq!(oid.unwrap(), commit_oid);
+        assert_that!(oid).is_ok().is_equal_to(commit_oid);
+
         Ok(())
     }
 
@@ -469,7 +475,7 @@ mod test {
 
         let oid = repo.get_head_commit_oid();
 
-        assert!(oid.is_err());
+        assert_that!(oid).is_err();
         Ok(())
     }
 
@@ -483,10 +489,10 @@ mod test {
         repo.add_all()?;
         let commit_oid = repo.commit("first commit")?;
 
-        let head = repo.get_head_commit();
+        let head = repo.get_head_commit().map(|head| head.id());
 
-        assert!(head.is_ok());
-        assert_eq!(head.unwrap().id(), commit_oid);
+        assert_that!(head).is_ok().is_equal_to(commit_oid);
+
         Ok(())
     }
 
@@ -501,7 +507,7 @@ mod test {
 
         let head = repo.get_head_commit();
 
-        assert!(head.is_err());
+        assert_that!(head).is_err();
         Ok(())
     }
 
@@ -518,7 +524,7 @@ mod test {
 
         let tag = repo.resolve_lightweight_tag("the_tag");
 
-        assert!(tag.is_ok());
+        assert_that!(tag).is_ok();
         Ok(())
     }
 
@@ -535,7 +541,7 @@ mod test {
 
         let tag = repo.resolve_lightweight_tag("the_taaaag");
 
-        assert!(tag.is_err());
+        assert_that!(tag).is_err();
         Ok(())
     }
 
@@ -557,8 +563,7 @@ mod test {
 
         let tag = repo.get_latest_tag();
 
-        assert!(tag.is_ok());
-        assert_eq!(tag.unwrap(), "0.2.0");
+        assert_that!(tag).is_ok().is_equal_to("0.2.0".to_string());
         Ok(())
     }
 
@@ -574,7 +579,7 @@ mod test {
 
         let tag = repo.get_latest_tag();
 
-        assert!(tag.is_err());
+        assert_that!(tag).is_err();
         Ok(())
     }
 
@@ -591,7 +596,7 @@ mod test {
 
         let tag = repo.get_latest_tag_oid();
 
-        assert!(tag.is_ok());
+        assert_that!(tag).is_ok();
         Ok(())
     }
 
@@ -607,7 +612,7 @@ mod test {
 
         let tag = repo.get_latest_tag_oid();
 
-        assert!(tag.is_err());
+        assert_that!(tag).is_err();
         Ok(())
     }
 
@@ -623,7 +628,7 @@ mod test {
 
         let tag = repo.get_head();
 
-        assert!(tag.is_some());
+        assert_that!(tag).is_some();
         Ok(())
     }
 
@@ -638,7 +643,7 @@ mod test {
 
         let tag = repo.get_head();
 
-        assert!(tag.is_none());
+        assert_that!(tag).is_none();
         Ok(())
     }
 
@@ -664,10 +669,8 @@ mod test {
 
         let commit_range = repo.get_tag_commits("1.0.0")?;
 
-        assert_eq!(
-            commit_range,
-            (OidOf::Other(start), OidOf::Tag("1.0.0".to_string(), end))
-        );
+        assert_that!(commit_range)
+            .is_equal_to((OidOf::Other(start), OidOf::Tag("1.0.0".to_string(), end)));
         Ok(())
     }
 
@@ -683,7 +686,7 @@ mod test {
 
         let shorthand = repo.get_branch_shorthand();
 
-        assert_eq!(shorthand, Some("master".to_string()));
+        assert_that!(shorthand).is_equal_to(Some("master".to_string()));
         Ok(())
     }
 
@@ -698,17 +701,17 @@ mod test {
         repo.commit("Initial commit")?;
 
         let statuses = repo.get_statuses()?.0;
-        assert!(statuses.is_empty());
+        assert_that!(statuses).is_empty();
 
         std::fs::write(&path.join("second_file"), "more changes")?;
         repo.add_all()?;
         let statuses = repo.get_statuses()?.0;
-        assert_eq!(statuses.len(), 1);
+        assert_that!(statuses).has_length(1);
 
         repo.stash_failed_version("1.0.0")?;
 
         let statuses = repo.get_statuses()?.0;
-        assert!(statuses.is_empty());
+        assert_that!(statuses).is_empty();
         Ok(())
     }
 }

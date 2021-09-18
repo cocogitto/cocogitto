@@ -3,8 +3,6 @@ use cocogitto::CocoGitto;
 
 use crate::helpers::*;
 
-use cocogitto::log::filter::CommitFilter;
-use cocogitto::log::filter::CommitFilters;
 use speculoos::prelude::*;
 
 #[test]
@@ -18,7 +16,7 @@ fn open_repo_ok() -> Result<()> {
         let cocogitto = CocoGitto::get();
 
         // Assert
-        assert!(cocogitto.is_ok());
+        assert_that(&cocogitto).is_ok();
         Ok(())
     })
 }
@@ -34,7 +32,7 @@ fn open_repo_err() -> Result<()> {
         let cocogitto = CocoGitto::get();
 
         // Assert
-        assert!(cocogitto.is_err());
+        assert_that(&cocogitto).is_err();
         Ok(())
     })
 }
@@ -53,7 +51,7 @@ fn check_commit_history_ok() -> Result<()> {
         let check = cocogitto.check(false);
 
         // Assert
-        assert!(check.is_ok());
+        assert_that(&check).is_ok();
         Ok(())
     })
 }
@@ -72,7 +70,7 @@ fn check_commit_history_err() -> Result<()> {
         let check = cocogitto.check(false);
 
         // Assert
-        assert!(check.is_err());
+        assert_that(&check).is_err();
         Ok(())
     })
 }
@@ -93,7 +91,7 @@ fn check_commit_ok_from_latest_tag() -> Result<()> {
         let check = cocogitto.check(true);
 
         // Assert
-        assert!(check.is_ok());
+        assert_that(&check).is_ok();
         Ok(())
     })
 }
@@ -107,12 +105,13 @@ fn check_commit_err_from_latest_tag() -> Result<()> {
         git_commit("this one should not be picked")?;
         git_tag("0.1.0")?;
         git_commit("Oh no!")?;
-
-        // Act
         let cocogitto = CocoGitto::get()?;
 
+        // Act
+        let check = cocogitto.check(true);
+
         // Assert
-        assert!(cocogitto.check(true).is_err());
+        assert_that(&check).is_err();
         Ok(())
     })
 }
@@ -130,55 +129,9 @@ fn long_commit_summary_does_not_panic() -> Result<()> {
         git_add()?;
         cocogitto.conventional_commit("feat", None, message, None, None, false)?;
 
-        let result = cocogitto.check(false);
+        let check = cocogitto.check(false);
 
-        assert!(result.is_ok());
-        Ok(())
-    })
-}
-
-#[test]
-fn get_unfiltered_logs() -> Result<()> {
-    run_test_with_context(|_| {
-        // Arrange
-        git_init()?;
-        git_commit("feat: a commit")?;
-        git_commit("test: do you test your code ?")?;
-        git_commit("I am afraid I can't do that Dave")?;
-        let filters = CommitFilters(Vec::with_capacity(0));
-        let cocogitto = CocoGitto::get()?;
-
-        // Act
-        let logs = cocogitto.get_log(filters)?;
-
-        // Assert
-        assert_that(&logs).contains("Commit message : 'I am afraid I can't do that Dave'");
-        assert_that(&logs).contains("Cause : Missing commit type separator `:`");
-
-        Ok(())
-    })
-}
-
-#[test]
-fn get_log_with_no_errors() -> Result<()> {
-    run_test_with_context(|_| {
-        // Arrange
-        git_init()?;
-        git_commit("feat: a commit")?;
-        git_commit("test: do you test your code ?")?;
-        git_commit("I am afraid I can't do that Dave")?;
-
-        let filters = CommitFilters(vec![CommitFilter::NoError]);
-        let cocogitto = CocoGitto::get()?;
-
-        // Act
-        let logs = cocogitto.get_log(filters)?;
-
-        // Assert
-        assert_that(&logs).does_not_contain("Errored commit : ");
-        assert_that(&logs).does_not_contain("Commit message : 'I am afraid I can't do that Dave'");
-        assert_that(&logs).does_not_contain("Missing commit type separator `:`");
-
+        assert_that(&check.is_ok());
         Ok(())
     })
 }
