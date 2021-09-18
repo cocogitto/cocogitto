@@ -1,6 +1,4 @@
 #![cfg(not(tarpaulin_include))]
-use std::process::exit;
-
 use anyhow::{Context, Result};
 use clap::{App, AppSettings, Arg, Shell, SubCommand};
 
@@ -72,13 +70,7 @@ fn main() -> Result<()> {
                     .map(|cogito| cogito.get_committer().unwrap())
                     .ok();
 
-                match commit::verify(author, message) {
-                    Ok(()) => exit(0),
-                    Err(err) => {
-                        eprintln!("{}", err);
-                        exit(1);
-                    }
-                }
+                commit::verify(author, message)?;
             }
 
             CHECK => {
