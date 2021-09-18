@@ -9,8 +9,8 @@ use git2::{
 use itertools::Itertools;
 use semver::Version;
 
-use crate::error::ErrorKind;
-use crate::error::ErrorKind::Git;
+use crate::error::CocogittoError;
+use crate::error::CocogittoError::Git;
 use crate::OidOf;
 
 use super::status::Statuses;
@@ -83,8 +83,8 @@ impl Repository {
         } else {
             let err = self
                 .get_branch_shorthand()
-                .map(|branch| ErrorKind::NothingToCommitWithBranch { branch })
-                .unwrap_or_else(|| ErrorKind::NothingToCommit);
+                .map(|branch| CocogittoError::NothingToCommitWithBranch { branch })
+                .unwrap_or_else(|| CocogittoError::NothingToCommit);
 
             Err(anyhow!(err))
         }
@@ -175,6 +175,10 @@ impl Repository {
                     .map(|oid| OidOf::Tag(tag, oid))
             })
             .map_err(|err| anyhow!("Could not resolve latest tag : {}", err))
+    }
+
+    pub(crate) fn get_first_commit_oidof(&self) -> Result<OidOf> {
+        self.get_first_commit().map(OidOf::Other)
     }
 
     pub(crate) fn get_first_commit(&self) -> Result<Oid> {
