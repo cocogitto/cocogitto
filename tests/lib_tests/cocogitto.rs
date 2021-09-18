@@ -1,10 +1,11 @@
 use anyhow::Result;
 use cocogitto::CocoGitto;
-use helper::*;
 
-pub mod helper;
+use crate::helpers::*;
 
-use helper::run_test_with_context;
+use cocogitto::log::filter::CommitFilter;
+use cocogitto::log::filter::CommitFilters;
+use speculoos::prelude::*;
 
 #[test]
 fn open_repo_ok() -> Result<()> {
@@ -119,19 +120,64 @@ fn check_commit_err_from_latest_tag() -> Result<()> {
 #[test]
 fn long_commit_summary_does_not_panic() -> Result<()> {
     run_test_with_context(|_| {
-        helper::git_init()?;
+        git_init()?;
         let message =
             "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…"
                 .to_string();
 
         let cocogitto = CocoGitto::get()?;
         std::fs::write("file", "Hello")?;
-        helper::git_add()?;
+        git_add()?;
         cocogitto.conventional_commit("feat", None, message, None, None, false)?;
 
         let result = cocogitto.check(false);
 
         assert!(result.is_ok());
+        Ok(())
+    })
+}
+
+#[test]
+fn get_unfiltered_logs() -> Result<()> {
+    run_test_with_context(|_| {
+        // Arrange
+        git_init()?;
+        git_commit("feat: a commit")?;
+        git_commit("test: do you test your code ?")?;
+        git_commit("I am afraid I can't do that Dave")?;
+        let filters = CommitFilters(Vec::with_capacity(0));
+        let cocogitto = CocoGitto::get()?;
+
+        // Act
+        let logs = cocogitto.get_log(filters)?;
+
+        // Assert
+        assert_that(&logs).contains("ERROR - I am afraid I can't do that Dave");
+        assert_that(&logs).contains("cause: Missing commit type separator `:`");
+
+        Ok(())
+    })
+}
+
+#[test]
+fn get_log_with_no_errors() -> Result<()> {
+    run_test_with_context(|_| {
+        // Arrange
+        git_init()?;
+        git_commit("feat: a commit")?;
+        git_commit("test: do you test your code ?")?;
+        git_commit("I am afraid I can't do that Dave")?;
+
+        let filters = CommitFilters(vec![CommitFilter::NoError]);
+        let cocogitto = CocoGitto::get()?;
+
+        // Act
+        let logs = cocogitto.get_log(filters)?;
+
+        // Assert
+        assert_that(&logs).does_not_contain("ERROR - I am afraid I can't do that Dave");
+        assert_that(&logs).does_not_contain("cause: Missing commit type separator `:`");
+
         Ok(())
     })
 }

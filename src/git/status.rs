@@ -7,13 +7,13 @@ use std::fmt::Formatter;
 
 pub(crate) struct Statuses(pub Vec<Status>);
 
-#[derive(Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub(crate) enum Status {
     Untracked(Changes),
     UnCommitted(Changes),
 }
 
-#[derive(Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub(crate) enum Changes {
     New(String),
     Renamed(String),
@@ -107,6 +107,7 @@ mod test {
     use anyhow::Result;
     use git2::Repository;
     use git2::StatusOptions;
+    use speculoos::prelude::*;
     use std::fs;
     use tempfile::TempDir;
 
@@ -126,12 +127,11 @@ mod test {
             .statuses(Some(&mut options))
             .map_err(|err| anyhow!(err))?;
 
-        let statuses = Statuses::from(git_statuses);
+        let statuses = Statuses::from(git_statuses).0;
 
-        assert!(statuses
-            .0
-            .contains(&super::Status::Untracked(Changes::New("file".into()))));
-        assert_eq!(statuses.0.len(), 1);
+        assert_that(&statuses.iter())
+            .contains(&super::Status::Untracked(Changes::New("file".into())));
+        assert_that(&statuses).has_length(1);
         Ok(())
     }
 }

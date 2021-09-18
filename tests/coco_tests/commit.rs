@@ -1,18 +1,17 @@
+use crate::helpers::*;
+
 use anyhow::Result;
 use assert_cmd::prelude::*;
 use std::process::Command;
-
-pub mod helper;
-use helper::run_test_with_context;
 
 #[test]
 #[cfg(not(tarpaulin))]
 fn commit_ok() -> Result<()> {
     run_test_with_context(|context| {
         // Arrange
-        helper::git_init()?;
+        git_init()?;
         std::fs::write(context.test_dir.join("test_file"), "content")?;
-        helper::git_add()?;
+        git_add()?;
 
         // Act
         Command::cargo_bin("coco")?
@@ -33,7 +32,7 @@ fn commit_ok() -> Result<()> {
 fn unstaged_changes_commit_err() -> Result<()> {
     run_test_with_context(|context| {
         // Arrange
-        helper::git_init()?;
+        git_init()?;
         std::fs::write(context.test_dir.join("test_file"), "content")?;
 
         // Act
@@ -55,9 +54,9 @@ fn unstaged_changes_commit_err() -> Result<()> {
 fn untracked_changes_commit_ok() -> Result<()> {
     run_test_with_context(|context| {
         // Arrange
-        helper::git_init()?;
+        git_init()?;
         std::fs::write(context.test_dir.join("staged"), "content")?;
-        helper::git_add()?;
+        git_add()?;
         std::fs::write(context.test_dir.join("untracked"), "content")?;
 
         // Act
@@ -79,7 +78,7 @@ fn untracked_changes_commit_ok() -> Result<()> {
 fn empty_commit_err() -> Result<()> {
     run_test_with_context(|_context| {
         // Arrange
-        helper::git_init()?;
+        git_init()?;
 
         // Act
         Command::cargo_bin("coco")?
