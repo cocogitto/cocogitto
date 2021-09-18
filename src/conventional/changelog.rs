@@ -95,6 +95,7 @@ mod test {
     use chrono::Utc;
     use conventional_commit_parser::commit::{CommitType, ConventionalCommit};
     use git2::Oid;
+    use speculoos::prelude::*;
 
     #[test]
     fn should_generate_changelog() -> Result<()> {
@@ -139,15 +140,14 @@ mod test {
 
         // Assert
         println!("{}", content);
-        assert!(content.contains(
-            "[5375e1](https://github.com/oknozor/cocogitto/commit/5375e15770ddf8821d0c1ad393d315e243014c15) - this is a commit message - coco"
-        ));
-        assert!(content.contains(
+        assert_that(&content)
+            .contains("[5375e1](https://github.com/oknozor/cocogitto/commit/5375e15770ddf8821d0c1ad393d315e243014c15) - this is a commit message - coco");
+        assert_that!(content).contains(
             "[5375e1](https://github.com/oknozor/cocogitto/commit/5375e15770ddf8821d0c1ad393d315e243014c15) - this is an other commit message - cogi"
-        ));
-        assert!(content.contains("## 5375e1..35085f -"));
-        assert!(content.contains("### Features"));
-        assert!(!content.contains("### Tests"));
+        );
+        assert_that!(content).contains("## 5375e1..35085f -");
+        assert_that!(content).contains("### Features");
+        assert_that!(content).does_not_contain("### Tests");
         Ok(())
     }
 
@@ -167,8 +167,8 @@ mod test {
 
         // Assert
         println!("{}", content);
-        assert!(content.contains("## 5375e1..35085f"));
-        assert!(!content.contains("### Features"));
+        assert_that!(content).contains("## 5375e1..35085f");
+        assert_that!(content).does_not_contain("### Features");
         Ok(())
     }
 }

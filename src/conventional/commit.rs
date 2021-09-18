@@ -254,12 +254,12 @@ mod test {
 
         // Assert
         let commit = commit.unwrap();
-        assert_eq!(commit.commit_type, CommitType::Feature);
-        assert_eq!(commit.scope, Some("database".to_owned()));
-        assert_eq!(commit.summary, "add postgresql driver".to_owned());
-        assert!(!commit.is_breaking_change);
-        assert!(commit.body.is_none());
-        assert!(commit.footers.is_empty());
+        assert_that!(commit.commit_type).is_equal_to(CommitType::Feature);
+        assert_that!(commit.scope).is_equal_to(Some("database".to_owned()));
+        assert_that!(commit.summary).is_equal_to("add postgresql driver".to_owned());
+        assert_that!(commit.is_breaking_change).is_false();
+        assert_that!(commit.body).is_none();
+        assert_that!(commit.footers).is_empty();
     }
 
     #[test]
@@ -271,7 +271,7 @@ mod test {
         let result = verify(Some("toml".into()), message);
 
         // Assert
-        assert!(result.is_ok());
+        assert_that!(result).is_ok();
     }
 
     #[test]
@@ -283,7 +283,7 @@ mod test {
         let result = verify(Some("toml".into()), message);
 
         // Assert
-        assert!(result.is_err());
+        assert_that!(result).is_err();
     }
 
     #[test]
@@ -308,7 +308,7 @@ mod test {
         let summary = commit.format_summary();
 
         // Assert
-        assert_that(&summary).is_equal_to("fix(scope): this is the message".to_string());
+        assert_that!(summary).is_equal_to("fix(scope): this is the message".to_string());
     }
 
     #[test]
@@ -333,6 +333,6 @@ mod test {
         let summary = commit.format_summary();
 
         // Assert
-        assert_that(&summary).is_equal_to("fix: this is the message".to_string());
+        assert_that!(summary).is_equal_to("fix: this is the message".to_string());
     }
 }

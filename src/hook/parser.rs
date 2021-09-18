@@ -182,21 +182,19 @@ mod tests {
     use crate::hook::parser::HookExpr;
     use crate::hook::Token;
     use anyhow::Result;
+    use speculoos::prelude::*;
 
     #[test]
     fn scan_exp() {
         let entry = "echo {{version+1major}}";
 
         let (range, expr) = HookExpr::scan_hook_entry(entry).unwrap();
-        assert_eq!(range, 5..23);
+        assert_that!(range).is_equal_to(5..23);
 
-        assert_eq!(
-            expr,
-            HookExpr {
-                src: "version+1major".to_string(),
-                tokens: VecDeque::new(),
-            }
-        )
+        assert_that!(expr).is_equal_to(HookExpr {
+            src: "version+1major".to_string(),
+            tokens: VecDeque::new(),
+        })
     }
 
     #[test]
@@ -205,8 +203,9 @@ mod tests {
 
         let (range, mut expr) = HookExpr::scan_hook_entry(entry).unwrap();
         expr.tokenize();
-        assert_eq!(range, 5..22);
-        assert_eq!(expr.tokens, [Token::Version, Token::Add, Token::Minor])
+        assert_that!(range).is_equal_to(5..22);
+        assert_that!(expr.tokens)
+            .is_equal_to(&vec![Token::Version, Token::Add, Token::Minor].into())
     }
 
     #[test]
@@ -215,8 +214,8 @@ mod tests {
 
         let (range, mut expr) = HookExpr::scan_hook_entry(entry).unwrap();
         expr.tokenize();
-        assert_eq!(range, 5..15);
-        assert_eq!(expr.tokens, [Token::LatestVersion])
+        assert_that!(range).is_equal_to(5..15);
+        assert_that!(expr.tokens).is_equal_to(&vec![Token::LatestVersion].into())
     }
 
     #[test]
@@ -226,11 +225,9 @@ mod tests {
         let (range, mut expr) = HookExpr::scan_hook_entry(entry).unwrap();
         expr.tokenize();
 
-        assert_eq!(range, 5..23);
-        assert_eq!(
-            expr.tokens,
-            [Token::Version, Token::Add, Token::Amount(2), Token::Major]
-        )
+        assert_that!(range).is_equal_to(5..23);
+        assert_that!(expr.tokens)
+            .is_equal_to(&vec![Token::Version, Token::Add, Token::Amount(2), Token::Major].into())
     }
 
     #[test]
@@ -240,16 +237,16 @@ mod tests {
         let (range, mut expr) = HookExpr::scan_hook_entry(entry).unwrap();
         expr.tokenize();
 
-        assert_eq!(range, 5..27);
-        assert_eq!(
-            expr.tokens,
-            [
+        assert_that!(range).is_equal_to(5..27);
+        assert_that!(expr.tokens).is_equal_to(
+            &vec![
                 Token::Version,
                 Token::Add,
                 Token::Amount(33),
                 Token::Patch,
-                Token::AlphaNumeric("-rc".to_string())
+                Token::AlphaNumeric("-rc".to_string()),
             ]
+            .into(),
         )
     }
 
@@ -267,20 +264,22 @@ mod tests {
         };
 
         let result = hookexpr.calculate_version(None, Version::new(1, 0, 0));
-        assert_eq!(result.unwrap(), "1.0.33-rc");
+        assert_that!(result)
+            .is_ok()
+            .is_equal_to("1.0.33-rc".to_string());
     }
 
     #[test]
     fn increment_version() -> Result<()> {
         let version = Version::parse("0.0.0")?;
         let version = HookExpr::increment_major(version, 1);
-        assert_eq!(version.major, 1);
+        assert_that!(version.major).is_equal_to(1);
 
         let version = HookExpr::increment_minor(version, 2);
-        assert_eq!(version.minor, 2);
+        assert_that!(version.minor).is_equal_to(2);
 
         let version = HookExpr::increment_patch(version, 5);
-        assert_eq!(version.patch, 5);
+        assert_that!(version.patch).is_equal_to(5);
 
         Ok(())
     }
