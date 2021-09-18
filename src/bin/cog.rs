@@ -1,3 +1,4 @@
+#![cfg(not(tarpaulin_include))]
 use std::process::exit;
 
 use anyhow::{Context, Result};

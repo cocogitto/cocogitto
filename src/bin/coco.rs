@@ -1,3 +1,4 @@
+#![cfg(not(tarpaulin_include))]
 use anyhow::Result;
 use clap::{App, AppSettings, Arg, Shell, SubCommand};
 use cocogitto::CocoGitto;

@@ -1,3 +1,4 @@
+#![cfg(not(tarpaulin))]
 mod bump;
 mod changelog;
 mod check;

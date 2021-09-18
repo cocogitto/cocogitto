@@ -7,7 +7,6 @@ use std::process::Command;
 use indoc::indoc;
 
 #[test]
-#[cfg(not(tarpaulin))]
 fn auto_bump_from_start_ok() -> Result<()> {
     run_test_with_context(|context| {
         let mut command = Command::cargo_bin("cog")?;
@@ -26,7 +25,6 @@ fn auto_bump_from_start_ok() -> Result<()> {
 }
 
 #[test]
-#[cfg(not(tarpaulin))]
 fn auto_bump_minor_from_latest_tag() -> Result<()> {
     run_test_with_context(|context| {
         let mut command = Command::cargo_bin("cog")?;
@@ -49,7 +47,6 @@ fn auto_bump_minor_from_latest_tag() -> Result<()> {
 }
 
 #[test]
-#[cfg(not(tarpaulin))]
 fn auto_bump_major_from_latest_tag() -> Result<()> {
     run_test_with_context(|context| {
         let mut command = Command::cargo_bin("cog")?;
@@ -72,7 +69,6 @@ fn auto_bump_major_from_latest_tag() -> Result<()> {
 }
 
 #[test]
-#[cfg(not(tarpaulin))]
 fn auto_bump_patch_from_latest_tag() -> Result<()> {
     run_test_with_context(|context| {
         let mut command = Command::cargo_bin("cog")?;
@@ -95,7 +91,6 @@ fn auto_bump_patch_from_latest_tag() -> Result<()> {
 }
 
 #[test]
-#[cfg(not(tarpaulin))]
 fn auto_bump_respect_semver_sorting() -> Result<()> {
     run_test_with_context(|context| {
         let mut command = Command::cargo_bin("cog")?;
@@ -119,7 +114,6 @@ fn auto_bump_respect_semver_sorting() -> Result<()> {
 }
 
 #[test]
-#[cfg(not(tarpaulin))]
 fn minor_bump() -> Result<()> {
     run_test_with_context(|context| {
         let mut command = Command::cargo_bin("cog")?;
@@ -138,7 +132,6 @@ fn minor_bump() -> Result<()> {
 }
 
 #[test]
-#[cfg(not(tarpaulin))]
 fn major_bump() -> Result<()> {
     run_test_with_context(|context| {
         let mut command = Command::cargo_bin("cog")?;
@@ -157,7 +150,6 @@ fn major_bump() -> Result<()> {
 }
 
 #[test]
-#[cfg(not(tarpaulin))]
 fn patch_bump() -> Result<()> {
     run_test_with_context(|context| {
         let mut command = Command::cargo_bin("cog")?;
@@ -176,7 +168,6 @@ fn patch_bump() -> Result<()> {
 }
 
 #[test]
-#[cfg(not(tarpaulin))]
 fn pre_release_bump() -> Result<()> {
     run_test_with_context(|context| {
         let mut command = Command::cargo_bin("cog")?;
@@ -195,7 +186,6 @@ fn pre_release_bump() -> Result<()> {
 }
 
 #[test]
-#[cfg(not(tarpaulin))]
 #[cfg(target_os = "linux")]
 fn bump_with_hook() -> Result<()> {
     run_test_with_context(|context| {
@@ -222,7 +212,6 @@ fn bump_with_hook() -> Result<()> {
 }
 
 #[test]
-#[cfg(not(tarpaulin))]
 #[cfg(target_os = "linux")]
 fn bump_with_profile_hook() -> Result<()> {
     run_test_with_context(|_context| {
