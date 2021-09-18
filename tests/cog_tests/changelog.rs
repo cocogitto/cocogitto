@@ -4,7 +4,6 @@ use assert_cmd::Command;
 use predicates::prelude::{predicate, PredicateBooleanExt};
 
 #[test]
-#[cfg(not(tarpaulin))]
 fn get_changelog_from_untagged_repo() -> Result<()> {
     run_test_with_context(|_| {
         // Arrange
@@ -26,7 +25,6 @@ fn get_changelog_from_untagged_repo() -> Result<()> {
 }
 
 #[test]
-#[cfg(not(tarpaulin))]
 fn get_changelog_from_tagged_repo() -> Result<()> {
     run_test_with_context(|_| {
         // Arrange
@@ -49,7 +47,6 @@ fn get_changelog_from_tagged_repo() -> Result<()> {
 }
 
 #[test]
-#[cfg(not(tarpaulin))]
 fn get_changelog_from_at_tag() -> Result<()> {
     run_test_with_context(|_| {
         // Arrange

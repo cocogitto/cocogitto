@@ -9,7 +9,6 @@ use speculoos::prelude::*;
 use std::path::PathBuf;
 
 #[test]
-#[cfg(not(tarpaulin))]
 fn init_empty_repo_in_target_dir() -> Result<()> {
     // Arrange
     run_test_with_context(|context| {
@@ -28,7 +27,6 @@ fn init_empty_repo_in_target_dir() -> Result<()> {
 }
 
 #[test]
-#[cfg(not(tarpaulin))]
 fn init_existing_repo() -> Result<()> {
     run_test_with_context(|context| {
         // Arrange
@@ -48,7 +46,6 @@ fn init_existing_repo() -> Result<()> {
 }
 
 #[test]
-#[cfg(not(tarpaulin))]
 fn fail_if_config_exist() -> Result<()> {
     run_test_with_context(|context| {
         // Arrange
@@ -77,7 +74,6 @@ fn fail_if_config_exist() -> Result<()> {
 }
 
 #[test]
-#[cfg(not(tarpaulin))]
 fn init_current_dir_with_no_arg() -> Result<()> {
     run_test_with_context(|context| {
         // Arrange
