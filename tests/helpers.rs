@@ -159,6 +159,26 @@ pub fn assert_tag(tag: &str) -> Result<()> {
     Ok(())
 }
 
+pub fn git_log_head() -> Result<String> {
+    let out = Command::new("git")
+        .arg("log")
+        .arg("-1")
+        .arg("--pretty=%B")
+        .output()?;
+
+    let head = String::from_utf8_lossy(&out.stdout).to_string();
+
+    Ok(head)
+}
+
+pub fn git_status() -> Result<String> {
+    let out = Command::new("git").arg("status").output()?;
+
+    let head = String::from_utf8_lossy(&out.stdout).to_string();
+
+    Ok(head)
+}
+
 pub fn get_git_user_name() -> Result<String> {
     let username = Command::new("git")
         .arg("config")

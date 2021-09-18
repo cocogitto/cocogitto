@@ -117,7 +117,7 @@ pub fn init<S: AsRef<Path> + ?Sized>(path: &S) -> Result<()> {
         .map_err(|err| anyhow!("Could not write file `{:?}` : {}", &settings_path, err))?;
     }
 
-    // TODO : add coco only"
+    // TODO: add cog.toml only
     repository
         .add_all()
         .map_err(|err| anyhow!("Could not add file to repository index : {}", err))?;
