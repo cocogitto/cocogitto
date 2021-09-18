@@ -5,7 +5,6 @@ use assert_cmd::Command;
 use predicates::prelude::predicate;
 
 #[test]
-#[cfg(not(tarpaulin))]
 fn cog_check_ok() -> Result<()> {
     run_test_with_context(|_| {
         // Arrange
@@ -26,7 +25,6 @@ fn cog_check_ok() -> Result<()> {
 }
 
 #[test]
-#[cfg(not(tarpaulin))]
 fn cog_check_failure() -> Result<()> {
     run_test_with_context(|_| {
         // Arrange
@@ -47,7 +45,6 @@ fn cog_check_failure() -> Result<()> {
 }
 
 #[test]
-#[cfg(not(tarpaulin))]
 fn cog_check_from_latest_tag_ok() -> Result<()> {
     run_test_with_context(|_| {
         // Arrange
@@ -71,7 +68,6 @@ fn cog_check_from_latest_tag_ok() -> Result<()> {
 }
 
 #[test]
-#[cfg(not(tarpaulin))]
 fn cog_check_from_latest_tag_failure() -> Result<()> {
     run_test_with_context(|_| {
         // Arrange
