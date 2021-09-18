@@ -1,6 +1,8 @@
 #![cfg(not(tarpaulin_include))]
 use anyhow::Result;
 use cocogitto::CONFIG_PATH;
+use speculoos::assert_that;
+use speculoos::iter::ContainingIntoIterAssertions;
 use std::panic;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
@@ -155,7 +157,7 @@ pub fn assert_tag(tag: &str) -> Result<()> {
 
     let out = String::from_utf8(out)?;
     let tags: Vec<&str> = out.split('\n').collect();
-    assert!(tags.contains(&tag));
+    assert_that(&tags).contains(&tag);
     Ok(())
 }
 
