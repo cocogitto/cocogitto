@@ -6,7 +6,7 @@ edition = "2018"
 readme = "README.md"
 license-file = "LICENSE"
 repository = "https://github.com/oknozor/cocogitto"
-description="""
+description = """
 Cocogitto is a set of cli tools for the conventional commit
 and semver specifications.
 """
@@ -22,7 +22,7 @@ git2 = { version = "^0", default-features = false, features = [] }
 anyhow = "^1"
 colored = "^2"
 chrono = "^0"
-config = "^0"
+config = { version = "^0", default-features = false, features = ["toml"] }
 itertools = "^0"
 serde_derive = "^1"
 serde = "^1"
