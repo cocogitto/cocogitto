@@ -5,6 +5,7 @@ use anyhow::Result;
 use config::{Config, File};
 use conventional_commit_parser::commit::CommitType;
 use std::collections::HashMap;
+use std::fmt::Debug;
 use std::path::PathBuf;
 
 type CommitsMetadataSettings = HashMap<String, CommitConfig>;
@@ -18,8 +19,12 @@ pub(crate) enum HookType {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub(crate) struct Settings {
+    /// Relative path to the repository changelog
+    /// Default: CHANGELOG.md
     pub changelog_path: Option<PathBuf>,
+    ///
     pub github: Option<String>,
+    pub repository: Option<RepositorySettings>,
     #[serde(default)]
     pub pre_bump_hooks: Vec<String>,
     #[serde(default)]
@@ -30,6 +35,53 @@ pub(crate) struct Settings {
     pub commit_types: CommitsMetadataSettings,
     #[serde(default)]
     pub bump_profiles: HashMap<String, BumpProfile>,
+}
+
+/// This is user to set how markdown changelog links will be generated. You need to Set this only
+/// if you repo is not hosted on github.
+#[derive(Debug, Deserialize, Serialize)]
+pub struct RepositorySettings {
+    /// The base url of the web platform hosting the repository (ex : `https://gitlab.com`)
+    pub host: String,
+    /// Name of the repository owner (ex : "DeveloperC")
+    pub owner: String,
+    /// Name of the repository on the target platform , (ex: `conventional_commits_next_version`)
+    pub repository: String,
+    /// A URL template representing a specific commit at a hash.
+    /// Default : "{{host}}/{{owner}}/{{repository}}/commit/{{hash}}"
+    pub commit_url_format: String,
+    /// `{{host}}/{{owner}}/{{repository}}/compare/{{previous_tag}}...{{current_tag}}`
+    pub compare_url_format: String,
+    /// A URL representing the issue format (allowing a different URL format to be swapped in for Gitlab, Bitbucket, etc).
+    /// Default:  `{{host}}/{{owner}}/{{repository}}/issues/{{id}}`
+    pub issue_url_format: String,
+    /// A URL representing the a user's profile URL on GitHub, Gitlab, etc. This URL is used for substituting @bcoe with https://github.com/bcoe in commit messages.
+    /// Default : `{{host}}/{{user}}`
+    pub user_url_format: String,
+    /// A string to be used to format the auto-generated release commit message.
+    /// Default : `chore(version): {{version}}`
+    pub release_commit_message_format: String,
+    /// An array of prefixes used to detect references to issues
+    /// Default: "#"
+    pub issue_prefix: Vec<String>,
+}
+
+impl Default for RepositorySettings {
+    fn default() -> Self {
+        RepositorySettings {
+            host: "".to_string(),
+            owner: "".to_string(),
+            repository: "".to_string(),
+            commit_url_format: "{{host}}/{{owner}}/{{repository}}/commit/{{hash}}".to_string(),
+            compare_url_format:
+                "{{host}}/{{owner}}/{{repository}}/compare/{{previous_tag}}...{{current_tag}}"
+                    .to_string(),
+            issue_url_format: "{{host}}/{{owner}}/{{repository}}/issues/{{id}}".to_string(),
+            user_url_format: "{{host}}/{{user}".to_string(),
+            release_commit_message_format: "chore(version): {{version}}".to_string(),
+            issue_prefix: vec![],
+        }
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -43,6 +95,7 @@ impl Default for Settings {
         Settings {
             changelog_path: Some(PathBuf::from("CHANGELOG.md")),
             github: Default::default(),
+            repository: None,
             pre_bump_hooks: Default::default(),
             post_bump_hooks: Default::default(),
             authors: Default::default(),
