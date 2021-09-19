@@ -11,7 +11,11 @@ Cocogitto is a set of cli tools for the conventional commit
 and semver specifications.
 """
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[profile.release]
+opt-level = 2
+lto = "fat"
+codegen-units = 1
+panic = "abort"
 
 [dependencies]
 git2 = { version = "^0", default-features = false, features = [] }
