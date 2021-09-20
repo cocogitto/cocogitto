@@ -4,6 +4,7 @@ use cocogitto::CocoGitto;
 use speculoos::prelude::*;
 
 use crate::helpers::*;
+use itertools::Itertools;
 
 #[test]
 fn get_unfiltered_logs() -> Result<()> {
@@ -20,8 +21,8 @@ fn get_unfiltered_logs() -> Result<()> {
         let logs = cocogitto.get_log(filters)?;
 
         // Assert
-        assert_that(&logs).contains("Commit message : 'I am afraid I can't do that Dave'");
-        assert_that(&logs).contains("Cause : Missing commit type separator `:`");
+        assert_that(&logs).contains("I am afraid I can't do that Dave");
+        assert_that(&logs).contains("Missing commit type separator `:`");
 
         Ok(())
     })
