@@ -23,6 +23,7 @@ anyhow = "^1"
 colored = "^2"
 chrono = "^0"
 config = { version = "^0", default-features = false, features = ["toml"] }
+edit = "^0"
 itertools = "^0"
 serde_derive = "^1"
 serde = "^1"
