@@ -4,7 +4,6 @@ use cocogitto::CocoGitto;
 use speculoos::prelude::*;
 
 use crate::helpers::*;
-use itertools::Itertools;
 
 #[test]
 fn get_unfiltered_logs() -> Result<()> {
