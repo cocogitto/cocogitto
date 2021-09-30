@@ -140,7 +140,7 @@ impl HookExpr {
                     let output = [version.to_string(), string].join("");
                     return Ok(output);
                 }
-                _ => return Err(anyhow!("Unexpected token in hook expression : {:?}", token)),
+                _ => return Err(anyhow!("Unexpected token in hook expression:{:?}", token)),
             };
         }
 
@@ -167,7 +167,7 @@ impl HookExpr {
                 Token::Major => Ok(HookExpr::increment_major(version, amt)),
                 Token::Minor => Ok(HookExpr::increment_minor(version, amt)),
                 Token::Patch => Ok(HookExpr::increment_patch(version, amt)),
-                _ => Err(anyhow!("Unexpected token in hook expression : {:?}", token)),
+                _ => Err(anyhow!("Unexpected token in hook expression:{:?}", token)),
             },
         }
     }

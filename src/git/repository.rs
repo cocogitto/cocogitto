@@ -115,7 +115,7 @@ impl Repository {
             Ok(head) => head
                 .peel_to_commit()
                 .map_err(|err| anyhow!("Could not peel head to commit {}", err)),
-            Err(err) => Err(anyhow!("Repo as not HEAD : {}", err)),
+            Err(err) => Err(anyhow!("Repo as not HEAD:{}", err)),
         }
     }
 
@@ -123,7 +123,7 @@ impl Repository {
         self.0
             .resolve_reference_from_short_name(tag)
             .map(|reference| reference.target().unwrap())
-            .map_err(|err| anyhow!("Cannot resolve tag {} : {}", tag, err.message()))
+            .map_err(|err| anyhow!("Cannot resolve tag {}:{}", tag, err.message()))
     }
 
     pub(crate) fn get_latest_tag(&self) -> Result<String> {
@@ -166,7 +166,7 @@ impl Repository {
     pub(crate) fn get_latest_tag_oid(&self) -> Result<Oid> {
         self.get_latest_tag()
             .and_then(|tag| self.resolve_lightweight_tag(&tag))
-            .map_err(|err| anyhow!("Could not resolve latest tag : {}", err))
+            .map_err(|err| anyhow!("Could not resolve latest tag:{}", err))
     }
 
     pub(crate) fn get_latest_tag_oidof(&self) -> Result<OidOf> {
@@ -175,7 +175,7 @@ impl Repository {
                 self.resolve_lightweight_tag(&tag)
                     .map(|oid| OidOf::Tag(tag, oid))
             })
-            .map_err(|err| anyhow!("Could not resolve latest tag : {}", err))
+            .map_err(|err| anyhow!("Could not resolve latest tag:{}", err))
     }
 
     pub(crate) fn get_first_commit_oidof(&self) -> Result<OidOf> {
