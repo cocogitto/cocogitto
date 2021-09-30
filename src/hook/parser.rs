@@ -93,7 +93,7 @@ impl HookExpr {
     fn increment_major(version: Version, amt: u32) -> Version {
         let mut version = version;
         for _ in 0..amt {
-            version.increment_major()
+            version.major += 1
         }
 
         version
@@ -102,7 +102,7 @@ impl HookExpr {
     fn increment_patch(version: Version, amt: u32) -> Version {
         let mut version = version;
         for _ in 0..amt {
-            version.increment_patch()
+            version.patch += 1
         }
 
         version
@@ -111,7 +111,7 @@ impl HookExpr {
     fn increment_minor(version: Version, amt: u32) -> Version {
         let mut version = version;
         for _ in 0..amt {
-            version.increment_minor()
+            version.minor += 1
         }
 
         version
