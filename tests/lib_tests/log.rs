@@ -43,8 +43,8 @@ fn get_log_with_no_errors() -> Result<()> {
         let logs = cocogitto.get_log(filters)?;
 
         // Assert
-        assert_that(&logs).does_not_contain("Errored commit : ");
-        assert_that(&logs).does_not_contain("Commit message : 'I am afraid I can't do that Dave'");
+        assert_that(&logs).does_not_contain("Errored commit:");
+        assert_that(&logs).does_not_contain("Commit message:'I am afraid I can't do that Dave'");
         assert_that(&logs).does_not_contain("Missing commit type separator `:`");
 
         Ok(())
