@@ -4,7 +4,7 @@ use anyhow::Result;
 use colored::*;
 use conventional_commit_parser::commit::CommitType;
 use git2::Commit as Git2Commit;
-use semver::{Identifier, Version};
+use semver::Version;
 
 pub enum VersionIncrement {
     Major,
@@ -23,17 +23,17 @@ impl VersionIncrement {
             VersionIncrement::Auto => self.get_auto_version(current_version),
             VersionIncrement::Major => {
                 let mut next = current_version.clone();
-                next.increment_major();
+                next.major += 1;
                 Ok(next)
             }
             VersionIncrement::Patch => {
                 let mut next = current_version.clone();
-                next.increment_patch();
+                next.patch += 1;
                 Ok(next)
             }
             VersionIncrement::Minor => {
                 let mut next = current_version.clone();
-                next.increment_minor();
+                next.minor += 1;
                 Ok(next)
             }
         }
@@ -87,11 +87,11 @@ impl VersionIncrement {
 
         let mut next_version = current_version.clone();
         if is_major_bump() {
-            next_version.increment_major();
+            next_version.major += 1;
         } else if is_minor_bump() {
-            next_version.increment_minor();
+            next_version.minor += 1;
         } else if is_patch_bump() {
-            next_version.increment_patch();
+            next_version.patch += 1;
         } else {
             bail!("No commit found to bump current version");
         }
@@ -134,38 +134,14 @@ impl VersionIncrement {
     }
 }
 
-pub fn parse_pre_release(string: &str) -> Result<Vec<Identifier>> {
-    ensure!(
-        string
-            .chars()
-            .all(|c| c.is_ascii_alphanumeric() || ['.', '-'].contains(&c)),
-        "Pre-release string must be a dot-separated list of identifiers comprised of ASCII alphanumerics and hyphens [0-9A-Za-z-]"
-    );
-
-    ensure!(
-        !string.starts_with('.') && !string.contains("..") && !string.ends_with('.'),
-        "Dot-separated identifiers in the pre-release string must not be empty"
-    );
-
-    let idents = string
-        .split('.')
-        .map(|s| match s.parse::<u64>() {
-            Ok(n) => Identifier::Numeric(n),
-            Err(_) => Identifier::AlphaNumeric(s.to_string()),
-        })
-        .collect();
-
-    Ok(idents)
-}
-
 #[cfg(test)]
 mod test {
     use crate::conventional::commit::Commit;
-    use crate::conventional::version::{parse_pre_release, VersionIncrement};
+    use crate::conventional::version::VersionIncrement;
     use anyhow::Result;
     use chrono::Utc;
     use conventional_commit_parser::commit::{CommitType, ConventionalCommit};
-    use semver::{Identifier, Version};
+    use semver::Version;
     use speculoos::prelude::*;
 
     // Auto version tests resides in test/ dir since it rely on git log
@@ -189,17 +165,6 @@ mod test {
     fn patch_bump() -> Result<()> {
         let version = VersionIncrement::Patch.bump(&Version::new(1, 0, 0))?;
         assert_that!(version).is_equal_to(Version::new(1, 0, 1));
-        Ok(())
-    }
-
-    #[test]
-    fn parse_pre_release_valid() -> Result<()> {
-        let idents = parse_pre_release("alpha.0-dev.1")?;
-        assert_that!(idents).is_equal_to(&vec![
-            Identifier::AlphaNumeric("alpha".into()),
-            Identifier::AlphaNumeric("0-dev".into()),
-            Identifier::Numeric(1),
-        ]);
         Ok(())
     }
 
@@ -345,22 +310,5 @@ mod test {
         assert_that!(version)
             .is_ok()
             .is_equal_to(Version::new(1, 1, 0))
-    }
-
-    #[test]
-    fn parse_pre_release_non_ascii() {
-        assert_that!(parse_pre_release("РАСТ")).is_err();
-    }
-
-    #[test]
-    fn parse_pre_release_illegal_ascii() {
-        assert_that!(parse_pre_release("alpha$5")).is_err();
-    }
-
-    #[test]
-    fn parse_pre_release_empty_ident() {
-        assert_that!(parse_pre_release(".alpha.5")).is_err();
-        assert_that!(parse_pre_release("alpha..5")).is_err();
-        assert_that!(parse_pre_release("alpha.5.")).is_err();
     }
 }
