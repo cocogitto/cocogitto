@@ -23,7 +23,7 @@ use colored::*;
 use conventional::changelog::{Changelog, ChangelogWriter};
 use conventional::commit::Commit;
 use conventional::commit::CommitConfig;
-use conventional::version::{parse_pre_release, VersionIncrement};
+use conventional::version::VersionIncrement;
 use conventional_commit_parser::commit::{CommitType, ConventionalCommit};
 use conventional_commit_parser::parse_footers;
 use git::repository::Repository;
@@ -31,7 +31,7 @@ use git2::{Oid, RebaseOptions};
 use hook::Hook;
 use itertools::Itertools;
 use log::filter::CommitFilters;
-use semver::Version;
+use semver::{Prerelease, Version};
 use settings::AuthorSetting;
 use std::collections::HashMap;
 use std::fmt::Display;
@@ -434,7 +434,7 @@ impl CocoGitto {
         };
 
         if let Some(pre_release) = pre_release {
-            next_version.pre = parse_pre_release(pre_release)?;
+            next_version.pre = Prerelease::new(pre_release)?;
         }
 
         let version_str = next_version.to_string();
