@@ -70,7 +70,7 @@ impl Settings {
                     let mut s = Config::new();
                     s.merge(File::from(settings_path))?;
                     s.try_into()
-                        .map_err(|err| anyhow!("Config format error : {}", err))
+                        .map_err(|err| anyhow!("Config format error:{}", err))
                 } else {
                     Ok(Settings::default())
                 }

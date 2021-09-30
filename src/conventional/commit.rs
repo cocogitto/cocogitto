@@ -42,7 +42,7 @@ impl Commit {
         let git2_message = message.unwrap().to_owned();
         let author = commit.author().name().unwrap_or("").to_string();
 
-        // FIXME : Why suddenly commit message start and finish with '\n'
+        // FIXME:Why suddenly commit message start and finish with '\n'
         let message = git2_message.trim_end().trim_start();
         let conventional_commit = conventional_commit_parser::parse(message);
 
