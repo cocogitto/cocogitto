@@ -123,15 +123,15 @@ pub fn init<S: AsRef<Path> + ?Sized>(path: &S) -> Result<()> {
         std::fs::write(
             &settings_path,
             toml::to_string(&settings)
-                .map_err(|err| anyhow!("Failed to serialize {} : {}", CONFIG_PATH, err))?,
+                .map_err(|err| anyhow!("Failed to serialize {}:{}", CONFIG_PATH, err))?,
         )
-        .map_err(|err| anyhow!("Could not write file `{:?}` : {}", &settings_path, err))?;
+        .map_err(|err| anyhow!("Could not write file `{:?}`:{}", &settings_path, err))?;
     }
 
     // TODO: add cog.toml only
     repository
         .add_all()
-        .map_err(|err| anyhow!("Could not add file to repository index : {}", err))?;
+        .map_err(|err| anyhow!("Could not add file to repository index:{}", err))?;
 
     if is_init_commit {
         repository.commit("chore: initial commit")?;
@@ -223,7 +223,7 @@ impl CocoGitto {
                     let oid = rebase_operation.id();
                     let original_commit = self.repository.0.find_commit(oid)?;
                     if errored_commits.contains(&oid) {
-                        println!("Found errored commits : {}", &oid.to_string()[0..7]);
+                        println!("Found errored commits:{}", &oid.to_string()[0..7]);
                         let file_path = dir.path().join(&commit.id().to_string());
                         let mut file = File::create(&file_path)?;
 
@@ -254,7 +254,7 @@ impl CocoGitto {
                         rebase.commit(None, &original_commit.committer(), Some(&new_message))?;
                         match verify(self.repository.get_author().ok(), &new_message) {
                             Ok(_) => println!(
-                                "Changed commit message to : \"{}\"",
+                                "Changed commit message to:\"{}\"",
                                 &new_message.trim_end()
                             ),
                             Err(err) => eprintln!(
@@ -417,7 +417,7 @@ impl CocoGitto {
 
         let mut next_version = increment
             .bump(&current_version)
-            .map_err(|err| anyhow!("Cannot bump version : {}", err))?;
+            .map_err(|err| anyhow!("Cannot bump version:{}", err))?;
 
         if next_version.le(&current_version) || next_version.eq(&current_version) {
             let comparison = format!("{} <= {}", current_version, next_version).red();
@@ -458,7 +458,7 @@ impl CocoGitto {
 
         writer
             .write()
-            .map_err(|err| anyhow!("Unable to write CHANGELOG.md : {}", err))?;
+            .map_err(|err| anyhow!("Unable to write CHANGELOG.md:{}", err))?;
 
         let hook_result = self.run_hooks(HookType::PreBump, &version_str, hooks_config);
         self.repository.add_all()?;
@@ -486,7 +486,7 @@ impl CocoGitto {
         self.run_hooks(HookType::PostBump, &version_str, hooks_config)?;
 
         let bump = format!("{} -> {}", current_version, next_version).green();
-        println!("Bumped version : {}", bump);
+        println!("Bumped version:{}", bump);
 
         Ok(())
     }
@@ -505,7 +505,7 @@ impl CocoGitto {
             .0
             .find_commit(to)?
             .parent_id(0)
-            .expect("Unexpected error : Unable to get parent commit")
+            .expect("Unexpected error:Unable to get parent commit")
             .to_string();
         let mut changelog = self.get_changelog(
             Some(from.as_str()),
@@ -516,8 +516,8 @@ impl CocoGitto {
     }
 
     /// ## Get a changelog between two oids
-    /// - `from` default value : latest tag or else first commit
-    /// - `to` default value : `HEAD` or else first commit
+    /// - `from` default value:latest tag or else first commit
+    /// - `to` default value:`HEAD` or else first commit
     pub(crate) fn get_changelog(
         &self,
         from: Option<&str>,
@@ -534,7 +534,7 @@ impl CocoGitto {
         for commit in self
             .repository
             .get_commit_range(from_oid, to_oid)
-            .map_err(|err| anyhow!("Could not get commit range {}...{} : {}", from, to, err))?
+            .map_err(|err| anyhow!("Could not get commit range {}...{}:{}", from, to, err))?
         {
             // We skip the origin commit (ex: from 0.1.0 to 1.0.0)
             if commit.id() == from_oid {
@@ -568,7 +568,7 @@ impl CocoGitto {
         })
     }
 
-    // TODO : revparse
+    // TODO:revparse
     fn resolve_to_arg(&self, to: Option<&str>) -> Result<OidOf> {
         if let Some(to) = to {
             self.get_raw_oid_or_tag_oid(to)
@@ -580,11 +580,11 @@ impl CocoGitto {
         }
     }
 
-    // TODO : revparse
+    // TODO:revparse
     fn resolve_from_arg(&self, from: Option<&str>) -> Result<OidOf> {
         if let Some(from) = from {
             self.get_raw_oid_or_tag_oid(from)
-                .map_err(|err| anyhow!("Could not resolve from arg {} : {}", from, err))
+                .map_err(|err| anyhow!("Could not resolve from arg {}:{}", from, err))
         } else {
             self.repository
                 .get_latest_tag_oidof()
@@ -597,11 +597,11 @@ impl CocoGitto {
             self.repository
                 .resolve_lightweight_tag(input)
                 .map(|oid| OidOf::Tag(input.to_owned(), oid))
-                .map_err(|err| anyhow!("tag {} not found : {} ", input, err))
+                .map_err(|err| anyhow!("tag {} not found:{} ", input, err))
         } else {
             Oid::from_str(input)
                 .map(OidOf::Other)
-                .map_err(|err| anyhow!("`{}` is not a valid oid : {}", input, err))
+                .map_err(|err| anyhow!("`{}` is not a valid oid:{}", input, err))
         }
     }
 

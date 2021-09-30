@@ -40,7 +40,7 @@ impl Display for CocogittoError {
                 author,
                 cause,
             } => {
-                let error_header = "Errored commit : ".bold().red();
+                let error_header = "Errored commit:".bold().red();
                 let author = format!("<{}>", author).blue();
                 writeln!(
                     f,
@@ -48,9 +48,9 @@ impl Display for CocogittoError {
                     header = error_header,
                     oid = oid,
                     author = author,
-                    message_title = "Commit message : ".yellow().bold(),
+                    message_title = "Commit message:".yellow().bold(),
                     summary = summary.italic(),
-                    cause_title = "Cause : ".yellow().bold(),
+                    cause_title = "Cause:".yellow().bold(),
                     cause = cause
                 )
             }
@@ -60,7 +60,7 @@ impl Display for CocogittoError {
                 oid,
                 author,
             } => {
-                let error_header = "Errored commit : ".bold().red();
+                let error_header = "Errored commit:".bold().red();
                 let author = format!("<{}>", author).blue();
                 writeln!(
                     f,
@@ -68,8 +68,8 @@ impl Display for CocogittoError {
                     header = error_header,
                     oid = oid,
                     author = author,
-                    message = "Commit message : ".yellow().bold(),
-                    cause = "Cause : ".yellow().bold(),
+                    message = "Commit message:".yellow().bold(),
+                    cause = "Cause:".yellow().bold(),
                     summary = summary.italic(),
                     commit_type = commit_type.red()
                 )

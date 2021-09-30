@@ -25,7 +25,7 @@ to provide what you would expect from such tools plus some original features.
 - Make using the conventional commit spec easy and fun.
 - Enable people to focus on their work instead of correcting small mistakes and typo.
 - Correctness regarding semver and conventional commit.
-- Automate things when possible (ex : bumping versions).
+- Automate things when possible (ex: bumping versions).
 
 ### Non goals
 
@@ -65,7 +65,7 @@ features related to the conventional commit specification. Anything else shall b
 
 ### Cargo
 
-Cocogitto is available on [crates.io](https://crates.io/crates/cocogitto) : 
+Cocogitto is available on [crates.io](https://crates.io/crates/cocogitto): 
 
 ```
 cargo install cocogitto
@@ -86,7 +86,7 @@ All configuration values are optional, take a look at [cog.toml](cog.toml) to kn
 At the moment Cocogitto comes with two binaries `coco` and `cog`. 
 
 - `coco` is used to create commits respecting the conventional commit spec.
-- `cog` does everything else : check your 
+- `cog` does everything else: check your 
 repo history against the spec, edit malformed commit messages, generate changelog and bump versions etc.
 
 ### Shell completions
@@ -118,9 +118,9 @@ $ coco generate-completions zsh > ~/.zfunc/_coco
 ## Coco Commits
 
 `coco` allows you to easily create commits respecting the conventional specification. It comes with a set of predefined arguments
-named after conventional commit types : `style`, `build`, `refactor`, `ci`, `fix`, `test`, `perf`, `chore`, `feat`, `revert`, `docs`.    
+named after conventional commit types: `style`, `build`, `refactor`, `ci`, `fix`, `test`, `perf`, `chore`, `feat`, `revert`, `docs`.    
 
-Conventional commits are structured as follow : 
+Conventional commits are structured as follows: 
 
 ```
 <type>[optional scope]: <description>
@@ -130,7 +130,7 @@ Conventional commits are structured as follow :
 [optional footer(s)]
 ```
 
-All `coco` commit commands follows the same structure : 
+All `coco` commit commands follows the same structure: 
 
 ```
 coco {type} {message} [optional scope] [optional body] [optional footer]
@@ -139,7 +139,7 @@ coco {type} {message} [optional scope] [optional body] [optional footer]
 The only difference you need to remember is that `coco` commit scope comes after the commit description. This allows 
 using positional arguments instead of typing flags (ex: `coco -t {type} -s {scope} -m {message}... and so on`)
 
-For instance if you want to create the following commit : `feat: add awesome feature` you would run this :
+For instance if you want to create the following commit: `feat: add awesome feature` you would run this :
 
 ```shell script
 coco feat "add awesome feature"
@@ -147,14 +147,14 @@ coco feat "add awesome feature"
 
 ### Breaking changes
 
-All `coco` argument are positional except the optional `-B` flag used to create breaking changes commits : 
+All `coco` argument are positional except the optional `-B` flag used to create breaking changes commits: 
 
 ```shell script
 coco fix -B "add fix a nasty bug" cli
 ```
 
 This would create the following [breaking change](https://www.conventionalcommits.org/en/v1.0.0/#commit-message-with--to-draw-attention-to-breaking-change) 
-commit : `fix!: fix a nasty bug`.
+commit:`fix!: fix a nasty bug`.
 
 `coco` use the `!` notation to denote breaking changes commit because it can be easily seen in your git log, however if
 you manually create breaking changes commits with [the footer notation](https://www.conventionalcommits.org/en/v1.0.0/#commit-message-with-description-and-breaking-change-footer)
@@ -163,7 +163,7 @@ cocogitto tools will still pick them.
 
 ## Cog commands
 
-The `cog` binary is used for everything that is not commit the available commands are the following : 
+The `cog` binary is used for everything that is not commit the available commands are the following:
 
 | Command     | Description | Required flags |
 | :---        | :----       |:---           |  
@@ -188,7 +188,7 @@ cog init
 ```
 
 `cog init` works like `git init` except it create a template `cog.toml` config file, 
-and a default init commit with the following message : `chore: initial commit`.
+and a default init commit with the following message:`chore: initial commit`.
 
 Optionally you can specify the path of the repository you want to create :
 
@@ -215,14 +215,14 @@ Changes to be committed:
 
 ### Check commit history
 
-Running `cog check` will check your commit history against the conventional commit specification : 
+Running `cog check` will check your commit history against the conventional commit specification:
 
 ```
 ❯ cog check
 No errored commits
 ```
 
-Let us create an invalid commit : 
+Let us create an invalid commit:
 ```shell script
 git commit -m "Your Mother Was A Hamster, And Your Father Smelt Of Elderberries"
 ```
@@ -231,7 +231,7 @@ And check our commit history again :
 ```
 ❯ cog check
 ERROR - Your Mother Was A Hamster, And Your Father Smelt Of Elderberries - (c82c30)
-	cause: invalid commit format : missing `: ` separator
+	cause: invalid commit format:missing `: ` separator
 ```
 
 Additionally, you can check your history, starting from the latest tag to HEAD using `from-latest-tag` flag.  
@@ -254,13 +254,13 @@ commit type etc.
 
 You can also filter the log content with the following flags (`cog log --help`) :
 
-- `-B` : display breaking changes only
-- `-t` : filter on commit type
-- `-a` : filter on commit author
-- `-s` : filter on commit scope
-- `-e` : ignore errors 
+- `-B`:display breaking changes only
+- `-t`:filter on commit type
+- `-a`:filter on commit author
+- `-s`:filter on commit scope
+- `-e`:ignore errors 
 
-Those flag can be combined to achieve complex search in your commit history : 
+Those flag can be combined to achieve complex search in your commit history:
 
 ```shell script
 cog log --author "Paul Delafosse" "Mike Lubinets" --type feat --scope cli --no-error
@@ -268,7 +268,7 @@ cog log --author "Paul Delafosse" "Mike Lubinets" --type feat --scope cli --no-e
 
 ### Generate changelogs
 
-There are two way to generate changelog with `cog` : 
+There are two way to generate changelog with `cog`:
 - To stdout with `cog changelog`.
 
     ```
@@ -296,7 +296,7 @@ There are two way to generate changelog with `cog` :
 
 ### Auto bump
 
-Assuming we are working on the following git repository : 
+Assuming we are working on the following git repository:
 ```
 * (HEAD -> master) feat: another cool feature
 * docs: add some documentation
@@ -305,17 +305,17 @@ Assuming we are working on the following git repository :
 * chore: initial commit
 ```
 
-Let us now create a version : 
+Let us now create a version:
 ```
 ❯ cog bump --auto
 Found feature commit caef0f, bumping to 0.1.0
-Skipping irrelevant commit 025cc0 with type : docs
+Skipping irrelevant commit 025cc0 with type:docs
 Found bug fix commit e2af66, bumping to 0.1.1
 Found feature commit 1b87aa, bumping to 0.2.0
-Bumped version : 0.0.0 -> 0.2.0
+Bumped version:0.0.0 -> 0.2.0
 ```
 
-If we look again at our git log : 
+If we look again at our git log:
 ```
 (HEAD -> master, tag: 0.2.0) chore(version): 0.2.0
 ... 
@@ -354,12 +354,12 @@ caef0f - another cool feature - Paul Delafosse
 This changelog was generated by [cocogitto](https://github.com/oknozor/cocogitto).
 ```
 
-You need to run `cog bump` with one of the following flags : 
-- `--auto` : choose the next version for you (based on feature commit, bug fixes commit and BREAKING_CHANGE commit).
-- `--major` : increment the MAJOR version.
-- `--minor` : increment the MINOR version.
-- `--patch` : increment the PATCH version.
-- `--version <version>` : set version manually (ex : `cog bump --version 3.2.1`).
+You need to run `cog bump` with one of the following flags:
+- `--auto`:choose the next version for you (based on feature commit, bug fixes commit and BREAKING_CHANGE commit).
+- `--major`:increment the MAJOR version.
+- `--minor`:increment the MINOR version.
+- `--patch`:increment the PATCH version.
+- `--version <version>`:set version manually (ex:`cog bump --version 3.2.1`).
 
 You can also create pre-release version by adding the `--pre` flag to the bump command :
 
@@ -367,11 +367,11 @@ You can also create pre-release version by adding the `--pre` flag to the bump c
 cog bump --major --pre "beta.1"
 ```
 
-Coming from `1.2.3` this would create the following tag : `2.0.0-beta.0`.
+Coming from `1.2.3` this would create the following tag:`2.0.0-beta.0`.
 
 
 If you create a new version, the version changelog will be prepended to your changelog file separated by `- - -`.
-Note that if your project already contains a changelog you can tell `cog` about it by adding this to the file : 
+Note that if your project already contains a changelog you can tell `cog` about it by adding this to the file:
 
 ```markdown
 - - -
@@ -436,7 +436,7 @@ post_bump_hooks = [
 ]
 ```
 
-As you can see we are bumping the manifest using a small DSL. It as only a few keywords : 
+As you can see we are bumping the manifest using a small DSL. It as only a few keywords:
 - start with the `version` keyword.
 - followed by the `+` operator.
 - `major`, `minor` and `patch` to specify the kind of increment you want. 
@@ -449,12 +449,12 @@ As you can see we are bumping the manifest using a small DSL. It as only a few k
 To protect your commit history, and your git remote, cog have builtins 
 [git hooks](https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks). 
 
-You can install them all by running : 
+You can install them all by running:
 ```
 cog install-hook all
 ```
 
-Or one by one, specifying the hook name : 
+Or one by one, specifying the hook name:
 
 1. Pre-push hook
 

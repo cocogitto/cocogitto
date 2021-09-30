@@ -118,13 +118,13 @@ impl VersionIncrement {
                         println!("Found bug fix commit {}", commit.shorthand().blue(),)
                     }
                     (commit_type, true) => println!(
-                        "Found {} commit {} with type : {}",
+                        "Found {} commit {} with type:{}",
                         "BREAKING CHANGE".red(),
                         commit.shorthand().blue(),
                         commit_type.as_ref().yellow()
                     ),
                     (_, false) => println!(
-                        "Skipping irrelevant commit {} with type : {}",
+                        "Skipping irrelevant commit {} with type:{}",
                         commit.shorthand().blue(),
                         commit.message.commit_type.as_ref().yellow()
                     ),
