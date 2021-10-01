@@ -17,8 +17,6 @@ fn commit_ok() -> Result<()> {
             .arg("feat")
             .arg("this is a commit message")
             .arg("scope")
-            .arg("this is the body")
-            .arg("this is the footer")
             // Assert
             .assert()
             .success();
@@ -61,8 +59,6 @@ fn untracked_changes_commit_ok() -> Result<()> {
             .arg("feat")
             .arg("this is a commit message")
             .arg("scope")
-            .arg("this is the body")
-            .arg("this is the footer")
             // Assert
             .assert()
             .success();
