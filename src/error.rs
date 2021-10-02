@@ -1,7 +1,8 @@
+use std::fmt::{self, Debug, Display, Formatter};
+
 use crate::OidOf;
+
 use colored::*;
-use std::fmt;
-use std::fmt::{Debug, Display, Formatter};
 
 #[derive(Debug)]
 pub(crate) enum CocogittoError {

@@ -1,14 +1,16 @@
+use std::cmp::Ordering;
+use std::fmt::{self, Formatter};
+
 use crate::error::CocogittoError::CommitFormat;
 use crate::SETTINGS;
-use anyhow::Result;
+
+use anyhow::{anyhow, Result};
 use chrono::{NaiveDateTime, Utc};
 use colored::*;
 use conventional_commit_parser::commit::ConventionalCommit;
 use conventional_commit_parser::error::ParseError;
 use git2::Commit as Git2Commit;
-use std::cmp::Ordering;
-use std::fmt;
-use std::fmt::Formatter;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct Commit {
@@ -239,6 +241,7 @@ pub fn verify(author: Option<String>, message: &str) -> Result<(), ParseError> {
 #[cfg(test)]
 mod test {
     use crate::conventional::commit::{verify, Commit};
+
     use chrono::NaiveDateTime;
     use conventional_commit_parser::commit::{CommitType, ConventionalCommit};
     use speculoos::prelude::*;

@@ -1,12 +1,13 @@
-use anyhow::Result;
-use assert_cmd::prelude::*;
-use cocogitto::CONFIG_PATH;
+use std::path::PathBuf;
 use std::process::Command;
+
+use cocogitto::CONFIG_PATH;
 
 use crate::helpers::*;
 
+use anyhow::Result;
+use assert_cmd::prelude::*;
 use speculoos::prelude::*;
-use std::path::PathBuf;
 
 #[test]
 fn init_empty_repo_in_target_dir() -> Result<()> {

@@ -1,10 +1,12 @@
-use crate::conventional::commit::Commit;
-use crate::{OidOf, SETTINGS};
-use anyhow::Result;
-use itertools::Itertools;
 use std::fmt::Write;
 use std::fs;
 use std::path::PathBuf;
+
+use crate::conventional::commit::Commit;
+use crate::{OidOf, SETTINGS};
+
+use anyhow::{anyhow, Result};
+use itertools::Itertools;
 
 pub(crate) struct Changelog {
     pub from: OidOf,
@@ -91,6 +93,7 @@ mod test {
     use crate::conventional::changelog::Changelog;
     use crate::conventional::commit::Commit;
     use crate::OidOf;
+
     use anyhow::Result;
     use chrono::Utc;
     use conventional_commit_parser::commit::{CommitType, ConventionalCommit};

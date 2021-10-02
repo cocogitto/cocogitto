@@ -1,12 +1,11 @@
-use crate::CocoGitto;
-use anyhow::Result;
-
-use std::fs::Permissions;
+use std::fs::{self, Permissions};
 #[cfg(target_family = "unix")]
 use std::os::unix::fs::PermissionsExt;
-
-use std::fs;
 use std::path::Path;
+
+use crate::CocoGitto;
+
+use anyhow::{anyhow, Result};
 
 pub static PRE_PUSH_HOOK: &[u8] = include_bytes!("assets/pre-push");
 pub static PREPARE_COMMIT_HOOK: &[u8] = include_bytes!("assets/prepare-commit-msg");
@@ -60,14 +59,16 @@ fn create_hook(path: &Path, kind: HookKind) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use crate::git::hook::HookKind;
-    use crate::CocoGitto;
-    use anyhow::Result;
-    use speculoos::prelude::*;
     use std::env;
     use std::fs::File;
     use std::path::PathBuf;
     use std::process::Command;
+
+    use crate::git::hook::HookKind;
+    use crate::CocoGitto;
+
+    use anyhow::Result;
+    use speculoos::prelude::*;
     use tempfile::TempDir;
 
     #[test]

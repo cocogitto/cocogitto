@@ -1,9 +1,9 @@
-use anyhow::Result;
+use std::path::Path;
 
 use crate::helpers::*;
 
+use anyhow::Result;
 use speculoos::prelude::*;
-use std::path::Path;
 
 #[test]
 fn should_init_a_cog_repository() -> Result<()> {
