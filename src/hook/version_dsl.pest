@@ -1,0 +1,33 @@
+//
+// Created by intellij-pest on 2021-10-01
+// version-dsl
+// Author: okno
+//
+
+delimiter_start = _{ "{{" }
+delimiter_end = _{ "}}" }
+current_version = { "version" }
+latest_version = { "latest" }
+
+add = { "+" }
+
+major = { "major" }
+minor = { "minor" }
+patch = { "patch" }
+
+amt = { NUMBER }
+ops = { add ~ amt? ~ ( major | minor | patch ) }
+ASCII_ALPHA_OR_HYPHEN = { ASCII_ALPHA | NUMBER | "-" }
+
+pre_release_separator = _{ "-" }
+build_metadata_separator = _{ "+" }
+dot = _{ "." }
+
+identifier = { ASCII_ALPHA_OR_HYPHEN+ }
+identifiers = { identifier ~ (dot ~ identifier)* }
+pre_release = { pre_release_separator ~ identifiers }
+build_metadata = { build_metadata_separator ~ identifiers }
+
+
+version = { delimiter_start ~ (current_version | latest_version) ~ ops* ~ pre_release? ~ build_metadata? ~ delimiter_end}
+version_dsl = { SOI ~ (version | (!delimiter_start ~ ANY) )* ~ EOI }

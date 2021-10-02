@@ -171,6 +171,8 @@ dependencies = [
  "indoc",
  "itertools",
  "lazy_static",
+ "pest",
+ "pest_derive",
  "predicates 1.0.8",
  "rand 0.7.3",
  "semver",
