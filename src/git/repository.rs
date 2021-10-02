@@ -1,6 +1,11 @@
+use std::fmt::{Debug, Formatter};
 use std::path::Path;
 
-use anyhow::Result;
+use crate::error::CocogittoError::{self, Git};
+use crate::git::status::Statuses;
+use crate::OidOf;
+
+use anyhow::{anyhow, ensure, Result};
 use colored::Colorize;
 use git2::{
     Commit as Git2Commit, Diff, DiffOptions, IndexAddOption, Object, ObjectType, Oid,
@@ -8,13 +13,6 @@ use git2::{
 };
 use itertools::Itertools;
 use semver::Version;
-
-use crate::error::CocogittoError;
-use crate::error::CocogittoError::Git;
-use crate::OidOf;
-
-use super::status::Statuses;
-use std::fmt::{Debug, Formatter};
 
 pub(crate) struct Repository(pub(crate) Git2Repository);
 
@@ -288,12 +286,12 @@ impl Debug for Repository {
 mod test {
     use std::process::{Command, Stdio};
 
-    use anyhow::Result;
-    use tempfile::TempDir;
-
-    use super::Repository;
+    use crate::git::repository::Repository;
     use crate::OidOf;
+
+    use anyhow::Result;
     use speculoos::prelude::*;
+    use tempfile::TempDir;
 
     #[test]
     fn init_repo() -> Result<()> {

@@ -1,11 +1,14 @@
+use std::collections::HashMap;
+use std::path::PathBuf;
+
 use crate::conventional::commit::CommitConfig;
 use crate::git::repository::Repository;
 use crate::{CommitsMetadata, CONFIG_PATH};
-use anyhow::Result;
+
+use anyhow::{anyhow, Result};
 use config::{Config, File};
 use conventional_commit_parser::commit::CommitType;
-use std::collections::HashMap;
-use std::path::PathBuf;
+use serde::{Deserialize, Serialize};
 
 type CommitsMetadataSettings = HashMap<String, CommitConfig>;
 pub(crate) type AuthorSettings = Vec<AuthorSetting>;

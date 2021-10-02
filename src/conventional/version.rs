@@ -1,12 +1,12 @@
-use anyhow::Result;
+use crate::conventional::commit::Commit;
+use crate::git::repository::Repository;
+
+use anyhow::{anyhow, bail, Result};
 use colored::*;
 use conventional_commit_parser::commit::CommitType;
 use git2::Commit as Git2Commit;
 use itertools::Itertools;
 use semver::Version;
-
-use crate::conventional::commit::Commit;
-use crate::git::repository::Repository;
 
 #[derive(Debug, PartialEq)]
 pub enum VersionIncrement {
@@ -172,15 +172,16 @@ impl VersionIncrement {
 // Auto version tests resides in test/ dir since it rely on git log
 // To generate the version
 mod test {
+    use std::str::FromStr;
+
+    use crate::conventional::commit::Commit;
+    use crate::conventional::version::VersionIncrement;
+
     use anyhow::Result;
     use chrono::Utc;
     use conventional_commit_parser::commit::{CommitType, ConventionalCommit};
     use semver::Version;
     use speculoos::prelude::*;
-
-    use crate::conventional::commit::Commit;
-    use crate::conventional::version::VersionIncrement;
-    use std::str::FromStr;
 
     impl Commit {
         fn commit_fixture(commit_type: CommitType, is_breaking_change: bool) -> Self {

@@ -1,16 +1,16 @@
 #![cfg(not(tarpaulin_include))]
 use std::path::PathBuf;
 
-use anyhow::{Context, Result};
-use structopt::clap::{AppSettings, Shell};
-use structopt::StructOpt;
-
 use cocogitto::conventional::commit;
 use cocogitto::conventional::version::VersionIncrement;
 use cocogitto::git::hook::HookKind;
 use cocogitto::log::filter::{CommitFilter, CommitFilters};
 use cocogitto::log::output::Output;
 use cocogitto::{CocoGitto, SETTINGS};
+
+use anyhow::{Context, Result};
+use structopt::clap::{AppSettings, Shell};
+use structopt::StructOpt;
 
 const APP_SETTINGS: &[AppSettings] = &[
     AppSettings::SubcommandRequiredElseHelp,
