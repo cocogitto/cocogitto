@@ -4,6 +4,8 @@ extern crate anyhow;
 extern crate serde_derive;
 #[macro_use]
 extern crate lazy_static;
+#[macro_use]
+extern crate pest_derive;
 
 pub mod error;
 
