@@ -1,9 +1,10 @@
-use anyhow::Result;
 use cocogitto::log::filter::{CommitFilter, CommitFilters};
 use cocogitto::CocoGitto;
-use speculoos::prelude::*;
 
 use crate::helpers::*;
+
+use anyhow::Result;
+use speculoos::prelude::*;
 
 #[test]
 fn get_unfiltered_logs() -> Result<()> {

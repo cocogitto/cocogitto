@@ -1,10 +1,11 @@
-use crate::helpers::*;
-use anyhow::Result;
-use assert_cmd::prelude::*;
-use speculoos::prelude::*;
 use std::process::Command;
 
+use crate::helpers::*;
+
+use anyhow::Result;
+use assert_cmd::prelude::*;
 use indoc::indoc;
+use speculoos::prelude::*;
 
 #[test]
 fn auto_bump_from_start_ok() -> Result<()> {

@@ -1,9 +1,10 @@
+use std::process::Command;
+
 use crate::helpers::*;
 
 use anyhow::Result;
 use assert_cmd::prelude::*;
 use indoc::indoc;
-use std::process::Command;
 
 #[test]
 fn verify_ok() -> Result<()> {

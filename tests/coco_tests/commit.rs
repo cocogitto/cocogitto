@@ -1,8 +1,9 @@
+use std::process::Command;
+
 use crate::helpers::*;
 
 use anyhow::Result;
 use assert_cmd::prelude::*;
-use std::process::Command;
 
 #[test]
 fn commit_ok() -> Result<()> {
