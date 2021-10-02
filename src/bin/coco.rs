@@ -1,14 +1,13 @@
 #![cfg(not(tarpaulin_include))]
 use std::fmt::Write;
 
+use cocogitto::{CocoGitto, COMMITS_METADATA};
+
 use anyhow::{bail, Result};
 use conventional_commit_parser::commit::Footer;
 use itertools::Itertools;
 use structopt::clap::{AppSettings, Shell};
 use structopt::StructOpt;
-
-use cocogitto::CocoGitto;
-use cocogitto::COMMITS_METADATA;
 
 const APP_SETTINGS: &[AppSettings] = &[
     AppSettings::UnifiedHelpMessage,

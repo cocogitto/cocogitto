@@ -1,8 +1,7 @@
-use anyhow::Result;
-use cocogitto::CocoGitto;
-
 use crate::helpers::*;
 
+use anyhow::Result;
+use cocogitto::CocoGitto;
 use speculoos::prelude::*;
 
 #[test]

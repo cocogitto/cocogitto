@@ -1,9 +1,10 @@
+use std::fmt::{self, Formatter};
+
 use crate::git::status::Changes::{Deleted, Modified, New, Renamed, TypeChange};
+
 use colored::*;
 use git2::StatusEntry as Git2StatusEntry;
 use git2::Statuses as Git2Statuses;
-use std::fmt;
-use std::fmt::Formatter;
 
 pub(crate) struct Statuses(pub Vec<Status>);
 
@@ -103,12 +104,13 @@ impl fmt::Debug for Statuses {
 
 #[cfg(test)]
 mod test {
-    use crate::git::status::{Changes, Statuses};
-    use anyhow::Result;
-    use git2::Repository;
-    use git2::StatusOptions;
-    use speculoos::prelude::*;
     use std::fs;
+
+    use crate::git::status::{Changes, Statuses};
+
+    use anyhow::{anyhow, Result};
+    use git2::{Repository, StatusOptions};
+    use speculoos::prelude::*;
     use tempfile::TempDir;
 
     #[test]

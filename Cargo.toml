@@ -25,8 +25,7 @@ chrono = "^0"
 config = { version = "^0", default-features = false, features = ["toml"] }
 edit = "^0"
 itertools = "^0"
-serde_derive = "^1"
-serde = "^1"
+serde = { version = "^1", features = ["derive"] }
 tempfile = "^3"
 semver = "^1"
 shell-words = "^1"
