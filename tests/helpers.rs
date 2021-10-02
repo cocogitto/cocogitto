@@ -1,11 +1,13 @@
 #![cfg(not(tarpaulin_include))]
-use anyhow::Result;
-use cocogitto::CONFIG_PATH;
-use speculoos::assert_that;
-use speculoos::iter::ContainingIntoIterAssertions;
 use std::panic;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
+
+use cocogitto::CONFIG_PATH;
+
+use anyhow::Result;
+use speculoos::assert_that;
+use speculoos::iter::ContainingIntoIterAssertions;
 use tempfile::TempDir;
 
 pub struct TestContext {

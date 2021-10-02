@@ -1,51 +1,36 @@
-#[macro_use]
-extern crate anyhow;
-#[macro_use]
-extern crate lazy_static;
-#[macro_use]
-extern crate pest_derive;
-#[macro_use]
-extern crate serde_derive;
+pub mod conventional;
+pub mod error;
+pub mod git;
+pub mod hook;
+pub mod log;
+pub mod settings;
 
 use std::collections::HashMap;
-use std::fmt::Display;
-use std::fmt::Formatter;
-use std::fmt::Write as FmtWrite;
+use std::fmt::{Display, Formatter, Write as FmtWrite};
 use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{exit, Command, Stdio};
 
-use anyhow::{Context, Error, Result};
+use conventional::changelog::{Changelog, ChangelogWriter};
+use conventional::commit::{verify, Commit, CommitConfig};
+use conventional::version::VersionIncrement;
+use error::{CocogittoError, CogCheckReport, PreHookError};
+use git::repository::Repository;
+use hook::Hook;
+use log::filter::CommitFilters;
+use settings::{HookType, Settings};
+
+use anyhow::{anyhow, bail, ensure, Context, Error, Result};
 use chrono::Utc;
 use colored::*;
 use conventional_commit_parser::commit::{CommitType, ConventionalCommit};
 use conventional_commit_parser::parse_footers;
 use git2::{Oid, RebaseOptions};
 use itertools::Itertools;
+use lazy_static::lazy_static;
 use semver::{Prerelease, Version};
 use tempfile::TempDir;
-
-use conventional::changelog::{Changelog, ChangelogWriter};
-use conventional::commit::Commit;
-use conventional::commit::CommitConfig;
-use conventional::version::VersionIncrement;
-use git::repository::Repository;
-use hook::Hook;
-use log::filter::CommitFilters;
-
-use crate::conventional::commit::verify;
-use crate::error::PreHookError;
-use crate::error::{CocogittoError, CogCheckReport};
-use crate::settings::{HookType, Settings};
-
-pub mod error;
-
-pub mod conventional;
-pub mod git;
-pub mod hook;
-pub mod log;
-pub mod settings;
 
 pub type CommitsMetadata = HashMap<CommitType, CommitConfig>;
 

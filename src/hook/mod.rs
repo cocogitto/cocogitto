@@ -1,15 +1,15 @@
+mod parser;
+
 use std::collections::VecDeque;
 use std::fmt;
 use std::ops::Range;
 use std::process::Command;
 use std::str::FromStr;
 
-use anyhow::Result;
-use semver::Version;
-
 use parser::Token;
 
-mod parser;
+use anyhow::{anyhow, ensure, Result};
+use semver::Version;
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct VersionSpan {
@@ -143,10 +143,9 @@ impl Hook {
 mod test {
     use std::str::FromStr;
 
-    use speculoos::prelude::*;
+    use crate::{Hook, Result};
 
-    use crate::Hook;
-    use crate::Result;
+    use speculoos::prelude::*;
 
     #[test]
     fn parse_empty_string() {

@@ -23,16 +23,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+use std::ffi::OsString;
+use std::io::{self, Write};
+use std::path::{Path, PathBuf};
+use std::process::{Child, Command, Stdio};
+
 use crate::Result;
-use anyhow::Context;
-use std::{
-    ffi::OsString,
-    io::{self, Write},
-    path::{Path, PathBuf},
-    process::Child,
-    process::Command,
-    process::Stdio,
-};
+
+use anyhow::{anyhow, Context};
 
 #[derive(Debug)]
 pub enum Output {
