@@ -340,7 +340,7 @@ impl CocoGitto {
             // Remove merge commits
             .filter(|commit| !commit.message().unwrap_or("").starts_with("Merge"))
             .filter(|commit| filters.filter_git2_commit(commit))
-            .map(|commit| Commit::from_git_commit(commit))
+            .map(Commit::from_git_commit)
             // Apply filters
             .filter(|commit| match commit {
                 Ok(commit) => filters.filters(commit),
