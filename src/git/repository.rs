@@ -36,22 +36,24 @@ impl Repository {
         let mut options = DiffOptions::new();
         options.include_untracked(include_untracked);
 
-        let diff = if let Some(head) = &self.get_head() {
-            self.0
-                .diff_tree_to_index(head.as_tree(), None, Some(&mut options))
-        } else {
-            self.0
-                .diff_tree_to_workdir_with_index(None, Some(&mut options))
+        let diff = match &self.get_head() {
+            Some(head) => self
+                .0
+                .diff_tree_to_index(head.as_tree(), None, Some(&mut options)),
+            None => self
+                .0
+                .diff_tree_to_workdir_with_index(None, Some(&mut options)),
         };
 
-        if let Ok(diff) = diff {
-            if diff.deltas().len() > 0 {
-                Some(diff)
-            } else {
-                None
+        match diff {
+            Ok(diff) => {
+                if diff.deltas().len() > 0 {
+                    Some(diff)
+                } else {
+                    None
+                }
             }
-        } else {
-            None
+            Err(..) => None,
         }
     }
 
