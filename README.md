@@ -309,7 +309,7 @@ Let us now create a version:
 ```
 ❯ cog bump --auto
 Found feature commit caef0f, bumping to 0.1.0
-Skipping irrelevant commit 025cc0 with type:docs
+Skipping irrelevant commit 025cc0 with type: docs
 Found bug fix commit e2af66, bumping to 0.1.1
 Found feature commit 1b87aa, bumping to 0.2.0
 Bumped version:0.0.0 -> 0.2.0
