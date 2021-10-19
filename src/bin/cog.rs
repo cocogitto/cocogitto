@@ -47,7 +47,11 @@ enum Cli {
 
     /// Interactively rename invalid commit messages
     #[structopt(no_version, settings = SUBCOMMAND_SETTINGS)]
-    Edit,
+    Edit {
+        /// Edit non conventional commits, starting from the latest tag to HEAD
+        #[structopt(short = "l", long)]
+        from_latest_tag: bool,
+    },
 
     /// Like git log but for conventional commits
     #[structopt(no_version, settings = SUBCOMMAND_SETTINGS)]
@@ -196,9 +200,9 @@ fn main() -> Result<()> {
             let cocogitto = CocoGitto::get()?;
             cocogitto.check(from_latest_tag)?;
         }
-        Cli::Edit => {
+        Cli::Edit { from_latest_tag } => {
             let cocogitto = CocoGitto::get()?;
-            cocogitto.check_and_edit()?;
+            cocogitto.check_and_edit(from_latest_tag)?;
         }
         Cli::Log {
             breaking_change,
