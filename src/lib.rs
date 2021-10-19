@@ -181,8 +181,13 @@ impl CocoGitto {
         Some(repo_tag_name)
     }
 
-    pub fn check_and_edit(&self) -> Result<()> {
-        let from = self.repository.get_first_commit()?;
+    pub fn check_and_edit(&self, from_latest_tag: bool) -> Result<()> {
+        let from = if from_latest_tag {
+            self.repository.get_latest_tag_oid()
+        } else {
+            self.repository.get_first_commit()
+        }?;
+
         let head = self.repository.get_head_commit()?;
         let commits = self.repository.get_commit_range(from, head.id())?;
         let editor = std::env::var("EDITOR")?;
