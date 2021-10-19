@@ -1,5 +1,5 @@
 use crate::conventional::commit::Commit;
-use crate::{OidOf, COMMITS_METADATA};
+use crate::{OidOf, SETTINGS};
 use anyhow::Result;
 use itertools::Itertools;
 use std::fmt::Write;
@@ -63,7 +63,7 @@ impl Changelog {
             .into_group_map();
 
         for (commit_type, commits) in grouped {
-            if let Some(meta) = COMMITS_METADATA.get(&commit_type) {
+            if let Some(meta) = SETTINGS.commit_types().get(&commit_type) {
                 write!(&mut out, "\n### {}\n\n", meta.changelog_title).unwrap();
                 out.extend(commits);
             }
