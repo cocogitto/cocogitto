@@ -233,7 +233,7 @@ fn bump_with_profile_hook() -> Result<()> {
         let expected = indoc! {
             "current 1.0.0
         next 1.0.1
-        Bumped version:1.0.0 -> 1.0.1
+        Bumped version: 1.0.0 -> 1.0.1
         "
         };
 

@@ -1,39 +1,12 @@
 #[macro_use]
 extern crate anyhow;
 #[macro_use]
-extern crate serde_derive;
-#[macro_use]
 extern crate lazy_static;
 #[macro_use]
 extern crate pest_derive;
+#[macro_use]
+extern crate serde_derive;
 
-pub mod error;
-
-pub mod conventional;
-pub mod git;
-pub mod hook;
-pub mod log;
-pub mod settings;
-
-use crate::conventional::commit::verify;
-use crate::error::PreHookError;
-use crate::error::{CocogittoError, CogCheckReport};
-use crate::settings::{HookType, Settings};
-use anyhow::{Context, Error, Result};
-use chrono::Utc;
-use colored::*;
-use conventional::changelog::{Changelog, ChangelogWriter};
-use conventional::commit::Commit;
-use conventional::commit::CommitConfig;
-use conventional::version::VersionIncrement;
-use conventional_commit_parser::commit::{CommitType, ConventionalCommit};
-use conventional_commit_parser::parse_footers;
-use git::repository::Repository;
-use git2::{Oid, RebaseOptions};
-use hook::Hook;
-use itertools::Itertools;
-use log::filter::CommitFilters;
-use semver::{Prerelease, Version};
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::fmt::Formatter;
@@ -42,7 +15,37 @@ use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{exit, Command, Stdio};
+
+use anyhow::{Context, Error, Result};
+use chrono::Utc;
+use colored::*;
+use conventional_commit_parser::commit::{CommitType, ConventionalCommit};
+use conventional_commit_parser::parse_footers;
+use git2::{Oid, RebaseOptions};
+use itertools::Itertools;
+use semver::{Prerelease, Version};
 use tempfile::TempDir;
+
+use conventional::changelog::{Changelog, ChangelogWriter};
+use conventional::commit::Commit;
+use conventional::commit::CommitConfig;
+use conventional::version::VersionIncrement;
+use git::repository::Repository;
+use hook::Hook;
+use log::filter::CommitFilters;
+
+use crate::conventional::commit::verify;
+use crate::error::PreHookError;
+use crate::error::{CocogittoError, CogCheckReport};
+use crate::settings::{HookType, Settings};
+
+pub mod error;
+
+pub mod conventional;
+pub mod git;
+pub mod hook;
+pub mod log;
+pub mod settings;
 
 pub type CommitsMetadata = HashMap<CommitType, CommitConfig>;
 
@@ -386,6 +389,16 @@ impl CocoGitto {
         pre_release: Option<&str>,
         hooks_config: Option<&str>,
     ) -> Result<()> {
+        if *SETTINGS == Settings::default() {
+            let part1 = "Warning: using".yellow();
+            let part2 = "with the default configuration. \n".yellow();
+            let part3 = "You may want to create a".yellow();
+            let part4 = "file in your project root to configure bumps.\n".yellow();
+            println!(
+                "{} 'cog bump' {}{} 'cog.toml' {}",
+                part1, part2, part3, part4
+            );
+        }
         let statuses = self.repository.get_statuses()?;
 
         // Fail if repo contains un-staged or un-committed changes
@@ -469,7 +482,7 @@ impl CocoGitto {
         self.run_hooks(HookType::PostBump, &version_str, hooks_config)?;
 
         let bump = format!("{} -> {}", current_version, next_version).green();
-        println!("Bumped version:{}", bump);
+        println!("Bumped version: {}", bump);
 
         Ok(())
     }
