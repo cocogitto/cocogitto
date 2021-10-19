@@ -1,6 +1,5 @@
 use crate::error::CocogittoError::CommitFormat;
-use crate::AUTHORS;
-use crate::REMOTE_URL;
+use crate::SETTINGS;
 use anyhow::Result;
 use chrono::{NaiveDateTime, Utc};
 use colored::*;
@@ -84,7 +83,8 @@ impl Commit {
                 self.author.blue()
             )
         } else {
-            let username = AUTHORS
+            let username = SETTINGS
+                .authors
                 .iter()
                 .find(|author| author.signature == self.author);
             let github_author = username.map(|user| {
@@ -93,7 +93,7 @@ impl Commit {
                     username = &user.username
                 )
             });
-            let oid = REMOTE_URL.as_ref().map(|remote_url| {
+            let oid = SETTINGS.github.as_ref().map(|remote_url| {
                 format!("[{}]({}/commit/{})", &self.oid[0..6], remote_url, &self.oid)
             });
             format!(
