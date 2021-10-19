@@ -11,13 +11,13 @@ type CommitsMetadataSettings = HashMap<String, CommitConfig>;
 pub(crate) type AuthorSettings = Vec<AuthorSetting>;
 
 #[derive(Copy, Clone)]
-pub(crate) enum HookType {
+pub enum HookType {
     PreBump,
     PostBump,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-pub(crate) struct Settings {
+pub struct Settings {
     pub changelog_path: Option<PathBuf>,
     pub github: Option<String>,
     #[serde(default)]
@@ -79,7 +79,7 @@ impl Settings {
         }
     }
 
-    pub(crate) fn commit_types(&self) -> CommitsMetadata {
+    pub fn commit_types(&self) -> CommitsMetadata {
         let commit_settings = self.commit_types.clone();
         let mut custom_types = HashMap::new();
 
@@ -87,14 +87,14 @@ impl Settings {
             let _ = custom_types.insert(CommitType::from(key.as_str()), value.clone());
         });
 
-        let mut default_types = Settings::get_default_commit_config();
+        let mut default_types = Settings::default_commit_config();
 
         default_types.extend(custom_types);
 
         default_types
     }
 
-    fn get_default_commit_config() -> CommitsMetadata {
+    fn default_commit_config() -> CommitsMetadata {
         let mut default_types = HashMap::new();
         default_types.insert(CommitType::Feature, CommitConfig::new("Features"));
         default_types.insert(CommitType::BugFix, CommitConfig::new("Bug Fixes"));

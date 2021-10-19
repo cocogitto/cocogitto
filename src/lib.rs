@@ -34,7 +34,6 @@ use hook::Hook;
 use itertools::Itertools;
 use log::filter::CommitFilters;
 use semver::{Prerelease, Version};
-use settings::AuthorSetting;
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::fmt::Formatter;
@@ -50,42 +49,19 @@ pub type CommitsMetadata = HashMap<CommitType, CommitConfig>;
 pub const CONFIG_PATH: &str = "cog.toml";
 
 lazy_static! {
+    pub static ref SETTINGS: Settings = {
+        if let Ok(repo) = Repository::open(".") {
+            Settings::get(&repo).unwrap_or_default()
+        } else {
+            Settings::default()
+        }
+    };
+
     // This cannot be carried by `Cocogitto` struct since we need it to be available in `Changelog`,
     // `Commit` etc. Be ensure that `CocoGitto::new` is called before using this  in order to bypass
     // unwrapping in case of error.
     pub static ref COMMITS_METADATA: CommitsMetadata = {
-        if let Ok(repo) = Repository::open(".") {
-            Settings::get(&repo).unwrap_or_default().commit_types()
-        } else {
-            Settings::default().commit_types()
-        }
-    };
-
-        pub static ref HOOK_PROFILES: Vec<String> = {
-        if let Ok(repo) = Repository::open(".") {
-            Settings::get(&repo).unwrap_or_default().bump_profiles
-            .keys()
-            .cloned()
-            .collect()
-        } else {
-            vec![]
-        }
-    };
-
-    static ref REMOTE_URL: Option<String> = {
-        if let Ok(repo) = Repository::open(".") {
-            Settings::get(&repo).unwrap_or_default().github
-        } else {
-            None
-        }
-    };
-
-        static ref AUTHORS: Vec<AuthorSetting> = {
-        if let Ok(repo) = Repository::open(".") {
-            Settings::get(&repo).unwrap_or_default().authors
-        } else {
-            vec![]
-        }
+        SETTINGS.commit_types()
     };
 }
 
@@ -311,7 +287,7 @@ impl CocoGitto {
             .iter()
             .map(|commit| {
                 let commit_type = &commit.message.commit_type;
-                match &COMMITS_METADATA.get(commit_type) {
+                match &SETTINGS.commit_types().get(commit_type) {
                     Some(_) => Ok(()),
                     None => Err(anyhow!(CocogittoError::CommitTypeNotAllowed {
                         oid: commit.oid.clone(),
