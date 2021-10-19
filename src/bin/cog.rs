@@ -10,7 +10,7 @@ use cocogitto::conventional::version::VersionIncrement;
 use cocogitto::git::hook::HookKind;
 use cocogitto::log::filter::{CommitFilter, CommitFilters};
 use cocogitto::log::output::Output;
-use cocogitto::{CocoGitto, HOOK_PROFILES};
+use cocogitto::{CocoGitto, SETTINGS};
 
 const APP_SETTINGS: &[AppSettings] = &[
     AppSettings::SubcommandRequiredElseHelp,
@@ -27,8 +27,9 @@ const SUBCOMMAND_SETTINGS: &[AppSettings] = &[
 ];
 
 fn hook_profiles() -> Vec<&'static str> {
-    HOOK_PROFILES
-        .iter()
+    SETTINGS
+        .bump_profiles
+        .keys()
         .map(|profile| profile.as_ref())
         .collect()
 }
@@ -186,7 +187,6 @@ fn main() -> Result<()> {
                 unreachable!()
             };
 
-            // TODO mode to cli
             cocogitto.create_version(increment, pre.as_deref(), hook_profile.as_deref())?
         }
         Cli::Verify { message } => {
