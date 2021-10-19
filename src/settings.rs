@@ -16,7 +16,7 @@ pub enum HookType {
     PostBump,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Eq, PartialEq)]
 pub struct Settings {
     pub changelog_path: Option<PathBuf>,
     pub github: Option<String>,
@@ -32,7 +32,7 @@ pub struct Settings {
     pub bump_profiles: HashMap<String, BumpProfile>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone, Eq, PartialEq)]
 pub struct AuthorSetting {
     pub signature: String,
     pub username: String,
@@ -52,7 +52,7 @@ impl Default for Settings {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize, Default)]
+#[derive(Debug, Deserialize, Serialize, Default, Eq, PartialEq)]
 pub struct BumpProfile {
     #[serde(default)]
     pub pre_bump_hooks: Vec<String>,
