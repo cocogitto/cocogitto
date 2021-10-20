@@ -10,7 +10,7 @@ use std::path::Path;
 
 pub static PRE_PUSH_HOOK: &[u8] = include_bytes!("assets/pre-push");
 pub static PREPARE_COMMIT_HOOK: &[u8] = include_bytes!("assets/prepare-commit-msg");
-const PRE_COMMIT_HOOK_PATH: &str = ".git/hooks/prepare-commit-msg";
+const PRE_COMMIT_HOOK_PATH: &str = ".git/hooks/pre-commit";
 const PRE_PUSH_HOOK_PATH: &str = ".git/hooks/pre-push";
 
 pub enum HookKind {
@@ -82,7 +82,7 @@ mod tests {
 
         cog.install_hook(HookKind::PrepareCommit)?;
 
-        assert_that!(PathBuf::from(".git/hooks/prepare-commit-msg")).exists();
+        assert_that!(PathBuf::from(".git/hooks/pre-commit")).exists();
         assert_that!(PathBuf::from(".git/hooks/pre-push")).does_not_exist();
         Ok(())
     }
@@ -100,7 +100,7 @@ mod tests {
         cog.install_hook(HookKind::PrePush)?;
 
         assert_that!(PathBuf::from(".git/hooks/pre-push")).exists();
-        assert_that!(PathBuf::from(".git/hooks/prepare-commit-msg")).does_not_exist();
+        assert_that!(PathBuf::from(".git/hooks/pre-commit")).does_not_exist();
         Ok(())
     }
 
@@ -117,7 +117,7 @@ mod tests {
         cog.install_hook(HookKind::All)?;
 
         assert_that!(PathBuf::from(".git/hooks/pre-push")).exists();
-        assert_that!(PathBuf::from(".git/hooks/prepare-commit-msg")).exists();
+        assert_that!(PathBuf::from(".git/hooks/pre-commit")).exists();
         Ok(())
     }
 
