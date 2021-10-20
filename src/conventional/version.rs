@@ -8,6 +8,7 @@ use semver::Version;
 use crate::conventional::commit::Commit;
 use crate::git::repository::Repository;
 
+#[derive(Debug, PartialEq)]
 pub enum VersionIncrement {
     Major,
     Minor,
@@ -22,26 +23,22 @@ impl VersionIncrement {
             VersionIncrement::Manual(version) => {
                 Version::parse(version).map_err(|err| anyhow!(err))
             }
-            VersionIncrement::Auto => self.get_auto_version(current_version),
-            VersionIncrement::Major => {
-                let mut next = current_version.clone();
-                next.major += 1;
-                Ok(next)
-            }
-            VersionIncrement::Patch => {
-                let mut next = current_version.clone();
-                next.patch += 1;
-                Ok(next)
-            }
-            VersionIncrement::Minor => {
-                let mut next = current_version.clone();
-                next.minor += 1;
-                Ok(next)
-            }
+            VersionIncrement::Auto => self.create_version_from_commit_history(current_version),
+            VersionIncrement::Major => Ok(Version::new(current_version.major + 1, 0, 0)),
+            VersionIncrement::Patch => Ok(Version::new(
+                current_version.major,
+                current_version.minor,
+                current_version.patch + 1,
+            )),
+            VersionIncrement::Minor => Ok(Version::new(
+                current_version.major,
+                current_version.minor + 1,
+                0,
+            )),
         }
     }
 
-    fn get_auto_version(&self, current_version: &Version) -> Result<Version> {
+    fn create_version_from_commit_history(&self, current_version: &Version) -> Result<Version> {
         let repository = Repository::open(".")?;
         let changelog_start_oid = repository
             .get_latest_tag_oid()
@@ -64,10 +61,18 @@ impl VersionIncrement {
             .filter_map(Result::ok)
             .collect();
 
-        VersionIncrement::get_next_auto_version(current_version, &conventional_commits)
+        let increment_type = VersionIncrement::version_increment_from_commit_history(
+            current_version,
+            &conventional_commits,
+        )?;
+
+        increment_type.bump(current_version)
     }
 
-    fn get_next_auto_version(current_version: &Version, commits: &[Commit]) -> Result<Version> {
+    fn version_increment_from_commit_history(
+        current_version: &Version,
+        commits: &[Commit],
+    ) -> Result<VersionIncrement> {
         let is_major_bump = || {
             current_version.major != 0
                 && commits
@@ -87,18 +92,15 @@ impl VersionIncrement {
                 .any(|commit| commit.message.commit_type == CommitType::BugFix)
         };
 
-        let mut next_version = current_version.clone();
         if is_major_bump() {
-            next_version.major += 1;
+            Ok(VersionIncrement::Major)
         } else if is_minor_bump() {
-            next_version.minor += 1;
+            Ok(VersionIncrement::Minor)
         } else if is_patch_bump() {
-            next_version.patch += 1;
+            Ok(VersionIncrement::Patch)
         } else {
-            bail!("No commit found to bump current version");
+            bail!("No commit found to bump current version")
         }
-
-        Ok(next_version)
     }
 
     fn display_history(commits: &[&Git2Commit]) {
@@ -167,6 +169,8 @@ impl VersionIncrement {
 }
 
 #[cfg(test)]
+// Auto version tests resides in test/ dir since it rely on git log
+// To generate the version
 mod test {
     use anyhow::Result;
     use chrono::Utc;
@@ -176,9 +180,25 @@ mod test {
 
     use crate::conventional::commit::Commit;
     use crate::conventional::version::VersionIncrement;
+    use std::str::FromStr;
 
-    // Auto version tests resides in test/ dir since it rely on git log
-    // To generate the version
+    impl Commit {
+        fn commit_fixture(commit_type: CommitType, is_breaking_change: bool) -> Self {
+            Commit {
+                oid: "1234".to_string(),
+                message: ConventionalCommit {
+                    commit_type,
+                    scope: None,
+                    body: None,
+                    summary: "message".to_string(),
+                    is_breaking_change,
+                    footers: vec![],
+                },
+                author: "".to_string(),
+                date: Utc::now().naive_local(),
+            }
+        }
+    }
 
     #[test]
     fn major_bump() -> Result<()> {
@@ -202,146 +222,88 @@ mod test {
     }
 
     #[test]
-    fn should_get_next_auto_version_patch() {
-        let patch = Commit {
-            oid: "1234".to_string(),
-            message: ConventionalCommit {
-                commit_type: CommitType::BugFix,
-                scope: None,
-                summary: "fix".to_string(),
-                body: None,
-                is_breaking_change: false,
-                footers: vec![],
-            },
-            author: "".to_string(),
-            date: Utc::now().naive_local(),
-        };
+    fn increment_minor_version_should_set_patch_to_zero() {
+        let version = Version::from_str("1.1.1").unwrap();
 
-        let version =
-            VersionIncrement::get_next_auto_version(&Version::parse("1.0.0").unwrap(), &[patch]);
+        let bumped = VersionIncrement::Minor.bump(&version).unwrap();
+
+        assert_that!(bumped).is_equal_to(Version::from_str("1.2.0").unwrap())
+    }
+
+    #[test]
+    fn increment_major_version_should_set_minor_and_patch_to_zero() {
+        let version = Version::from_str("1.1.1").unwrap();
+
+        let bumped = VersionIncrement::Major.bump(&version).unwrap();
+
+        assert_that!(bumped).is_equal_to(Version::from_str("2.0.0").unwrap())
+    }
+
+    #[test]
+    fn increment_should_strip_metadata() {
+        let version = Version::from_str("1.1.1-pre+10.1").unwrap();
+
+        let bumped = VersionIncrement::Patch.bump(&version).unwrap();
+
+        assert_that!(bumped).is_equal_to(Version::from_str("1.1.2").unwrap())
+    }
+
+    #[test]
+    fn should_get_next_auto_version_patch() {
+        let patch = Commit::commit_fixture(CommitType::BugFix, false);
+
+        let version = VersionIncrement::version_increment_from_commit_history(
+            &Version::parse("1.0.0").unwrap(),
+            &[patch],
+        );
 
         assert_that!(version)
             .is_ok()
-            .is_equal_to(Version::new(1, 0, 1))
+            .is_equal_to(VersionIncrement::Patch)
     }
 
     #[test]
     fn should_get_next_auto_version_breaking_changes() {
-        let feature = Commit {
-            oid: "1234".to_string(),
-            message: ConventionalCommit {
-                commit_type: CommitType::Feature,
-                scope: None,
-                body: None,
-                summary: "feature".to_string(),
-                is_breaking_change: false,
-                footers: vec![],
-            },
-            author: "".to_string(),
-            date: Utc::now().naive_local(),
-        };
+        let feature = Commit::commit_fixture(CommitType::Feature, false);
+        let breaking_change = Commit::commit_fixture(CommitType::Feature, true);
 
-        let breaking_change = Commit {
-            oid: "1234".to_string(),
-            message: ConventionalCommit {
-                commit_type: CommitType::Feature,
-                scope: None,
-                body: None,
-                summary: "feature".to_string(),
-                is_breaking_change: true,
-                footers: vec![],
-            },
-            author: "".to_string(),
-            date: Utc::now().naive_local(),
-        };
-
-        let version = VersionIncrement::get_next_auto_version(
+        let version = VersionIncrement::version_increment_from_commit_history(
             &Version::parse("1.0.0").unwrap(),
             &[breaking_change, feature],
         );
 
         assert_that!(version)
             .is_ok()
-            .is_equal_to(Version::new(2, 0, 0))
+            .is_equal_to(VersionIncrement::Major)
     }
 
     #[test]
     fn should_get_next_auto_version_breaking_changes_on_initial_dev_version() {
-        let feature = Commit {
-            oid: "1234".to_string(),
-            message: ConventionalCommit {
-                commit_type: CommitType::Feature,
-                scope: None,
-                body: None,
-                summary: "feature".to_string(),
-                is_breaking_change: false,
-                footers: vec![],
-            },
-            author: "".to_string(),
-            date: Utc::now().naive_local(),
-        };
+        let feature = Commit::commit_fixture(CommitType::Feature, false);
+        let breaking_change = Commit::commit_fixture(CommitType::Feature, true);
 
-        let breaking_change = Commit {
-            oid: "1234".to_string(),
-            message: ConventionalCommit {
-                commit_type: CommitType::Feature,
-                scope: None,
-                body: None,
-                summary: "feature".to_string(),
-                is_breaking_change: true,
-                footers: vec![],
-            },
-            author: "".to_string(),
-            date: Utc::now().naive_local(),
-        };
-
-        let version = VersionIncrement::get_next_auto_version(
+        let version = VersionIncrement::version_increment_from_commit_history(
             &Version::parse("0.1.0").unwrap(),
             &[breaking_change, feature],
         );
 
         assert_that!(version)
             .is_ok()
-            .is_equal_to(Version::new(0, 2, 0))
+            .is_equal_to(VersionIncrement::Minor)
     }
 
     #[test]
     fn should_get_next_auto_version_minor() {
-        let patch = Commit {
-            oid: "1234".to_string(),
-            message: ConventionalCommit {
-                commit_type: CommitType::BugFix,
-                scope: None,
-                body: None,
-                summary: "fix".to_string(),
-                is_breaking_change: false,
-                footers: vec![],
-            },
-            author: "".to_string(),
-            date: Utc::now().naive_local(),
-        };
+        let patch = Commit::commit_fixture(CommitType::BugFix, false);
+        let feature = Commit::commit_fixture(CommitType::Feature, false);
 
-        let feature = Commit {
-            oid: "1234".to_string(),
-            message: ConventionalCommit {
-                commit_type: CommitType::Feature,
-                scope: None,
-                body: None,
-                summary: "feature".to_string(),
-                is_breaking_change: false,
-                footers: vec![],
-            },
-            author: "".to_string(),
-            date: Utc::now().naive_local(),
-        };
-
-        let version = VersionIncrement::get_next_auto_version(
+        let version = VersionIncrement::version_increment_from_commit_history(
             &Version::parse("1.0.0").unwrap(),
             &[patch, feature],
         );
 
         assert_that!(version)
             .is_ok()
-            .is_equal_to(Version::new(1, 1, 0))
+            .is_equal_to(VersionIncrement::Minor)
     }
 }
