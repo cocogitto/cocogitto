@@ -481,4 +481,4 @@ Found a bug, have a suggestion for a new feature ? Please read the contribution 
 
 ## Licence
 
-All the code in this repository is released under the MIT License, for more information take a look at the [LICENSE](LICENSE) file.
+<a href="https://github.com/oknozor/cocogitto/blob/master/LICENSE"><img alt="GitHub license" src="https://img.shields.io/github/license/oknozor/cocogitto?style=for-the-badge"></a>
