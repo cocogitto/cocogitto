@@ -1,25 +1,9 @@
-pub mod conventional;
-pub mod error;
-pub mod git;
-pub mod hook;
-pub mod log;
-pub mod settings;
-
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter, Write as FmtWrite};
 use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{exit, Command, Stdio};
-
-use conventional::changelog::{Changelog, ChangelogWriter};
-use conventional::commit::{verify, Commit, CommitConfig};
-use conventional::version::VersionIncrement;
-use error::{CocogittoError, CogCheckReport, PreHookError};
-use git::repository::Repository;
-use hook::Hook;
-use log::filter::CommitFilters;
-use settings::{HookType, Settings};
 
 use anyhow::{anyhow, bail, ensure, Context, Error, Result};
 use chrono::Utc;
@@ -31,6 +15,25 @@ use itertools::Itertools;
 use lazy_static::lazy_static;
 use semver::{Prerelease, Version};
 use tempfile::TempDir;
+
+use conventional::changelog::{Changelog, ChangelogWriter};
+use conventional::commit::{verify, Commit, CommitConfig};
+use conventional::version::VersionIncrement;
+use error::{CocogittoError, CogCheckReport, PreHookError};
+use git::repository::Repository;
+use hook::Hook;
+use log::filter::CommitFilters;
+use settings::{HookType, Settings};
+
+use crate::git::tag::Tag;
+use crate::hook::HookVersion;
+
+pub mod conventional;
+pub mod error;
+pub mod git;
+pub mod hook;
+pub mod log;
+pub mod settings;
 
 pub type CommitsMetadata = HashMap<CommitType, CommitConfig>;
 
@@ -424,12 +427,20 @@ impl CocoGitto {
         // Fail if repo contains un-staged or un-committed changes
         ensure!(statuses.0.is_empty(), "{}", self.repository.get_statuses()?);
 
-        let current_tag = self
-            .repository
-            .get_latest_tag()
-            .unwrap_or_else(|_| Version::new(0, 0, 0).to_string());
-
-        let current_version = Version::parse(&current_tag)?;
+        let current_tag = self.repository.get_latest_tag();
+        let current_version = match current_tag {
+            Ok(ref tag) => tag.to_version().unwrap_or_else(|_err| {
+                println!(
+                    "Failed to parse tag {}, falling back to 0.0.0",
+                    tag.to_string()
+                );
+                Version::new(0, 0, 0)
+            }),
+            Err(ref _err) => {
+                println!("Failed to get current version, falling back to 0.0.0");
+                Version::new(0, 0, 0)
+            }
+        };
 
         let mut next_version = increment
             .bump(&current_version)
@@ -455,10 +466,10 @@ impl CocoGitto {
 
         let version_str = next_version.to_string();
 
-        let origin = if current_tag == "0.0.0" {
+        let origin = if current_version == Version::new(0, 0, 0) {
             self.repository.get_first_commit()?.to_string()
         } else {
-            current_tag
+            current_tag?.oid().to_string()
         };
 
         let changelog = self.get_changelog(
@@ -476,7 +487,20 @@ impl CocoGitto {
             .write()
             .map_err(|err| anyhow!("Unable to write CHANGELOG.md:{}", err))?;
 
-        let hook_result = self.run_hooks(HookType::PreBump, &version_str, hooks_config);
+        let current = self
+            .repository
+            .get_latest_tag()
+            .map(|tag| HookVersion::new(&tag.to_string_with_prefix()))
+            .ok();
+
+        let next_version = HookVersion::new(&Self::prefix_version(next_version.to_string()));
+
+        let hook_result = self.run_hooks(
+            HookType::PreBump,
+            current.as_ref(),
+            &next_version,
+            hooks_config,
+        );
         self.repository.add_all()?;
 
         // Hook failed, we need to stop here and reset
@@ -495,13 +519,24 @@ impl CocoGitto {
             exit(1);
         }
 
+        let version_str = Self::prefix_version(version_str);
+
         self.repository
-            .commit(&format!("chore(version): {}", next_version))?;
+            .commit(&format!("chore(version): {}", next_version.prefixed_tag))?;
+
         self.repository.create_tag(&version_str)?;
 
-        self.run_hooks(HookType::PostBump, &version_str, hooks_config)?;
+        self.run_hooks(
+            HookType::PostBump,
+            current.as_ref(),
+            &next_version,
+            hooks_config,
+        )?;
 
-        let bump = format!("{} -> {}", current_version, next_version).green();
+        let current = current
+            .map(|current| current.prefixed_tag)
+            .unwrap_or_else(|| "...".to_string());
+        let bump = format!("{} -> {}", current, next_version.prefixed_tag).green();
         println!("Bumped version: {}", bump);
 
         Ok(())
@@ -596,7 +631,6 @@ impl CocoGitto {
         }
     }
 
-    // TODO:revparse
     fn resolve_from_arg(&self, from: Option<&str>) -> Result<OidOf> {
         if let Some(from) = from {
             self.get_raw_oid_or_tag_oid(from)
@@ -612,7 +646,7 @@ impl CocoGitto {
         if let Ok(_version) = Version::parse(input) {
             self.repository
                 .resolve_lightweight_tag(input)
-                .map(|oid| OidOf::Tag(input.to_owned(), oid))
+                .map(OidOf::Tag)
                 .map_err(|err| anyhow!("tag {} not found:{} ", input, err))
         } else {
             Oid::from_str(input)
@@ -624,7 +658,8 @@ impl CocoGitto {
     fn run_hooks(
         &self,
         hook_type: HookType,
-        next_version: &str,
+        current_tag: Option<&HookVersion>,
+        next_version: &HookVersion,
         hook_profile: Option<&str>,
     ) -> Result<()> {
         let settings = Settings::get(&self.repository)?;
@@ -651,21 +686,31 @@ impl CocoGitto {
                 .try_collect()?,
         };
 
-        let current_version = self.repository.get_latest_tag().ok();
-
         for mut hook in hooks {
-            hook.insert_versions(current_version.clone(), next_version)?;
+            hook.insert_versions(current_tag, next_version)?;
             hook.run().context(hook.to_string())?;
         }
 
         Ok(())
+    }
+
+    fn prefix_version(version: String) -> String {
+        if let Some(prefix) = SETTINGS.tag_prefix.as_ref() {
+            if !version.starts_with(prefix) {
+                format!("{}{}", prefix, version)
+            } else {
+                version
+            }
+        } else {
+            version
+        }
     }
 }
 
 /// A wrapper for git2 oid including tags and HEAD ref
 #[derive(Debug, PartialEq, Eq)]
 enum OidOf {
-    Tag(String, Oid),
+    Tag(Tag),
     Head(Oid),
     Other(Oid),
 }
@@ -673,7 +718,8 @@ enum OidOf {
 impl OidOf {
     fn get_oid(&self) -> Oid {
         match self {
-            OidOf::Tag(_, v) | OidOf::Head(v) | OidOf::Other(v) => v.to_owned(),
+            OidOf::Head(v) | OidOf::Other(v) => v.to_owned(),
+            OidOf::Tag(tag) => tag.oid().to_owned(),
         }
     }
 }
@@ -682,7 +728,7 @@ impl Display for OidOf {
     /// Print the oid according to it's type
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            OidOf::Tag(tag, _) => write!(f, "{}", tag),
+            OidOf::Tag(tag) => write!(f, "{}", tag.to_string()),
             OidOf::Head(_) => write!(f, "HEAD"),
             OidOf::Other(oid) => write!(f, "{}", &oid.to_string()[0..6]),
         }
