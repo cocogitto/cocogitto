@@ -20,6 +20,7 @@ pub enum HookType {
 }
 
 #[derive(Debug, Deserialize, Serialize, Eq, PartialEq)]
+#[serde(deny_unknown_fields)]
 pub struct Settings {
     pub changelog_path: Option<PathBuf>,
     pub github: Option<String>,
@@ -38,6 +39,7 @@ pub struct Settings {
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone, Eq, PartialEq)]
+#[serde(deny_unknown_fields)]
 pub struct AuthorSetting {
     pub signature: String,
     pub username: String,
@@ -59,6 +61,7 @@ impl Default for Settings {
 }
 
 #[derive(Debug, Deserialize, Serialize, Default, Eq, PartialEq)]
+#[serde(deny_unknown_fields)]
 pub struct BumpProfile {
     #[serde(default)]
     pub pre_bump_hooks: Vec<String>,
