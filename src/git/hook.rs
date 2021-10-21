@@ -8,7 +8,7 @@ use crate::CocoGitto;
 use anyhow::{anyhow, Result};
 
 pub static PRE_PUSH_HOOK: &[u8] = include_bytes!("assets/pre-push");
-pub static PREPARE_COMMIT_HOOK: &[u8] = include_bytes!("assets/prepare-commit-msg");
+pub static PREPARE_COMMIT_HOOK: &[u8] = include_bytes!("assets/pre-commit");
 const PRE_COMMIT_HOOK_PATH: &str = ".git/hooks/pre-commit";
 const PRE_PUSH_HOOK_PATH: &str = ".git/hooks/pre-push";
 
