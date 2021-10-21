@@ -2,8 +2,8 @@ use std::fmt::{Debug, Formatter};
 use std::path::Path;
 
 use crate::error::CocogittoError::{self, Git};
-use crate::git::status::Statuses;
-use crate::OidOf;
+use crate::git::{status::Statuses, tag::Tag};
+use crate::{OidOf, SETTINGS};
 
 use anyhow::{anyhow, ensure, Result};
 use colored::Colorize;
@@ -12,7 +12,8 @@ use git2::{
     Repository as Git2Repository, StatusOptions,
 };
 use itertools::Itertools;
-use semver::Version;
+
+use git2::string_array::StringArray;
 
 pub(crate) struct Repository(pub(crate) Git2Repository);
 
@@ -119,33 +120,36 @@ impl Repository {
         }
     }
 
-    pub(crate) fn resolve_lightweight_tag(&self, tag: &str) -> Result<Oid> {
+    pub(crate) fn resolve_lightweight_tag(&self, tag: &str) -> Result<Tag> {
         self.0
             .resolve_reference_from_short_name(tag)
             .map(|reference| reference.target().unwrap())
-            .map_err(|err| anyhow!("Cannot resolve tag {}:{}", tag, err.message()))
+            .map(|oid| Tag::new(tag, oid))?
     }
 
-    pub(crate) fn get_latest_tag(&self) -> Result<String> {
-        let tag_names = self.0.tag_names(None)?;
-        let latest_tag = tag_names.iter().flatten().flat_map(Version::parse).max();
+    pub(crate) fn get_latest_tag(&self) -> Result<Tag> {
+        let latest_tag: Option<Tag> = self
+            .tags()?
+            .iter()
+            .flatten()
+            .map(|tag| self.resolve_lightweight_tag(tag))
+            .filter_map(Result::ok)
+            .max();
 
         match latest_tag {
-            Some(tag) => Ok(tag.to_string()),
+            Some(tag) => Ok(tag),
             None => Err(anyhow!("Unable to get any tag")),
         }
     }
 
     pub(crate) fn get_tag_commits(&self, target_tag: &str) -> Result<(OidOf, OidOf)> {
-        let tag_names = self.0.tag_names(None)?;
-        let oid_of_target_tag = OidOf::Tag(
-            target_tag.to_string(),
-            self.resolve_lightweight_tag(target_tag)?,
-        );
+        let oid_of_target_tag = OidOf::Tag(self.resolve_lightweight_tag(target_tag)?);
+
         // Starting point is set to first commit
         let oid_of_first_commit = OidOf::Other(self.get_first_commit()?);
 
-        let oid_of_previous_tag = tag_names
+        let oid_of_previous_tag = self
+            .tags()?
             .iter()
             .flatten()
             .sorted()
@@ -153,7 +157,6 @@ impl Repository {
             .find(|&(_, cur)| cur == target_tag)
             .map(|(prev, _)| {
                 OidOf::Tag(
-                    prev.to_string(),
                     self.resolve_lightweight_tag(prev)
                         .expect("Unexpected tag parsing error"),
                 )
@@ -165,16 +168,13 @@ impl Repository {
 
     pub(crate) fn get_latest_tag_oid(&self) -> Result<Oid> {
         self.get_latest_tag()
-            .and_then(|tag| self.resolve_lightweight_tag(&tag))
+            .map(|tag| tag.oid().to_owned())
             .map_err(|err| anyhow!("Could not resolve latest tag:{}", err))
     }
 
     pub(crate) fn get_latest_tag_oidof(&self) -> Result<OidOf> {
         self.get_latest_tag()
-            .and_then(|tag| {
-                self.resolve_lightweight_tag(&tag)
-                    .map(|oid| OidOf::Tag(tag, oid))
-            })
+            .map(OidOf::Tag)
             .map_err(|err| anyhow!("Could not resolve latest tag:{}", err))
     }
 
@@ -273,6 +273,17 @@ impl Repository {
         let obj = repo.revparse_single(arg)?;
         let tree = obj.peel(ObjectType::Tree)?;
         Ok(Some(tree))
+    }
+
+    fn tags(&self) -> Result<StringArray> {
+        let pattern = SETTINGS
+            .tag_prefix
+            .as_ref()
+            .map(|prefix| format!("{}*", prefix));
+
+        self.0
+            .tag_names(pattern.as_deref())
+            .map_err(|err| anyhow!("{}", err))
     }
 }
 
@@ -561,9 +572,9 @@ mod test {
         repo.commit("second commit")?;
         repo.create_tag("0.2.0")?;
 
-        let tag = repo.get_latest_tag();
+        let tag = repo.get_latest_tag()?;
 
-        assert_that!(tag).is_ok().is_equal_to("0.2.0".to_string());
+        assert_that!(tag.to_string_with_prefix()).is_equal_to("0.2.0".to_string());
         Ok(())
     }
 
@@ -669,8 +680,9 @@ mod test {
 
         let commit_range = repo.get_tag_commits("1.0.0")?;
 
-        assert_that!(commit_range)
-            .is_equal_to((OidOf::Other(start), OidOf::Tag("1.0.0".to_string(), end)));
+        assert_that!(commit_range.0).is_equal_to(OidOf::Other(start));
+        assert_that!(commit_range.1.get_oid()).is_equal_to(end);
+        assert_that!(commit_range.1.to_string()).is_equal_to("1.0.0".to_string());
         Ok(())
     }
 

@@ -6,10 +6,12 @@ use std::ops::Range;
 use std::process::Command;
 use std::str::FromStr;
 
+use semver::Version;
+
+use crate::SETTINGS;
 use parser::Token;
 
 use anyhow::{anyhow, ensure, Result};
-use semver::Version;
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct VersionSpan {
@@ -17,12 +19,44 @@ pub struct VersionSpan {
     tokens: VecDeque<Token>,
 }
 
+pub(crate) struct HookVersion {
+    pub prefixed_tag: String,
+}
+
+impl HookVersion {
+    pub(crate) fn new(tag: &str) -> Self {
+        HookVersion {
+            prefixed_tag: tag.to_string(),
+        }
+    }
+    pub(crate) fn to_version(&self) -> Result<Version> {
+        match SETTINGS.tag_prefix.as_ref() {
+            Some(prefix) => {
+                if self.prefixed_tag.starts_with(prefix) {
+                    let version = self.prefixed_tag.strip_prefix(prefix);
+                    Version::parse(version.unwrap())
+                } else {
+                    Version::parse(self.prefixed_tag.as_ref())
+                }
+            }
+            None => Version::parse(self.prefixed_tag.as_ref()),
+        }
+        .map_err(|err| anyhow!("{}", err))
+    }
+}
+
 impl VersionSpan {
-    pub fn build_version_str(
+    pub(crate) fn build_version_str(
         &mut self,
-        version: &Version,
-        latest: Option<&Version>,
+        version: &HookVersion,
+        latest: Option<&HookVersion>,
     ) -> Result<String> {
+        let version = version.to_version()?;
+        let latest = latest
+            .map(|version| version.to_version())
+            .map(Result::ok)
+            .flatten();
+
         // According to the pest grammar, a `version` or `latest_version` token is expected first
         let mut version = match self.tokens.pop_front() {
             Some(Token::Version) => Ok(version),
@@ -30,8 +64,7 @@ impl VersionSpan {
                 latest.ok_or_else(|| anyhow!("No previous tag found to replace {{latest}} version"))
             }
             _ => unreachable!("Unexpected parsing error"),
-        }?
-        .clone();
+        }?;
 
         let mut amount = 1;
 
@@ -70,7 +103,11 @@ pub struct HookSpan {
 }
 
 impl HookSpan {
-    fn replace_versions(&mut self, version: &Version, latest: Option<&Version>) -> Result<String> {
+    fn replace_versions(
+        &mut self,
+        version: &HookVersion,
+        latest: Option<&HookVersion>,
+    ) -> Result<String> {
         let mut output = self.content.clone();
         if let Some(mut span) = self.version_spans.pop() {
             let version_str = span.build_version_str(version, latest)?;
@@ -103,23 +140,17 @@ impl fmt::Display for Hook {
 }
 
 impl Hook {
-    pub fn insert_versions(
+    pub(crate) fn insert_versions(
         &mut self,
-        current_version: Option<String>,
-        next_version: &str,
+        current_version: Option<&HookVersion>,
+        next_version: &HookVersion,
     ) -> Result<()> {
-        let next_version = Version::from_str(next_version)?;
-        let current_version = current_version
-            .map(|version| Version::from_str(&version))
-            .map(Result::ok)
-            .flatten();
-
         let parts = self
             .0
             .iter()
             .map(|part| parser::parse(part))
             .map(Result::unwrap)
-            .map(|mut span| span.replace_versions(&next_version, current_version.as_ref()))
+            .map(|mut span| span.replace_versions(next_version, current_version))
             .map(Result::unwrap)
             .collect();
 
@@ -143,7 +174,7 @@ impl Hook {
 mod test {
     use std::str::FromStr;
 
-    use crate::{Hook, Result};
+    use crate::{Hook, HookVersion, Result};
 
     use speculoos::prelude::*;
 
@@ -163,7 +194,8 @@ mod test {
     #[test]
     fn replace_version_cargo() -> Result<()> {
         let mut hook = Hook::from_str("cargo bump {{version}}")?;
-        hook.insert_versions(None, "1.0.0").unwrap();
+        hook.insert_versions(None, &HookVersion::new("1.0.0"))
+            .unwrap();
 
         assert_that(&hook.0).contains_all_of(&vec![
             &"cargo".to_string(),
@@ -176,7 +208,8 @@ mod test {
     #[test]
     fn replace_maven_version() -> Result<()> {
         let mut hook = Hook::from_str("mvn versions:set -DnewVersion={{version}}")?;
-        hook.insert_versions(None, "1.0.0").unwrap();
+        hook.insert_versions(None, &HookVersion::new("1.0.0"))
+            .unwrap();
 
         assert_eq!(&hook.0, &["mvn", "versions:set", "-DnewVersion=1.0.0"]);
         Ok(())
@@ -185,7 +218,8 @@ mod test {
     #[test]
     fn replace_maven_version_with_expression() -> Result<()> {
         let mut hook = Hook::from_str("mvn versions:set -DnewVersion={{version+1minor-SNAPSHOT}}")?;
-        hook.insert_versions(None, "1.0.0").unwrap();
+        hook.insert_versions(None, &HookVersion::new("1.0.0"))
+            .unwrap();
 
         assert_eq!(
             &hook.0,
@@ -197,7 +231,8 @@ mod test {
     #[test]
     fn leave_hook_untouched_when_no_version() -> Result<()> {
         let mut hook = Hook::from_str("echo \"Hello World\"")?;
-        hook.insert_versions(None, "1.0.0").unwrap();
+        hook.insert_versions(None, &HookVersion::new("1.0.0"))
+            .unwrap();
 
         assert_eq!(&hook.0, &["echo", "Hello World"]);
         Ok(())
@@ -206,7 +241,8 @@ mod test {
     #[test]
     fn replace_quoted_version() -> Result<()> {
         let mut hook = Hook::from_str("echo \"{{version}}\"")?;
-        hook.insert_versions(None, "1.0.0").unwrap();
+        hook.insert_versions(None, &HookVersion::new("1.0.0"))
+            .unwrap();
 
         assert_eq!(&hook.0, &["echo", "1.0.0"]);
         Ok(())
@@ -215,7 +251,8 @@ mod test {
     #[test]
     fn replace_version_with_nested_simple_quoted_arg() -> Result<()> {
         let mut hook = Hook::from_str("coco chore 'bump snapshot to {{version+1minor-pre}}'")?;
-        hook.insert_versions(None, "1.0.0").unwrap();
+        hook.insert_versions(None, &HookVersion::new("1.0.0"))
+            .unwrap();
 
         assert_eq!(&hook.0, &["coco", "chore", "bump snapshot to 1.1.0-pre"]);
         Ok(())
@@ -224,7 +261,8 @@ mod test {
     #[test]
     fn replace_version_with_nested_double_quoted_arg() -> Result<()> {
         let mut hook = Hook::from_str("coco chore \"bump snapshot to {{version+1minor-pre}}\"")?;
-        hook.insert_versions(None, "1.0.0").unwrap();
+        hook.insert_versions(None, &HookVersion::new("1.0.0"))
+            .unwrap();
 
         assert_eq!(&hook.0, &["coco", "chore", "bump snapshot to 1.1.0-pre"]);
         Ok(())
@@ -233,7 +271,7 @@ mod test {
     #[test]
     fn replace_version_with_multiple_placeholders() -> Result<()> {
         let mut hook = Hook::from_str("echo \"the latest {{latest}}, the greatest {{version}}\"")?;
-        hook.insert_versions(Some("0.5.9".to_string()), "1.0.0")
+        hook.insert_versions(Some(&HookVersion::new("0.5.9")), &HookVersion::new("1.0.0"))
             .unwrap();
 
         assert_eq!(&hook.0, &["echo", "the latest 0.5.9, the greatest 1.0.0"]);
@@ -245,7 +283,7 @@ mod test {
         let mut hook = Hook::from_str(
             "echo \"the latest {{latest+3major+1minor}}, the greatest {{version+2patch}}\"",
         )?;
-        hook.insert_versions(Some("0.5.9".to_string()), "1.0.0")
+        hook.insert_versions(Some(&HookVersion::new("0.5.9")), &HookVersion::new("1.0.0"))
             .unwrap();
 
         assert_eq!(&hook.0, &["echo", "the latest 3.1.0, the greatest 1.0.2"]);
@@ -256,7 +294,8 @@ mod test {
     fn replace_version_with_pre_and_build_metadata() -> Result<()> {
         let mut hook =
             Hook::from_str("echo \"the latest {{version+1major-pre.alpha-bravo+build.42}}\"")?;
-        hook.insert_versions(None, "1.0.0").unwrap();
+        hook.insert_versions(None, &HookVersion::new("1.0.0"))
+            .unwrap();
 
         assert_eq!(
             &hook.0,

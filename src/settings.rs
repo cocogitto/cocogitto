@@ -24,6 +24,8 @@ pub struct Settings {
     pub changelog_path: Option<PathBuf>,
     pub github: Option<String>,
     #[serde(default)]
+    pub tag_prefix: Option<String>,
+    #[serde(default)]
     pub pre_bump_hooks: Vec<String>,
     #[serde(default)]
     pub post_bump_hooks: Vec<String>,
@@ -51,6 +53,7 @@ impl Default for Settings {
             authors: Default::default(),
             commit_types: Default::default(),
             bump_profiles: Default::default(),
+            tag_prefix: None,
         }
     }
 }
