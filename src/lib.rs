@@ -326,6 +326,39 @@ impl CocoGitto {
         Ok(logs)
     }
 
+    pub fn get_conventional_message(
+        commit_type: &str,
+        scope: Option<String>,
+        summary: String,
+        body: Option<String>,
+        footer: Option<String>,
+        is_breaking_change: bool,
+    ) -> Result<String> {
+        // Ensure commit type is known
+        let commit_type = CommitType::from(commit_type);
+
+        // Ensure footers are correctly formatted
+        let footers = match footer {
+            Some(footers) => parse_footers(&footers)?,
+            None => Vec::with_capacity(0),
+        };
+
+        let conventional_message = ConventionalCommit {
+            commit_type,
+            scope,
+            body,
+            footers,
+            summary,
+            is_breaking_change,
+        }
+        .to_string();
+
+        // Validate the message
+        conventional_commit_parser::parse(&conventional_message)?;
+
+        Ok(conventional_message)
+    }
+
     pub fn conventional_commit(
         &self,
         commit_type: &str,
