@@ -326,6 +326,8 @@ impl CocoGitto {
         Ok(logs)
     }
 
+    /// Tries to get a commit message conforming to the Conventional Commit spec.
+    /// If the commit message does _not_ conform, `None` is returned instead.
     pub fn get_conventional_message(
         commit_type: &str,
         scope: Option<String>,
