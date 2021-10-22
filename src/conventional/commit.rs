@@ -13,11 +13,24 @@ use git2::Commit as Git2Commit;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Eq, PartialEq)]
-pub struct Commit {
+pub struct Commit<'a> {
     pub(crate) oid: String,
-    pub(crate) message: ConventionalCommit,
+    pub(crate) raw: String,
+    pub(crate) conventional: ConventionalCommit<'a>,
     pub(crate) author: String,
     pub(crate) date: NaiveDateTime,
+}
+
+impl Default for Commit<'_> {
+    fn default() -> Self {
+        Self {
+            oid: "".to_string(),
+            raw: "".to_string(),
+            conventional: Default::default(),
+            author: "".to_string(),
+            date: Utc::now().naive_utc(),
+        }
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone, Eq, PartialEq)]
@@ -33,23 +46,26 @@ impl CommitConfig {
     }
 }
 
-impl Commit {
-    pub(crate) fn from_git_commit(commit: &Git2Commit) -> Result<Self> {
+impl<'a> Commit<'a> {
+    pub fn from_git_commit(commit: &'a Git2Commit<'a>) -> Result<Self> {
         let oid = commit.id().to_string();
-
-        let commit = commit.to_owned();
         let date = NaiveDateTime::from_timestamp(commit.time().seconds(), 0);
         let message = commit.message();
-        let git2_message = message.unwrap().to_owned();
-        let author = commit.author().name().unwrap_or("").to_string();
-
+        let git2_message = message.unwrap();
+        let author = commit
+            .author()
+            .name()
+            .map(|author| author.to_string())
+            .unwrap_or("".to_string());
         let message = git2_message.trim_end().trim_start();
-        let conventional_commit = conventional_commit_parser::parse(message);
+        let conventional_commit =
+            conventional_commit_parser::parse(Box::leak(message.to_string().into_boxed_str()));
 
         match conventional_commit {
             Ok(message) => Ok(Commit {
                 oid,
-                message,
+                raw: message.to_string(),
+                conventional: message,
                 author,
                 date,
             }),
@@ -60,7 +76,7 @@ impl Commit {
                 Err(anyhow!(CommitFormat {
                     oid,
                     summary,
-                    author,
+                    author: author.to_string(),
                     cause: err.to_string()
                 }))
             }
@@ -80,7 +96,7 @@ impl Commit {
             format!(
                 "{} - {} - {}\n",
                 self.shorthand().yellow(),
-                self.message.summary,
+                self.conventional.summary,
                 self.author.blue()
             )
         } else {
@@ -100,14 +116,14 @@ impl Commit {
             format!(
                 "{} - {} - {}\n\n",
                 oid.unwrap_or_else(|| self.oid[0..6].into()),
-                self.message.summary,
+                self.conventional.summary,
                 github_author.unwrap_or_else(|| self.author.to_string())
             )
         }
     }
 
     pub fn get_log(&self) -> String {
-        let summary = &self.message.summary;
+        let summary = &self.conventional.summary;
         let message_display = Commit::short_summary_from_str(summary).yellow();
         let author_format = "Author:".green().bold();
         let type_format = "Type:".green().bold();
@@ -163,14 +179,14 @@ impl Commit {
             author_format,
             self.author,
             type_format,
-            self.message.commit_type,
+            self.conventional.commit_type,
             scope_format,
-            self.message.scope.as_deref().unwrap_or("none"),
+            self.conventional.scope.as_deref().unwrap_or("none"),
         )
     }
 
     fn format_breaking_change(&self) -> String {
-        if self.message.is_breaking_change {
+        if self.conventional.is_breaking_change {
             format!("{} - ", "BREAKING CHANGE".red().bold())
         } else {
             "".to_string()
@@ -178,12 +194,15 @@ impl Commit {
     }
 
     pub(crate) fn format_summary(&self) -> String {
-        match &self.message.scope {
-            None => format!("{}: {}", self.message.commit_type, self.message.summary,),
+        match &self.conventional.scope {
+            None => format!(
+                "{}: {}",
+                self.conventional.commit_type, self.conventional.summary,
+            ),
             Some(scope) => {
                 format!(
                     "{}({}): {}",
-                    self.message.commit_type, scope, self.message.summary,
+                    self.conventional.commit_type, scope, self.conventional.summary,
                 )
             }
         }
@@ -200,25 +219,27 @@ impl Commit {
     }
 }
 
-impl fmt::Display for Commit {
+impl fmt::Display for Commit<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.get_log())
     }
 }
 
-impl PartialOrd for Commit {
+impl PartialOrd for Commit<'_> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.message.scope.partial_cmp(&other.message.scope)
+        self.conventional
+            .scope
+            .partial_cmp(&other.conventional.scope)
     }
 }
 
-impl Ord for Commit {
+impl Ord for Commit<'_> {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.message.scope.cmp(&other.message.scope)
+        self.conventional.scope.cmp(&other.conventional.scope)
     }
 }
 
-pub fn verify(author: Option<String>, message: &str) -> Result<(), ParseError> {
+pub fn verify(author: Option<&str>, message: &str) -> Result<(), ParseError> {
     let commit = conventional_commit_parser::parse(message);
 
     match commit {
@@ -227,9 +248,12 @@ pub fn verify(author: Option<String>, message: &str) -> Result<(), ParseError> {
                 "{}",
                 Commit {
                     oid: "not committed".to_string(),
-                    message,
+                    raw: "".to_string(),
+                    conventional: message,
                     date: Utc::now().naive_utc(),
-                    author: author.unwrap_or_else(|| "Unknown".to_string()),
+                    author: author
+                        .map(|author| author.to_string())
+                        .unwrap_or_else(|| "Unknown".to_string()),
                 }
             );
             Ok(())
@@ -257,8 +281,8 @@ mod test {
         // Assert
         let commit = commit.unwrap();
         assert_that!(commit.commit_type).is_equal_to(CommitType::Feature);
-        assert_that!(commit.scope).is_equal_to(Some("database".to_owned()));
-        assert_that!(commit.summary).is_equal_to("add postgresql driver".to_owned());
+        assert_that!(commit.scope).is_equal_to(Some("database"));
+        assert_that!(commit.summary).is_equal_to("add postgresql driver");
         assert_that!(commit.is_breaking_change).is_false();
         assert_that!(commit.body).is_none();
         assert_that!(commit.footers).is_empty();
@@ -293,10 +317,11 @@ mod test {
         // Arrange
         let commit = Commit {
             oid: "1234567".to_string(),
-            message: ConventionalCommit {
+            raw: "placeholder".to_string(),
+            conventional: ConventionalCommit {
                 commit_type: CommitType::BugFix,
-                scope: Some("scope".to_string()),
-                summary: "this is the message".to_string(),
+                scope: Some("scope"),
+                summary: "this is the message",
                 body: None,
                 footers: vec![],
                 is_breaking_change: false,
@@ -318,10 +343,11 @@ mod test {
         // Arrange
         let commit = Commit {
             oid: "1234567".to_string(),
-            message: ConventionalCommit {
+            raw: "placeholder".to_string(),
+            conventional: ConventionalCommit {
                 commit_type: CommitType::BugFix,
                 scope: None,
-                summary: "this is the message".to_string(),
+                summary: "this is the message",
                 body: None,
                 footers: vec![],
                 is_breaking_change: false,

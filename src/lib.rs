@@ -23,6 +23,7 @@ use error::{CocogittoError, CogCheckReport, PreHookError};
 use git::repository::Repository;
 use hook::Hook;
 use log::filter::CommitFilters;
+use settings::COMMITS_METADATA;
 use settings::{HookType, Settings};
 
 use crate::git::tag::Tag;
@@ -35,7 +36,7 @@ pub mod hook;
 pub mod log;
 pub mod settings;
 
-pub type CommitsMetadata = HashMap<CommitType, CommitConfig>;
+pub type CommitsMetadata<'a> = HashMap<CommitType<'a>, CommitConfig>;
 
 pub const CONFIG_PATH: &str = "cog.toml";
 
@@ -46,13 +47,6 @@ lazy_static! {
         } else {
             Settings::default()
         }
-    };
-
-    // This cannot be carried by `Cocogitto` struct since we need it to be available in `Changelog`,
-    // `Commit` etc. Be ensure that `CocoGitto::new` is called before using this  in order to bypass
-    // unwrapping in case of error.
-    pub static ref COMMITS_METADATA: CommitsMetadata = {
-        SETTINGS.commit_types()
     };
 }
 
@@ -226,7 +220,7 @@ impl CocoGitto {
                             .collect();
 
                         rebase.commit(None, &original_commit.committer(), Some(&new_message))?;
-                        match verify(self.repository.get_author().ok(), &new_message) {
+                        match verify(self.get_committer().ok().as_deref(), &new_message) {
                             Ok(_) => println!(
                                 "Changed commit message to:\"{}\"",
                                 &new_message.trim_end()
@@ -271,20 +265,20 @@ impl CocoGitto {
         let (successes, mut errors): (Vec<_>, Vec<_>) = commits
             .iter()
             .filter(|commit| !commit.message().unwrap_or("").starts_with("Merge "))
-            .map(Commit::from_git_commit)
+            .map(|commit| Commit::from_git_commit(commit))
             .partition_result();
 
         let type_errors: Vec<Error> = successes
             .iter()
             .map(|commit| {
-                let commit_type = &commit.message.commit_type;
-                match &SETTINGS.commit_types().get(commit_type) {
+                let commit_type = &commit.conventional.commit_type;
+                match COMMITS_METADATA.get(commit_type) {
                     Some(_) => Ok(()),
                     None => Err(anyhow!(CocogittoError::CommitTypeNotAllowed {
                         oid: commit.oid.clone(),
                         summary: commit.format_summary(),
-                        commit_type: commit.message.commit_type.to_string(),
-                        author: commit.author.clone()
+                        commit_type: commit.conventional.commit_type.to_string(),
+                        author: commit.author.to_string()
                     })),
                 }
             })
@@ -312,7 +306,7 @@ impl CocoGitto {
             // Remove merge commits
             .filter(|commit| !commit.message().unwrap_or("").starts_with("Merge"))
             .filter(|commit| filters.filter_git2_commit(commit))
-            .map(Commit::from_git_commit)
+            .map(|commit| Commit::from_git_commit(commit))
             // Apply filters
             .filter(|commit| match commit {
                 Ok(commit) => filters.filters(commit),
@@ -331,12 +325,12 @@ impl CocoGitto {
 
     /// Tries to get a commit message conforming to the Conventional Commit spec.
     /// If the commit message does _not_ conform, `None` is returned instead.
-    pub fn get_conventional_message(
-        commit_type: &str,
-        scope: Option<String>,
-        summary: String,
-        body: Option<String>,
-        footer: Option<String>,
+    pub fn get_conventional_message<'a>(
+        commit_type: &'a str,
+        scope: Option<&'a str>,
+        summary: &'a str,
+        body: Option<&'a str>,
+        footer: Option<&'a str>,
         is_breaking_change: bool,
     ) -> Result<String> {
         // Ensure commit type is known
@@ -367,10 +361,10 @@ impl CocoGitto {
     pub fn conventional_commit(
         &self,
         commit_type: &str,
-        scope: Option<String>,
-        summary: String,
-        body: Option<String>,
-        footer: Option<String>,
+        scope: Option<&String>,
+        summary: &str,
+        body: Option<&String>,
+        footer: Option<&String>,
         is_breaking_change: bool,
     ) -> Result<()> {
         // Ensure commit type is known
@@ -382,6 +376,8 @@ impl CocoGitto {
             None => Vec::with_capacity(0),
         };
 
+        let scope = scope.map(|scope| scope.as_str());
+        let body = body.map(|body| body.as_str());
         let conventional_message = ConventionalCommit {
             commit_type,
             scope,
@@ -472,20 +468,38 @@ impl CocoGitto {
             current_tag?.oid().to_string()
         };
 
-        let changelog = self.get_changelog(
-            Some(&origin),
-            Some(&self.repository.get_head_commit_oid()?.to_string()),
-            Some(next_version.to_string()),
-        )?;
+        {
+            let from = self.resolve_from_arg(Some(&origin))?;
+            let to =
+                self.resolve_to_arg(Some(&self.repository.get_head_commit_oid()?.to_string()))?;
+            let from_oid = from.get_oid();
+            let to_oid = to.get_oid();
 
-        let mut writer = ChangelogWriter {
-            changelog,
-            path: self.changelog_path.clone(),
-        };
+            let git2_commits = self
+                .repository
+                .get_commit_range(from_oid, to_oid)
+                .map_err(|err| anyhow!("Could not get commit range {}...{}:{}", from, to, err))?;
 
-        writer
-            .write()
-            .map_err(|err| anyhow!("Unable to write CHANGELOG.md:{}", err))?;
+            let git2_commits: Vec<Commit> = git2_commits
+                .iter()
+                .map(|commit| Commit::from_git_commit(commit))
+                .filter_map(Result::ok)
+                .collect();
+
+            let git2_commits: Vec<&Commit> = git2_commits.iter().collect();
+
+            let changelog =
+                self.get_changelog(from, to, Some(next_version.to_string()), git2_commits)?;
+
+            let mut writer = ChangelogWriter {
+                changelog,
+                path: self.changelog_path.clone(),
+            };
+
+            writer
+                .write()
+                .map_err(|err| anyhow!("Unable to write CHANGELOG.md:{}", err))?;
+        }
 
         let current = self
             .repository
@@ -543,7 +557,25 @@ impl CocoGitto {
     }
 
     pub fn get_colored_changelog(&self, from: Option<&str>, to: Option<&str>) -> Result<String> {
-        let mut changelog = self.get_changelog(from, to, None)?;
+        let from = self.resolve_from_arg(from)?;
+        let to = self.resolve_to_arg(to)?;
+        let from_oid = from.get_oid();
+        let to_oid = to.get_oid();
+
+        let git2_commits = self
+            .repository
+            .get_commit_range(from_oid, to_oid)
+            .map_err(|err| anyhow!("Could not get commit range {}...{}:{}", from, to, err))?;
+
+        let git2_commits: Vec<Commit> = git2_commits
+            .iter()
+            .map(|commit| Commit::from_git_commit(commit))
+            .filter_map(Result::ok)
+            .collect();
+
+        let git2_commits: Vec<&Commit> = git2_commits.iter().collect();
+
+        let mut changelog = self.get_changelog(from, to, None, git2_commits)?;
         Ok(changelog.markdown(true))
     }
 
@@ -558,11 +590,25 @@ impl CocoGitto {
             .parent_id(0)
             .expect("Unexpected error:Unable to get parent commit")
             .to_string();
-        let mut changelog = self.get_changelog(
-            Some(from.as_str()),
-            Some(to.as_str()),
-            Some(tag.to_string()),
-        )?;
+
+        let from = self.resolve_from_arg(Some(from.as_str()))?;
+        let to = self.resolve_to_arg(Some(to.as_str()))?;
+        let from_oid = from.get_oid();
+        let to_oid = to.get_oid();
+
+        let git2_commits = self
+            .repository
+            .get_commit_range(from_oid, to_oid)
+            .map_err(|err| anyhow!("Could not get commit range {}...{}:{}", from, to, err))?;
+
+        let git2_commits: Vec<Commit> = git2_commits
+            .iter()
+            .map(|commit| Commit::from_git_commit(commit))
+            .filter_map(Result::ok)
+            .collect();
+
+        let git2_commits: Vec<&Commit> = git2_commits.iter().collect();
+        let mut changelog = self.get_changelog(from, to, Some(tag.to_string()), git2_commits)?;
         Ok(changelog.markdown(true))
     }
 
@@ -571,41 +617,23 @@ impl CocoGitto {
     /// - `to` default value:`HEAD` or else first commit
     pub(crate) fn get_changelog(
         &self,
-        from: Option<&str>,
-        to: Option<&str>,
+        from: OidOf,
+        to: OidOf,
         tag_name: Option<String>,
+        git2_commits: Vec<&Commit>,
     ) -> Result<Changelog> {
-        let from = self.resolve_from_arg(from)?;
-        let to = self.resolve_to_arg(to)?;
-        let from_oid = from.get_oid();
-        let to_oid = to.get_oid();
-
         let mut commits = vec![];
 
-        for commit in self
-            .repository
-            .get_commit_range(from_oid, to_oid)
-            .map_err(|err| anyhow!("Could not get commit range {}...{}:{}", from, to, err))?
-        {
+        for commit in git2_commits {
             // We skip the origin commit (ex: from 0.1.0 to 1.0.0)
-            if commit.id() == from_oid {
+            if commit.oid == from.get_oid().to_string() {
                 break;
             }
 
             // Ignore merge commits
-            if let Some(message) = commit.message() {
-                if message.starts_with("Merge") {
-                    continue;
-                }
+            if commit.raw.starts_with("Merge") {
+                continue;
             }
-
-            match Commit::from_git_commit(&commit) {
-                Ok(commit) => commits.push(commit),
-                Err(err) => {
-                    let err = err.to_string().red();
-                    eprintln!("{}", err);
-                }
-            };
         }
 
         let date = Utc::now().naive_utc().date().to_string();

@@ -5,13 +5,42 @@ use crate::conventional::commit::CommitConfig;
 use crate::git::repository::Repository;
 use crate::{CommitsMetadata, CONFIG_PATH};
 
+use crate::SETTINGS;
 use anyhow::{anyhow, Result};
 use config::{Config, File};
 use conventional_commit_parser::commit::CommitType;
+use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 
 type CommitsMetadataSettings = HashMap<String, CommitConfig>;
 pub(crate) type AuthorSettings = Vec<AuthorSetting>;
+
+lazy_static! {
+    pub static ref COMMITS_METADATA: CommitsMetadata<'static> = {
+        let mut default_types = HashMap::new();
+        default_types.insert(CommitType::Feature, CommitConfig::new("Features"));
+        default_types.insert(CommitType::BugFix, CommitConfig::new("Bug Fixes"));
+        default_types.insert(CommitType::Chore, CommitConfig::new("Miscellaneous Chores"));
+        default_types.insert(CommitType::Revert, CommitConfig::new("Revert"));
+        default_types.insert(
+            CommitType::Performances,
+            CommitConfig::new("Performance Improvements"),
+        );
+        default_types.insert(
+            CommitType::Documentation,
+            CommitConfig::new("Documentation"),
+        );
+        default_types.insert(CommitType::Style, CommitConfig::new("Style"));
+        default_types.insert(CommitType::Refactor, CommitConfig::new("Refactoring"));
+        default_types.insert(CommitType::Test, CommitConfig::new("Tests"));
+
+        default_types.insert(CommitType::Build, CommitConfig::new("Build system"));
+
+        default_types.insert(CommitType::Ci, CommitConfig::new("Continuous Integration"));
+
+        default_types
+    };
+}
 
 #[derive(Copy, Clone)]
 pub enum HookType {
@@ -86,46 +115,6 @@ impl Settings {
             }
             None => Ok(Settings::default()),
         }
-    }
-
-    pub fn commit_types(&self) -> CommitsMetadata {
-        let commit_settings = self.commit_types.clone();
-        let mut custom_types = HashMap::new();
-
-        commit_settings.iter().for_each(|(key, value)| {
-            let _ = custom_types.insert(CommitType::from(key.as_str()), value.clone());
-        });
-
-        let mut default_types = Settings::default_commit_config();
-
-        default_types.extend(custom_types);
-
-        default_types
-    }
-
-    fn default_commit_config() -> CommitsMetadata {
-        let mut default_types = HashMap::new();
-        default_types.insert(CommitType::Feature, CommitConfig::new("Features"));
-        default_types.insert(CommitType::BugFix, CommitConfig::new("Bug Fixes"));
-        default_types.insert(CommitType::Chore, CommitConfig::new("Miscellaneous Chores"));
-        default_types.insert(CommitType::Revert, CommitConfig::new("Revert"));
-        default_types.insert(
-            CommitType::Performances,
-            CommitConfig::new("Performance Improvements"),
-        );
-        default_types.insert(
-            CommitType::Documentation,
-            CommitConfig::new("Documentation"),
-        );
-        default_types.insert(CommitType::Style, CommitConfig::new("Style"));
-        default_types.insert(CommitType::Refactor, CommitConfig::new("Refactoring"));
-        default_types.insert(CommitType::Test, CommitConfig::new("Tests"));
-
-        default_types.insert(CommitType::Build, CommitConfig::new("Build system"));
-
-        default_types.insert(CommitType::Ci, CommitConfig::new("Continuous Integration"));
-
-        default_types
     }
 
     pub fn get_hooks(&self, hook_type: HookType) -> &Vec<String> {

@@ -120,8 +120,7 @@ fn long_commit_summary_does_not_panic() -> Result<()> {
     run_test_with_context(|_| {
         git_init()?;
         let message =
-            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…"
-                .to_string();
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…";
 
         let cocogitto = CocoGitto::get()?;
         std::fs::write("file", "Hello")?;

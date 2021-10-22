@@ -1,16 +1,19 @@
 #![cfg(not(tarpaulin_include))]
+
 use std::path::PathBuf;
 
+use anyhow::{Context, Result};
+use conventional_commit_parser::commit::CommitType;
+use structopt::clap::{AppSettings, Shell};
+use structopt::StructOpt;
+
 use cocogitto::conventional::commit;
+use cocogitto::conventional::commit::Commit;
 use cocogitto::conventional::version::VersionIncrement;
 use cocogitto::git::hook::HookKind;
 use cocogitto::log::filter::{CommitFilter, CommitFilters};
 use cocogitto::log::output::Output;
 use cocogitto::{CocoGitto, SETTINGS};
-
-use anyhow::{Context, Result};
-use structopt::clap::{AppSettings, Shell};
-use structopt::StructOpt;
 
 const APP_SETTINGS: &[AppSettings] = &[
     AppSettings::SubcommandRequiredElseHelp,
@@ -194,7 +197,7 @@ fn main() -> Result<()> {
                 .map(|cogito| cogito.get_committer().unwrap())
                 .ok();
 
-            commit::verify(author, &message)?;
+            commit::verify(author.as_deref(), &message)?;
         }
         Cli::Check { from_latest_tag } => {
             let cocogitto = CocoGitto::get()?;
@@ -222,17 +225,32 @@ fn main() -> Result<()> {
                 .build()?;
 
             let mut filters = vec![];
-            if let Some(commit_types) = typ {
-                filters.extend(
-                    commit_types
-                        .iter()
-                        .map(|commit_type| CommitFilter::Type(commit_type.as_str().into())),
-                );
-            }
 
-            if let Some(scopes) = scope {
-                filters.extend(scopes.into_iter().map(CommitFilter::Scope));
-            }
+            let commit_types = typ.unwrap_or_else(|| Vec::with_capacity(0));
+            let commit_types: Vec<&str> = commit_types.iter().map(|sc| sc.as_str()).collect();
+
+            let commit_types: Vec<CommitType> = commit_types
+                .iter()
+                .map(|typ| CommitType::from(*typ))
+                .collect();
+
+            let commit_types: Vec<CommitFilter> = commit_types
+                .iter()
+                .map(|typ| CommitFilter::Type(typ))
+                .collect();
+
+            filters.extend(commit_types);
+
+            let scopes: Vec<String> = scope.unwrap_or_else(|| Vec::with_capacity(0));
+            let scopes: Vec<&str> = scopes.iter().map(|sc| sc.as_str()).collect();
+
+            let scopes: Vec<CommitFilter> = scopes
+                .iter()
+                .map(|scope| *scope)
+                .map(CommitFilter::Scope)
+                .collect();
+
+            filters.extend(scopes);
 
             if let Some(authors) = author {
                 filters.extend(authors.into_iter().map(CommitFilter::Author));

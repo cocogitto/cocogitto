@@ -4,17 +4,17 @@ use conventional_commit_parser::commit::CommitType;
 use git2::Commit as Git2Commit;
 
 #[derive(Eq, PartialEq)]
-pub enum CommitFilter {
-    Type(CommitType),
-    Scope(String),
+pub enum CommitFilter<'a> {
+    Type(&'a CommitType<'a>),
+    Scope(&'a str),
     Author(String),
     BreakingChange,
     NoError,
 }
 
-pub struct CommitFilters(pub Vec<CommitFilter>);
+pub struct CommitFilters<'a>(pub Vec<CommitFilter<'a>>);
 
-impl CommitFilters {
+impl CommitFilters<'_> {
     pub(crate) fn no_error(&self) -> bool {
         !self.0.contains(&CommitFilter::NoError)
     }
@@ -47,7 +47,7 @@ impl CommitFilters {
             .0
             .iter()
             .filter_map(|filter| match filter {
-                CommitFilter::Type(commit_type) => Some(commit_type),
+                CommitFilter::Type(commit_type) => Some(*commit_type),
                 _ => None,
             })
             .collect();
@@ -57,15 +57,15 @@ impl CommitFilters {
         } else {
             types
                 .iter()
-                .any(|commit_type| **commit_type == commit.message.commit_type)
+                .any(|commit_type| **commit_type == commit.conventional.commit_type)
         };
 
         // Scope filters
-        let scopes: Vec<&String> = self
+        let scopes: Vec<&str> = self
             .0
             .iter()
             .filter_map(|filter| match filter {
-                CommitFilter::Scope(scope) => Some(scope),
+                CommitFilter::Scope(scope) => Some(*scope),
                 _ => None,
             })
             .collect();
@@ -75,12 +75,12 @@ impl CommitFilters {
         } else {
             scopes
                 .iter()
-                .any(|&scope| Some(scope) == commit.message.scope.as_ref())
+                .any(|&scope| Some(scope) == commit.conventional.scope)
         };
 
         // Breaking changes filters
         let filter_breaking_changes = if self.0.contains(&CommitFilter::BreakingChange) {
-            commit.message.is_breaking_change
+            commit.conventional.is_breaking_change
         } else {
             true
         };

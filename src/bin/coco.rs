@@ -1,7 +1,7 @@
 #![cfg(not(tarpaulin_include))]
 use std::fmt::Write;
 
-use cocogitto::{CocoGitto, COMMITS_METADATA};
+use cocogitto::{settings::COMMITS_METADATA, CocoGitto};
 
 use anyhow::{bail, Result};
 use conventional_commit_parser::commit::Footer;
@@ -135,7 +135,14 @@ fn main() -> Result<()> {
             (None, None, cli.breaking_change)
         };
 
-        cocogitto.conventional_commit(&cli.typ, cli.scope, cli.message, body, footer, breaking)?;
+        cocogitto.conventional_commit(
+            &cli.typ,
+            cli.scope.as_ref(),
+            &cli.message,
+            body.as_ref(),
+            footer.as_ref(),
+            breaking,
+        )?;
     }
 
     Ok(())

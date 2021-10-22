@@ -3,25 +3,26 @@ use std::fs;
 use std::path::PathBuf;
 
 use crate::conventional::commit::Commit;
+use crate::settings::COMMITS_METADATA;
 use crate::{OidOf, SETTINGS};
 
 use anyhow::{anyhow, Result};
 use itertools::Itertools;
 
-pub(crate) struct Changelog {
+pub(crate) struct Changelog<'a> {
     pub from: OidOf,
     pub to: OidOf,
     pub date: String,
-    pub commits: Vec<Commit>,
+    pub commits: Vec<Commit<'a>>,
     pub tag_name: Option<String>,
 }
 
-pub(crate) struct ChangelogWriter {
-    pub(crate) changelog: Changelog,
+pub(crate) struct ChangelogWriter<'a> {
+    pub(crate) changelog: Changelog<'a>,
     pub(crate) path: PathBuf,
 }
 
-impl ChangelogWriter {
+impl ChangelogWriter<'_> {
     pub fn write(&mut self) -> Result<()> {
         let mut changelog_content =
             fs::read_to_string(&self.path).unwrap_or_else(|_err| Changelog::changelog_template());
@@ -44,7 +45,7 @@ impl ChangelogWriter {
     }
 }
 
-impl Changelog {
+impl Changelog<'_> {
     pub(crate) fn markdown(&mut self, colored: bool) -> String {
         let short_to = &self.to;
         let short_from = &self.from;
@@ -60,12 +61,12 @@ impl Changelog {
             .drain(..)
             .map(|commit| {
                 let md = commit.to_markdown(colored);
-                (commit.message.commit_type, md)
+                (commit.conventional.commit_type, md)
             })
             .into_group_map();
 
         for (commit_type, commits) in grouped {
-            if let Some(meta) = SETTINGS.commit_types().get(&commit_type) {
+            if let Some(meta) = COMMITS_METADATA.get(&commit_type) {
                 write!(&mut out, "\n### {}\n\n", meta.changelog_title).unwrap();
                 out.extend(commits);
             }
@@ -111,11 +112,12 @@ mod test {
             commits: vec![
                 Commit {
                     oid: "5375e15770ddf8821d0c1ad393d315e243014c15".to_string(),
-                    message: ConventionalCommit {
+                    raw: "placeholder".to_string(),
+                    conventional: ConventionalCommit {
                         commit_type: CommitType::Feature,
                         scope: None,
                         body: None,
-                        summary: "this is a commit message".to_string(),
+                        summary: "this is a commit message",
                         is_breaking_change: false,
                         footers: vec![],
                     },
@@ -124,11 +126,12 @@ mod test {
                 },
                 Commit {
                     oid: "5375e15770ddf8821d0c1ad393d315e243014c15".to_string(),
-                    message: ConventionalCommit {
+                    raw: "placeholder".to_string(),
+                    conventional: ConventionalCommit {
                         commit_type: CommitType::Feature,
                         scope: None,
                         body: None,
-                        summary: "this is an other commit message".to_string(),
+                        summary: "this is an other commit message",
                         is_breaking_change: false,
                         footers: vec![],
                     },

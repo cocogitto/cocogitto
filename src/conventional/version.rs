@@ -48,16 +48,20 @@ impl VersionIncrement {
 
         let commits = repository.get_commit_range(changelog_start_oid, head)?;
 
-        let commits: Vec<&Git2Commit> = commits
-            .iter()
+        let commits: Vec<Git2Commit> = commits
+            .into_iter()
             .filter(|commit| !commit.message().unwrap_or("").starts_with("Merge "))
             .collect();
 
-        VersionIncrement::display_history(&commits);
-
-        let conventional_commits: Vec<Commit> = commits
+        let conventional_commits: Vec<Result<Commit, anyhow::Error>> = commits
             .iter()
             .map(|commit| Commit::from_git_commit(commit))
+            .collect();
+
+        VersionIncrement::display_history(&conventional_commits);
+
+        let conventional_commits: Vec<Commit> = conventional_commits
+            .into_iter()
             .filter_map(Result::ok)
             .collect();
 
@@ -77,19 +81,19 @@ impl VersionIncrement {
             current_version.major != 0
                 && commits
                     .iter()
-                    .any(|commit| commit.message.is_breaking_change)
+                    .any(|commit| commit.conventional.is_breaking_change)
         };
 
         let is_minor_bump = || {
             commits
                 .iter()
-                .any(|commit| commit.message.commit_type == CommitType::Feature)
+                .any(|commit| commit.conventional.commit_type == CommitType::Feature)
         };
 
         let is_patch_bump = || {
             commits
                 .iter()
-                .any(|commit| commit.message.commit_type == CommitType::BugFix)
+                .any(|commit| commit.conventional.commit_type == CommitType::BugFix)
         };
 
         if is_major_bump() {
@@ -103,20 +107,15 @@ impl VersionIncrement {
         }
     }
 
-    fn display_history(commits: &[&Git2Commit]) {
-        let conventional_commits: Vec<Result<Commit, anyhow::Error>> = commits
-            .iter()
-            .map(|commit| Commit::from_git_commit(commit))
-            .collect();
-
+    fn display_history(conventional_commits: &[Result<Commit, anyhow::Error>]) {
         // Commits which type are neither feat, fix nor breaking changes
         // won't affect the version number.
         let mut non_bump_commits: Vec<&CommitType> = conventional_commits
             .iter()
             .filter_map(|commit| match commit {
-                Ok(commit) => match commit.message.commit_type {
+                Ok(commit) => match commit.conventional.commit_type {
                     CommitType::Feature | CommitType::BugFix => None,
-                    _ => Some(&commit.message.commit_type),
+                    _ => Some(&commit.conventional.commit_type),
                 },
                 Err(_) => None,
             })
@@ -139,7 +138,7 @@ impl VersionIncrement {
         let bump_commits = conventional_commits
             .iter()
             .filter_map(|commit| match commit {
-                Ok(commit) => match commit.message.commit_type {
+                Ok(commit) => match commit.conventional.commit_type {
                     CommitType::Feature | CommitType::BugFix => Some(Ok(commit)),
                     _ => None,
                 },
@@ -148,18 +147,18 @@ impl VersionIncrement {
 
         for commit in bump_commits {
             match commit {
-                Ok(commit) if commit.message.is_breaking_change => {
+                Ok(commit) if commit.conventional.is_breaking_change => {
                     println!(
                         "Found {} commit {} with type: {}",
                         "BREAKING CHANGE".red(),
                         commit.shorthand().blue(),
-                        commit.message.commit_type.as_ref().yellow()
+                        commit.conventional.commit_type.as_ref().yellow()
                     )
                 }
-                Ok(commit) if commit.message.commit_type == CommitType::BugFix => {
+                Ok(commit) if commit.conventional.commit_type == CommitType::BugFix => {
                     println!("Found bug fix commit {}", commit.shorthand().blue())
                 }
-                Ok(commit) if commit.message.commit_type == CommitType::Feature => {
+                Ok(commit) if commit.conventional.commit_type == CommitType::Feature => {
                     println!("Found feature commit {}", commit.shorthand().blue())
                 }
                 _ => (),
@@ -183,15 +182,16 @@ mod test {
     use semver::Version;
     use speculoos::prelude::*;
 
-    impl Commit {
-        fn commit_fixture(commit_type: CommitType, is_breaking_change: bool) -> Self {
+    impl<'a> Commit<'a> {
+        fn commit_fixture(commit_type: CommitType<'a>, is_breaking_change: bool) -> Self {
             Commit {
                 oid: "1234".to_string(),
-                message: ConventionalCommit {
+                raw: "message".to_string(),
+                conventional: ConventionalCommit {
                     commit_type,
                     scope: None,
                     body: None,
-                    summary: "message".to_string(),
+                    summary: "message",
                     is_breaking_change,
                     footers: vec![],
                 },

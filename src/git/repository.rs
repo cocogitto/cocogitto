@@ -8,8 +8,8 @@ use crate::{OidOf, SETTINGS};
 use anyhow::{anyhow, ensure, Result};
 use colored::Colorize;
 use git2::{
-    Commit as Git2Commit, Diff, DiffOptions, IndexAddOption, Object, ObjectType, Oid,
-    Repository as Git2Repository, StatusOptions,
+    Commit as Git2Commit, Diff, DiffOptions, Error, IndexAddOption, Object, ObjectType, Oid,
+    Repository as Git2Repository, Signature, StatusOptions,
 };
 use itertools::Itertools;
 
@@ -258,7 +258,7 @@ impl Repository {
         self.0
             .signature()?
             .name()
-            .map(|name| name.to_string())
+            .map(|author| author.to_string())
             .ok_or_else(|| anyhow!("Cannot get committer name"))
     }
 
