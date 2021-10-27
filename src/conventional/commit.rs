@@ -2,7 +2,6 @@ use std::cmp::Ordering;
 use std::fmt::{self, Formatter};
 
 use crate::error::CocogittoError::CommitFormat;
-use crate::SETTINGS;
 
 use anyhow::{anyhow, Result};
 use chrono::{NaiveDateTime, Utc};
@@ -72,37 +71,6 @@ impl Commit {
             &self.oid[0..6]
         } else {
             &self.oid
-        }
-    }
-
-    pub fn to_markdown(&self, colored: bool) -> String {
-        if colored {
-            format!(
-                "{} - {} - {}\n",
-                self.shorthand().yellow(),
-                self.message.summary,
-                self.author.blue()
-            )
-        } else {
-            let username = SETTINGS
-                .authors
-                .iter()
-                .find(|author| author.signature == self.author);
-            let github_author = username.map(|user| {
-                format!(
-                    "[{username}](https://github.com/{username})",
-                    username = &user.username
-                )
-            });
-            let oid = SETTINGS.github.as_ref().map(|remote_url| {
-                format!("[{}]({}/commit/{})", &self.oid[0..6], remote_url, &self.oid)
-            });
-            format!(
-                "{} - {} - {}\n\n",
-                oid.unwrap_or_else(|| self.oid[0..6].into()),
-                self.message.summary,
-                github_author.unwrap_or_else(|| self.author.to_string())
-            )
         }
     }
 

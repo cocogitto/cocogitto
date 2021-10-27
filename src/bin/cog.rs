@@ -257,8 +257,11 @@ fn main() -> Result<()> {
         Cli::Changelog { from, to, at } => {
             let cocogitto = CocoGitto::get()?;
             let result = match at {
-                Some(at) => cocogitto.get_colored_changelog_at_tag(&at)?,
-                None => cocogitto.get_colored_changelog(from.as_deref(), to.as_deref())?,
+                Some(at) => cocogitto.get_changelog_at_tag(&at)?,
+                None => {
+                    let changelog = cocogitto.get_changelog(from.as_deref(), to.as_deref())?;
+                    changelog.to_markdown(cocogitto::settings::renderer())?
+                }
             };
             println!("{}", result);
         }
