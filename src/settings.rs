@@ -3,8 +3,9 @@ use std::path::PathBuf;
 
 use crate::conventional::commit::CommitConfig;
 use crate::git::repository::Repository;
-use crate::{CommitsMetadata, CONFIG_PATH};
+use crate::{CommitsMetadata, CONFIG_PATH, SETTINGS};
 
+use crate::conventional::changelog::renderer::Renderer;
 use anyhow::{anyhow, Result};
 use config::{Config, File};
 use conventional_commit_parser::commit::CommitType;
@@ -19,11 +20,9 @@ pub enum HookType {
     PostBump,
 }
 
-#[derive(Debug, Deserialize, Serialize, Eq, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, Eq, PartialEq, Default)]
 #[serde(deny_unknown_fields)]
 pub struct Settings {
-    pub changelog_path: Option<PathBuf>,
-    pub github: Option<String>,
     #[serde(default)]
     pub tag_prefix: Option<String>,
     #[serde(default)]
@@ -31,11 +30,33 @@ pub struct Settings {
     #[serde(default)]
     pub post_bump_hooks: Vec<String>,
     #[serde(default)]
-    pub authors: AuthorSettings,
-    #[serde(default)]
     pub commit_types: CommitsMetadataSettings,
     #[serde(default)]
+    pub changelog: Changelog,
+    #[serde(default)]
     pub bump_profiles: HashMap<String, BumpProfile>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, Eq, PartialEq)]
+#[serde(deny_unknown_fields, default)]
+pub struct Changelog {
+    pub github: bool,
+    pub path: PathBuf,
+    pub owner: Option<String>,
+    pub repository: Option<String>,
+    pub authors: AuthorSettings,
+}
+
+impl Default for Changelog {
+    fn default() -> Self {
+        Changelog {
+            github: false,
+            path: PathBuf::from("CHANGELOG.md"),
+            owner: None,
+            repository: None,
+            authors: vec![],
+        }
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone, Eq, PartialEq)]
@@ -45,18 +66,24 @@ pub struct AuthorSetting {
     pub username: String,
 }
 
-impl Default for Settings {
-    fn default() -> Self {
-        Settings {
-            changelog_path: Some(PathBuf::from("CHANGELOG.md")),
-            github: Default::default(),
-            pre_bump_hooks: Default::default(),
-            post_bump_hooks: Default::default(),
-            authors: Default::default(),
-            commit_types: Default::default(),
-            bump_profiles: Default::default(),
-            tag_prefix: None,
-        }
+pub fn commit_username(author: &str) -> Option<&'static str> {
+    SETTINGS
+        .changelog
+        .authors
+        .iter()
+        .find(|author_map| author_map.signature == author)
+        .map(|author| author.username.as_str())
+}
+
+pub fn changelog_path() -> &'static PathBuf {
+    &SETTINGS.changelog.path
+}
+
+pub fn renderer() -> Renderer {
+    if SETTINGS.changelog.github {
+        Renderer::github()
+    } else {
+        Renderer::default()
     }
 }
 
