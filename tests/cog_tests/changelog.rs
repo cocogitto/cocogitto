@@ -1,10 +1,11 @@
-use crate::helpers::*;
-
 use anyhow::Result;
 use assert_cmd::Command;
-use cocogitto::settings::Settings;
 use predicates::prelude::{predicate, PredicateBooleanExt};
 use speculoos::prelude::*;
+
+use cocogitto::settings::Settings;
+
+use crate::helpers::*;
 
 #[test]
 fn get_changelog_from_untagged_repo() -> Result<()> {
@@ -78,8 +79,11 @@ fn get_changelog_from_tag() -> Result<()> {
 fn get_changelog_with_tag_prefix() -> Result<()> {
     run_test_with_context(|context| {
         // Arrange
-        let mut settings = Settings::default();
-        settings.tag_prefix = Some("v".to_string());
+        let settings = Settings {
+            tag_prefix: Some("v".to_string()),
+            ..Default::default()
+        };
+
         let settings = toml::to_string(&settings);
         std::fs::write(context.test_dir.join("cog.toml"), settings?)?;
 
@@ -110,8 +114,11 @@ fn get_changelog_with_tag_prefix() -> Result<()> {
 fn get_changelog_at_tag_prefix() -> Result<()> {
     run_test_with_context(|context| {
         // Arrange
-        let mut settings = Settings::default();
-        settings.tag_prefix = Some("v".to_string());
+        let settings = Settings {
+            tag_prefix: Some("v".to_string()),
+            ..Default::default()
+        };
+
         let settings = toml::to_string(&settings);
         std::fs::write(context.test_dir.join("cog.toml"), settings?)?;
 

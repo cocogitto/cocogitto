@@ -52,7 +52,7 @@ fn prepare_edit_template(typ: &str, message: &str, scope: Option<&str>, breaking
     template
 }
 
-fn metadata_as_commit_types() -> Vec<&'static str> {
+fn commit_types() -> Vec<&'static str> {
     COMMITS_METADATA
         .iter()
         .map(|(commit_type, _)| commit_type.as_ref())
@@ -64,7 +64,7 @@ fn metadata_as_commit_types() -> Vec<&'static str> {
 #[structopt(name = "Coco", author = "Paul D. <paul.delafosse@protonmail.com>", settings = APP_SETTINGS)]
 struct Cli {
     /// Conventional commit type
-    #[structopt(name = "type", possible_values = &metadata_as_commit_types(), default_value_if("completion", None, "chore"))]
+    #[structopt(name = "type", possible_values = &commit_types(), default_value_if("completion", None, "chore"))]
     typ: String,
 
     /// Commit description

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::fmt::{Display, Formatter, Write as FmtWrite};
 use std::fs::File;
 use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::{exit, Command, Stdio};
 
 use anyhow::{anyhow, bail, ensure, Context, Error, Result};
@@ -16,7 +16,6 @@ use lazy_static::lazy_static;
 use semver::{Prerelease, Version};
 use tempfile::TempDir;
 
-use conventional::changelog::{Changelog, ChangelogWriter};
 use conventional::commit::{verify, Commit, CommitConfig};
 use conventional::version::VersionIncrement;
 use error::{CocogittoError, CogCheckReport, PreHookError};
@@ -25,6 +24,7 @@ use hook::Hook;
 use log::filter::CommitFilters;
 use settings::{HookType, Settings};
 
+use crate::conventional::changelog::release::{ChangelogCommit, Release};
 use crate::git::tag::Tag;
 use crate::hook::HookVersion;
 
@@ -112,21 +112,15 @@ pub fn init<S: AsRef<Path> + ?Sized>(path: &S) -> Result<()> {
 #[derive(Debug)]
 pub struct CocoGitto {
     repository: Repository,
-    changelog_path: PathBuf,
 }
 
 impl CocoGitto {
     pub fn get() -> Result<Self> {
         let repository = Repository::open(&std::env::current_dir()?)?;
-        let settings = Settings::get(&repository)?;
-        let changelog_path = settings
-            .changelog_path
-            .unwrap_or_else(|| PathBuf::from("CHANGELOG.md"));
+        let _settings = Settings::get(&repository)?;
+        let _changelog_path = settings::changelog_path();
 
-        Ok(CocoGitto {
-            repository,
-            changelog_path,
-        })
+        Ok(CocoGitto { repository })
     }
 
     pub fn get_committer(&self) -> Result<String> {
@@ -430,10 +424,7 @@ impl CocoGitto {
         let current_tag = self.repository.get_latest_tag();
         let current_version = match current_tag {
             Ok(ref tag) => tag.to_version().unwrap_or_else(|_err| {
-                println!(
-                    "Failed to parse tag {}, falling back to 0.0.0",
-                    tag.to_string()
-                );
+                println!("Failed to parse tag {}, falling back to 0.0.0", tag);
                 Version::new(0, 0, 0)
             }),
             Err(ref _err) => {
@@ -475,17 +466,11 @@ impl CocoGitto {
         let changelog = self.get_changelog(
             Some(&origin),
             Some(&self.repository.get_head_commit_oid()?.to_string()),
-            Some(next_version.to_string()),
         )?;
 
-        let mut writer = ChangelogWriter {
-            changelog,
-            path: self.changelog_path.clone(),
-        };
+        let path = settings::changelog_path();
 
-        writer
-            .write()
-            .map_err(|err| anyhow!("Unable to write CHANGELOG.md:{}", err))?;
+        changelog.write_to_file(path, settings::renderer())?;
 
         let current = self
             .repository
@@ -542,12 +527,7 @@ impl CocoGitto {
         Ok(())
     }
 
-    pub fn get_colored_changelog(&self, from: Option<&str>, to: Option<&str>) -> Result<String> {
-        let mut changelog = self.get_changelog(from, to, None)?;
-        Ok(changelog.markdown(true))
-    }
-
-    pub fn get_colored_changelog_at_tag(&self, tag: &str) -> Result<String> {
+    pub fn get_changelog_at_tag(&self, tag: &str) -> Result<String> {
         let (from, to) = self.repository.get_tag_commits(tag)?;
         let from = from.get_oid().to_string();
         let to = to.get_oid();
@@ -558,23 +538,17 @@ impl CocoGitto {
             .parent_id(0)
             .expect("Unexpected error:Unable to get parent commit")
             .to_string();
-        let mut changelog = self.get_changelog(
-            Some(from.as_str()),
-            Some(to.as_str()),
-            Some(tag.to_string()),
-        )?;
-        Ok(changelog.markdown(true))
+        let changelog = self.get_changelog(Some(from.as_str()), Some(to.as_str()))?;
+
+        changelog
+            .to_markdown(settings::renderer())
+            .map_err(|err| anyhow!(err))
     }
 
     /// ## Get a changelog between two oids
     /// - `from` default value:latest tag or else first commit
     /// - `to` default value:`HEAD` or else first commit
-    pub(crate) fn get_changelog(
-        &self,
-        from: Option<&str>,
-        to: Option<&str>,
-        tag_name: Option<String>,
-    ) -> Result<Changelog> {
+    pub fn get_changelog(&self, from: Option<&str>, to: Option<&str>) -> Result<Release> {
         let from = self.resolve_from_arg(from)?;
         let to = self.resolve_to_arg(to)?;
         let from_oid = from.get_oid();
@@ -600,7 +574,7 @@ impl CocoGitto {
             }
 
             match Commit::from_git_commit(&commit) {
-                Ok(commit) => commits.push(commit),
+                Ok(commit) => commits.push(ChangelogCommit::from(commit)),
                 Err(err) => {
                     let err = err.to_string().red();
                     eprintln!("{}", err);
@@ -608,14 +582,11 @@ impl CocoGitto {
             };
         }
 
-        let date = Utc::now().naive_utc().date().to_string();
-
-        Ok(Changelog {
-            from,
-            to,
-            date,
+        Ok(Release {
+            version: to.as_tag_str(),
+            date: Utc::now().naive_utc(),
             commits,
-            tag_name,
+            previous: None,
         })
     }
 
@@ -716,6 +687,14 @@ enum OidOf {
 }
 
 impl OidOf {
+    fn as_tag_str(&self) -> Option<String> {
+        if let OidOf::Tag(tag) = &self {
+            Some(tag.to_string_with_prefix())
+        } else {
+            None
+        }
+    }
+
     fn get_oid(&self) -> Oid {
         match self {
             OidOf::Head(v) | OidOf::Other(v) => v.to_owned(),
@@ -728,7 +707,7 @@ impl Display for OidOf {
     /// Print the oid according to it's type
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            OidOf::Tag(tag) => write!(f, "{}", tag.to_string()),
+            OidOf::Tag(tag) => write!(f, "{}", tag),
             OidOf::Head(_) => write!(f, "HEAD"),
             OidOf::Other(oid) => write!(f, "{}", &oid.to_string()[0..6]),
         }
