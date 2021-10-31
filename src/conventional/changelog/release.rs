@@ -3,8 +3,8 @@ use conventional_commit_parser::commit::Footer;
 use serde::Serialize;
 
 use crate::conventional::commit::Commit;
-
-use crate::{settings, OidOf};
+use crate::git::oid::OidOf;
+use crate::settings;
 
 #[derive(Serialize)]
 pub struct Release<'a> {
@@ -49,16 +49,15 @@ impl<'a> From<&'a Footer> for ChangelogFooter<'a> {
 mod test {
     use chrono::Utc;
     use conventional_commit_parser::commit::{CommitType, ConventionalCommit, Footer};
-
+    use git2::Oid;
+    use indoc::indoc;
     use speculoos::prelude::*;
 
     use crate::conventional::changelog::release::{ChangelogCommit, Release};
     use crate::conventional::changelog::renderer::Renderer;
     use crate::conventional::commit::Commit;
+    use crate::git::oid::OidOf;
     use crate::git::tag::Tag;
-    use crate::OidOf;
-    use git2::Oid;
-    use indoc::indoc;
 
     #[test]
     fn should_render_default_template() {

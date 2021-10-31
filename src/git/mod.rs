@@ -1,5 +1,9 @@
+pub mod commit;
+pub mod diff;
 pub mod hook;
+pub mod oid;
 pub mod repository;
 pub mod revspec;
+pub mod stash;
 pub mod status;
 pub mod tag;
