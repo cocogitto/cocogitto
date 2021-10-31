@@ -43,12 +43,13 @@ impl VersionIncrement {
         let changelog_start_oid = repository
             .get_latest_tag_oid()
             .unwrap_or_else(|_| repository.get_first_commit().unwrap());
+        let changelog_start_oid = changelog_start_oid.to_string();
+        let changelog_start_oid = Some(changelog_start_oid.as_str());
 
-        let head = repository.get_head_commit_oid()?;
-
-        let commits = repository.get_commit_range(changelog_start_oid, head)?;
+        let commits = repository.get_commit_range(changelog_start_oid, None)?;
 
         let commits: Vec<&Git2Commit> = commits
+            .commits
             .iter()
             .filter(|commit| !commit.message().unwrap_or("").starts_with("Merge "))
             .collect();

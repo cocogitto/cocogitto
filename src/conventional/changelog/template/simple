@@ -1,10 +1,10 @@
-{% if version %}                                                                                                        \
-    ## {{ version }} - {{ date | date(format="%Y-%m-%d") }}
-{% else %}
+{% if version.tag %}                                                                                                    \
+    ## {{ version.tag }} - {{ date | date(format="%Y-%m-%d") }}
+{% else %}                                                                                                              \
     {% set from = commits | last %}                                                                                     \
-    {% set to = commits | first %}                                                                                      \
+    {% set to = version.id%}                                                                                            \
     {% set from_shorthand = from.id | truncate(length=7, end="") %}                                                     \
-    {% set to_shorthand = to.id | truncate(length=7, end="") %}                                                         \
+    {% set to_shorthand = to | truncate(length=7, end="") %}                                                            \
     ## Unreleased ({{ from_shorthand ~ ".." ~ to_shorthand }})                                                          \
 {% endif %}                                                                                                             \
                                                                                                                         \
@@ -25,7 +25,7 @@
     {% endfor %}                                                                                                        \
     {% for commit in typed_commits | unscoped %}                                                                        \
         {% if commit.author %}                                                                                          \
-            {% set author = commit.author %}                                                                           \
+            {% set author = commit.author %}                                                                            \
         {% else %}                                                                                                      \
             {% set author = commit.signature %}                                                                         \
         {% endif %}                                                                                                     \

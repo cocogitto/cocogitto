@@ -59,88 +59,77 @@ fn create_hook(path: &Path, kind: HookKind) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use std::env;
     use std::fs::File;
-    use std::path::PathBuf;
     use std::process::Command;
 
     use crate::git::hook::HookKind;
     use crate::CocoGitto;
 
+    use crate::test_helpers::run_test_with_context;
     use anyhow::Result;
     use speculoos::prelude::*;
-    use tempfile::TempDir;
 
     #[test]
     fn add_pre_commit_hook() -> Result<()> {
-        let temp = TempDir::new()?;
-        let temp = temp.path().to_path_buf();
-        env::set_current_dir(&temp)?;
+        run_test_with_context(|context| {
+            Command::new("git").arg("init").output()?;
 
-        Command::new("git").arg("init").output()?;
+            let cog = CocoGitto::get()?;
 
-        let cog = CocoGitto::get()?;
+            cog.install_hook(HookKind::PrepareCommit)?;
 
-        cog.install_hook(HookKind::PrepareCommit)?;
-
-        assert_that!(PathBuf::from(".git/hooks/pre-commit")).exists();
-        assert_that!(PathBuf::from(".git/hooks/pre-push")).does_not_exist();
-        Ok(())
+            assert_that!(context.test_dir.join(".git/hooks/pre-commit")).exists();
+            assert_that!(context.test_dir.join(".git/hooks/pre-push")).does_not_exist();
+            Ok(())
+        })
     }
 
     #[test]
     fn add_pre_push_hook() -> Result<()> {
-        let tmp = TempDir::new()?;
-        let temp = tmp.path().to_path_buf();
-        env::set_current_dir(&temp)?;
+        run_test_with_context(|context| {
+            Command::new("git").arg("init").output()?;
 
-        Command::new("git").arg("init").output()?;
+            let cog = CocoGitto::get()?;
 
-        let cog = CocoGitto::get()?;
+            cog.install_hook(HookKind::PrePush)?;
 
-        cog.install_hook(HookKind::PrePush)?;
-
-        assert_that!(PathBuf::from(".git/hooks/pre-push")).exists();
-        assert_that!(PathBuf::from(".git/hooks/pre-commit")).does_not_exist();
-        Ok(())
+            assert_that!(context.test_dir.join(".git/hooks/pre-push")).exists();
+            assert_that!(context.test_dir.join(".git/hooks/pre-commit")).does_not_exist();
+            Ok(())
+        })
     }
 
     #[test]
     fn add_all() -> Result<()> {
-        let tmp = TempDir::new()?;
-        let tmp = tmp.path().to_path_buf();
-        env::set_current_dir(&tmp)?;
+        run_test_with_context(|context| {
+            Command::new("git").arg("init").output()?;
 
-        Command::new("git").arg("init").output()?;
+            let cog = CocoGitto::get()?;
 
-        let cog = CocoGitto::get()?;
+            cog.install_hook(HookKind::All)?;
 
-        cog.install_hook(HookKind::All)?;
-
-        assert_that!(PathBuf::from(".git/hooks/pre-push")).exists();
-        assert_that!(PathBuf::from(".git/hooks/pre-commit")).exists();
-        Ok(())
+            assert_that!(context.test_dir.join(".git/hooks/pre-push")).exists();
+            assert_that!(context.test_dir.join(".git/hooks/pre-commit")).exists();
+            Ok(())
+        })
     }
 
     #[test]
     #[cfg(target_family = "unix")]
     fn should_have_perm_755_on_unix() -> Result<()> {
         use std::os::unix::fs::PermissionsExt;
+        run_test_with_context(|context| {
+            Command::new("git").arg("init").output()?;
 
-        let tmp = TempDir::new()?;
-        let tmp = tmp.path().to_path_buf();
-        env::set_current_dir(&tmp)?;
+            let cog = CocoGitto::get()?;
 
-        Command::new("git").arg("init").output()?;
+            cog.install_hook(HookKind::PrePush)?;
 
-        let cog = CocoGitto::get()?;
-
-        cog.install_hook(HookKind::PrePush)?;
-
-        let prepush = File::open(".git/hooks/pre-push")?;
-        let metadata = prepush.metadata()?;
-        assert_that!(PathBuf::from(".git/hooks/pre-push")).exists();
-        assert_that!(metadata.permissions().mode() & 0o777).is_equal_to(0o755);
-        Ok(())
+            let prepush = File::open(".git/hooks/pre-push")?;
+            let metadata = prepush.metadata()?;
+            assert_that!(context.test_dir.join(".git/hooks/pre-push")).exists();
+            assert_that!(metadata.permissions().mode() & 0o777).is_equal_to(0o755);
+            Ok(())
+        })
     }
 }

@@ -1,3 +1,4 @@
+use crate::git::repository::Repository;
 use crate::SETTINGS;
 use anyhow::anyhow;
 use anyhow::Result;
@@ -7,8 +8,31 @@ use std::cmp::Ordering;
 use std::fmt;
 use std::fmt::Formatter;
 
+impl Repository {
+    pub fn resolve_tag(&self, tag: &str) -> Result<Tag> {
+        let without_prefix = match SETTINGS.tag_prefix.as_ref() {
+            None => Ok(tag),
+            Some(prefix) => tag
+                .strip_prefix(prefix)
+                .ok_or_else(|| anyhow!("Expected a tag with prefix {}, got {}", prefix, tag)),
+        }?;
+
+        // Ensure the tag is SemVer compliant
+        Version::parse(without_prefix)?;
+
+        self.resolve_lightweight_tag(tag)
+    }
+
+    pub fn resolve_lightweight_tag(&self, tag: &str) -> Result<Tag> {
+        self.0
+            .resolve_reference_from_short_name(tag)
+            .map(|reference| reference.target().unwrap())
+            .map(|oid| Tag::new(tag, oid))?
+    }
+}
+
 #[derive(Debug, PartialEq, Eq)]
-pub(crate) struct Tag {
+pub struct Tag {
     tag: String,
     oid: Oid,
 }

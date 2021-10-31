@@ -143,18 +143,17 @@ impl CocoGitto {
     }
 
     pub fn check_and_edit(&self, from_latest_tag: bool) -> Result<()> {
-        let from = if from_latest_tag {
-            self.repository.get_latest_tag_oid()
+        let commits = if from_latest_tag {
+            self.repository.get_commit_range(None, None)?
         } else {
-            self.repository.get_first_commit()
-        }?;
+            self.repository.all_commits()?
+        };
 
-        let head = self.repository.get_head_commit()?;
-        let commits = self.repository.get_commit_range(from, head.id())?;
         let editor = std::env::var("EDITOR")?;
         let dir = TempDir::new()?;
 
         let errored_commits: Vec<Oid> = commits
+            .commits
             .iter()
             .map(|commit| {
                 let conv_commit = Commit::from_git_commit(commit);
@@ -248,21 +247,14 @@ impl CocoGitto {
     }
 
     pub fn check(&self, check_from_latest_tag: bool) -> Result<()> {
-        let from = if check_from_latest_tag {
-            self.repository
-                .get_latest_tag_oidof()
-                .unwrap_or_else(|_err| {
-                    println!("No previous tag found, falling back to first commit");
-                    self.repository.get_first_commit_oidof().unwrap()
-                })
+        let commit_range = if check_from_latest_tag {
+            self.repository.get_commit_range(None, None)?
         } else {
-            self.repository.get_first_commit_oidof()?
+            self.repository.all_commits()?
         };
 
-        let to = self.repository.get_head_commit_oid()?;
-        let commits = self.repository.get_commit_range(from.get_oid(), to)?;
-
-        let (successes, mut errors): (Vec<_>, Vec<_>) = commits
+        let (successes, mut errors): (Vec<_>, Vec<_>) = commit_range
+            .commits
             .iter()
             .filter(|commit| !commit.message().unwrap_or("").starts_with("Merge "))
             .map(Commit::from_git_commit)
@@ -292,16 +284,18 @@ impl CocoGitto {
             println!("{}", msg);
             Ok(())
         } else {
-            let report = CogCheckReport { from, errors };
+            let report = CogCheckReport {
+                from: commit_range.from,
+                errors,
+            };
             Err(anyhow!("{}", report))
         }
     }
 
     pub fn get_log(&self, filters: CommitFilters) -> Result<String> {
-        let from = self.repository.get_first_commit()?;
-        let to = self.repository.get_head_commit_oid()?;
-        let commits = self.repository.get_commit_range(from, to)?;
+        let commits = self.repository.all_commits()?;
         let logs = commits
+            .commits
             .iter()
             // Remove merge commits
             .filter(|commit| !commit.message().unwrap_or("").starts_with("Merge"))
@@ -528,17 +522,9 @@ impl CocoGitto {
     }
 
     pub fn get_changelog_at_tag(&self, tag: &str) -> Result<String> {
-        let (from, to) = self.repository.get_tag_commits(tag)?;
+        let (from, _) = self.repository.get_tag_commits(tag)?;
         let from = from.get_oid().to_string();
-        let to = to.get_oid();
-        let to = self
-            .repository
-            .0
-            .find_commit(to)?
-            .parent_id(0)
-            .expect("Unexpected error:Unable to get parent commit")
-            .to_string();
-        let changelog = self.get_changelog(Some(from.as_str()), Some(to.as_str()))?;
+        let changelog = self.get_changelog(Some(from.as_str()), Some(tag))?;
 
         changelog
             .to_markdown(settings::renderer())
@@ -549,23 +535,14 @@ impl CocoGitto {
     /// - `from` default value:latest tag or else first commit
     /// - `to` default value:`HEAD` or else first commit
     pub fn get_changelog(&self, from: Option<&str>, to: Option<&str>) -> Result<Release> {
-        let from = self.resolve_from_arg(from)?;
-        let to = self.resolve_to_arg(to)?;
-        let from_oid = from.get_oid();
-        let to_oid = to.get_oid();
-
         let mut commits = vec![];
 
-        for commit in self
+        let commit_range = self
             .repository
-            .get_commit_range(from_oid, to_oid)
-            .map_err(|err| anyhow!("Could not get commit range {}...{}:{}", from, to, err))?
-        {
-            // We skip the origin commit (ex: from 0.1.0 to 1.0.0)
-            if commit.id() == from_oid {
-                break;
-            }
+            .get_commit_range(from, to)
+            .map_err(|err| anyhow!("Could not get commit range {:?}...{:?}:{}", from, to, err))?;
 
+        for commit in commit_range.commits {
             // Ignore merge commits
             if let Some(message) = commit.message() {
                 if message.starts_with("Merge") {
@@ -583,47 +560,11 @@ impl CocoGitto {
         }
 
         Ok(Release {
-            version: to.as_tag_str(),
+            version: commit_range.to,
+            from: commit_range.from,
             date: Utc::now().naive_utc(),
             commits,
-            previous: None,
         })
-    }
-
-    // TODO:revparse
-    fn resolve_to_arg(&self, to: Option<&str>) -> Result<OidOf> {
-        if let Some(to) = to {
-            self.get_raw_oid_or_tag_oid(to)
-        } else {
-            self.repository
-                .get_head_commit_oid()
-                .map(OidOf::Head)
-                .or_else(|_err| self.repository.get_first_commit().map(OidOf::Other))
-        }
-    }
-
-    fn resolve_from_arg(&self, from: Option<&str>) -> Result<OidOf> {
-        if let Some(from) = from {
-            self.get_raw_oid_or_tag_oid(from)
-                .map_err(|err| anyhow!("Could not resolve from arg {}:{}", from, err))
-        } else {
-            self.repository
-                .get_latest_tag_oidof()
-                .or_else(|_err| self.repository.get_first_commit().map(OidOf::Other))
-        }
-    }
-
-    fn get_raw_oid_or_tag_oid(&self, input: &str) -> Result<OidOf> {
-        if let Ok(_version) = Version::parse(input) {
-            self.repository
-                .resolve_lightweight_tag(input)
-                .map(OidOf::Tag)
-                .map_err(|err| anyhow!("tag {} not found:{} ", input, err))
-        } else {
-            Oid::from_str(input)
-                .map(OidOf::Other)
-                .map_err(|err| anyhow!("`{}` is not a valid oid:{}", input, err))
-        }
     }
 
     fn run_hooks(
@@ -680,21 +621,13 @@ impl CocoGitto {
 
 /// A wrapper for git2 oid including tags and HEAD ref
 #[derive(Debug, PartialEq, Eq)]
-enum OidOf {
+pub enum OidOf {
     Tag(Tag),
     Head(Oid),
     Other(Oid),
 }
 
 impl OidOf {
-    fn as_tag_str(&self) -> Option<String> {
-        if let OidOf::Tag(tag) = &self {
-            Some(tag.to_string_with_prefix())
-        } else {
-            None
-        }
-    }
-
     fn get_oid(&self) -> Oid {
         match self {
             OidOf::Head(v) | OidOf::Other(v) => v.to_owned(),
@@ -711,5 +644,40 @@ impl Display for OidOf {
             OidOf::Head(_) => write!(f, "HEAD"),
             OidOf::Other(oid) => write!(f, "{}", &oid.to_string()[0..6]),
         }
+    }
+}
+
+#[cfg(test)]
+pub mod test_helpers {
+    use anyhow::Result;
+    use std::panic;
+    use std::path::PathBuf;
+    use tempfile::TempDir;
+
+    pub struct TestContext {
+        pub current_dir: PathBuf,
+        pub test_dir: PathBuf,
+    }
+
+    // Save the current directory in the test context
+    // Change current dir to a temp directory
+    // Execute the test in context
+    // Reset temp directory
+    pub fn run_test_with_context<T>(test: T) -> Result<()>
+    where
+        T: FnOnce(&TestContext) -> Result<()> + panic::UnwindSafe,
+    {
+        let current_dir = std::env::current_dir()?;
+        let temp_dir = TempDir::new()?;
+        std::env::set_current_dir(&temp_dir)?;
+
+        let context = TestContext {
+            current_dir,
+            test_dir: temp_dir.into_path(),
+        };
+
+        test(&context)?;
+
+        Ok(std::env::set_current_dir(context.current_dir)?)
     }
 }
