@@ -108,32 +108,33 @@ mod test {
 
     use crate::git::status::{Changes, Statuses};
 
+    use crate::test_helpers::run_test_with_context;
     use anyhow::{anyhow, Result};
     use git2::{Repository, StatusOptions};
     use speculoos::prelude::*;
-    use tempfile::TempDir;
 
     #[test]
     fn should_get_statuses_from_git_statuses() -> Result<()> {
-        let tmp = TempDir::new()?;
-        let path = tmp.path().join("test_repo");
-        let repo = Repository::init(&path)?;
-        fs::write(path.join("file"), "content")?;
+        run_test_with_context(|context| {
+            let path = context.test_dir.join("test_repo");
+            let repo = Repository::init(&path)?;
+            fs::write(path.join("file"), "content")?;
 
-        let mut options = StatusOptions::new();
-        options.include_untracked(true);
-        options.exclude_submodules(true);
-        options.include_unmodified(false);
+            let mut options = StatusOptions::new();
+            options.include_untracked(true);
+            options.exclude_submodules(true);
+            options.include_unmodified(false);
 
-        let git_statuses = repo
-            .statuses(Some(&mut options))
-            .map_err(|err| anyhow!(err))?;
+            let git_statuses = repo
+                .statuses(Some(&mut options))
+                .map_err(|err| anyhow!(err))?;
 
-        let statuses = Statuses::from(git_statuses).0;
+            let statuses = Statuses::from(git_statuses).0;
 
-        assert_that(&statuses.iter())
-            .contains(&super::Status::Untracked(Changes::New("file".into())));
-        assert_that(&statuses).has_length(1);
-        Ok(())
+            assert_that!(statuses.iter())
+                .contains(&super::Status::Untracked(Changes::New("file".into())));
+            assert_that!(statuses).has_length(1);
+            Ok(())
+        })
     }
 }

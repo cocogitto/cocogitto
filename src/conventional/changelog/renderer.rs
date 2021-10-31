@@ -34,7 +34,7 @@ impl Renderer {
         Ok(Renderer { tera })
     }
 
-    pub fn render(&self, version: &Release) -> Result<String, tera::Error> {
+    pub(crate) fn render(&self, version: &Release) -> Result<String, tera::Error> {
         let template_context = Context::from_serialize(version)?;
 
         let mut context = tera::Context::new();

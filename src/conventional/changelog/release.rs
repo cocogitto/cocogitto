@@ -4,14 +4,14 @@ use serde::Serialize;
 
 use crate::conventional::commit::Commit;
 
-use crate::settings;
+use crate::{settings, OidOf};
 
 #[derive(Serialize)]
 pub struct Release<'a> {
-    pub version: Option<String>,
+    pub version: OidOf,
+    pub from: OidOf,
     pub date: NaiveDateTime,
     pub commits: Vec<ChangelogCommit<'a>>,
-    pub previous: Option<Box<Release<'a>>>,
 }
 
 pub struct ChangelogCommit<'a> {
@@ -55,14 +55,28 @@ mod test {
     use crate::conventional::changelog::release::{ChangelogCommit, Release};
     use crate::conventional::changelog::renderer::Renderer;
     use crate::conventional::commit::Commit;
+    use crate::git::tag::Tag;
+    use crate::OidOf;
+    use git2::Oid;
     use indoc::indoc;
 
     #[test]
     fn should_render_default_template() {
         let paul_delafosse = "Paul Delafosse";
         let a_commit_hash = "17f7e23081db15e9318aeb37529b1d473cf41cbe";
+        let version = Tag::new(
+            "1.0.0",
+            Oid::from_str("9bb5facac5724bc81385fdd740fedbb49056da00").unwrap(),
+        )
+        .unwrap();
+        let from = Tag::new(
+            "0.1.0",
+            Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap(),
+        )
+        .unwrap();
         let version = Release {
-            version: Some("1.0.0".to_string()),
+            version: OidOf::Tag(version),
+            from: OidOf::Tag(from),
             date: Utc::now().naive_utc(),
             commits: vec![
                 ChangelogCommit {
@@ -123,12 +137,6 @@ mod test {
                     },
                 },
             ],
-            previous: Some(Box::new(Release {
-                version: Some("0.3.0".to_string()),
-                date: Utc::now().naive_utc(),
-                commits: vec![],
-                previous: None,
-            })),
         };
 
         let renderer = Renderer::default();
@@ -136,7 +144,7 @@ mod test {
 
         assert_that!(changelog).is_ok().is_equal_to(
             indoc! {
-                "## 1.0.0 - 2021-10-28
+                "## 1.0.0 - 2021-10-31
                 #### Bug Fixes
                 - **(parser)** fix parser implementation - (17f7e23) - *oknozor*
                 #### Features

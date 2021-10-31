@@ -120,13 +120,6 @@ impl Repository {
         }
     }
 
-    pub(crate) fn resolve_lightweight_tag(&self, tag: &str) -> Result<Tag> {
-        self.0
-            .resolve_reference_from_short_name(tag)
-            .map(|reference| reference.target().unwrap())
-            .map(|oid| Tag::new(tag, oid))?
-    }
-
     pub(crate) fn get_latest_tag(&self) -> Result<Tag> {
         let latest_tag: Option<Tag> = self
             .tags()?
@@ -170,16 +163,6 @@ impl Repository {
         self.get_latest_tag()
             .map(|tag| tag.oid().to_owned())
             .map_err(|err| anyhow!("Could not resolve latest tag:{}", err))
-    }
-
-    pub(crate) fn get_latest_tag_oidof(&self) -> Result<OidOf> {
-        self.get_latest_tag()
-            .map(OidOf::Tag)
-            .map_err(|err| anyhow!("Could not resolve latest tag:{}", err))
-    }
-
-    pub(crate) fn get_first_commit_oidof(&self) -> Result<OidOf> {
-        self.get_first_commit().map(OidOf::Other)
     }
 
     pub(crate) fn get_first_commit(&self) -> Result<Oid> {
@@ -234,26 +217,6 @@ impl Repository {
             .map_err(|err| anyhow!(err))
     }
 
-    pub(crate) fn get_commit_range(&self, from: Oid, to: Oid) -> Result<Vec<Git2Commit>> {
-        // Ensure commit exists
-        self.0.find_commit(from)?;
-        self.0.find_commit(to)?;
-
-        let mut revwalk = self.0.revwalk()?;
-
-        revwalk.push_range(&format!("{}..{}", from, to))?;
-
-        let mut commits: Vec<Git2Commit> = vec![];
-
-        for oid in revwalk {
-            let oid = oid?;
-            let commit = self.0.find_commit(oid)?;
-            commits.push(commit);
-        }
-
-        Ok(commits)
-    }
-
     pub(crate) fn get_author(&self) -> Result<String> {
         self.0
             .signature()?
@@ -300,430 +263,401 @@ mod test {
     use crate::git::repository::Repository;
     use crate::OidOf;
 
+    use crate::test_helpers::run_test_with_context;
     use anyhow::Result;
     use speculoos::prelude::*;
-    use tempfile::TempDir;
 
     #[test]
     fn init_repo() -> Result<()> {
-        let tmp = TempDir::new()?;
+        run_test_with_context(|context| {
+            let repo = Repository::init(&context.test_dir);
 
-        let repo = Repository::init(&tmp.path().join("test_repo"));
-
-        assert_that!(repo).is_ok();
-        Ok(())
+            assert_that!(repo).is_ok();
+            Ok(())
+        })
     }
 
     #[test]
     fn create_commit_ok() -> Result<()> {
-        let tmp = TempDir::new()?;
+        run_test_with_context(|context| {
+            let repo = Repository::init(".")?;
+            std::fs::write(context.test_dir.join("file"), "changes")?;
+            repo.add_all()?;
 
-        let path = tmp.path().join("test_repo");
-        let repo = Repository::init(&path)?;
-        std::fs::write(&path.join("file"), "changes")?;
-        repo.add_all()?;
-
-        assert_that!(repo.commit("feat: a test commit")).is_ok();
-        Ok(())
+            assert_that!(repo.commit("feat: a test commit")).is_ok();
+            Ok(())
+        })
     }
 
     #[test]
     fn not_create_empty_commit() -> Result<()> {
-        let tmp = TempDir::new()?;
+        run_test_with_context(|_| {
+            let repo = Repository::init(".")?;
 
-        let path = tmp.path().join("test_repo");
-        let repo = Repository::init(&path)?;
-
-        assert_that!(repo.commit("feat: a test commit")).is_err();
-        Ok(())
+            assert_that!(repo.commit("feat: a test commit")).is_err();
+            Ok(())
+        })
     }
 
     #[test]
     fn not_create_empty_commit_with_unstaged_changed() -> Result<()> {
-        let tmp = TempDir::new()?;
+        run_test_with_context(|context| {
+            let repo = Repository::init(".")?;
+            std::fs::write(context.test_dir.join("file"), "changes")?;
 
-        let path = tmp.path().join("test_repo");
-        let repo = Repository::init(&path)?;
-        std::fs::write(&path.join("file"), "changes")?;
-
-        assert_that!(repo.commit("feat: a test commit")).is_err();
-        Ok(())
+            assert_that!(repo.commit("feat: a test commit")).is_err();
+            Ok(())
+        })
     }
 
     #[test]
     fn get_repo_working_dir_some() -> Result<()> {
-        let tmp = TempDir::new()?;
+        run_test_with_context(|context| {
+            let repo = Repository::init(".")?;
+            let dir = context.test_dir.join("dir");
+            std::fs::create_dir(&dir)?;
+            std::env::set_current_dir(&dir)?;
 
-        let path = tmp.path().join("test_repo");
-        let repo = Repository::init(&path)?;
-        let dir = &path.join("dir");
-        std::fs::create_dir(dir)?;
-        std::env::set_current_dir(dir)?;
-
-        assert_that!(repo.get_repo_dir()).is_equal_to(Some(path.as_path()));
-        Ok(())
+            assert_that!(repo.get_repo_dir()).is_equal_to(Some(context.test_dir.as_path()));
+            Ok(())
+        })
     }
 
     #[test]
     fn get_diff_some() -> Result<()> {
-        let tmp = TempDir::new()?;
+        run_test_with_context(|context| {
+            let repo = Repository::init(".")?;
+            std::fs::write(context.test_dir.join("file"), "changes")?;
+            repo.add_all()?;
 
-        let path = tmp.path().join("test_repo");
-        let repo = Repository::init(&path)?;
-        std::fs::write(&path.join("file"), "changes")?;
-        repo.add_all()?;
-
-        assert!(repo.get_diff(false).is_some());
-        Ok(())
+            assert!(repo.get_diff(false).is_some());
+            Ok(())
+        })
     }
 
     #[test]
     fn get_diff_none() -> Result<()> {
-        let tmp = TempDir::new()?;
+        run_test_with_context(|context| {
+            let repo = Repository::init(".")?;
+            std::fs::write(context.test_dir.join("file"), "changes")?;
 
-        let path = tmp.path().join("test_repo");
-        let repo = Repository::init(&path)?;
-        std::fs::write(&path.join("file"), "changes")?;
-
-        assert!(repo.get_diff(false).is_none());
-        Ok(())
+            assert!(repo.get_diff(false).is_none());
+            Ok(())
+        })
     }
 
     #[test]
     fn get_diff_include_untracked_some() -> Result<()> {
-        let tmp = TempDir::new()?;
+        run_test_with_context(|context| {
+            let repo = Repository::init(".")?;
+            std::fs::write(context.test_dir.join("file"), "changes")?;
 
-        let path = tmp.path().join("test_repo");
-        let repo = Repository::init(&path)?;
-        std::fs::write(&path.join("file"), "changes")?;
-
-        assert!(repo.get_diff(true).is_some());
-        Ok(())
+            assert!(repo.get_diff(true).is_some());
+            Ok(())
+        })
     }
 
     #[test]
     fn get_diff_include_untracked_none() -> Result<()> {
-        let tmp = TempDir::new()?;
+        run_test_with_context(|_| {
+            let repo = Repository::init(".")?;
 
-        let path = tmp.path().join("test_repo");
-        let repo = Repository::init(&path)?;
-
-        assert!(repo.get_diff(true).is_none());
-        Ok(())
+            assert!(repo.get_diff(true).is_none());
+            Ok(())
+        })
     }
 
     // see: https://git-scm.com/book/en/v2/Git-on-the-Server-Getting-Git-on-a-Server
     #[test]
     fn open_bare_err() -> Result<()> {
-        let tmp = TempDir::new()?;
-        std::env::set_current_dir(&tmp)?;
+        run_test_with_context(|_| {
+            Command::new("git")
+                .arg("init")
+                .arg("bare")
+                .stdout(Stdio::inherit())
+                .output()?;
 
-        let tmp = &tmp.path().to_str().unwrap();
+            let repo = Repository::open(".");
 
-        Command::new("git")
-            .arg("init")
-            .arg("bare")
-            .arg(tmp)
-            .stdout(Stdio::inherit())
-            .output()?;
-
-        let repo = Repository::open(tmp);
-
-        assert_that!(repo).is_err();
-        Ok(())
+            assert_that!(repo).is_err();
+            Ok(())
+        })
     }
 
     #[test]
     fn get_repo_statuses_empty() -> Result<()> {
-        let tmp = TempDir::new()?;
+        run_test_with_context(|context| {
+            let repo = Repository::init(&context.test_dir)?;
 
-        let path = tmp.path().join("test_repo");
-        let repo = Repository::init(&path)?;
+            let statuses = repo.get_statuses()?;
 
-        let statuses = repo.get_statuses()?;
-
-        assert_that!(statuses.0).has_length(0);
-        Ok(())
+            assert_that!(statuses.0).has_length(0);
+            Ok(())
+        })
     }
 
     #[test]
     fn get_repo_statuses_not_empty() -> Result<()> {
-        let tmp = TempDir::new()?;
+        run_test_with_context(|context| {
+            let repo = Repository::init(&context.test_dir)?;
+            std::fs::write(context.test_dir.join("file"), "changes")?;
 
-        let path = tmp.path().join("test_repo");
-        let repo = Repository::init(&path)?;
-        std::fs::write(&path.join("file"), "changes")?;
+            let statuses = repo.get_statuses()?;
 
-        let statuses = repo.get_statuses()?;
-
-        assert_that!(statuses.0).has_length(1);
-        Ok(())
+            assert_that!(statuses.0).has_length(1);
+            Ok(())
+        })
     }
 
     #[test]
     fn get_repo_head_oid_ok() -> Result<()> {
-        let tmp = TempDir::new()?;
+        run_test_with_context(|context| {
+            let repo = Repository::init(&context.test_dir)?;
+            std::fs::write(context.test_dir.join("file"), "changes")?;
+            repo.add_all()?;
+            let commit_oid = repo.commit("first commit")?;
 
-        let path = tmp.path().join("test_repo");
-        let repo = Repository::init(&path)?;
-        std::fs::write(&path.join("file"), "changes")?;
-        repo.add_all()?;
-        let commit_oid = repo.commit("first commit")?;
+            let oid = repo.get_head_commit_oid();
 
-        let oid = repo.get_head_commit_oid();
+            assert_that!(oid).is_ok().is_equal_to(commit_oid);
 
-        assert_that!(oid).is_ok().is_equal_to(commit_oid);
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[test]
     fn get_repo_head_oid_err() -> Result<()> {
-        let tmp = TempDir::new()?;
+        run_test_with_context(|context| {
+            let repo = Repository::init(&context.test_dir)?;
 
-        let path = tmp.path().join("test_repo");
-        let repo = Repository::init(&path)?;
+            let oid = repo.get_head_commit_oid();
 
-        let oid = repo.get_head_commit_oid();
-
-        assert_that!(oid).is_err();
-        Ok(())
+            assert_that!(oid).is_err();
+            Ok(())
+        })
     }
 
     #[test]
     fn get_repo_head_obj_ok() -> Result<()> {
-        let tmp = TempDir::new()?;
+        run_test_with_context(|context| {
+            let repo = Repository::init(&context.test_dir)?;
+            std::fs::write(context.test_dir.join("file"), "changes")?;
+            repo.add_all()?;
+            let commit_oid = repo.commit("first commit")?;
 
-        let path = tmp.path().join("test_repo");
-        let repo = Repository::init(&path)?;
-        std::fs::write(&path.join("file"), "changes")?;
-        repo.add_all()?;
-        let commit_oid = repo.commit("first commit")?;
+            let head = repo.get_head_commit().map(|head| head.id());
 
-        let head = repo.get_head_commit().map(|head| head.id());
+            assert_that!(head).is_ok().is_equal_to(commit_oid);
 
-        assert_that!(head).is_ok().is_equal_to(commit_oid);
-
-        Ok(())
+            Ok(())
+        })
     }
 
     #[test]
     fn get_repo_head_obj_err() -> Result<()> {
-        let tmp = TempDir::new()?;
+        run_test_with_context(|context| {
+            let repo = Repository::init(&context.test_dir)?;
+            std::fs::write(context.test_dir.join("file"), "changes")?;
+            repo.add_all()?;
 
-        let path = tmp.path().join("test_repo");
-        let repo = Repository::init(&path)?;
-        std::fs::write(&path.join("file"), "changes")?;
-        repo.add_all()?;
+            let head = repo.get_head_commit();
 
-        let head = repo.get_head_commit();
-
-        assert_that!(head).is_err();
-        Ok(())
+            assert_that!(head).is_err();
+            Ok(())
+        })
     }
 
     #[test]
     fn resolve_lightweight_tag_ok() -> Result<()> {
-        let tmp = TempDir::new()?;
+        run_test_with_context(|context| {
+            let repo = Repository::init(&context.test_dir)?;
+            std::fs::write(context.test_dir.join("file"), "changes")?;
+            repo.add_all()?;
+            repo.commit("first commit")?;
+            repo.create_tag("the_tag")?;
 
-        let path = tmp.path().join("test_repo");
-        let repo = Repository::init(&path)?;
-        std::fs::write(&path.join("file"), "changes")?;
-        repo.add_all()?;
-        repo.commit("first commit")?;
-        repo.create_tag("the_tag")?;
+            let tag = repo.resolve_lightweight_tag("the_tag");
 
-        let tag = repo.resolve_lightweight_tag("the_tag");
-
-        assert_that!(tag).is_ok();
-        Ok(())
+            assert_that!(tag).is_ok();
+            Ok(())
+        })
     }
 
     #[test]
     fn resolve_lightweight_tag_err() -> Result<()> {
-        let tmp = TempDir::new()?;
+        run_test_with_context(|context| {
+            let repo = Repository::init(&context.test_dir)?;
+            std::fs::write(context.test_dir.join("file"), "changes")?;
+            repo.add_all()?;
+            repo.commit("first commit")?;
+            repo.create_tag("the_tag")?;
 
-        let path = tmp.path().join("test_repo");
-        let repo = Repository::init(&path)?;
-        std::fs::write(&path.join("file"), "changes")?;
-        repo.add_all()?;
-        repo.commit("first commit")?;
-        repo.create_tag("the_tag")?;
+            let tag = repo.resolve_lightweight_tag("the_taaaag");
 
-        let tag = repo.resolve_lightweight_tag("the_taaaag");
-
-        assert_that!(tag).is_err();
-        Ok(())
+            assert_that!(tag).is_err();
+            Ok(())
+        })
     }
 
     #[test]
     fn get_latest_tag_ok() -> Result<()> {
-        let tmp = TempDir::new()?;
+        run_test_with_context(|context| {
+            let repo = Repository::init(&context.test_dir)?;
+            std::fs::write(&context.test_dir.join("file"), "changes")?;
+            repo.add_all()?;
+            repo.commit("first commit")?;
+            repo.create_tag("0.1.0")?;
 
-        let path = tmp.path().join("test_repo");
-        let repo = Repository::init(&path)?;
-        std::fs::write(&path.join("file"), "changes")?;
-        repo.add_all()?;
-        repo.commit("first commit")?;
-        repo.create_tag("0.1.0")?;
+            std::fs::write(&context.test_dir.join("file"), "changes2")?;
+            repo.add_all()?;
+            repo.commit("second commit")?;
+            repo.create_tag("0.2.0")?;
 
-        std::fs::write(&path.join("file"), "changes2")?;
-        repo.add_all()?;
-        repo.commit("second commit")?;
-        repo.create_tag("0.2.0")?;
+            let tag = repo.get_latest_tag()?;
 
-        let tag = repo.get_latest_tag()?;
-
-        assert_that!(tag.to_string_with_prefix()).is_equal_to("0.2.0".to_string());
-        Ok(())
+            assert_that!(tag.to_string_with_prefix()).is_equal_to("0.2.0".to_string());
+            Ok(())
+        })
     }
 
     #[test]
     fn get_latest_tag_err() -> Result<()> {
-        let tmp = TempDir::new()?;
+        run_test_with_context(|context| {
+            let repo = Repository::init(&context.test_dir)?;
+            std::fs::write(&context.test_dir.join("file"), "changes")?;
+            repo.add_all()?;
+            repo.commit("first commit")?;
 
-        let path = tmp.path().join("test_repo");
-        let repo = Repository::init(&path)?;
-        std::fs::write(&path.join("file"), "changes")?;
-        repo.add_all()?;
-        repo.commit("first commit")?;
+            let tag = repo.get_latest_tag();
 
-        let tag = repo.get_latest_tag();
-
-        assert_that!(tag).is_err();
-        Ok(())
+            assert_that!(tag).is_err();
+            Ok(())
+        })
     }
 
     #[test]
     fn get_latest_tag_oid_ok() -> Result<()> {
-        let tmp = TempDir::new()?;
+        run_test_with_context(|context| {
+            let repo = Repository::init(&context.test_dir)?;
+            std::fs::write(&context.test_dir.join("file"), "changes")?;
+            repo.add_all()?;
+            repo.commit("first commit")?;
+            repo.create_tag("1.0.0")?;
 
-        let path = tmp.path().join("test_repo");
-        let repo = Repository::init(&path)?;
-        std::fs::write(&path.join("file"), "changes")?;
-        repo.add_all()?;
-        repo.commit("first commit")?;
-        repo.create_tag("1.0.0")?;
+            let tag = repo.get_latest_tag_oid();
 
-        let tag = repo.get_latest_tag_oid();
-
-        assert_that!(tag).is_ok();
-        Ok(())
+            assert_that!(tag).is_ok();
+            Ok(())
+        })
     }
 
     #[test]
     fn get_latest_tag_oid_err() -> Result<()> {
-        let tmp = TempDir::new()?;
+        run_test_with_context(|context| {
+            let repo = Repository::init(&context.test_dir)?;
+            std::fs::write(&context.test_dir.join("file"), "changes")?;
+            repo.add_all()?;
+            repo.commit("first commit")?;
 
-        let path = tmp.path().join("test_repo");
-        let repo = Repository::init(&path)?;
-        std::fs::write(&path.join("file"), "changes")?;
-        repo.add_all()?;
-        repo.commit("first commit")?;
+            let tag = repo.get_latest_tag_oid();
 
-        let tag = repo.get_latest_tag_oid();
-
-        assert_that!(tag).is_err();
-        Ok(())
+            assert_that!(tag).is_err();
+            Ok(())
+        })
     }
 
     #[test]
     fn get_head_some() -> Result<()> {
-        let tmp = TempDir::new()?;
+        run_test_with_context(|context| {
+            let repo = Repository::init(&context.test_dir)?;
+            std::fs::write(&context.test_dir.join("file"), "changes")?;
+            repo.add_all()?;
+            repo.commit("first commit")?;
 
-        let path = tmp.path().join("test_repo");
-        let repo = Repository::init(&path)?;
-        std::fs::write(&path.join("file"), "changes")?;
-        repo.add_all()?;
-        repo.commit("first commit")?;
+            let tag = repo.get_head();
 
-        let tag = repo.get_head();
-
-        assert_that!(tag).is_some();
-        Ok(())
+            assert_that!(tag).is_some();
+            Ok(())
+        })
     }
 
     #[test]
     fn get_head_none() -> Result<()> {
-        let tmp = TempDir::new()?;
+        run_test_with_context(|context| {
+            let repo = Repository::init(&context.test_dir)?;
+            std::fs::write(&context.test_dir.join("file"), "changes")?;
+            repo.add_all()?;
 
-        let path = tmp.path().join("test_repo");
-        let repo = Repository::init(&path)?;
-        std::fs::write(&path.join("file"), "changes")?;
-        repo.add_all()?;
+            let tag = repo.get_head();
 
-        let tag = repo.get_head();
-
-        assert_that!(tag).is_none();
-        Ok(())
+            assert_that!(tag).is_none();
+            Ok(())
+        })
     }
 
     #[test]
     fn get_tag_commits() -> Result<()> {
-        let tmp = TempDir::new()?;
+        run_test_with_context(|context| {
+            let repo = Repository::init(&context.test_dir)?;
+            std::fs::write(&context.test_dir.join("file"), "changes")?;
+            repo.add_all()?;
+            let start = repo.commit("chore: init")?;
 
-        let path = tmp.path().join("test_repo");
-        let repo = Repository::init(&path)?;
-        std::fs::write(&path.join("file"), "changes")?;
-        repo.add_all()?;
-        let start = repo.commit("chore: init")?;
+            std::fs::write(&context.test_dir.join("file2"), "changes")?;
+            repo.add_all()?;
+            let end = repo.commit("chore: 1.0.0")?;
 
-        std::fs::write(&path.join("file2"), "changes")?;
-        repo.add_all()?;
-        let end = repo.commit("chore: 1.0.0")?;
+            repo.create_tag("1.0.0")?;
 
-        repo.create_tag("1.0.0")?;
+            std::fs::write(&context.test_dir.join("file3"), "changes")?;
+            repo.add_all()?;
+            repo.commit("feat: a commit")?;
 
-        std::fs::write(&path.join("file3"), "changes")?;
-        repo.add_all()?;
-        repo.commit("feat: a commit")?;
+            let commit_range = repo.get_tag_commits("1.0.0")?;
 
-        let commit_range = repo.get_tag_commits("1.0.0")?;
-
-        assert_that!(commit_range.0).is_equal_to(OidOf::Other(start));
-        assert_that!(commit_range.1.get_oid()).is_equal_to(end);
-        assert_that!(commit_range.1.to_string()).is_equal_to("1.0.0".to_string());
-        Ok(())
+            assert_that!(commit_range.0).is_equal_to(OidOf::Other(start));
+            assert_that!(commit_range.1.get_oid()).is_equal_to(end);
+            assert_that!(commit_range.1.to_string()).is_equal_to("1.0.0".to_string());
+            Ok(())
+        })
     }
 
     #[test]
     fn get_branch_short_hand() -> Result<()> {
-        let tmp = TempDir::new()?;
+        run_test_with_context(|context| {
+            let repo = Repository::init(&context.test_dir)?;
+            std::fs::write(&context.test_dir.join("file"), "changes")?;
+            repo.add_all()?;
+            repo.commit("hello one")?;
 
-        let path = tmp.path().join("test_repo");
-        let repo = Repository::init(&path)?;
-        std::fs::write(&path.join("file"), "changes")?;
-        repo.add_all()?;
-        repo.commit("hello one")?;
+            let shorthand = repo.get_branch_shorthand();
 
-        let shorthand = repo.get_branch_shorthand();
-
-        assert_that!(shorthand).is_equal_to(Some("master".to_string()));
-        Ok(())
+            assert_that!(shorthand).is_equal_to(Some("master".to_string()));
+            Ok(())
+        })
     }
 
     #[test]
     fn should_stash_failed_bump() -> Result<()> {
-        let tmp = TempDir::new()?;
+        run_test_with_context(|context| {
+            let mut repo = Repository::init(&context.test_dir)?;
+            std::fs::write(&context.test_dir.join("file"), "changes")?;
+            repo.add_all()?;
+            repo.commit("Initial commit")?;
 
-        let path = tmp.path().join("test_repo");
-        let mut repo = Repository::init(&path)?;
-        std::fs::write(&path.join("file"), "changes")?;
-        repo.add_all()?;
-        repo.commit("Initial commit")?;
+            let statuses = repo.get_statuses()?.0;
+            assert_that!(statuses).is_empty();
 
-        let statuses = repo.get_statuses()?.0;
-        assert_that!(statuses).is_empty();
+            std::fs::write(&context.test_dir.join("second_file"), "more changes")?;
+            repo.add_all()?;
+            let statuses = repo.get_statuses()?.0;
+            assert_that!(statuses).has_length(1);
 
-        std::fs::write(&path.join("second_file"), "more changes")?;
-        repo.add_all()?;
-        let statuses = repo.get_statuses()?.0;
-        assert_that!(statuses).has_length(1);
+            repo.stash_failed_version("1.0.0")?;
 
-        repo.stash_failed_version("1.0.0")?;
-
-        let statuses = repo.get_statuses()?.0;
-        assert_that!(statuses).is_empty();
-        Ok(())
+            let statuses = repo.get_statuses()?.0;
+            assert_that!(statuses).is_empty();
+            Ok(())
+        })
     }
 }
