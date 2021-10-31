@@ -45,7 +45,7 @@ mod test {
     #[test]
     fn create_commit_ok() -> Result<()> {
         run_test_with_context(|context| {
-            let repo = Repository::init(".")?;
+            let repo = Repository::init(&context.test_dir)?;
             std::fs::write(context.test_dir.join("file"), "changes")?;
             repo.add_all()?;
 
@@ -56,8 +56,8 @@ mod test {
 
     #[test]
     fn not_create_empty_commit() -> Result<()> {
-        run_test_with_context(|_| {
-            let repo = Repository::init(".")?;
+        run_test_with_context(|context| {
+            let repo = Repository::init(&context.test_dir)?;
 
             assert_that!(repo.commit("feat: a test commit")).is_err();
             Ok(())
@@ -67,7 +67,7 @@ mod test {
     #[test]
     fn not_create_empty_commit_with_unstaged_changed() -> Result<()> {
         run_test_with_context(|context| {
-            let repo = Repository::init(".")?;
+            let repo = Repository::init(&context.test_dir)?;
             std::fs::write(context.test_dir.join("file"), "changes")?;
 
             assert_that!(repo.commit("feat: a test commit")).is_err();

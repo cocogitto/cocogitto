@@ -618,15 +618,22 @@ impl CocoGitto {
 
 #[cfg(test)]
 pub mod test_helpers {
-    use std::panic;
-    use std::path::PathBuf;
-
     use anyhow::Result;
+    use std::panic;
+    use std::path::{Path, PathBuf};
     use tempfile::TempDir;
 
     pub struct TestContext {
         pub current_dir: PathBuf,
         pub test_dir: PathBuf,
+    }
+
+    impl TestContext {
+        pub fn write_file<S: AsRef<Path>>(&self, path: S, content: &str) -> Result<()> {
+            let path = self.test_dir.join(path);
+            std::fs::write(path, content)?;
+            Ok(())
+        }
     }
 
     // Save the current directory in the test context

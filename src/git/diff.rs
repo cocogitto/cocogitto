@@ -37,7 +37,7 @@ mod test {
     #[test]
     fn get_diff_some() -> Result<()> {
         run_test_with_context(|context| {
-            let repo = Repository::init(".")?;
+            let repo = Repository::init(&context.test_dir)?;
             std::fs::write(context.test_dir.join("file"), "changes")?;
             repo.add_all()?;
 
@@ -49,7 +49,7 @@ mod test {
     #[test]
     fn get_diff_none() -> Result<()> {
         run_test_with_context(|context| {
-            let repo = Repository::init(".")?;
+            let repo = Repository::init(&context.test_dir)?;
             std::fs::write(context.test_dir.join("file"), "changes")?;
 
             assert!(repo.get_diff(false).is_none());
@@ -60,7 +60,7 @@ mod test {
     #[test]
     fn get_diff_include_untracked_some() -> Result<()> {
         run_test_with_context(|context| {
-            let repo = Repository::init(".")?;
+            let repo = Repository::init(&context.test_dir)?;
             std::fs::write(context.test_dir.join("file"), "changes")?;
 
             assert!(repo.get_diff(true).is_some());
@@ -70,8 +70,8 @@ mod test {
 
     #[test]
     fn get_diff_include_untracked_none() -> Result<()> {
-        run_test_with_context(|_| {
-            let repo = Repository::init(".")?;
+        run_test_with_context(|context| {
+            let repo = Repository::init(&context.test_dir)?;
 
             assert!(repo.get_diff(true).is_none());
             Ok(())

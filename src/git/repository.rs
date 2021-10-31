@@ -116,7 +116,7 @@ mod test {
     #[test]
     fn get_repo_working_dir_some() -> Result<()> {
         run_test_with_context(|context| {
-            let repo = Repository::init(".")?;
+            let repo = Repository::init(&context.test_dir)?;
             let dir = context.test_dir.join("dir");
             std::fs::create_dir(&dir)?;
             std::env::set_current_dir(&dir)?;
@@ -129,14 +129,15 @@ mod test {
     // see: https://git-scm.com/book/en/v2/Git-on-the-Server-Getting-Git-on-a-Server
     #[test]
     fn open_bare_err() -> Result<()> {
-        run_test_with_context(|_| {
+        run_test_with_context(|context| {
             Command::new("git")
                 .arg("init")
+                .arg(&context.test_dir)
                 .arg("bare")
                 .stdout(Stdio::inherit())
                 .output()?;
 
-            let repo = Repository::open(".");
+            let repo = Repository::open(&context.test_dir);
 
             assert_that!(repo).is_err();
             Ok(())
