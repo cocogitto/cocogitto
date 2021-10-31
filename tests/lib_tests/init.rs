@@ -8,9 +8,9 @@ use speculoos::prelude::*;
 #[test]
 fn should_init_a_cog_repository() -> Result<()> {
     // Arrange
-    run_test_with_context(|_| {
+    run_test_with_context(|context| {
         // Act
-        cocogitto::init(".")?;
+        cocogitto::init(&context.test_dir)?;
 
         // Assert
         assert_that(&Path::new("cog.toml")).exists();

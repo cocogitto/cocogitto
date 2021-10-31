@@ -23,7 +23,9 @@ impl VersionIncrement {
             VersionIncrement::Manual(version) => {
                 Version::parse(version).map_err(|err| anyhow!(err))
             }
-            VersionIncrement::Auto => self.create_version_from_commit_history(current_version),
+            VersionIncrement::Auto => {
+                VersionIncrement::create_version_from_commit_history(current_version)
+            }
             VersionIncrement::Major => Ok(Version::new(current_version.major + 1, 0, 0)),
             VersionIncrement::Patch => Ok(Version::new(
                 current_version.major,
@@ -38,7 +40,7 @@ impl VersionIncrement {
         }
     }
 
-    fn create_version_from_commit_history(&self, current_version: &Version) -> Result<Version> {
+    fn create_version_from_commit_history(current_version: &Version) -> Result<Version> {
         let repository = Repository::open(".")?;
         let changelog_start_oid = repository
             .get_latest_tag_oid()
@@ -224,88 +226,108 @@ mod test {
     }
 
     #[test]
-    fn increment_minor_version_should_set_patch_to_zero() {
-        let version = Version::from_str("1.1.1").unwrap();
+    fn increment_minor_version_should_set_patch_to_zero() -> Result<()> {
+        let version = Version::from_str("1.1.1")?;
 
-        let bumped = VersionIncrement::Minor.bump(&version).unwrap();
+        let bumped = VersionIncrement::Minor.bump(&version);
 
-        assert_that!(bumped).is_equal_to(Version::from_str("1.2.0").unwrap())
+        assert_that!(bumped)
+            .is_ok()
+            .is_equal_to(Version::from_str("1.2.0")?);
+
+        Ok(())
     }
 
     #[test]
-    fn increment_major_version_should_set_minor_and_patch_to_zero() {
-        let version = Version::from_str("1.1.1").unwrap();
+    fn increment_major_version_should_set_minor_and_patch_to_zero() -> Result<()> {
+        let version = Version::from_str("1.1.1")?;
 
-        let bumped = VersionIncrement::Major.bump(&version).unwrap();
+        let bumped = VersionIncrement::Major.bump(&version);
 
-        assert_that!(bumped).is_equal_to(Version::from_str("2.0.0").unwrap())
+        assert_that!(bumped)
+            .is_ok()
+            .is_equal_to(Version::from_str("2.0.0")?);
+
+        Ok(())
     }
 
     #[test]
-    fn increment_should_strip_metadata() {
-        let version = Version::from_str("1.1.1-pre+10.1").unwrap();
+    fn increment_should_strip_metadata() -> Result<()> {
+        let version = Version::from_str("1.1.1-pre+10.1")?;
 
-        let bumped = VersionIncrement::Patch.bump(&version).unwrap();
+        let bumped = VersionIncrement::Patch.bump(&version);
 
-        assert_that!(bumped).is_equal_to(Version::from_str("1.1.2").unwrap())
+        assert_that!(bumped)
+            .is_ok()
+            .is_equal_to(Version::from_str("1.1.2")?);
+
+        Ok(())
     }
 
     #[test]
-    fn should_get_next_auto_version_patch() {
+    fn should_get_next_auto_version_patch() -> Result<()> {
         let patch = Commit::commit_fixture(CommitType::BugFix, false);
 
         let version = VersionIncrement::version_increment_from_commit_history(
-            &Version::parse("1.0.0").unwrap(),
+            &Version::parse("1.0.0")?,
             &[patch],
         );
 
         assert_that!(version)
             .is_ok()
-            .is_equal_to(VersionIncrement::Patch)
+            .is_equal_to(VersionIncrement::Patch);
+
+        Ok(())
     }
 
     #[test]
-    fn should_get_next_auto_version_breaking_changes() {
+    fn should_get_next_auto_version_breaking_changes() -> Result<()> {
         let feature = Commit::commit_fixture(CommitType::Feature, false);
         let breaking_change = Commit::commit_fixture(CommitType::Feature, true);
 
         let version = VersionIncrement::version_increment_from_commit_history(
-            &Version::parse("1.0.0").unwrap(),
+            &Version::parse("1.0.0")?,
             &[breaking_change, feature],
         );
 
         assert_that!(version)
             .is_ok()
-            .is_equal_to(VersionIncrement::Major)
+            .is_equal_to(VersionIncrement::Major);
+
+        Ok(())
     }
 
     #[test]
-    fn should_get_next_auto_version_breaking_changes_on_initial_dev_version() {
+    fn should_get_next_auto_version_breaking_changes_on_initial_dev_version() -> Result<()> {
         let feature = Commit::commit_fixture(CommitType::Feature, false);
         let breaking_change = Commit::commit_fixture(CommitType::Feature, true);
 
         let version = VersionIncrement::version_increment_from_commit_history(
-            &Version::parse("0.1.0").unwrap(),
+            &Version::parse("0.1.0")?,
             &[breaking_change, feature],
         );
 
         assert_that!(version)
             .is_ok()
-            .is_equal_to(VersionIncrement::Minor)
+            .is_equal_to(VersionIncrement::Minor);
+
+        Ok(())
     }
 
     #[test]
-    fn should_get_next_auto_version_minor() {
+    fn should_get_next_auto_version_minor() -> Result<()> {
         let patch = Commit::commit_fixture(CommitType::BugFix, false);
         let feature = Commit::commit_fixture(CommitType::Feature, false);
 
         let version = VersionIncrement::version_increment_from_commit_history(
-            &Version::parse("1.0.0").unwrap(),
+            &Version::parse("1.0.0")?,
             &[patch, feature],
         );
 
         assert_that!(version)
             .is_ok()
-            .is_equal_to(VersionIncrement::Minor)
+            .is_equal_to(VersionIncrement::Minor);
+
+        Ok(())
     }
 }
