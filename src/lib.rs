@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::fmt::{Display, Formatter, Write as FmtWrite};
+use std::fmt::Write as FmtWrite;
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
@@ -25,7 +25,6 @@ use log::filter::CommitFilters;
 use settings::{HookType, Settings};
 
 use crate::conventional::changelog::release::{ChangelogCommit, Release};
-use crate::git::tag::Tag;
 use crate::hook::HookVersion;
 
 pub mod conventional;
@@ -522,9 +521,7 @@ impl CocoGitto {
     }
 
     pub fn get_changelog_at_tag(&self, tag: &str) -> Result<String> {
-        let (from, _) = self.repository.get_tag_commits(tag)?;
-        let from = from.get_oid().to_string();
-        let changelog = self.get_changelog(Some(from.as_str()), Some(tag))?;
+        let changelog = self.get_changelog(None, Some(tag))?;
 
         changelog
             .to_markdown(settings::renderer())
@@ -619,39 +616,12 @@ impl CocoGitto {
     }
 }
 
-/// A wrapper for git2 oid including tags and HEAD ref
-#[derive(Debug, PartialEq, Eq)]
-pub enum OidOf {
-    Tag(Tag),
-    Head(Oid),
-    Other(Oid),
-}
-
-impl OidOf {
-    fn get_oid(&self) -> Oid {
-        match self {
-            OidOf::Head(v) | OidOf::Other(v) => v.to_owned(),
-            OidOf::Tag(tag) => tag.oid().to_owned(),
-        }
-    }
-}
-
-impl Display for OidOf {
-    /// Print the oid according to it's type
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            OidOf::Tag(tag) => write!(f, "{}", tag),
-            OidOf::Head(_) => write!(f, "HEAD"),
-            OidOf::Other(oid) => write!(f, "{}", &oid.to_string()[0..6]),
-        }
-    }
-}
-
 #[cfg(test)]
 pub mod test_helpers {
-    use anyhow::Result;
     use std::panic;
     use std::path::PathBuf;
+
+    use anyhow::Result;
     use tempfile::TempDir;
 
     pub struct TestContext {

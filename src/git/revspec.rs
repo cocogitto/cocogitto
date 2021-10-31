@@ -2,9 +2,9 @@ use anyhow::anyhow;
 use anyhow::Result;
 use git2::{Commit, Oid};
 
+use crate::git::oid::OidOf;
 use crate::git::repository::Repository;
 use crate::git::tag::Tag;
-use crate::OidOf;
 
 pub struct CommitRange<'repo> {
     pub from: OidOf,
@@ -151,10 +151,10 @@ mod test {
     use git2::Oid;
     use speculoos::prelude::*;
 
+    use crate::git::oid::OidOf;
     use crate::git::repository::Repository;
     use crate::git::tag::Tag;
     use crate::test_helpers::run_test_with_context;
-    use crate::OidOf;
 
     #[test]
     fn all_commits() -> Result<()> {
@@ -170,6 +170,35 @@ mod test {
             Ok(())
         })
     }
+
+    #[test]
+    fn get_tag_commits() -> Result<()> {
+        run_test_with_context(|context| {
+            // Arrange
+            let repo = Repository::init(&context.test_dir)?;
+            std::fs::write(&context.test_dir.join("file"), "changes")?;
+            repo.add_all()?;
+            let start = repo.commit("chore: init")?;
+
+            std::fs::write(&context.test_dir.join("file2"), "changes")?;
+            repo.add_all()?;
+            let _end = repo.commit("chore: 1.0.0")?;
+
+            repo.create_tag("1.0.0")?;
+
+            std::fs::write(&context.test_dir.join("file3"), "changes")?;
+            repo.add_all()?;
+            repo.commit("feat: a commit")?;
+
+            let commit_range = repo.get_commit_range(None, Some("1.0.0"))?;
+
+            assert_that!(commit_range.from).is_equal_to(OidOf::Other(start));
+            assert_that!(commit_range.to.to_string()).is_equal_to("1.0.0".to_string());
+            assert_that!(commit_range.commits).has_length(1);
+            Ok(())
+        })
+    }
+
     #[test]
     fn from_tag_to_tag_ok() -> Result<()> {
         run_test_with_context(|context| {

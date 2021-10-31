@@ -2,9 +2,27 @@ use std::fmt::{self, Formatter};
 
 use crate::git::status::Changes::{Deleted, Modified, New, Renamed, TypeChange};
 
+use crate::git::repository::Repository;
+use anyhow::{anyhow, Result};
 use colored::*;
-use git2::StatusEntry as Git2StatusEntry;
 use git2::Statuses as Git2Statuses;
+use git2::{StatusEntry as Git2StatusEntry, StatusOptions};
+
+impl Repository {
+    pub(crate) fn get_statuses(&self) -> Result<Statuses> {
+        let mut options = StatusOptions::new();
+        options.include_untracked(true);
+        options.exclude_submodules(true);
+        options.include_unmodified(false);
+
+        let statuses = self
+            .0
+            .statuses(Some(&mut options))
+            .map_err(|err| anyhow!(err))?;
+
+        Ok(Statuses::from(statuses))
+    }
+}
 
 pub(crate) struct Statuses(pub Vec<Status>);
 
@@ -108,10 +126,36 @@ mod test {
 
     use crate::git::status::{Changes, Statuses};
 
+    use crate::git::repository::Repository;
     use crate::test_helpers::run_test_with_context;
     use anyhow::{anyhow, Result};
-    use git2::{Repository, StatusOptions};
+    use git2::StatusOptions;
     use speculoos::prelude::*;
+
+    #[test]
+    fn get_repo_statuses_empty() -> Result<()> {
+        run_test_with_context(|context| {
+            let repo = Repository::init(&context.test_dir)?;
+
+            let statuses = repo.get_statuses()?;
+
+            assert_that!(statuses.0).has_length(0);
+            Ok(())
+        })
+    }
+
+    #[test]
+    fn get_repo_statuses_not_empty() -> Result<()> {
+        run_test_with_context(|context| {
+            let repo = Repository::init(&context.test_dir)?;
+            std::fs::write(context.test_dir.join("file"), "changes")?;
+
+            let statuses = repo.get_statuses()?;
+
+            assert_that!(statuses.0).has_length(1);
+            Ok(())
+        })
+    }
 
     #[test]
     fn should_get_statuses_from_git_statuses() -> Result<()> {
@@ -126,6 +170,7 @@ mod test {
             options.include_unmodified(false);
 
             let git_statuses = repo
+                .0
                 .statuses(Some(&mut options))
                 .map_err(|err| anyhow!(err))?;
 

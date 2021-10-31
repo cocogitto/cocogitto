@@ -1,6 +1,6 @@
 use std::fmt::{self, Debug, Display, Formatter};
 
-use crate::OidOf;
+use crate::git::oid::OidOf;
 
 use colored::*;
 

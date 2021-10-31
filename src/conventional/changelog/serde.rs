@@ -2,9 +2,9 @@ use serde::ser::SerializeStruct;
 use serde::{Serialize, Serializer};
 
 use crate::conventional::changelog::release::{ChangelogCommit, ChangelogFooter};
-
+use crate::git::oid::OidOf;
 use crate::git::tag::Tag;
-use crate::{OidOf, COMMITS_METADATA};
+use crate::COMMITS_METADATA;
 
 impl Serialize for Tag {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -70,12 +70,12 @@ impl Serialize for OidOf {
 mod test {
     use chrono::Utc;
     use conventional_commit_parser::commit::{CommitType, ConventionalCommit, Footer};
+    use git2::Oid;
     use speculoos::prelude::*;
 
     use crate::conventional::changelog::release::ChangelogCommit;
     use crate::conventional::commit::Commit;
     use crate::git::tag::Tag;
-    use git2::Oid;
 
     #[test]
     fn should_serialize_tag() {
