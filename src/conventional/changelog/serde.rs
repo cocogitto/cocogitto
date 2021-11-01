@@ -57,7 +57,10 @@ impl Serialize for OidOf {
     {
         let mut oidof = serializer.serialize_struct("OidOf", 3)?;
         match self {
-            OidOf::Tag(tag) => oidof.serialize_field("tag", &tag.to_string_with_prefix())?,
+            OidOf::Tag(tag) => {
+                oidof.serialize_field("tag", &tag.to_string_with_prefix())?;
+                oidof.serialize_field("id", &tag.oid().to_string())?
+            }
             OidOf::Head(oid) | OidOf::Other(oid) => {
                 oidof.serialize_field("id", &oid.to_string())?
             }

@@ -1,37 +1,46 @@
 use std::collections::HashMap;
 
+use itertools::Itertools;
 use tera::{get_json_pointer, to_value, try_get_value, Context, Tera, Value};
 
 use crate::conventional::changelog::release::Release;
 use crate::SETTINGS;
-use itertools::Itertools;
 
 const DEFAULT_TEMPLATE: &[u8] = include_bytes!("template/simple");
+const DEFAULT_TEMPLATE_NAME: &str = "default_template";
 const GITHUB_TEMPLATE: &[u8] = include_bytes!("template/github");
+const GITHUB_TEMPLATE_NAME: &str = "github_template";
 
+#[derive(Debug)]
 pub struct Renderer {
     tera: Tera,
+    template_name: String,
 }
 
 impl Default for Renderer {
     fn default() -> Self {
         let template = String::from_utf8_lossy(DEFAULT_TEMPLATE);
-        Self::new(template.as_ref()).unwrap()
+        Self::new(template.as_ref(), DEFAULT_TEMPLATE_NAME).unwrap()
     }
 }
 
 impl Renderer {
     pub fn github() -> Self {
         let template = String::from_utf8_lossy(GITHUB_TEMPLATE);
-        Self::new(template.as_ref()).unwrap()
+        Self::new(template.as_ref(), GITHUB_TEMPLATE_NAME).unwrap()
     }
 
-    pub fn new(template: &str) -> Result<Self, tera::Error> {
+    pub fn new(template: &str, template_name: &str) -> Result<Self, tera::Error> {
         let mut tera = Tera::default();
-        tera.add_raw_template("default_changelog", template)?;
+
+        tera.add_raw_template(template_name, template.as_ref())?;
         tera.register_filter("upper_first", Self::upper_first_filter);
         tera.register_filter("unscoped", Self::unscoped);
-        Ok(Renderer { tera })
+
+        Ok(Renderer {
+            tera,
+            template_name: template_name.into(),
+        })
     }
 
     pub(crate) fn render(&self, version: &Release) -> Result<String, tera::Error> {
@@ -54,7 +63,7 @@ impl Renderer {
         context.extend(template_context);
 
         self.tera
-            .render("default_changelog", &context)
+            .render(&self.template_name, &context)
             .map(|changelog| {
                 changelog
                     .lines()
@@ -75,7 +84,8 @@ impl Renderer {
         Ok(tera::to_value(&s)?)
     }
 
-    pub fn unscoped(value: &Value, args: &HashMap<String, Value>) -> Result<Value, tera::Error> {
+    // filter commit with no scope
+    fn unscoped(value: &Value, args: &HashMap<String, Value>) -> Result<Value, tera::Error> {
         let mut arr = try_get_value!("unscoped", "scope", Vec<Value>, value);
         if arr.is_empty() {
             return Ok(arr.into());
