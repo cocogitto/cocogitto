@@ -105,6 +105,7 @@ mod test {
                     footers: vec![Footer {
                         token: "token".to_string(),
                         content: "content".to_string(),
+                        ..Default::default()
                     }],
                     is_breaking_change: false,
                 },

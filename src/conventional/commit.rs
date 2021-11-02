@@ -211,7 +211,9 @@ mod test {
     use crate::conventional::commit::{verify, Commit};
 
     use chrono::NaiveDateTime;
-    use conventional_commit_parser::commit::{CommitType, ConventionalCommit};
+
+    use conventional_commit_parser::commit::{CommitType, ConventionalCommit, Footer, Separator};
+    use indoc::indoc;
     use speculoos::prelude::*;
 
     #[test]
@@ -230,6 +232,46 @@ mod test {
         assert_that!(commit.is_breaking_change).is_false();
         assert_that!(commit.body).is_none();
         assert_that!(commit.footers).is_empty();
+    }
+
+    #[test]
+    fn should_map_conventional_commit_message_with_multiple_scope_to_struct() {
+        // Arrange
+        let message = indoc!(
+            "feat(database): add postgresql driver
+            
+            The body
+
+            footer: 123
+            footer2 #456"
+        );
+
+        // Act
+        let commit = conventional_commit_parser::parse(message);
+
+        // Assert
+        let commit = commit.unwrap();
+        assert_that!(commit.commit_type).is_equal_to(CommitType::Feature);
+        assert_that!(commit.scope).is_equal_to(Some("database".to_owned()));
+        assert_that!(commit.summary).is_equal_to("add postgresql driver".to_owned());
+        assert_that!(commit.is_breaking_change).is_false();
+        assert_that!(commit.body)
+            .is_some()
+            .is_equal_to("The body".to_string());
+        assert_that!(commit.footers).is_equal_to(vec![
+            Footer {
+                token: "footer".to_string(),
+                content: "123".to_string(),
+                ..Default::default()
+            },
+            Footer {
+                token: "footer2".to_string(),
+                content: "456".to_string(),
+                token_separator: Separator::Hash,
+            },
+        ]);
+
+        assert_that!(commit.to_string()).is_equal_to(&message.to_string())
     }
 
     #[test]

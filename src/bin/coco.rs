@@ -4,7 +4,7 @@ use std::fmt::Write;
 use cocogitto::{CocoGitto, COMMITS_METADATA};
 
 use anyhow::{bail, Result};
-use conventional_commit_parser::commit::Footer;
+use conventional_commit_parser::commit::Separator;
 use itertools::Itertools;
 use structopt::clap::{AppSettings, Shell};
 use structopt::StructOpt;
@@ -117,18 +117,28 @@ fn main() -> Result<()> {
                 .filter(|&line| !line.trim_start().starts_with('#'))
                 .join("\n");
 
-            let mut cc = conventional_commit_parser::parse(content.trim())?;
+            let cc = conventional_commit_parser::parse(content.trim())?;
 
-            let footer = if !cc.footers.is_empty() {
-                let Footer { token, content } = cc.footers.swap_remove(0);
-                Some(format!("{}: {}", token, content.trim()))
-            } else {
+            let footers: Option<String> = if cc.footers.is_empty() {
                 None
+            } else {
+                Some(
+                    cc.footers
+                        .iter()
+                        .map(|footer| {
+                            let separator = match footer.token_separator {
+                                Separator::Colon => ": ",
+                                Separator::Hash => " #",
+                            };
+                            format!("{}{}{}", footer.token, separator, footer.content)
+                        })
+                        .join("\n"),
+                )
             };
 
             (
                 cc.body.map(|s| s.trim().to_string()),
-                footer,
+                footers,
                 cc.is_breaking_change || cli.breaking_change,
             )
         } else {
