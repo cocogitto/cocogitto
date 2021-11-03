@@ -129,6 +129,7 @@ fn main() -> Result<()> {
                             let separator = match footer.token_separator {
                                 Separator::Colon => ": ",
                                 Separator::Hash => " #",
+                                Separator::ColonWithNewLine => " \n",
                             };
                             format!("{}{}{}", footer.token, separator, footer.content)
                         })
