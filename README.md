@@ -397,8 +397,8 @@ You can run pre bump commands with the `{{version}}` alias to reference the newl
 ```toml
 # cog.toml
 pre_bump_hooks = [
-    "cargo build --release",
     "cargo bump {{version}}",
+    "cargo build --release",
 ]
 ```
 
