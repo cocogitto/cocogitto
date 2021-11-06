@@ -87,6 +87,33 @@ mod test {
     }
 
     #[test]
+    fn should_full_hash_template() -> Result<()> {
+        // Arrange
+        let release = Release::fixture();
+        let renderer = Renderer::try_new(Template {
+            context: None,
+            kind: TemplateKind::FullHash,
+        })?;
+
+        // Act
+        let changelog = renderer.render(&release);
+
+        // Assert
+        assert_that!(changelog).is_ok().is_equal_to(
+            indoc! {
+                "#### Bug Fixes
+                - 17f7e23081db15e9318aeb37529b1d473cf41cbe - **(parser)** fix parser implementation - @oknozor
+                #### Features
+                - 17f7e23081db15e9318aeb37529b1d473cf41cbe - **(parser)** implement the changelog generator - @oknozor
+                - 17f7e23081db15e9318aeb37529b1d473cf41cbe - awesome feature - Paul Delafosse"
+            }
+                .to_string(),
+        );
+
+        Ok(())
+    }
+
+    #[test]
     fn should_render_github_template() -> Result<()> {
         // Arrange
         let release = Release::fixture();

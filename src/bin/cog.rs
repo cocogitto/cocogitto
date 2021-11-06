@@ -103,7 +103,7 @@ enum Cli {
         at: Option<String>,
 
         /// Generate the changelog with the given template.
-        /// Possible values are 'remote', 'default' or the path to your template.  
+        /// Possible values are 'remote', 'full_hash', 'default' or the path to your template.  
         /// If not specified cog will use cog.toml template config or fallback to 'default'.
         #[structopt(name = "template", long, short = "p")]
         template: Option<String>,

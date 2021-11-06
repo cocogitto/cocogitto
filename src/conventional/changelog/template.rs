@@ -7,6 +7,8 @@ const DEFAULT_TEMPLATE: &[u8] = include_bytes!("template/simple");
 const DEFAULT_TEMPLATE_NAME: &str = "default";
 const REMOTE_TEMPLATE: &[u8] = include_bytes!("template/remote");
 const REMOTE_TEMPLATE_NAME: &str = "remote";
+const FULL_HASH_TEMPLATE: &[u8] = include_bytes!("template/full_hash");
+const FULL_HASH_TEMPLATE_NAME: &str = "full_hash";
 
 #[derive(Debug, Default)]
 pub struct Template {
@@ -28,6 +30,7 @@ impl Template {
 #[derive(Debug)]
 pub enum TemplateKind {
     Default,
+    FullHash,
     Remote,
     Custom(PathBuf),
 }
@@ -44,6 +47,7 @@ impl TemplateKind {
         match value {
             DEFAULT_TEMPLATE_NAME => Ok(TemplateKind::Default),
             REMOTE_TEMPLATE_NAME => Ok(TemplateKind::Remote),
+            FULL_HASH_TEMPLATE_NAME => Ok(TemplateKind::FullHash),
             path => {
                 let path = PathBuf::from(path);
                 if !path.exists() {
@@ -59,6 +63,7 @@ impl TemplateKind {
         match self {
             TemplateKind::Default => Ok(DEFAULT_TEMPLATE.to_vec()),
             TemplateKind::Remote => Ok(REMOTE_TEMPLATE.to_vec()),
+            TemplateKind::FullHash => Ok(FULL_HASH_TEMPLATE.to_vec()),
             TemplateKind::Custom(path) => std::fs::read(path),
         }
     }
@@ -67,6 +72,7 @@ impl TemplateKind {
         match self {
             TemplateKind::Default => DEFAULT_TEMPLATE_NAME,
             TemplateKind::Remote => REMOTE_TEMPLATE_NAME,
+            TemplateKind::FullHash => FULL_HASH_TEMPLATE_NAME,
             TemplateKind::Custom(_) => "custom_template",
         }
     }
