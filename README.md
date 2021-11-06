@@ -460,7 +460,7 @@ Or one by one, specifying the hook name :
 
     Enabling this hook will run `cog check` before pushing to remote.
     ```
-    cog install-hooks pre-push
+    cog install-hook pre-push
     ```
 
 2. Pre-commit hook
