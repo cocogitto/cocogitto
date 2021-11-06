@@ -20,7 +20,7 @@
         {% for commit in scoped_commits | sort(attribute="scope") %}                                                    \
             {% if commit.author and repository_url %}                                                                   \
                 {% set author = "@" ~ commit.author %}                                                                  \
-                {% set author_link = "https://github.com/" ~ commit.author %}                                           \
+                {% set author_link = platform ~ "/" ~ commit.author %}                                           \
                 {% set author = "[" ~ author ~ "](" ~ author_link ~ ")" %}                                              \
             {% else %}                                                                                                  \
                 {% set author = commit.signature %}                                                                     \
@@ -33,7 +33,7 @@
     {% for commit in typed_commits | unscoped %}                                                                        \
         {% if commit.author and repository_url %}                                                                       \
             {% set author = "@" ~ commit.author %}                                                                      \
-            {% set author_link = "https://github.com/" ~ author %}                                                      \
+            {% set author_link = platform ~ "/" ~ commit.author %}                                                      \
             {% set author = "[" ~ author ~ "](" ~ author_link ~ ")" %}                                                  \
         {% else %}                                                                                                      \
             {% set author = commit.signature %}                                                                         \

@@ -55,6 +55,7 @@ mod test {
 
     use crate::conventional::changelog::release::{ChangelogCommit, Release};
     use crate::conventional::changelog::renderer::Renderer;
+    use crate::conventional::changelog::template::{RemoteContext, Template, TemplateKind};
     use crate::conventional::commit::Commit;
     use crate::git::oid::OidOf;
     use crate::git::tag::Tag;
@@ -89,7 +90,14 @@ mod test {
     fn should_render_github_template() -> Result<()> {
         // Arrange
         let release = Release::fixture();
-        let renderer = Renderer::github();
+        let renderer = Renderer::try_new(Template {
+            context: Some(RemoteContext::new(
+                "github.com".into(),
+                "cocogitto".into(),
+                "oknozor".into(),
+            )),
+            kind: TemplateKind::Remote,
+        })?;
 
         // Act
         let changelog = renderer.render(&release);

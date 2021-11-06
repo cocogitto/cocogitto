@@ -4,66 +4,48 @@ use itertools::Itertools;
 use tera::{get_json_pointer, to_value, try_get_value, Context, Tera, Value};
 
 use crate::conventional::changelog::release::Release;
-use crate::SETTINGS;
-
-const DEFAULT_TEMPLATE: &[u8] = include_bytes!("template/simple");
-const DEFAULT_TEMPLATE_NAME: &str = "default_template";
-const GITHUB_TEMPLATE: &[u8] = include_bytes!("template/github");
-const GITHUB_TEMPLATE_NAME: &str = "github_template";
+use crate::conventional::changelog::template::Template;
 
 #[derive(Debug)]
 pub struct Renderer {
     tera: Tera,
-    template_name: String,
+    template: Template,
 }
 
 impl Default for Renderer {
     fn default() -> Self {
-        let template = String::from_utf8_lossy(DEFAULT_TEMPLATE);
-        Self::new(template.as_ref(), DEFAULT_TEMPLATE_NAME).unwrap()
+        Self::try_new(Template::default()).expect("Failed to load renderer for default template")
     }
 }
 
 impl Renderer {
-    pub fn github() -> Self {
-        let template = String::from_utf8_lossy(GITHUB_TEMPLATE);
-        Self::new(template.as_ref(), GITHUB_TEMPLATE_NAME).unwrap()
-    }
-
-    pub fn new(template: &str, template_name: &str) -> Result<Self, tera::Error> {
+    pub fn try_new(template: Template) -> Result<Self, tera::Error> {
         let mut tera = Tera::default();
+        let content = template.kind.get()?;
+        let content = String::from_utf8_lossy(content.as_slice());
 
-        tera.add_raw_template(template_name, template.as_ref())?;
+        tera.add_raw_template(template.kind.name(), content.as_ref())?;
         tera.register_filter("upper_first", Self::upper_first_filter);
         tera.register_filter("unscoped", Self::unscoped);
 
-        Ok(Renderer {
-            tera,
-            template_name: template_name.into(),
-        })
+        Ok(Renderer { tera, template })
     }
 
     pub(crate) fn render(&self, version: &Release) -> Result<String, tera::Error> {
-        let template_context = Context::from_serialize(version)?;
+        let mut template_context = Context::from_serialize(version)?;
 
-        let mut context = tera::Context::new();
-        let settings = &SETTINGS.changelog;
+        let context = self
+            .template
+            .context
+            .as_ref()
+            .map(|context| context.to_tera_context());
 
-        if settings.github {
-            if let (Some(owner), Some(repo)) = (&settings.owner, &settings.repository) {
-                context.insert("platform", "https://github.com/");
-                context.insert("owner", owner);
-                context.insert(
-                    "repository_url",
-                    &format!("https://github.com/{}/{}", owner, repo),
-                );
-            }
-        };
-
-        context.extend(template_context);
+        if let Some(context) = context {
+            template_context.extend(context);
+        }
 
         self.tera
-            .render(&self.template_name, &context)
+            .render(self.template.kind.name(), &template_context)
             .map(|changelog| {
                 changelog
                     .lines()

@@ -5,7 +5,7 @@ use crate::conventional::commit::CommitConfig;
 use crate::git::repository::Repository;
 use crate::{CommitsMetadata, CONFIG_PATH, SETTINGS};
 
-use crate::conventional::changelog::renderer::Renderer;
+use crate::conventional::changelog::template::{RemoteContext, Template};
 use anyhow::{anyhow, Result};
 use config::{Config, File};
 use conventional_commit_parser::commit::CommitType;
@@ -40,7 +40,8 @@ pub struct Settings {
 #[derive(Debug, Deserialize, Serialize, Clone, Eq, PartialEq)]
 #[serde(deny_unknown_fields, default)]
 pub struct Changelog {
-    pub github: bool,
+    pub template: Option<String>,
+    pub remote: Option<String>,
     pub path: PathBuf,
     pub owner: Option<String>,
     pub repository: Option<String>,
@@ -50,7 +51,8 @@ pub struct Changelog {
 impl Default for Changelog {
     fn default() -> Self {
         Changelog {
-            github: false,
+            template: None,
+            remote: None,
             path: PathBuf::from("CHANGELOG.md"),
             owner: None,
             repository: None,
@@ -77,14 +79,6 @@ pub fn commit_username(author: &str) -> Option<&'static str> {
 
 pub fn changelog_path() -> &'static PathBuf {
     &SETTINGS.changelog.path
-}
-
-pub fn renderer() -> Renderer {
-    if SETTINGS.changelog.github {
-        Renderer::github()
-    } else {
-        Renderer::default()
-    }
 }
 
 #[derive(Debug, Deserialize, Serialize, Default, Eq, PartialEq)]
@@ -171,5 +165,36 @@ impl Settings {
             HookType::PreBump => &profile.pre_bump_hooks,
             HookType::PostBump => &profile.post_bump_hooks,
         }
+    }
+
+    pub fn to_changelog_template(&self) -> Option<Template> {
+        self.changelog.template.as_ref().map(|template| {
+            let context = if template == "remote" {
+                let remote = self
+                    .changelog
+                    .remote
+                    .as_ref()
+                    .expect("'remote' should be set for remote template");
+                let repository = self
+                    .changelog
+                    .repository
+                    .as_ref()
+                    .expect("'repository' should be set for remote template");
+                let owner = self
+                    .changelog
+                    .owner
+                    .as_ref()
+                    .expect("'owner' should be set for remote template");
+                Some(RemoteContext::new(
+                    remote.to_owned(),
+                    repository.to_owned(),
+                    owner.to_owned(),
+                ))
+            } else {
+                None
+            };
+
+            Template::from_arg(template, context).expect("Unable to get template from config")
+        })
     }
 }

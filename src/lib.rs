@@ -25,6 +25,7 @@ use log::filter::CommitFilters;
 use settings::{HookType, Settings};
 
 use crate::conventional::changelog::release::{ChangelogCommit, Release};
+use crate::conventional::changelog::template::Template;
 use crate::hook::HookVersion;
 
 pub mod conventional;
@@ -462,7 +463,7 @@ impl CocoGitto {
 
         let path = settings::changelog_path();
 
-        changelog.write_to_file(path, settings::renderer())?;
+        changelog.write_to_file(path, SETTINGS.to_changelog_template().unwrap_or_default())?;
 
         let current = self
             .repository
@@ -519,12 +520,10 @@ impl CocoGitto {
         Ok(())
     }
 
-    pub fn get_changelog_at_tag(&self, tag: &str) -> Result<String> {
+    pub fn get_changelog_at_tag(&self, tag: &str, template: Template) -> Result<String> {
         let changelog = self.get_changelog(None, Some(tag))?;
 
-        changelog
-            .to_markdown(settings::renderer())
-            .map_err(|err| anyhow!(err))
+        changelog.to_markdown(template).map_err(|err| anyhow!(err))
     }
 
     /// ## Get a changelog between two oids
