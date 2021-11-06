@@ -1,6 +1,7 @@
 #![cfg(not(tarpaulin_include))]
 use std::path::PathBuf;
 
+use cocogitto::conventional::changelog::template::{RemoteContext, Template};
 use cocogitto::conventional::commit;
 use cocogitto::conventional::version::VersionIncrement;
 use cocogitto::git::hook::HookKind;
@@ -85,6 +86,7 @@ enum Cli {
         message: String,
     },
 
+    // FIXME : pass revpec pattern instead of from, to
     /// Display a changelog for the given commit oid range
     #[structopt(no_version, settings = SUBCOMMAND_SETTINGS)]
     Changelog {
@@ -99,6 +101,24 @@ enum Cli {
         /// Generate the changelog for a specific git tag
         #[structopt(short, long)]
         at: Option<String>,
+
+        /// Generate the changelog with the given template.
+        /// Possible values are 'remote', 'default' or the path to your template.  
+        /// If not specified cog will use cog.toml template config or fallback to 'default'.
+        #[structopt(name = "template", long, short = "p")]
+        template: Option<String>,
+
+        /// Url to use during template generation
+        #[structopt(name = "remote", long, required_if("template", "remote"))]
+        remote: Option<String>,
+
+        /// Repository owner to use during template generation
+        #[structopt(name = "owner", long, required_if("template", "remote"))]
+        owner: Option<String>,
+
+        /// Name of the repository used during template generation
+        #[structopt(name = "repository", long, required_if("template", "remote"))]
+        repository: Option<String>,
     },
 
     /// Commit changelog from latest tag to HEAD and create new tag
@@ -254,13 +274,42 @@ fn main() -> Result<()> {
                 .write_all(content.as_bytes())
                 .context("failed to write log into the pager")?;
         }
-        Cli::Changelog { from, to, at } => {
+        Cli::Changelog {
+            from,
+            to,
+            at,
+            template,
+            remote,
+            owner,
+            repository,
+        } => {
             let cocogitto = CocoGitto::get()?;
+
+            // Get a template either from arg or from config
+            let template = match template {
+                None => SETTINGS.to_changelog_template(),
+                Some(template) => {
+                    let context = if template == "remote" {
+                        let remote = remote.expect("'remote' should be set for remote template");
+                        let repository =
+                            repository.expect("'repository' should be set for remote template");
+                        let owner = owner.expect("'owner' should be set for remote template");
+                        Some(RemoteContext::new(remote, repository, owner))
+                    } else {
+                        None
+                    };
+
+                    Some(Template::from_arg(&template, context)?)
+                }
+            };
+
+            let template = template.unwrap_or_default();
+
             let result = match at {
-                Some(at) => cocogitto.get_changelog_at_tag(&at)?,
+                Some(at) => cocogitto.get_changelog_at_tag(&at, template)?,
                 None => {
                     let changelog = cocogitto.get_changelog(from.as_deref(), to.as_deref())?;
-                    changelog.to_markdown(cocogitto::settings::renderer())?
+                    changelog.to_markdown(template)?
                 }
             };
             println!("{}", result);

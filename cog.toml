@@ -35,14 +35,14 @@ post_bump_hooks = [
 ex = { changelog_title = "This is the markdown title for `ex` commit type" }
 
 [changelog]
-github = true
-# Optional changelog path ("CHANGELOG.md" if omitted)
 path = "CHANGELOG.md"
+template = "remote"
+remote = "github.com"
 repository = "cocogitto"
 owner = "oknozor"
 # Optional contributor list
-# intended to map git signature to github username
-# and generate changelog links to their github profiles
+# intended to map git signature to remote username
+# and generate changelog links to their remote profiles
 authors = [
     { signature = "Paul Delafosse", username = "oknozor" },
     { signature = "Jack Dorland", username = "jackdorland" },
