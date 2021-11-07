@@ -1,6 +1,7 @@
 use crate::conventional::commit::Commit;
 use crate::git::repository::Repository;
 
+use crate::git::revspec::RevspecPattern;
 use anyhow::{anyhow, bail, Result};
 use colored::*;
 use conventional_commit_parser::commit::CommitType;
@@ -48,7 +49,12 @@ impl VersionIncrement {
         let changelog_start_oid = changelog_start_oid.to_string();
         let changelog_start_oid = Some(changelog_start_oid.as_str());
 
-        let commits = repository.get_commit_range(changelog_start_oid, None)?;
+        let pattern = changelog_start_oid
+            .map(|oid| format!("{}..", oid))
+            .unwrap_or_else(|| "..".to_string());
+        let pattern = pattern.as_str();
+        let pattern = RevspecPattern::from(pattern);
+        let commits = repository.get_commit_range(&pattern)?;
 
         let commits: Vec<&Git2Commit> = commits
             .commits

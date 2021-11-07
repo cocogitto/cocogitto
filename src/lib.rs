@@ -26,6 +26,7 @@ use settings::{HookType, Settings};
 
 use crate::conventional::changelog::release::{ChangelogCommit, Release};
 use crate::conventional::changelog::template::Template;
+use crate::git::revspec::RevspecPattern;
 use crate::hook::HookVersion;
 
 pub mod conventional;
@@ -143,7 +144,8 @@ impl CocoGitto {
 
     pub fn check_and_edit(&self, from_latest_tag: bool) -> Result<()> {
         let commits = if from_latest_tag {
-            self.repository.get_commit_range(None, None)?
+            self.repository
+                .get_commit_range(&RevspecPattern::default())?
         } else {
             self.repository.all_commits()?
         };
@@ -247,7 +249,8 @@ impl CocoGitto {
 
     pub fn check(&self, check_from_latest_tag: bool) -> Result<()> {
         let commit_range = if check_from_latest_tag {
-            self.repository.get_commit_range(None, None)?
+            self.repository
+                .get_commit_range(&RevspecPattern::default())?
         } else {
             self.repository.all_commits()?
         };
@@ -456,10 +459,11 @@ impl CocoGitto {
             current_tag?.oid().to_string()
         };
 
-        let changelog = self.get_changelog(
-            Some(&origin),
-            Some(&self.repository.get_head_commit_oid()?.to_string()),
-        )?;
+        let target = self.repository.get_head_commit_oid()?.to_string();
+        let pattern = (origin.as_str(), target.as_str());
+
+        let pattern = RevspecPattern::from(pattern);
+        let changelog = self.get_changelog(pattern)?;
 
         let path = settings::changelog_path();
 
@@ -521,7 +525,9 @@ impl CocoGitto {
     }
 
     pub fn get_changelog_at_tag(&self, tag: &str, template: Template) -> Result<String> {
-        let changelog = self.get_changelog(None, Some(tag))?;
+        let pattern = format!("..{}", tag);
+        let pattern = RevspecPattern::from(pattern.as_str());
+        let changelog = self.get_changelog(pattern)?;
 
         changelog.to_markdown(template).map_err(|err| anyhow!(err))
     }
@@ -529,13 +535,16 @@ impl CocoGitto {
     /// ## Get a changelog between two oids
     /// - `from` default value:latest tag or else first commit
     /// - `to` default value:`HEAD` or else first commit
-    pub fn get_changelog(&self, from: Option<&str>, to: Option<&str>) -> Result<Release> {
+    pub fn get_changelog(&self, pattern: RevspecPattern) -> Result<Release> {
         let mut commits = vec![];
 
-        let commit_range = self
-            .repository
-            .get_commit_range(from, to)
-            .map_err(|err| anyhow!("Could not get commit range {:?}...{:?}:{}", from, to, err))?;
+        let commit_range = self.repository.get_commit_range(&pattern).map_err(|err| {
+            anyhow!(
+                "Could not get commit range for pattern '{}': {}",
+                pattern,
+                err
+            )
+        })?;
 
         for commit in commit_range.commits {
             // Ignore merge commits
