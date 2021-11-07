@@ -1,16 +1,67 @@
 use anyhow::anyhow;
 use anyhow::Result;
 use git2::{Commit, Oid};
+use std::fmt;
+use std::fmt::Formatter;
 
 use crate::git::oid::OidOf;
 use crate::git::repository::Repository;
 use crate::git::tag::Tag;
 
+#[derive(Debug)]
 pub struct CommitRange<'repo> {
     pub from: OidOf,
     pub to: OidOf,
     pub commits: Vec<Commit<'repo>>,
 }
+
+#[derive(Debug, Default)]
+pub struct RevspecPattern<'a> {
+    from: Option<&'a str>,
+    to: Option<&'a str>,
+}
+
+impl fmt::Display for RevspecPattern<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let from = self.from.unwrap_or("");
+        let to = self.to.unwrap_or("");
+        write!(f, "{:?}..{:?}", from, to)
+    }
+}
+
+impl<'a> From<&'a str> for RevspecPattern<'a> {
+    fn from(value: &'a str) -> Self {
+        if !value.contains("..") {
+            panic!("Invalid commit range pattern: '{}'", value);
+        }
+
+        let split = value.split("..").collect::<Vec<&'a str>>();
+
+        let from = if split[0].is_empty() {
+            None
+        } else {
+            Some(split[0])
+        };
+
+        let to = if split[1].is_empty() {
+            None
+        } else {
+            Some(split[1])
+        };
+
+        RevspecPattern { from, to }
+    }
+}
+
+impl<'a> From<(&'a str, &'a str)> for RevspecPattern<'a> {
+    fn from((from, to): (&'a str, &'a str)) -> Self {
+        Self {
+            from: Some(from),
+            to: Some(to),
+        }
+    }
+}
+
 impl Repository {
     /// Return a [`CommitRange`] containing all commit in the current repository
     pub fn all_commits(&self) -> Result<CommitRange> {
@@ -41,7 +92,10 @@ impl Repository {
     /// Return a commit range
     /// `from` : either a tag or an oid, latest tag if none, fallbacks to first commit
     /// `to`: HEAD if none
-    pub fn get_commit_range(&self, from: Option<&str>, to: Option<&str>) -> Result<CommitRange> {
+    pub fn get_commit_range(&self, pattern: &RevspecPattern) -> Result<CommitRange> {
+        let from = pattern.from;
+        let to = pattern.to;
+
         // Is the given `to` arg a tag or an oid ?
         let maybe_to_tag = to.map(|to| self.resolve_tag(to).ok()).flatten();
 
@@ -153,8 +207,47 @@ mod test {
 
     use crate::git::oid::OidOf;
     use crate::git::repository::Repository;
+    use crate::git::revspec::RevspecPattern;
     use crate::git::tag::Tag;
     use crate::test_helpers::run_test_with_context;
+
+    #[test]
+    fn convert_str_to_pattern_to() {
+        let pattern = RevspecPattern::from("..1.0.0");
+
+        assert_that!(pattern.from).is_none();
+        assert_that!(pattern.to).is_some().is_equal_to("1.0.0");
+    }
+
+    #[test]
+    fn convert_str_to_pattern_from() {
+        let pattern = RevspecPattern::from("1.0.0..");
+
+        assert_that!(pattern.from).is_some().is_equal_to("1.0.0");
+        assert_that!(pattern.to).is_none()
+    }
+
+    #[test]
+    fn convert_empty_pattern() {
+        let pattern = RevspecPattern::from("..");
+
+        assert_that!(pattern.from).is_none();
+        assert_that!(pattern.to).is_none()
+    }
+
+    #[test]
+    #[should_panic(expected = "Invalid commit range pattern: '1.0.0'")]
+    fn panic_invalid_pattern() {
+        let _ = RevspecPattern::from("1.0.0");
+    }
+
+    #[test]
+    fn convert_full_pattern() {
+        let pattern = RevspecPattern::from("1.0.0..2.0.0");
+
+        assert_that!(pattern.from).is_some().is_equal_to("1.0.0");
+        assert_that!(pattern.to).is_some().is_equal_to("2.0.0");
+    }
 
     #[test]
     fn all_commits() -> Result<()> {
@@ -190,7 +283,7 @@ mod test {
             repo.add_all()?;
             repo.commit("feat: a commit")?;
 
-            let commit_range = repo.get_commit_range(None, Some("1.0.0"))?;
+            let commit_range = repo.get_commit_range(&RevspecPattern::from("..1.0.0"))?;
 
             assert_that!(commit_range.from).is_equal_to(OidOf::Other(start));
             assert_that!(commit_range.to.to_string()).is_equal_to("1.0.0".to_string());
@@ -210,7 +303,7 @@ mod test {
             let v3_0_0 = OidOf::Tag(Tag::new("3.0.0", v3_0_0)?);
 
             // Act
-            let range = repo.get_commit_range(Some("1.0.0"), Some("3.0.0"))?;
+            let range = repo.get_commit_range(&RevspecPattern::from("1.0.0..3.0.0"))?;
 
             // Assert
             assert_that!(range.from).is_equal_to(v1_0_0);
@@ -231,7 +324,7 @@ mod test {
             let v1_0_0 = OidOf::Tag(Tag::new("1.0.0", v1_0_0)?);
 
             // Act
-            let range = repo.get_commit_range(Some("1.0.0"), None)?;
+            let range = repo.get_commit_range(&RevspecPattern::from("1.0.0.."))?;
 
             // Assert
             assert_that!(range.from).is_equal_to(v1_0_0);
@@ -251,7 +344,7 @@ mod test {
             let latest = OidOf::Tag(repo.get_latest_tag()?);
 
             // Act
-            let range = repo.get_commit_range(None, None)?;
+            let range = repo.get_commit_range(&RevspecPattern::default())?;
 
             // Assert
             assert_that!(range.from).is_equal_to(latest);
@@ -271,7 +364,7 @@ mod test {
             let v3_0_0 = OidOf::Tag(Tag::new("3.0.0", v3_0_0)?);
 
             // Act
-            let range = repo.get_commit_range(None, Some("3.0.0"))?;
+            let range = repo.get_commit_range(&RevspecPattern::from("..3.0.0"))?;
 
             // Assert
             assert_that!(range.from).is_equal_to(v2_1_1);

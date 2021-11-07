@@ -10,6 +10,7 @@ use cocogitto::log::output::Output;
 use cocogitto::{CocoGitto, SETTINGS};
 
 use anyhow::{Context, Result};
+use cocogitto::git::revspec::RevspecPattern;
 use structopt::clap::{AppSettings, Shell};
 use structopt::StructOpt;
 
@@ -90,13 +91,9 @@ enum Cli {
     /// Display a changelog for the given commit oid range
     #[structopt(no_version, settings = SUBCOMMAND_SETTINGS)]
     Changelog {
-        /// Generate the changelog from this commit or tag ref, default latest tag
-        #[structopt(short, long, conflicts_with = "at")]
-        from: Option<String>,
-
-        /// Generate the changelog to this commit or tag ref, default HEAD
-        #[structopt(short, long, conflicts_with = "at")]
-        to: Option<String>,
+        /// Generate the changelog from in the given spec range
+        #[structopt(conflicts_with = "at")]
+        pattern: Option<String>,
 
         /// Generate the changelog for a specific git tag
         #[structopt(short, long)]
@@ -105,15 +102,15 @@ enum Cli {
         /// Generate the changelog with the given template.
         /// Possible values are 'remote', 'full_hash', 'default' or the path to your template.  
         /// If not specified cog will use cog.toml template config or fallback to 'default'.
-        #[structopt(name = "template", long, short = "p")]
+        #[structopt(name = "template", long, short)]
         template: Option<String>,
 
         /// Url to use during template generation
-        #[structopt(name = "remote", long, required_if("template", "remote"))]
+        #[structopt(name = "remote", long, short, required_if("template", "remote"))]
         remote: Option<String>,
 
         /// Repository owner to use during template generation
-        #[structopt(name = "owner", long, required_if("template", "remote"))]
+        #[structopt(name = "owner", long, short, required_if("template", "remote"))]
         owner: Option<String>,
 
         /// Name of the repository used during template generation
@@ -275,8 +272,7 @@ fn main() -> Result<()> {
                 .context("failed to write log into the pager")?;
         }
         Cli::Changelog {
-            from,
-            to,
+            pattern,
             at,
             template,
             remote,
@@ -305,10 +301,12 @@ fn main() -> Result<()> {
 
             let template = template.unwrap_or_default();
 
+            let pattern = pattern.as_deref().map(RevspecPattern::from);
+
             let result = match at {
                 Some(at) => cocogitto.get_changelog_at_tag(&at, template)?,
                 None => {
-                    let changelog = cocogitto.get_changelog(from.as_deref(), to.as_deref())?;
+                    let changelog = cocogitto.get_changelog(pattern.unwrap_or_default())?;
                     changelog.to_markdown(template)?
                 }
             };
