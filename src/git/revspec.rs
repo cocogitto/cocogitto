@@ -1,9 +1,11 @@
-use anyhow::anyhow;
-use anyhow::Result;
-use git2::{Commit, Oid};
 use std::fmt;
 use std::fmt::Formatter;
 
+use anyhow::anyhow;
+use anyhow::Result;
+use git2::{Commit, Oid};
+
+use crate::conventional::changelog::release::Release;
 use crate::git::oid::OidOf;
 use crate::git::repository::Repository;
 use crate::git::tag::Tag;
@@ -16,48 +18,48 @@ pub struct CommitRange<'repo> {
 }
 
 #[derive(Debug, Default)]
-pub struct RevspecPattern<'a> {
-    from: Option<&'a str>,
-    to: Option<&'a str>,
+pub struct RevspecPattern {
+    from: Option<String>,
+    to: Option<String>,
 }
 
-impl fmt::Display for RevspecPattern<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let from = self.from.unwrap_or("");
-        let to = self.to.unwrap_or("");
-        write!(f, "{:?}..{:?}", from, to)
+impl fmt::Display for RevspecPattern {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        let from = self.from.as_deref().unwrap_or("");
+        let to = self.to.as_deref().unwrap_or("");
+        write!(f, "{}..{}", from, to)
     }
 }
 
-impl<'a> From<&'a str> for RevspecPattern<'a> {
-    fn from(value: &'a str) -> Self {
+impl From<&str> for RevspecPattern {
+    fn from(value: &str) -> Self {
         if !value.contains("..") {
             panic!("Invalid commit range pattern: '{}'", value);
         }
 
-        let split = value.split("..").collect::<Vec<&'a str>>();
+        let split = value.split("..").collect::<Vec<&str>>();
 
         let from = if split[0].is_empty() {
             None
         } else {
-            Some(split[0])
+            Some(split[0].to_string())
         };
 
         let to = if split[1].is_empty() {
             None
         } else {
-            Some(split[1])
+            Some(split[1].to_string())
         };
 
         RevspecPattern { from, to }
     }
 }
 
-impl<'a> From<(&'a str, &'a str)> for RevspecPattern<'a> {
-    fn from((from, to): (&'a str, &'a str)) -> Self {
+impl From<(&str, &str)> for RevspecPattern {
+    fn from((from, to): (&str, &str)) -> Self {
         Self {
-            from: Some(from),
-            to: Some(to),
+            from: Some(from.to_string()),
+            to: Some(to.to_string()),
         }
     }
 }
@@ -89,12 +91,56 @@ impl Repository {
         Ok(CommitRange { from, to, commits })
     }
 
+    pub(crate) fn get_release_range(&self, pattern: RevspecPattern) -> Result<Release> {
+        let target = if let Some(target) = pattern.from {
+            self.resolve_oid_of(&target)
+        } else {
+            OidOf::Other(self.get_first_commit()?)
+        };
+
+        let pattern = RevspecPattern {
+            from: None,
+            to: pattern.to,
+        };
+
+        let range = self.get_commit_range(&pattern)?;
+        let release = Release::from(range);
+        let release = self.populate_previous_release(release, target.oid())?;
+        Ok(release)
+    }
+
+    fn populate_previous_release<'a>(
+        &'a self,
+        mut release: Release<'a>,
+        target: &Oid,
+    ) -> Result<Release<'a>> {
+        let pattern = format!("..{}", release.from);
+        let pattern = RevspecPattern::from(pattern.as_str());
+        let range = self.get_commit_range(&pattern)?;
+
+        // Target tag or commit reached
+        if range.to.oid() == target {
+            // We are not on first commit
+            if range.from != range.to {
+                let previous = Release::from(range);
+                release.previous = Some(Box::new(previous));
+            }
+            return Ok(release);
+        }
+
+        let previous = Release::from(range);
+        let previous = self.populate_previous_release(previous, target)?;
+        release.previous = Some(Box::new(previous));
+
+        Ok(release)
+    }
+
     /// Return a commit range
     /// `from` : either a tag or an oid, latest tag if none, fallbacks to first commit
     /// `to`: HEAD if none
     pub fn get_commit_range(&self, pattern: &RevspecPattern) -> Result<CommitRange> {
-        let from = pattern.from;
-        let to = pattern.to;
+        let from = pattern.from.as_deref();
+        let to = pattern.to.as_deref();
 
         // Is the given `to` arg a tag or an oid ?
         let maybe_to_tag = to.map(|to| self.resolve_tag(to).ok()).flatten();
@@ -118,19 +164,7 @@ impl Repository {
                         .expect("No commit found")
                 }),
             // We might have a tag
-            Some(from) => self
-                .resolve_tag(from)
-                .ok()
-                .map(OidOf::Tag)
-                // No tag found, this is an oid
-                .unwrap_or_else(|| {
-                    let oid = self
-                        .0
-                        .revparse_single(from)
-                        .expect("Expected oid or tag")
-                        .id();
-                    OidOf::Other(oid)
-                }),
+            Some(from) => self.resolve_oid_of(from),
         };
 
         // Resolve shorthands and tags
@@ -144,6 +178,21 @@ impl Repository {
         let commits = self.get_commit_range_from_spec(&spec)?;
 
         Ok(CommitRange { from, to, commits })
+    }
+
+    fn resolve_oid_of(&self, from: &str) -> OidOf {
+        self.resolve_tag(from)
+            .ok()
+            .map(OidOf::Tag)
+            // No tag found, this is an oid
+            .unwrap_or_else(|| {
+                let oid = self
+                    .0
+                    .revparse_single(from)
+                    .expect("Expected oid or tag")
+                    .id();
+                OidOf::Other(oid)
+            })
     }
 
     fn get_commit_range_from_spec(&self, spec: &str) -> Result<Vec<Commit>> {
@@ -201,6 +250,7 @@ impl Repository {
 
 #[cfg(test)]
 mod test {
+    use crate::conventional::changelog::release::Release;
     use anyhow::Result;
     use git2::Oid;
     use speculoos::prelude::*;
@@ -216,14 +266,18 @@ mod test {
         let pattern = RevspecPattern::from("..1.0.0");
 
         assert_that!(pattern.from).is_none();
-        assert_that!(pattern.to).is_some().is_equal_to("1.0.0");
+        assert_that!(pattern.to)
+            .is_some()
+            .is_equal_to("1.0.0".to_string());
     }
 
     #[test]
     fn convert_str_to_pattern_from() {
         let pattern = RevspecPattern::from("1.0.0..");
 
-        assert_that!(pattern.from).is_some().is_equal_to("1.0.0");
+        assert_that!(pattern.from)
+            .is_some()
+            .is_equal_to("1.0.0".to_string());
         assert_that!(pattern.to).is_none()
     }
 
@@ -245,8 +299,12 @@ mod test {
     fn convert_full_pattern() {
         let pattern = RevspecPattern::from("1.0.0..2.0.0");
 
-        assert_that!(pattern.from).is_some().is_equal_to("1.0.0");
-        assert_that!(pattern.to).is_some().is_equal_to("2.0.0");
+        assert_that!(pattern.from)
+            .is_some()
+            .is_equal_to("1.0.0".to_string());
+        assert_that!(pattern.to)
+            .is_some()
+            .is_equal_to("2.0.0".to_string());
     }
 
     #[test]
@@ -262,6 +320,28 @@ mod test {
             assert_that!(range.commits).is_not_empty();
             Ok(())
         })
+    }
+
+    #[test]
+    fn get_release_range_integration_test() -> Result<()> {
+        // Arrange
+        let repo = Repository::open(".")?;
+        let format_version = |release: &Release| format!("{}", release.version);
+
+        // Act
+        let release = repo.get_release_range(RevspecPattern::from("0.32.1..0.32.3"))?;
+
+        // Assert
+        assert_that!(format_version(&release)).is_equal_to("0.32.3".to_string());
+
+        let release = *release.previous.unwrap();
+        assert_that!(format_version(&release)).is_equal_to("0.32.2".to_string());
+
+        let release = *release.previous.unwrap();
+        assert_that!(format_version(&release)).is_equal_to("0.32.1".to_string());
+
+        assert_that!(release.previous).is_none();
+        Ok(())
     }
 
     #[test]
@@ -353,6 +433,7 @@ mod test {
             Ok(())
         })
     }
+
     #[test]
     fn from_previous_to_tag() -> Result<()> {
         run_test_with_context(|context| {
@@ -369,6 +450,29 @@ mod test {
             // Assert
             assert_that!(range.from).is_equal_to(v2_1_1);
             assert_that!(range.to).is_equal_to(v3_0_0);
+
+            Ok(())
+        })
+    }
+
+    #[test]
+    fn recursive_from_origin_to_head() -> Result<()> {
+        run_test_with_context(|context| {
+            // Arrange
+            let repo = Repository::open(&context.current_dir)?;
+            let tag_count = repo.0.tag_names(None)?.len();
+
+            // Act
+            let mut realease = repo.get_release_range(RevspecPattern::from(".."))?;
+            let mut count = 0;
+
+            while let Some(previous) = realease.previous {
+                realease = *previous;
+                count += 1;
+            }
+
+            // Assert
+            assert_that!(count).is_equal_to(tag_count);
 
             Ok(())
         })

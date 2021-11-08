@@ -44,6 +44,7 @@ predicates = "1"
 rand = "0.7.3"
 indoc = "1.0.3"
 speculoos = "0.8.0"
+pretty_assertions = "1.0.0"
 
 [features]
 default = ["cli"]

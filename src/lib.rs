@@ -6,7 +6,6 @@ use std::path::Path;
 use std::process::{exit, Command, Stdio};
 
 use anyhow::{anyhow, bail, ensure, Context, Error, Result};
-use chrono::Utc;
 use colored::*;
 use conventional_commit_parser::commit::{CommitType, ConventionalCommit};
 use conventional_commit_parser::parse_footers;
@@ -24,7 +23,7 @@ use hook::Hook;
 use log::filter::CommitFilters;
 use settings::{HookType, Settings};
 
-use crate::conventional::changelog::release::{ChangelogCommit, Release};
+use crate::conventional::changelog::release::Release;
 use crate::conventional::changelog::template::Template;
 use crate::git::revspec::RevspecPattern;
 use crate::hook::HookVersion;
@@ -463,7 +462,7 @@ impl CocoGitto {
         let pattern = (origin.as_str(), target.as_str());
 
         let pattern = RevspecPattern::from(pattern);
-        let changelog = self.get_changelog(pattern)?;
+        let changelog = self.get_changelog(pattern, false)?;
 
         let path = settings::changelog_path();
 
@@ -527,48 +526,34 @@ impl CocoGitto {
     pub fn get_changelog_at_tag(&self, tag: &str, template: Template) -> Result<String> {
         let pattern = format!("..{}", tag);
         let pattern = RevspecPattern::from(pattern.as_str());
-        let changelog = self.get_changelog(pattern)?;
+        let changelog = self.get_changelog(pattern, false)?;
 
-        changelog.to_markdown(template).map_err(|err| anyhow!(err))
+        changelog
+            .into_markdown(template)
+            .map_err(|err| anyhow!(err))
     }
 
     /// ## Get a changelog between two oids
     /// - `from` default value:latest tag or else first commit
     /// - `to` default value:`HEAD` or else first commit
-    pub fn get_changelog(&self, pattern: RevspecPattern) -> Result<Release> {
-        let mut commits = vec![];
+    pub fn get_changelog(
+        &self,
+        pattern: RevspecPattern,
+        with_child_releases: bool,
+    ) -> Result<Release> {
+        if with_child_releases {
+            self.repository.get_release_range(pattern)
+        } else {
+            let commit_range = self.repository.get_commit_range(&pattern).map_err(|err| {
+                anyhow!(
+                    "Could not get commit range for pattern '{}': {}",
+                    pattern,
+                    err
+                )
+            })?;
 
-        let commit_range = self.repository.get_commit_range(&pattern).map_err(|err| {
-            anyhow!(
-                "Could not get commit range for pattern '{}': {}",
-                pattern,
-                err
-            )
-        })?;
-
-        for commit in commit_range.commits {
-            // Ignore merge commits
-            if let Some(message) = commit.message() {
-                if message.starts_with("Merge") {
-                    continue;
-                }
-            }
-
-            match Commit::from_git_commit(&commit) {
-                Ok(commit) => commits.push(ChangelogCommit::from(commit)),
-                Err(err) => {
-                    let err = err.to_string().red();
-                    eprintln!("{}", err);
-                }
-            };
+            Ok(Release::from(commit_range))
         }
-
-        Ok(Release {
-            version: commit_range.to,
-            from: commit_range.from,
-            date: Utc::now().naive_utc(),
-            commits,
-        })
     }
 
     fn run_hooks(

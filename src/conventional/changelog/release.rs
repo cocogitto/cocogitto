@@ -1,19 +1,54 @@
-use chrono::NaiveDateTime;
+use chrono::{NaiveDateTime, Utc};
 use conventional_commit_parser::commit::Footer;
 use serde::Serialize;
 
 use crate::conventional::commit::Commit;
 use crate::git::oid::OidOf;
+use crate::git::revspec::CommitRange;
 use crate::settings;
+use colored::Colorize;
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 pub struct Release<'a> {
     pub version: OidOf,
     pub from: OidOf,
     pub date: NaiveDateTime,
     pub commits: Vec<ChangelogCommit<'a>>,
+    pub previous: Option<Box<Release<'a>>>,
 }
 
+impl<'a> From<CommitRange<'a>> for Release<'a> {
+    fn from(commit_range: CommitRange<'a>) -> Self {
+        let mut commits = vec![];
+
+        for commit in commit_range.commits {
+            // Ignore merge commits
+            if let Some(message) = commit.message() {
+                if message.starts_with("Merge") {
+                    continue;
+                }
+            }
+
+            match Commit::from_git_commit(&commit) {
+                Ok(commit) => commits.push(ChangelogCommit::from(commit)),
+                Err(err) => {
+                    let err = err.to_string().red();
+                    eprintln!("{}", err);
+                }
+            };
+        }
+
+        Release {
+            version: commit_range.to,
+            from: commit_range.from,
+            date: Utc::now().naive_utc(),
+            commits,
+            previous: None,
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct ChangelogCommit<'a> {
     pub author_username: Option<&'a str>,
     pub commit: Commit,
@@ -47,6 +82,7 @@ impl<'a> From<&'a Footer> for ChangelogFooter<'a> {
 
 #[cfg(test)]
 mod test {
+    use anyhow::Result;
     use chrono::NaiveDateTime;
     use conventional_commit_parser::commit::{CommitType, ConventionalCommit, Footer};
     use git2::Oid;
@@ -59,7 +95,6 @@ mod test {
     use crate::conventional::commit::Commit;
     use crate::git::oid::OidOf;
     use crate::git::tag::Tag;
-    use anyhow::Result;
 
     #[test]
     fn should_render_default_template() -> Result<()> {
@@ -68,7 +103,7 @@ mod test {
         let renderer = Renderer::default();
 
         // Act
-        let changelog = renderer.render(&release);
+        let changelog = renderer.render(release);
 
         // Assert
         assert_that!(changelog).is_ok().is_equal_to(
@@ -96,7 +131,7 @@ mod test {
         })?;
 
         // Act
-        let changelog = renderer.render(&release);
+        let changelog = renderer.render(release);
 
         // Assert
         assert_that!(changelog).is_ok().is_equal_to(
@@ -127,7 +162,7 @@ mod test {
         })?;
 
         // Act
-        let changelog = renderer.render(&release);
+        let changelog = renderer.render(release);
 
         // Assert
         assert_that!(changelog).is_ok().is_equal_to(
@@ -139,7 +174,7 @@ mod test {
                 - **(parser)** implement the changelog generator - ([17f7e23](https://github.com/oknozor/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
                 - awesome feature - ([17f7e23](https://github.com/oknozor/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - Paul Delafosse"
             }
-            .to_string(),
+                .to_string(),
         );
 
         Ok(())
@@ -228,6 +263,7 @@ mod test {
                         },
                     },
                 ],
+                previous: None,
             }
         }
     }
