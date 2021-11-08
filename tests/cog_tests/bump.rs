@@ -231,12 +231,12 @@ fn bump_with_profile_hook() -> Result<()> {
         git_tag("1.0.0")?;
         git_commit("feat: feature")?;
 
-        let expected = indoc! {
+        let expected = indoc!(
             "current 1.0.0
-        next 1.0.1
-        Bumped version: 1.0.0 -> 1.0.1
+            next 1.0.1
+            Bumped version: 1.0.0 -> 1.0.1
         "
-        };
+        );
 
         // Act
         Command::cargo_bin("cog")?

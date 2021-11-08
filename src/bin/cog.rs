@@ -306,8 +306,8 @@ fn main() -> Result<()> {
             let result = match at {
                 Some(at) => cocogitto.get_changelog_at_tag(&at, template)?,
                 None => {
-                    let changelog = cocogitto.get_changelog(pattern.unwrap_or_default())?;
-                    changelog.to_markdown(template)?
+                    let changelog = cocogitto.get_changelog(pattern.unwrap_or_default(), true)?;
+                    changelog.into_markdown(template)?
                 }
             };
             println!("{}", result);

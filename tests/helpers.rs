@@ -5,6 +5,7 @@ use std::process::{Command, Stdio};
 
 use cocogitto::CONFIG_PATH;
 
+use anyhow::anyhow;
 use anyhow::Result;
 use speculoos::assert_that;
 use speculoos::iter::ContainingIntoIterAssertions;
@@ -124,7 +125,7 @@ pub fn git_add() -> Result<()> {
     Ok(())
 }
 
-pub fn git_commit(message: &str) -> Result<()> {
+pub fn git_commit(message: &str) -> Result<String> {
     Command::new("git")
         .arg("add")
         .arg(".")
@@ -141,7 +142,18 @@ pub fn git_commit(message: &str) -> Result<()> {
         .stdout(Stdio::null())
         .stderr(Stdio::inherit())
         .output()?;
-    Ok(())
+
+    // Return the commit id
+    let output = Command::new("git")
+        .arg("log")
+        .arg("--format=%H")
+        .arg("-n")
+        .arg("1")
+        .stdout(Stdio::piped())
+        .stderr(Stdio::inherit())
+        .output()?;
+
+    String::from_utf8(output.stdout).map_err(|err| anyhow!(err))
 }
 
 pub fn git_tag(tag: &str) -> Result<()> {

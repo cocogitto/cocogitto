@@ -12,6 +12,16 @@ pub enum OidOf {
     Other(Oid),
 }
 
+impl OidOf {
+    pub fn oid(&self) -> &Oid {
+        match self {
+            OidOf::Tag(t) => t.oid(),
+            OidOf::Head(o) => o,
+            OidOf::Other(o) => o,
+        }
+    }
+}
+
 impl Display for OidOf {
     /// Print the oid according to it's type
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {

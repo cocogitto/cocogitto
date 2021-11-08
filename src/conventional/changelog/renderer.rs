@@ -31,7 +31,18 @@ impl Renderer {
         Ok(Renderer { tera, template })
     }
 
-    pub(crate) fn render(&self, version: &Release) -> Result<String, tera::Error> {
+    pub(crate) fn render(&self, version: Release) -> Result<String, tera::Error> {
+        let mut release = self.render_release(&version)?;
+        let mut version = version;
+        while let Some(previous) = version.previous.map(|v| *v) {
+            release.push_str("\n- - -\n");
+            release.push_str(self.render_release(&previous)?.as_str());
+            version = previous;
+        }
+
+        Ok(release)
+    }
+    fn render_release(&self, version: &Release) -> Result<String, tera::Error> {
         let mut template_context = Context::from_serialize(version)?;
 
         let context = self
