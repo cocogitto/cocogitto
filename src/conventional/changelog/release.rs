@@ -156,7 +156,7 @@ mod test {
             context: Some(RemoteContext::new(
                 "github.com".into(),
                 "cocogitto".into(),
-                "oknozor".into(),
+                "cocogitto".into(),
             )),
             kind: TemplateKind::Remote,
         })?;
@@ -167,12 +167,12 @@ mod test {
         // Assert
         assert_that!(changelog).is_ok().is_equal_to(
             indoc! {
-                "## [1.0.0](https://github.com/oknozor/cocogitto/compare/0.1.0..1.0.0) - 2015-09-05
+                "## [1.0.0](https://github.com/cocogitto/cocogitto/compare/0.1.0..1.0.0) - 2015-09-05
                 #### Bug Fixes
-                - **(parser)** fix parser implementation - ([17f7e23](https://github.com/oknozor/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
+                - **(parser)** fix parser implementation - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
                 #### Features
-                - **(parser)** implement the changelog generator - ([17f7e23](https://github.com/oknozor/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
-                - awesome feature - ([17f7e23](https://github.com/oknozor/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - Paul Delafosse"
+                - **(parser)** implement the changelog generator - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
+                - awesome feature - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - Paul Delafosse"
             }
                 .to_string(),
         );
