@@ -4,10 +4,10 @@ name: CI
 on:
   push:
     branches:
-      - master
+      - main
   pull_request:
     branches:
-      - master
+      - main
 jobs:
   test:
     name: Tests
@@ -24,7 +24,7 @@ jobs:
           git config --global user.name github-actions
 
       - name: Conventional commit check
-        uses: oknozor/cocogitto-action@v1
+        uses: cocogitto/cocogitto-action@v1
         with:
           git-user: 'github-actions'
           git-user-email: 'github-actions@github.com'

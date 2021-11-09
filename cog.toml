@@ -39,7 +39,7 @@ path = "CHANGELOG.md"
 template = "remote"
 remote = "github.com"
 repository = "cocogitto"
-owner = "oknozor"
+owner = "cocogitto"
 # Optional contributor list
 # intended to map git signature to remote username
 # and generate changelog links to their remote profiles
