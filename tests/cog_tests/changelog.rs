@@ -25,11 +25,12 @@ fn get_changelog_range() -> Result<()> {
     let changelog = changelog.get_output();
     let changelog = &changelog.stdout;
     let changelog = String::from_utf8_lossy(changelog.as_slice());
+    let today = Utc::today().naive_utc().to_string();
 
     assert_eq!(
         changelog.as_ref(),
         formatdoc!(
-            "## 0.32.3 - 2021-11-09
+            "## 0.32.3 - {today}
                 #### Bug Fixes
                 - fix openssl missing in CD - (1c0d2e9) - oknozor
                 #### Documentation
@@ -37,7 +38,7 @@ fn get_changelog_range() -> Result<()> {
                 #### Miscellaneous Chores
                 - **(version)** 0.32.3 - (0939f4c) - *oknozor*
                 - - -
-                ## 0.32.2 - 2021-11-09
+                ## 0.32.2 - {today}
                 #### Bug Fixes
                 - **(cd)** bump setup-rust-action to v1.3.3 - (5350b11) - *oknozor*
                 #### Documentation
@@ -45,7 +46,7 @@ fn get_changelog_range() -> Result<()> {
                 #### Miscellaneous Chores
                 - **(version)** 0.32.2 - (ef4803b) - *oknozor*
                 - - -
-                ## 0.32.1 - 2021-11-09
+                ## 0.32.1 - {today}
                 #### Bug Fixes
                 - **(cd)** fix ci cross build command bin args - (7f04a98) - *oknozor*
                 #### Documentation
@@ -59,7 +60,7 @@ fn get_changelog_range() -> Result<()> {
                 #### Refactoring
                 - change config name to cog.toml - (d4aa61b) - oknozor
                 - - -
-                ## 0.30.0 - 2021-11-09
+                ## 0.30.0 - {today}
                 #### Continuous Integration
                 - **(cd)** fix publish action script - (d0d0ae9) - *oknozor*
                 #### Features
@@ -69,7 +70,8 @@ fn get_changelog_range() -> Result<()> {
                 - remove test generated dir - (a6fba9c) - oknozor
                 #### Tests
                 - **(cli)** add verify it tests - (9da7321) - *oknozor*
-                "
+                ",
+            today = today
         )
     );
     Ok(())
@@ -132,6 +134,7 @@ fn get_changelog_from_tagged_repo() -> Result<()> {
         let changelog = changelog.get_output();
         let changelog = &changelog.stdout;
         let changelog = String::from_utf8_lossy(changelog.as_slice());
+        let today = Utc::today().naive_utc().to_string();
 
         assert_eq!(
             changelog.as_ref(),
@@ -140,12 +143,13 @@ fn get_changelog_from_tagged_repo() -> Result<()> {
                     #### Bug Fixes
                     - bug fix - ({commit_two}) - Tom
                     - - -
-                    ## 1.0.0 - 2021-11-09
+                    ## 1.0.0 - {today}
                     #### Features
                     - **(taef)** feature - ({commit_one}) - Tom
                     ",
                 commit_one = &commit_one[0..7],
-                commit_two = &commit_two[0..7]
+                commit_two = &commit_two[0..7],
+                today = today
             )
         );
         Ok(())
