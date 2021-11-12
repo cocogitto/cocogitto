@@ -143,7 +143,16 @@ impl Repository {
         let to = pattern.to.as_deref();
 
         // Is the given `to` arg a tag or an oid ?
-        let maybe_to_tag = to.map(|to| self.resolve_tag(to).ok()).flatten();
+        let maybe_to_tag = match to {
+            // No target tag provided, check if HEAD is tagged
+            None => {
+                let head = self.get_head_commit_oid()?;
+
+                self.get_latest_tag().ok().filter(|tag| *tag.oid() == head)
+            }
+            // Try to resolve a tag from the provided range, ex: ..1.0.0
+            Some(to) => self.resolve_tag(to).ok(),
+        };
 
         // get/validate the target oid
         let to = match to {

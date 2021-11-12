@@ -307,3 +307,57 @@ fn get_changelog_at_tag_prefix() -> Result<()> {
         Ok(())
     })
 }
+
+#[test]
+fn get_changelog_from_tag_to_tagged_head() -> Result<()> {
+    run_test_with_context(|_| {
+        // Arrange
+        git_init()?;
+        git_commit("chore: init")?;
+        let commit_one = git_commit("feat: start")?;
+        let commit_two = git_commit("feat: feature 1")?;
+        git_tag("1.0.0")?;
+        let commit_three = git_commit("feat: feature 2")?;
+        let commit_four = git_commit("fix: bug fix 1")?;
+        let commit_five = git_commit("chore(version): 2.0.0")?;
+        git_tag("2.0.0")?;
+        git_log()?;
+
+        // Act
+        let changelog = Command::cargo_bin("cog")?
+            .arg("changelog")
+            // Assert
+            .assert()
+            .success();
+
+        let changelog = changelog.get_output();
+        let changelog = String::from_utf8_lossy(&changelog.stdout);
+        let today = Utc::today().naive_utc();
+
+        assert_eq!(
+            changelog.as_ref(),
+            formatdoc!(
+                "## 2.0.0 - {today}
+                #### Bug Fixes
+                - bug fix 1 - ({commit_four}) - Tom
+                #### Features
+                - feature 2 - ({commit_three}) - Tom
+                #### Miscellaneous Chores
+                - **(version)** 2.0.0 - ({commit_five}) - Tom
+                - - -
+                ## 1.0.0 - {today}
+                #### Features
+                - feature 1 - ({commit_two}) - Tom
+                - start - ({commit_one}) - Tom
+                ",
+                today = today,
+                commit_one = &commit_one[0..7],
+                commit_two = &commit_two[0..7],
+                commit_three = &commit_three[0..7],
+                commit_four = &commit_four[0..7],
+                commit_five = &commit_five[0..7],
+            )
+        );
+        Ok(())
+    })
+}
