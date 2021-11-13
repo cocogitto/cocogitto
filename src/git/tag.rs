@@ -121,6 +121,10 @@ impl Tag {
         self.oid.as_ref().unwrap()
     }
 
+    pub(crate) fn oid(&self) -> Option<&Oid> {
+        self.oid.as_ref()
+    }
+
     pub(crate) fn new(name: &str, oid: Option<Oid>) -> Result<Tag> {
         let tag = match SETTINGS.tag_prefix.as_ref() {
             None => Ok(name),
