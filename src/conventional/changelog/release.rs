@@ -189,12 +189,12 @@ mod test {
             let a_commit_hash = "17f7e23081db15e9318aeb37529b1d473cf41cbe";
             let version = Tag::new(
                 "1.0.0",
-                Oid::from_str("9bb5facac5724bc81385fdd740fedbb49056da00").unwrap(),
+                Some(Oid::from_str("9bb5facac5724bc81385fdd740fedbb49056da00").unwrap()),
             )
             .unwrap();
             let from = Tag::new(
                 "0.1.0",
-                Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap(),
+                Some(Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap()),
             )
             .unwrap();
             Release {

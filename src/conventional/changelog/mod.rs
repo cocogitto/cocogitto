@@ -10,6 +10,8 @@ pub(crate) mod renderer;
 pub(crate) mod serde;
 pub mod template;
 
+const CHANGELOG_SEPARATOR: &str = "- - -";
+
 const DEFAULT_HEADER: &str =
     "# Changelog\nAll notable changes to this project will be documented in this file. \
 See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.\n\n- - -\n";
@@ -30,11 +32,15 @@ impl Release<'_> {
         let mut changelog_content = fs::read_to_string(path.as_ref())
             .unwrap_or_else(|_| [DEFAULT_HEADER, DEFAULT_FOOTER].join(""));
 
-        let separator_idx = changelog_content.find("- - -");
+        let separator_idx = changelog_content.find(CHANGELOG_SEPARATOR);
 
         if let Some(idx) = separator_idx {
-            changelog_content.insert_str(idx + 5, &changelog);
-            changelog_content.insert_str(idx + 5 + changelog.len(), "\n- - -");
+            changelog_content.insert(idx + CHANGELOG_SEPARATOR.len(), '\n');
+            changelog_content.insert_str(idx + CHANGELOG_SEPARATOR.len() + 1, &changelog);
+            changelog_content.insert_str(
+                idx + CHANGELOG_SEPARATOR.len() + 1 + changelog.len(),
+                "\n- - -\n",
+            );
             fs::write(path.as_ref(), changelog_content)?;
 
             Ok(())

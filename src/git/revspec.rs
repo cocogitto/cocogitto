@@ -147,8 +147,9 @@ impl Repository {
             // No target tag provided, check if HEAD is tagged
             None => {
                 let head = self.get_head_commit_oid()?;
-
-                self.get_latest_tag().ok().filter(|tag| *tag.oid() == head)
+                self.get_latest_tag()
+                    .ok()
+                    .filter(|tag| *tag.oid_unchecked() == head)
             }
             // Try to resolve a tag from the provided range, ex: ..1.0.0
             Some(to) => self.resolve_tag(to).ok(),
@@ -190,17 +191,24 @@ impl Repository {
     }
 
     fn resolve_oid_of(&self, from: &str) -> OidOf {
+        // either we have a tag name
         self.resolve_tag(from)
-            .ok()
             .map(OidOf::Tag)
-            // No tag found, this is an oid
-            .unwrap_or_else(|| {
-                let oid = self
-                    .0
-                    .revparse_single(from)
-                    .expect("Expected oid or tag")
-                    .id();
-                OidOf::Other(oid)
+            // Or an oid
+            .unwrap_or_else(|_| {
+                let object = self.0.revparse_single(from).expect("Expected oid or tag");
+
+                // Is the oid pointing to a tag ?
+                let tag = self
+                    .all_tags()
+                    .expect("Error trying to get repository tags")
+                    .into_iter()
+                    .find(|tag| *tag.oid_unchecked() == object.id());
+
+                match tag {
+                    None => OidOf::Other(object.id()),
+                    Some(tag) => OidOf::Tag(tag),
+                }
             })
     }
 
@@ -240,7 +248,7 @@ impl Repository {
                 let name = String::from_utf8_lossy(name);
                 let name = name.as_ref().strip_prefix("refs/tags/").unwrap();
                 if range.contains(&oid) {
-                    if let Ok(tag) = Tag::new(name, oid) {
+                    if let Ok(tag) = Tag::new(name, Some(oid)) {
                         tags.push(tag);
                     };
                 };
@@ -387,9 +395,9 @@ mod test {
             // Arrange
             let repo = Repository::open(&context.current_dir)?;
             let v1_0_0 = Oid::from_str("549070fa99986b059cbaa9457b6b6f065bbec46b")?;
-            let v1_0_0 = OidOf::Tag(Tag::new("1.0.0", v1_0_0)?);
+            let v1_0_0 = OidOf::Tag(Tag::new("1.0.0", Some(v1_0_0))?);
             let v3_0_0 = Oid::from_str("c6508e243e2816e2d2f58828ee0c6721502958dd")?;
-            let v3_0_0 = OidOf::Tag(Tag::new("3.0.0", v3_0_0)?);
+            let v3_0_0 = OidOf::Tag(Tag::new("3.0.0", Some(v3_0_0))?);
 
             // Act
             let range = repo.get_commit_range(&RevspecPattern::from("1.0.0..3.0.0"))?;
@@ -410,7 +418,7 @@ mod test {
             let head = repo.get_head_commit_oid()?;
             let head = OidOf::Other(head);
             let v1_0_0 = Oid::from_str("549070fa99986b059cbaa9457b6b6f065bbec46b")?;
-            let v1_0_0 = OidOf::Tag(Tag::new("1.0.0", v1_0_0)?);
+            let v1_0_0 = OidOf::Tag(Tag::new("1.0.0", Some(v1_0_0))?);
 
             // Act
             let range = repo.get_commit_range(&RevspecPattern::from("1.0.0.."))?;
@@ -449,9 +457,9 @@ mod test {
             // Arrange
             let repo = Repository::open(&context.current_dir)?;
             let v2_1_1 = Oid::from_str("9dcf728d2eef6b5986633dd52ecbe9e416234898")?;
-            let v2_1_1 = OidOf::Tag(Tag::new("2.1.1", v2_1_1)?);
+            let v2_1_1 = OidOf::Tag(Tag::new("2.1.1", Some(v2_1_1))?);
             let v3_0_0 = Oid::from_str("c6508e243e2816e2d2f58828ee0c6721502958dd")?;
-            let v3_0_0 = OidOf::Tag(Tag::new("3.0.0", v3_0_0)?);
+            let v3_0_0 = OidOf::Tag(Tag::new("3.0.0", Some(v3_0_0))?);
 
             // Act
             let range = repo.get_commit_range(&RevspecPattern::from("..3.0.0"))?;
@@ -472,11 +480,11 @@ mod test {
             let tag_count = repo.0.tag_names(None)?.len();
 
             // Act
-            let mut realease = repo.get_release_range(RevspecPattern::from(".."))?;
+            let mut release = repo.get_release_range(RevspecPattern::from(".."))?;
             let mut count = 0;
 
-            while let Some(previous) = realease.previous {
-                realease = *previous;
+            while let Some(previous) = release.previous {
+                release = *previous;
                 count += 1;
             }
 

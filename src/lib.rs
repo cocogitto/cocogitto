@@ -25,7 +25,9 @@ use settings::{HookType, Settings};
 
 use crate::conventional::changelog::release::Release;
 use crate::conventional::changelog::template::Template;
+use crate::git::oid::OidOf;
 use crate::git::revspec::RevspecPattern;
+use crate::git::tag::Tag;
 use crate::hook::HookVersion;
 
 pub mod conventional;
@@ -430,7 +432,7 @@ impl CocoGitto {
 
         let mut next_version = increment
             .bump(&current_version)
-            .map_err(|err| anyhow!("Cannot bump version:{}", err))?;
+            .map_err(|err| anyhow!("Cannot bump version: {}", err))?;
 
         if next_version.le(&current_version) || next_version.eq(&current_version) {
             let comparison = format!("{} <= {}", current_version, next_version).red();
@@ -455,14 +457,14 @@ impl CocoGitto {
         let origin = if current_version == Version::new(0, 0, 0) {
             self.repository.get_first_commit()?.to_string()
         } else {
-            current_tag?.oid().to_string()
+            current_tag?.oid_unchecked().to_string()
         };
 
         let target = self.repository.get_head_commit_oid()?.to_string();
         let pattern = (origin.as_str(), target.as_str());
 
         let pattern = RevspecPattern::from(pattern);
-        let changelog = self.get_changelog(pattern, false)?;
+        let changelog = self.get_changelog_with_target_version(pattern, &version_str)?;
 
         let path = settings::changelog_path();
 
@@ -531,6 +533,26 @@ impl CocoGitto {
         changelog
             .into_markdown(template)
             .map_err(|err| anyhow!(err))
+    }
+
+    /// Used for cog bump. the target version
+    /// is not created yet when generating the changelog.
+    pub fn get_changelog_with_target_version(
+        &self,
+        pattern: RevspecPattern,
+        target_version: &str,
+    ) -> Result<Release> {
+        let commit_range = self.repository.get_commit_range(&pattern).map_err(|err| {
+            anyhow!(
+                "Could not get commit range for pattern '{}': {}",
+                pattern,
+                err
+            )
+        })?;
+
+        let mut release = Release::from(commit_range);
+        release.version = OidOf::Tag(Tag::new(target_version, None)?);
+        Ok(release)
     }
 
     /// ## Get a changelog between two oids

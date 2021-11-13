@@ -15,7 +15,7 @@ pub enum OidOf {
 impl OidOf {
     pub fn oid(&self) -> &Oid {
         match self {
-            OidOf::Tag(t) => t.oid(),
+            OidOf::Tag(t) => t.oid_unchecked(),
             OidOf::Head(o) => o,
             OidOf::Other(o) => o,
         }
