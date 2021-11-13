@@ -59,6 +59,9 @@ impl Serialize for OidOf {
         match self {
             OidOf::Tag(tag) => {
                 oidof.serialize_field("tag", &tag.to_string_with_prefix())?;
+                if let Some(oid) = tag.oid() {
+                    oidof.serialize_field("id", &oid.to_string())?;
+                }
             }
             OidOf::Head(oid) | OidOf::Other(oid) => {
                 oidof.serialize_field("id", &oid.to_string())?
