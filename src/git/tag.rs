@@ -4,8 +4,10 @@ use anyhow::{anyhow, ensure, Result};
 use colored::Colorize;
 use git2::string_array::StringArray;
 use git2::Oid;
+use git2::Tag as Git2Tag;
 use semver::Version;
 use std::cmp::Ordering;
+use std::convert::TryFrom;
 use std::fmt;
 use std::fmt::Formatter;
 
@@ -32,7 +34,7 @@ impl Repository {
         self.0
             .resolve_reference_from_short_name(tag)
             .map(|reference| reference.target().unwrap())
-            .map(|oid| Tag::new(tag, oid))?
+            .map(|oid| Tag::new(tag, Some(oid)))?
     }
 
     pub(crate) fn create_tag(&self, name: &str) -> Result<()> {
@@ -57,23 +59,29 @@ impl Repository {
     }
 
     pub(crate) fn get_latest_tag(&self) -> Result<Tag> {
-        let latest_tag: Option<Tag> = self
+        let tags: Vec<Tag> = self.all_tags()?;
+
+        let latest_tag: Option<&Tag> = tags.iter().max();
+
+        match latest_tag {
+            Some(tag) => Ok(tag.to_owned()),
+            None => Err(anyhow!("Unable to get any tag")),
+        }
+    }
+
+    pub(crate) fn all_tags(&self) -> Result<Vec<Tag>> {
+        Ok(self
             .tags()?
             .iter()
             .flatten()
             .map(|tag| self.resolve_lightweight_tag(tag))
             .filter_map(Result::ok)
-            .max();
-
-        match latest_tag {
-            Some(tag) => Ok(tag),
-            None => Err(anyhow!("Unable to get any tag")),
-        }
+            .collect())
     }
 
     pub(crate) fn get_latest_tag_oid(&self) -> Result<Oid> {
         self.get_latest_tag()
-            .map(|tag| tag.oid().to_owned())
+            .map(|tag| tag.oid_unchecked().to_owned())
             .map_err(|err| anyhow!("Could not resolve latest tag:{}", err))
     }
 
@@ -92,15 +100,28 @@ impl Repository {
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Tag {
     tag: String,
-    oid: Oid,
+    oid: Option<Oid>,
+}
+
+impl TryFrom<Git2Tag<'_>> for Tag {
+    type Error = anyhow::Error;
+
+    fn try_from(tag: Git2Tag) -> std::prelude::rust_2015::Result<Self, Self::Error> {
+        let name = tag.name().expect("Unexpected unnamed tag");
+        Self::new(name, Some(tag.id()))
+    }
 }
 
 impl Tag {
-    pub(crate) fn oid(&self) -> &Oid {
-        &self.oid
+    // Tag always contains an oid unless it was created before the tag exist.
+    // The only case where we do that is while creating the changelog during `cog bump`.
+    // In this situation we need a tag to generate the changelog but this tag does not exist in the
+    // repo yet.
+    pub(crate) fn oid_unchecked(&self) -> &Oid {
+        self.oid.as_ref().unwrap()
     }
 
-    pub(crate) fn new(name: &str, oid: Oid) -> Result<Tag> {
+    pub(crate) fn new(name: &str, oid: Option<Oid>) -> Result<Tag> {
         let tag = match SETTINGS.tag_prefix.as_ref() {
             None => Ok(name),
             Some(prefix) => name

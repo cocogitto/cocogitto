@@ -35,7 +35,7 @@ impl Renderer {
         let mut release = self.render_release(&version)?;
         let mut version = version;
         while let Some(previous) = version.previous.map(|v| *v) {
-            release.push_str("\n- - -\n");
+            release.push_str("\n\n- - -\n\n");
             release.push_str(self.render_release(&previous)?.as_str());
             version = previous;
         }
