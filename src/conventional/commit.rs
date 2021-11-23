@@ -52,7 +52,7 @@ impl Commit {
                 author,
                 date,
             }),
-            Err(err) => {
+            Err(cause) => {
                 let message = git2_message.trim_end();
                 let summary = Commit::short_summary_from_str(message);
 
@@ -60,7 +60,7 @@ impl Commit {
                     oid,
                     summary,
                     author,
-                    cause: err.to_string()
+                    cause
                 }))
             }
         }

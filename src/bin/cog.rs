@@ -190,18 +190,13 @@ fn main() -> Result<()> {
         } => {
             let mut cocogitto = CocoGitto::get()?;
 
-            let increment = if let Some(version) = version {
-                VersionIncrement::Manual(version)
-            } else if auto {
-                VersionIncrement::Auto
-            } else if major {
-                VersionIncrement::Major
-            } else if minor {
-                VersionIncrement::Minor
-            } else if patch {
-                VersionIncrement::Patch
-            } else {
-                unreachable!()
+            let increment = match version {
+                Some(version) => VersionIncrement::Manual(version),
+                None if auto => VersionIncrement::Auto,
+                None if major => VersionIncrement::Major,
+                None if minor => VersionIncrement::Minor,
+                None if patch => VersionIncrement::Patch,
+                _ => unreachable!(),
             };
 
             cocogitto.create_version(increment, pre.as_deref(), hook_profile.as_deref())?
