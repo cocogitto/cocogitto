@@ -2,7 +2,9 @@ use std::fmt::{self, Debug, Display, Formatter};
 
 use crate::git::oid::OidOf;
 
+use anyhow::anyhow;
 use colored::*;
+use conventional_commit_parser::error::ParseError;
 
 #[derive(Debug)]
 pub(crate) enum CocogittoError {
@@ -10,7 +12,7 @@ pub(crate) enum CocogittoError {
         oid: String,
         summary: String,
         author: String,
-        cause: String,
+        cause: ParseError,
     },
     CommitTypeNotAllowed {
         oid: String,
@@ -43,6 +45,12 @@ impl Display for CocogittoError {
             } => {
                 let error_header = "Errored commit: ".bold().red();
                 let author = format!("<{}>", author).blue();
+                let cause = anyhow!(cause.clone());
+                let cause = format!("{:?}", cause)
+                    .lines()
+                    .collect::<Vec<&str>>()
+                    .join("\n\t");
+
                 writeln!(
                     f,
                     "{header}{oid} {author}\n\t{message_title}'{summary}'\n\t{cause_title}{cause}",
@@ -51,7 +59,7 @@ impl Display for CocogittoError {
                     author = author,
                     message_title = "Commit message: ".yellow().bold(),
                     summary = summary.italic(),
-                    cause_title = "Cause: ".yellow().bold(),
+                    cause_title = "Error: ".yellow().bold(),
                     cause = cause
                 )
             }
@@ -70,7 +78,7 @@ impl Display for CocogittoError {
                     oid = oid,
                     author = author,
                     message = "Commit message:".yellow().bold(),
-                    cause = "Cause:".yellow().bold(),
+                    cause = "Error:".yellow().bold(),
                     summary = summary.italic(),
                     commit_type = commit_type.red()
                 )
