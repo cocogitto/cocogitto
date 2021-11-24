@@ -5,9 +5,9 @@ COMMIT_MSG_FILE=$1
 MESSAGE=$(cat $COMMIT_MSG_FILE)
 
 if cog verify "$MESSAGE"; then
-    echo "Commit parse succeded"
-else 
+    echo "Commit parse succeeded"
+else
     echo "See https://www.conventionalcommits.org/en/v1.0.0"
     exit 1
-fi 
+fi
 
