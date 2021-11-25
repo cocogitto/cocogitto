@@ -4,7 +4,7 @@ version = "3.0.0"
 authors = ["Paul Delafosse <paul.delafosse@protonmail.com>"]
 edition = "2018"
 readme = "README.md"
-license-file = "LICENSE"
+license = "MIT"
 repository = "https://github.com/cocogitto/cocogitto"
 description = """
 Cocogitto is a set of cli tools for the conventional commit
