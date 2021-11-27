@@ -68,7 +68,7 @@ and [semver](https://semver.org/) specifications.
 ### Why ?
 
 There are plenty of tools listed on
-the [conventional commits web site](https://www.conventionalcommits.org/en/v1.0.0/#tooling-for-conventional-commits)
+the [conventional commits web site](https://www.conventionalcommits.org/en/about/)
 to help you generate changelog, git hooks, commit template etc. Some of them are specifically designed for the
 conventional commits specification, and some of them are general purpose. 
 
@@ -244,7 +244,7 @@ See [Github integration -> GitHub-bot](https://docs.cocogitto.io/ci_cd/#github-b
 
 ## Contributing
 
-Found a bug, have a suggestion for a new feature ? Please read the contribution guideline and submit an issue.
+Found a bug, have a suggestion for a new feature ? Please read the contribution guideline and [submit an issue](https://github.com/cocogitto/cocogitto/issues/new/choose).
 
 ## Licence
 
