@@ -87,7 +87,6 @@ enum Cli {
         message: String,
     },
 
-    // FIXME : pass revpec pattern instead of from, to
     /// Display a changelog for the given commit oid range
     #[structopt(no_version, settings = SUBCOMMAND_SETTINGS)]
     Changelog {
@@ -162,7 +161,7 @@ enum Cli {
     #[structopt(no_version, settings = SUBCOMMAND_SETTINGS)]
     InstallHook {
         /// Type of hook to install
-        #[structopt(possible_values = &["pre-commit", "pre-push", "all"])]
+        #[structopt(possible_values = &["commit-msg", "pre-push", "all"])]
         hook_type: String,
     },
 
@@ -313,7 +312,7 @@ fn main() -> Result<()> {
         Cli::InstallHook { hook_type } => {
             let cocogitto = CocoGitto::get()?;
             match hook_type.as_str() {
-                "pre-commit" => cocogitto.install_hook(HookKind::PrepareCommit)?,
+                "commit-msg" => cocogitto.install_hook(HookKind::PrepareCommit)?,
                 "pre-push" => cocogitto.install_hook(HookKind::PrePush)?,
                 "all" => cocogitto.install_hook(HookKind::All)?,
                 _ => unreachable!(),
