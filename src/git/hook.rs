@@ -8,8 +8,8 @@ use crate::CocoGitto;
 use anyhow::{anyhow, Result};
 
 pub(crate) static PRE_PUSH_HOOK: &[u8] = include_bytes!("assets/pre-push");
-pub(crate) static PREPARE_COMMIT_HOOK: &[u8] = include_bytes!("assets/pre-commit");
-const PRE_COMMIT_HOOK_PATH: &str = ".git/hooks/pre-commit";
+pub(crate) static PREPARE_COMMIT_HOOK: &[u8] = include_bytes!("assets/commit-msg");
+const PRE_COMMIT_HOOK_PATH: &str = ".git/hooks/commit-msg";
 const PRE_PUSH_HOOK_PATH: &str = ".git/hooks/pre-push";
 
 pub enum HookKind {
@@ -78,7 +78,7 @@ mod tests {
 
             cog.install_hook(HookKind::PrepareCommit)?;
 
-            assert_that!(context.test_dir.join(".git/hooks/pre-commit")).exists();
+            assert_that!(context.test_dir.join(".git/hooks/commit-msg")).exists();
             assert_that!(context.test_dir.join(".git/hooks/pre-push")).does_not_exist();
             Ok(())
         })
@@ -109,7 +109,7 @@ mod tests {
             cog.install_hook(HookKind::All)?;
 
             assert_that!(context.test_dir.join(".git/hooks/pre-push")).exists();
-            assert_that!(context.test_dir.join(".git/hooks/pre-commit")).exists();
+            assert_that!(context.test_dir.join(".git/hooks/commit-msg")).exists();
             Ok(())
         })
     }
