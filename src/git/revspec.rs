@@ -179,7 +179,6 @@ impl Repository {
 
         // Resolve shorthands and tags
         let spec = format!("{}..{}", from, to);
-
         // Attempt to resolve tag names, fallback to oid
         let to = maybe_to_tag
             .map(OidOf::Tag)
@@ -438,14 +437,22 @@ mod test {
             let repo = Repository::open(&context.current_dir)?;
             let head = repo.get_head_commit_oid()?;
             let head = OidOf::Other(head);
-            let latest = OidOf::Tag(repo.get_latest_tag()?);
+            let mut tags = repo.all_tags()?;
+            tags.sort();
+            let mut latest = tags.last().unwrap();
+
+            if latest.oid().unwrap() == head.oid() {
+                latest = &tags[tags.len() - 2];
+            }
+
+            let latest = OidOf::Tag(latest.clone());
 
             // Act
             let range = repo.get_commit_range(&RevspecPattern::default())?;
 
             // Assert
             assert_that!(range.from).is_equal_to(latest);
-            assert_that!(range.to).is_equal_to(head);
+            assert_that!(range.to.oid()).is_equal_to(head.oid());
 
             Ok(())
         })
