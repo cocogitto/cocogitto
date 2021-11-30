@@ -416,6 +416,15 @@ mod test {
             let repo = Repository::open(&context.current_dir)?;
             let head = repo.get_head_commit_oid()?;
             let head = OidOf::Other(head);
+            let tag = repo.get_latest_tag()?;
+
+            // Cover the case when we release a version and run the test in the CI right after that
+            let head = if tag.oid() == Some(head.oid()) {
+                OidOf::Tag(tag)
+            } else {
+                head
+            };
+
             let v1_0_0 = Oid::from_str("549070fa99986b059cbaa9457b6b6f065bbec46b")?;
             let v1_0_0 = OidOf::Tag(Tag::new("1.0.0", Some(v1_0_0))?);
 
@@ -484,7 +493,13 @@ mod test {
         run_test_with_context(|context| {
             // Arrange
             let repo = Repository::open(&context.current_dir)?;
-            let tag_count = repo.0.tag_names(None)?.len();
+            let mut tag_count = repo.0.tag_names(None)?.len();
+            let head = repo.get_head_commit_oid()?;
+            let latest = repo.get_latest_tag()?;
+            let latest = latest.oid();
+            if latest == Some(&head) {
+                tag_count -= 1;
+            };
 
             // Act
             let mut release = repo.get_release_range(RevspecPattern::from(".."))?;
