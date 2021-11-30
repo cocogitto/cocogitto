@@ -2,6 +2,13 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## [4.0.1](https://github.com/cocogitto/cocogitto/compare/4.0.0..4.0.1) - 2021-11-30
+#### Bug Fixes
+- **(bump)** correctly generate tag with prefix - ([9e8d592](https://github.com/cocogitto/cocogitto/commit/9e8d592d58f0200590ec3ac3d2b5c2b2c1720a06)) - [@oknozor](https://github.com/oknozor)
+#### Tests
+- fix test failing on HEAD->latest - ([d597208](https://github.com/cocogitto/cocogitto/commit/d59720866671d8076088979a9425a74af949a193)) - [@oknozor](https://github.com/oknozor)
+- - -
+
 ## [4.0.0](https://github.com/cocogitto/cocogitto/compare/3.0.0..4.0.0) - 2021-11-30
 #### Bug Fixes
 - **(bump)** fix target changelog tag on bump - ([0618192](https://github.com/cocogitto/cocogitto/commit/0618192b5e2866b7e12ac6d036df700041194506)) - [@oknozor](https://github.com/oknozor)
