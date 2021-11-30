@@ -2,6 +2,86 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## [4.0.0](https://github.com/cocogitto/cocogitto/compare/3.0.0..4.0.0) - 2021-11-30
+#### Bug Fixes
+- **(bump)** fix target changelog tag on bump - ([0618192](https://github.com/cocogitto/cocogitto/commit/0618192b5e2866b7e12ac6d036df700041194506)) - [@oknozor](https://github.com/oknozor)
+- **(changelog)** correctly pick tagged HEAD commit - ([9b5a591](https://github.com/cocogitto/cocogitto/commit/9b5a591a9c67a2fbdffdcbeff296932858ba49b3)) - [@oknozor](https://github.com/oknozor)
+- **(hook)** use pre-commit instead of prepare-commit-message hook - ([6fe1a27](https://github.com/cocogitto/cocogitto/commit/6fe1a279a45b1f6452a23039dece95cd508b03bd)) - [@oknozor](https://github.com/oknozor)
+- **(scope)** add support for multiple version placeholder and buidmetatata in hooks [#117] - ([43eba56](https://github.com/cocogitto/cocogitto/commit/43eba56766e697a0fcdb43e63835bbc608552d22)) - [@oknozor](https://github.com/oknozor)
+- change git commit hook type to allow use of '--no-verify' - ([c4516b7](https://github.com/cocogitto/cocogitto/commit/c4516b77d51fce36935e6d0786fc8055557bb423)) - [@oknozor](https://github.com/oknozor)
+- make footer serialization and deserialization symmetric - ([04befc1](https://github.com/cocogitto/cocogitto/commit/04befc1969e3700e33a84259a34732773577dcc0)) - [@oknozor](https://github.com/oknozor)
+- fix version increment regression #129 - ([4372b57](https://github.com/cocogitto/cocogitto/commit/4372b57a8431c5b0bdacd6aa1e288719f8585dc0)) - [@oknozor](https://github.com/oknozor)
+- display parse error corectly on cog verify - ([618499e](https://github.com/cocogitto/cocogitto/commit/618499ef99e1948b60c8fbe5f2a3adbc0089cb92)) - [@oknozor](https://github.com/oknozor)
+- display hook-profiles value in cli and safe check commit type - ([fa59679](https://github.com/cocogitto/cocogitto/commit/fa59679e50b6f81e7125e82c2b2351f1a9c2c659)) - [@oknozor](https://github.com/oknozor)
+- fix unicode trailing char panic [#101] - ([3de62ba](https://github.com/cocogitto/cocogitto/commit/3de62ba02273e6714e08374575b55788ceb4483e)) - [@oknozor](https://github.com/oknozor)
+- fix typo in git hooks error messages - ([6d8bdb5](https://github.com/cocogitto/cocogitto/commit/6d8bdb5f2e6c894e326cc5439f6b5a22997f9d9a)) - [@cpoissonnier](https://github.com/cpoissonnier)
+- generate completions without opening a repository - ([eaf63bb](https://github.com/cocogitto/cocogitto/commit/eaf63bb33b94a18bc50cbab9ee5b596ede24f01c)) - [@orhun](https://github.com/orhun)
+- remove Cargo.lock from gitignore [#109] - ([ffe7f0d](https://github.com/cocogitto/cocogitto/commit/ffe7f0dc3a15cc52911e572c469827c598ee60b5)) - [@oknozor](https://github.com/oknozor)
+#### Continuous Integration
+- fix prebump hooks ordering - ([ab3f841](https://github.com/cocogitto/cocogitto/commit/ab3f84118b9b2637a0ae5d0725d755575ea8bf06)) - [@oknozor](https://github.com/oknozor)
+- update codecov action - ([ae66d91](https://github.com/cocogitto/cocogitto/commit/ae66d91968987b0f6a5f1008e88260388172b703)) - [@oknozor](https://github.com/oknozor)
+- move cog check action to CI - ([4616065](https://github.com/cocogitto/cocogitto/commit/4616065360b51f8536f3f238553ba6317e191c3d)) - [@oknozor](https://github.com/oknozor)
+#### Documentation
+- **(readme)** fix pre_bump_hooks example - ([81ad844](https://github.com/cocogitto/cocogitto/commit/81ad8446ac018caff94ef4369c8049b30c012b6e)) - [@its-danny](https://github.com/its-danny)
+- add temporary logo - ([99c39a8](https://github.com/cocogitto/cocogitto/commit/99c39a8f85d0db4b7e182b0f5e54b2d33223350b)) - [@oknozor](https://github.com/oknozor)
+- update readme links - ([c3a3143](https://github.com/cocogitto/cocogitto/commit/c3a3143a8d3a450aeaf19bc91ea7bc1d2321116c)) - [@oknozor](https://github.com/oknozor)
+- update readme - ([a2d9268](https://github.com/cocogitto/cocogitto/commit/a2d9268c8abeeecaf504eb77631356e86659af3a)) - [@oknozor](https://github.com/oknozor)
+- document get_conventional_message - ([72b2722](https://github.com/cocogitto/cocogitto/commit/72b27229fb28b4a7a984815c3987df02ccd673fd)) - [@its-danny](https://github.com/its-danny)
+- fix typo in README (#126) - ([551dc32](https://github.com/cocogitto/cocogitto/commit/551dc326ee5baf586bd26e49d5f1be35135b7f02)) - Jean-Philippe Bidegain
+#### Features
+- **(changelog)** populate template with tag oid - ([679928f](https://github.com/cocogitto/cocogitto/commit/679928f4f1913bd073693d9cafb2d53eef5ae418)) - [@oknozor](https://github.com/oknozor)
+- **(changelog)** display multiple release changelog on changelog range - ([c6940c5](https://github.com/cocogitto/cocogitto/commit/c6940c524880265b55941fad20aac46aa5b79305)) - [@oknozor](https://github.com/oknozor)
+- **(changelog)** add full_hash changelog template - ([10ab5c6](https://github.com/cocogitto/cocogitto/commit/10ab5c6dc0cce8daa37a17672fec0fcf77679ec9)) - [@oknozor](https://github.com/oknozor)
+- **(changelog)** add custom template - ([ad2bcd2](https://github.com/cocogitto/cocogitto/commit/ad2bcd2ea3bd1bd1fe936324c1b62d21d005d0ac)) - [@oknozor](https://github.com/oknozor)
+- **(changelog)** implement changelog template - #72 - ([56bbff7](https://github.com/cocogitto/cocogitto/commit/56bbff7a2e7fbfe863ddda199f91c770a5597f78)) - [@oknozor](https://github.com/oknozor)
+- **(cli)** improve commit format error format - ([78dea00](https://github.com/cocogitto/cocogitto/commit/78dea00088c7e359164f09d22af1d29a8b468e57)) - [@oknozor](https://github.com/oknozor)
+- **(coco)** add edit flag for opening message in editor - ([2b62de3](https://github.com/cocogitto/cocogitto/commit/2b62de3d23a5290dcf49571ceeea60509a09e65b)) - [@tranzystorek-io](https://github.com/tranzystorek-io)
+- **(cog)** add from latest tag flag to cog edit - ([f391df6](https://github.com/cocogitto/cocogitto/commit/f391df65d0e165a742d3fcff68183261cc5f5836)) - [@oknozor](https://github.com/oknozor)
+- **(hook)** add bump profiles configuration - ([13eeed9](https://github.com/cocogitto/cocogitto/commit/13eeed983cf2b44ebf686f4b9d7f86626792a1ff)) - [@oknozor](https://github.com/oknozor)
+- **(tag)** add configurable tag prefix as described in #122 - ([38f9eab](https://github.com/cocogitto/cocogitto/commit/38f9eab1f772980dc1b81241dfce12b0cd290951)) - [@oknozor](https://github.com/oknozor)
+- use revspec instead of 'from' annd 'to' flag for changelog - ([ce24789](https://github.com/cocogitto/cocogitto/commit/ce247898b99f0b5b5fbf93c235b51543224e3e50)) - [@oknozor](https://github.com/oknozor)
+- add get_conventional_message fn to return the prepared message without committing - ([4668622](https://github.com/cocogitto/cocogitto/commit/46686226fc4c950f285c2d4c525a89967326ca63)) - [@its-danny](https://github.com/its-danny)
+- improve cli message format and fix #97 - ([d0bb0d4](https://github.com/cocogitto/cocogitto/commit/d0bb0d4e5a36ab19f9f09ab68fdaed336e43ba89)) - [@oknozor](https://github.com/oknozor)
+- add {{latest}} tag to hook dsl - ([5eff372](https://github.com/cocogitto/cocogitto/commit/5eff372bf1aaaa0458f2a382abadeeeb560ee6f5)) - [@oknozor](https://github.com/oknozor)
+#### Miscellaneous Chores
+- **(settings)** deny unknown settings fields - ([8cf426a](https://github.com/cocogitto/cocogitto/commit/8cf426a665c025288817546520abcd81c73b3918)) - [@oknozor](https://github.com/oknozor)
+- use MIT license in cargo.toml - ([ffbab13](https://github.com/cocogitto/cocogitto/commit/ffbab13819681a4be494f73db2519173c7834e84)) - [@oknozor](https://github.com/oknozor)
+- remove aur package submodule #141 - ([6a030ca](https://github.com/cocogitto/cocogitto/commit/6a030ca2dec7a53c35cbf14cf1b92c52f8853007)) - [@oknozor](https://github.com/oknozor)
+- update default branch name and remote - ([477b6ac](https://github.com/cocogitto/cocogitto/commit/477b6ac50e2b489c6c85b23299d2fa08b2920af7)) - [@oknozor](https://github.com/oknozor)
+- update conventional commit parser - ([9c52c23](https://github.com/cocogitto/cocogitto/commit/9c52c23a93a51d5468cb4ffcfabef05185b38b40)) - [@oknozor](https://github.com/oknozor)
+- add myself to the contributor list - ([aa002ba](https://github.com/cocogitto/cocogitto/commit/aa002bac405f43d8ff9f84300ba41e5d8f17f45e)) - [@its-danny](https://github.com/its-danny)
+- remove spaces before column everywhere - ([3f21a55](https://github.com/cocogitto/cocogitto/commit/3f21a55a0ba662f3bea5f2be73e1af3a9d6d5c4c)) - [@oknozor](https://github.com/oknozor)
+- bump semver to v1 - ([3d8db7d](https://github.com/cocogitto/cocogitto/commit/3d8db7df0e1003e220ce0a94dc34ead6a64e12fe)) - [@oknozor](https://github.com/oknozor)
+- add cpoissonnier to the contributors list - ([b55c3ee](https://github.com/cocogitto/cocogitto/commit/b55c3ee83501258873900666b9c1f59799d5410d)) - [@cpoissonnier](https://github.com/cpoissonnier)
+- add github sponsor - ([f2175fc](https://github.com/cocogitto/cocogitto/commit/f2175fc963fca5bc445f396ff26d043641bd1012)) - [@oknozor](https://github.com/oknozor)
+- add orhun to the contributors list (#113) - ([b68f1fd](https://github.com/cocogitto/cocogitto/commit/b68f1fd0af11e6ee4b02ebbfabee8b116295ce77)) - Orhun Parmaksız
+#### Performance Improvements
+- remove unused default features from the config crate - ([8e069e8](https://github.com/cocogitto/cocogitto/commit/8e069e8dd41499f49e28192262158e637af29cc5)) - [@oknozor](https://github.com/oknozor)
+- add binary size optimizations - ([6227ca6](https://github.com/cocogitto/cocogitto/commit/6227ca626ed1f607d3a5215c5677e9fbf772baeb)) - [@oknozor](https://github.com/oknozor)
+#### Refactoring
+- **(errors)** remove thiserror crate and rework error format - ([5b00f9e](https://github.com/cocogitto/cocogitto/commit/5b00f9ed1ac5d4cd429cb6eb80392cf41d22a6e7)) - [@oknozor](https://github.com/oknozor)
+- **(git)** split repository in multiple modules - ([5ce5187](https://github.com/cocogitto/cocogitto/commit/5ce518730c225681a899326e4ceb224e132dd7d7)) - [@oknozor](https://github.com/oknozor)
+- **(git-hooks)** rename prepare-commit hook asset - ([a693d6f](https://github.com/cocogitto/cocogitto/commit/a693d6f4a135b38c9b886cf5e4eb177acb153602)) - [@oknozor](https://github.com/oknozor)
+- use git2 revspec instead of home made lookup - ([49e79d1](https://github.com/cocogitto/cocogitto/commit/49e79d1180f51f86fab7a60aaf6fdf94fdbd1fd1)) - [@oknozor](https://github.com/oknozor)
+- organize imports and dependencies - ([807d033](https://github.com/cocogitto/cocogitto/commit/807d033d9f5f433959ffa1b2575499c894e0e118)) - [@tranzystorek-io](https://github.com/tranzystorek-io)
+- remove some lazy static constants - ([dd26c84](https://github.com/cocogitto/cocogitto/commit/dd26c84373be21ce676da7dc477bf4cad0043f17)) - [@oknozor](https://github.com/oknozor)
+- use matches expression instead of if lets - ([7b7e469](https://github.com/cocogitto/cocogitto/commit/7b7e4695acb5939a6a89843e80d7f569e2f24299)) - [@oknozor](https://github.com/oknozor)
+- switch coco arg parsing to structopt - ([5b185d8](https://github.com/cocogitto/cocogitto/commit/5b185d8d0c9accfe056e38f40359dc90cf6f81da)) - [@tranzystorek-io](https://github.com/tranzystorek-io)
+#### Tests
+- **(changelog)** add github template test - ([e1f219b](https://github.com/cocogitto/cocogitto/commit/e1f219bb891fcb6967fb005156bc379fd546ce36)) - [@oknozor](https://github.com/oknozor)
+- **(coco)** fix failing test [#103] - ([14cbc8d](https://github.com/cocogitto/cocogitto/commit/14cbc8d744613d13d92c06fe67bd6f026b50d4a3)) - [@oknozor](https://github.com/oknozor)
+- fix changelog date in test - ([fbe02bb](https://github.com/cocogitto/cocogitto/commit/fbe02bb037f95d78299644cac98068ae1670f4fc)) - [@oknozor](https://github.com/oknozor)
+- add write_file test helper - ([ad41a5f](https://github.com/cocogitto/cocogitto/commit/ad41a5f3f6ead623d5f3f2524629e0c426a130be)) - [@oknozor](https://github.com/oknozor)
+- fix test failing on a colored VTE - ([3922623](https://github.com/cocogitto/cocogitto/commit/3922623b1effe6e589ceb603c959fabde01417df)) - [@oknozor](https://github.com/oknozor)
+- ignore binaries from coverage - ([8ee7a2e](https://github.com/cocogitto/cocogitto/commit/8ee7a2e19f78bcffea0a6fffa868011b31b3c9d4)) - [@oknozor](https://github.com/oknozor)
+- use fluent assertions - ([ce9882c](https://github.com/cocogitto/cocogitto/commit/ce9882c6042f729573e628406019567d4e46180f)) - [@oknozor](https://github.com/oknozor)
+- add init tests - ([a9fc5f3](https://github.com/cocogitto/cocogitto/commit/a9fc5f36ec82aa41f2bfb51c151dc1fe0c5d016a)) - [@oknozor](https://github.com/oknozor)
+- refactor test modules structure - ([abc8f01](https://github.com/cocogitto/cocogitto/commit/abc8f018816cd2857c9a84eb950945810eb7b46d)) - [@oknozor](https://github.com/oknozor)
+- remove panic unwind from test helper - ([738ed8a](https://github.com/cocogitto/cocogitto/commit/738ed8a944b0d27f700d6d0cc3429b08d3fdd719)) - [@oknozor](https://github.com/oknozor)
+- make test helper module  public - ([205397b](https://github.com/cocogitto/cocogitto/commit/205397b39013845c1da002926f2120ab28057dbf)) - [@oknozor](https://github.com/oknozor)
+- refactor IT test using a run in context helper - ([a32a517](https://github.com/cocogitto/cocogitto/commit/a32a517265a9755696bdbed2250a14accdfe703e)) - [@oknozor](https://github.com/oknozor)
+- - -
+
 ## 3.0.0 - 2021-09-13
 
 
