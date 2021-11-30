@@ -70,6 +70,30 @@ fn auto_bump_major_from_latest_tag() -> Result<()> {
 }
 
 #[test]
+fn auto_bump_with_prefix() -> Result<()> {
+    run_test_with_context(|context| {
+        let mut command = Command::cargo_bin("cog")?;
+
+        command.arg("bump").arg("--auto");
+        git_init()?;
+        std::fs::write(context.test_dir.join("cog.toml"), "tag_prefix = \"v\"")?;
+        git_commit("chore: init")?;
+        git_commit("feat(taef): feature")?;
+        git_commit("fix: bug fix")?;
+        git_tag("v1.0.0")?;
+        git_commit("feat(taef)!: feature")?;
+        git_commit("feat!: feature 1")?;
+        git_commit("feat: feature 2")?;
+
+        command.assert().success();
+
+        assert_that(&context.test_dir.join("CHANGELOG.md")).exists();
+        assert_tag("v2.0.0")?;
+        Ok(())
+    })
+}
+
+#[test]
 fn auto_bump_patch_from_latest_tag() -> Result<()> {
     run_test_with_context(|context| {
         let mut command = Command::cargo_bin("cog")?;

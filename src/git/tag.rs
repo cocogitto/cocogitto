@@ -106,7 +106,7 @@ pub struct Tag {
 impl TryFrom<Git2Tag<'_>> for Tag {
     type Error = anyhow::Error;
 
-    fn try_from(tag: Git2Tag) -> std::prelude::rust_2015::Result<Self, Self::Error> {
+    fn try_from(tag: Git2Tag) -> std::result::Result<Self, Self::Error> {
         let name = tag.name().expect("Unexpected unnamed tag");
         Self::new(name, Some(tag.id()))
     }

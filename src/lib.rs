@@ -452,7 +452,10 @@ impl CocoGitto {
             next_version.pre = Prerelease::new(pre_release)?;
         }
 
-        let version_str = next_version.to_string();
+        let version_str = match &SETTINGS.tag_prefix {
+            None => next_version.to_string(),
+            Some(prefix) => format!("{}{}", prefix, next_version),
+        };
 
         let origin = if current_version == Version::new(0, 0, 0) {
             self.repository.get_first_commit()?.to_string()
@@ -484,6 +487,7 @@ impl CocoGitto {
             &next_version,
             hooks_config,
         );
+
         self.repository.add_all()?;
 
         // Hook failed, we need to stop here and reset
