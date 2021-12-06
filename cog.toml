@@ -53,4 +53,5 @@ authors = [
     { signature = "orhun", username = "orhun" },
     { signature = "Danny Tatom", username = "its-danny" },
     { signature = "Clément Poissonnier", username = "cpoissonnier" },
+    { signature = "Luke Hsiao", username = "lukehsiao" },
 ]

@@ -243,9 +243,22 @@ impl Repository {
 
         let mut tags = vec![];
         self.0
-            .tag_foreach(|oid, name| {
+            .tag_foreach(|mut oid, name| {
                 let name = String::from_utf8_lossy(name);
                 let name = name.as_ref().strip_prefix("refs/tags/").unwrap();
+
+                // If this is an annotated tag, find the first parent commit
+                if self.0.revparse_single(name).unwrap().as_commit().is_none() {
+                    if let Some(commit) = self
+                        .0
+                        .revparse_single([name, "^{}"].concat().as_str())
+                        .unwrap()
+                        .as_commit()
+                    {
+                        oid = commit.id();
+                    }
+                };
+
                 if range.contains(&oid) {
                     if let Ok(tag) = Tag::new(name, Some(oid)) {
                         tags.push(tag);
@@ -358,6 +371,48 @@ mod test {
         assert_that!(format_version(&release)).is_equal_to("0.32.1".to_string());
 
         assert_that!(release.previous).is_none();
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn get_annotated_tag_commits() -> Result<()> {
+        // Arrange
+        let repo = Repository::init(".")?;
+        run_cmd!(
+            git init
+            echo changes > file
+            git add .
+        )?;
+
+        let start = repo.commit("chore: init")?;
+
+        run_cmd!(
+            git init
+            echo changes > file2
+            git add .
+        )?;
+
+        let _end = repo.commit("chore: 1.0.0")?;
+
+        // Create an annotated tag
+        let head = repo.get_head_commit().unwrap();
+        let sig = git2::Signature::now("Author", "email@example.com")?;
+        repo.0
+            .tag("1.0.0", &head.into_object(), &sig, "the_msg", false)?;
+
+        run_cmd!(
+            git init
+            echo changes > file3
+            git add .
+        )?;
+
+        repo.commit("feat: a commit")?;
+
+        let commit_range = repo.get_commit_range(&RevspecPattern::from("..1.0.0"))?;
+
+        assert_that!(commit_range.from).is_equal_to(OidOf::Other(start));
+        assert_that!(commit_range.to.to_string()).is_equal_to("1.0.0".to_string());
+        assert_that!(commit_range.commits).has_length(1);
         Ok(())
     }
 
