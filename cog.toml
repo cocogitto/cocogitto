@@ -3,7 +3,7 @@
 # `{{version}}` will be interpretted as your target version
 pre_bump_hooks = [
     "sh -c \"./ci/check_branch.sh\"",
-    "cargo test -- --test-threads 1",
+    "cargo test",
     "cargo clippy",
     "cargo fmt --all",
     "cargo bump {{version}}",

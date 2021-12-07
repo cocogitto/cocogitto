@@ -181,7 +181,7 @@ mod test {
     #[test]
     fn parse_empty_string() {
         let empty_hook = Hook::from_str("");
-        assert_that(&empty_hook).is_err();
+        assert_that!(empty_hook).is_err();
     }
 
     #[test]
@@ -197,7 +197,7 @@ mod test {
         hook.insert_versions(None, &HookVersion::new("1.0.0"))
             .unwrap();
 
-        assert_that(&hook.0).contains_all_of(&vec![
+        assert_that!(hook.0).contains_all_of(&vec![
             &"cargo".to_string(),
             &"bump".to_string(),
             &"1.0.0".to_string(),

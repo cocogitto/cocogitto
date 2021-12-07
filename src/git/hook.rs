@@ -60,76 +60,81 @@ fn create_hook(path: &Path, kind: HookKind) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use std::fs::File;
-    use std::process::Command;
 
     use crate::git::hook::HookKind;
     use crate::CocoGitto;
 
-    use crate::test_helpers::run_test_with_context;
     use anyhow::Result;
+    use cmd_lib::run_cmd;
+    use sealed_test::prelude::*;
     use speculoos::prelude::*;
+    use std::path::Path;
 
-    #[test]
+    #[sealed_test]
     fn add_pre_commit_hook() -> Result<()> {
-        run_test_with_context(|context| {
-            Command::new("git").arg("init").output()?;
+        // Arrange
+        run_cmd!(git init)?;
 
-            let cog = CocoGitto::get()?;
+        let cog = CocoGitto::get()?;
 
-            cog.install_hook(HookKind::PrepareCommit)?;
+        // Act
+        cog.install_hook(HookKind::PrepareCommit)?;
 
-            assert_that!(context.test_dir.join(".git/hooks/commit-msg")).exists();
-            assert_that!(context.test_dir.join(".git/hooks/pre-push")).does_not_exist();
-            Ok(())
-        })
+        // Assert
+        assert_that!(Path::new(".git/hooks/commit-msg")).exists();
+        assert_that!(Path::new(".git/hooks/pre-push")).does_not_exist();
+        Ok(())
     }
 
-    #[test]
+    #[sealed_test]
     fn add_pre_push_hook() -> Result<()> {
-        run_test_with_context(|context| {
-            Command::new("git").arg("init").output()?;
+        // Arrange
+        run_cmd!(git init)?;
 
-            let cog = CocoGitto::get()?;
+        let cog = CocoGitto::get()?;
 
-            cog.install_hook(HookKind::PrePush)?;
+        // Act
+        cog.install_hook(HookKind::PrePush)?;
 
-            assert_that!(context.test_dir.join(".git/hooks/pre-push")).exists();
-            assert_that!(context.test_dir.join(".git/hooks/pre-commit")).does_not_exist();
-            Ok(())
-        })
+        // Assert
+        assert_that!(Path::new(".git/hooks/pre-push")).exists();
+        assert_that!(Path::new(".git/hooks/pre-commit")).does_not_exist();
+        Ok(())
     }
 
-    #[test]
+    #[sealed_test]
     fn add_all() -> Result<()> {
-        run_test_with_context(|context| {
-            Command::new("git").arg("init").output()?;
+        // Arrange
+        run_cmd!(git init)?;
 
-            let cog = CocoGitto::get()?;
+        let cog = CocoGitto::get()?;
 
-            cog.install_hook(HookKind::All)?;
+        // Act
+        cog.install_hook(HookKind::All)?;
 
-            assert_that!(context.test_dir.join(".git/hooks/pre-push")).exists();
-            assert_that!(context.test_dir.join(".git/hooks/commit-msg")).exists();
-            Ok(())
-        })
+        // Assert
+        assert_that!(Path::new(".git/hooks/pre-push")).exists();
+        assert_that!(Path::new(".git/hooks/commit-msg")).exists();
+        Ok(())
     }
 
-    #[test]
+    #[sealed_test]
     #[cfg(target_family = "unix")]
     fn should_have_perm_755_on_unix() -> Result<()> {
+        // Arrange
         use std::os::unix::fs::PermissionsExt;
-        run_test_with_context(|context| {
-            Command::new("git").arg("init").output()?;
+        run_cmd!(git init)?;
 
-            let cog = CocoGitto::get()?;
+        let cog = CocoGitto::get()?;
 
-            cog.install_hook(HookKind::PrePush)?;
+        // Act
+        cog.install_hook(HookKind::PrePush)?;
 
-            let prepush = File::open(".git/hooks/pre-push")?;
-            let metadata = prepush.metadata()?;
-            assert_that!(context.test_dir.join(".git/hooks/pre-push")).exists();
-            assert_that!(metadata.permissions().mode() & 0o777).is_equal_to(0o755);
-            Ok(())
-        })
+        // Assert
+        let prepush = File::open(".git/hooks/pre-push")?;
+        let metadata = prepush.metadata()?;
+        assert_that!(Path::new(".git/hooks/pre-push")).exists();
+        assert_that!(metadata.permissions().mode() & 0o777).is_equal_to(0o755);
+        Ok(())
     }
 }

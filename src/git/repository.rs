@@ -95,154 +95,165 @@ impl Debug for Repository {
 
 #[cfg(test)]
 mod test {
-    use std::process::{Command, Stdio};
+    use std::path::PathBuf;
+    use std::str::FromStr;
 
     use anyhow::Result;
+    use cmd_lib::run_cmd;
+    use sealed_test::prelude::*;
     use speculoos::prelude::*;
 
     use crate::git::repository::Repository;
-    use crate::test_helpers::run_test_with_context;
 
-    #[test]
+    #[sealed_test]
     fn init_repo() -> Result<()> {
-        run_test_with_context(|context| {
-            let repo = Repository::init(&context.test_dir);
+        let repo = Repository::init(".");
 
-            assert_that!(repo).is_ok();
-            Ok(())
-        })
+        assert_that!(repo).is_ok();
+        Ok(())
     }
 
-    #[test]
+    #[sealed_test]
     fn get_repo_working_dir_some() -> Result<()> {
-        run_test_with_context(|context| {
-            let repo = Repository::init(&context.test_dir)?;
-            let dir = context.test_dir.join("dir");
-            std::fs::create_dir(&dir)?;
-            std::env::set_current_dir(&dir)?;
+        // Arrange
+        let expected_dir = std::env::current_dir()?;
+        let repo = Repository::init(&expected_dir)?;
+        let dir = PathBuf::from_str("dir")?;
+        std::fs::create_dir(&dir)?;
+        std::env::set_current_dir(&dir)?;
 
-            assert_that!(repo.get_repo_dir()).is_equal_to(Some(context.test_dir.as_path()));
-            Ok(())
-        })
+        // Act
+        let root_dir = repo.get_repo_dir();
+
+        // Assert
+        assert_that!(root_dir).is_equal_to(Some(expected_dir.as_path()));
+        Ok(())
     }
 
-    // see: https://git-scm.com/book/en/v2/Git-on-the-Server-Getting-Git-on-a-Server
-    #[test]
-    fn open_bare_err() -> Result<()> {
-        run_test_with_context(|context| {
-            Command::new("git")
-                .arg("init")
-                .arg(&context.test_dir)
-                .arg("bare")
-                .stdout(Stdio::inherit())
-                .output()?;
-
-            let repo = Repository::open(&context.test_dir);
-
-            assert_that!(repo).is_err();
-            Ok(())
-        })
-    }
-
-    #[test]
+    #[sealed_test]
     fn get_repo_head_oid_ok() -> Result<()> {
-        run_test_with_context(|context| {
-            let repo = Repository::init(&context.test_dir)?;
-            std::fs::write(context.test_dir.join("file"), "changes")?;
-            repo.add_all()?;
-            let commit_oid = repo.commit("first commit")?;
+        // Arrange
+        run_cmd!(
+            git init
+            echo changes > file
+            git add .
+        )?;
+        let repo = Repository::open(".")?;
+        let commit_oid = repo.commit("first commit")?;
 
-            let oid = repo.get_head_commit_oid();
+        // Act
+        let oid = repo.get_head_commit_oid();
 
-            assert_that!(oid).is_ok().is_equal_to(commit_oid);
-
-            Ok(())
-        })
+        // Assert
+        assert_that!(oid).is_ok().is_equal_to(commit_oid);
+        Ok(())
     }
 
-    #[test]
+    #[sealed_test]
     fn get_repo_head_oid_err() -> Result<()> {
-        run_test_with_context(|context| {
-            let repo = Repository::init(&context.test_dir)?;
+        // Arrange
+        let repo = Repository::init(".")?;
 
-            let oid = repo.get_head_commit_oid();
+        // Act
+        let oid = repo.get_head_commit_oid();
 
-            assert_that!(oid).is_err();
-            Ok(())
-        })
+        // Assert
+        assert_that!(oid).is_err();
+        Ok(())
     }
 
-    #[test]
+    #[sealed_test]
     fn get_repo_head_obj_ok() -> Result<()> {
-        run_test_with_context(|context| {
-            let repo = Repository::init(&context.test_dir)?;
-            std::fs::write(context.test_dir.join("file"), "changes")?;
-            repo.add_all()?;
-            let commit_oid = repo.commit("first commit")?;
+        // Arrange
+        run_cmd!(
+            git init
+            echo changes > file
+            git add .
+        )?;
+        let repo = Repository::open(".")?;
+        let commit_oid = repo.commit("first commit")?;
 
-            let head = repo.get_head_commit().map(|head| head.id());
+        // Act
+        let head = repo.get_head_commit().map(|head| head.id());
 
-            assert_that!(head).is_ok().is_equal_to(commit_oid);
-
-            Ok(())
-        })
+        // Assert
+        assert_that!(head).is_ok().is_equal_to(commit_oid);
+        Ok(())
     }
 
-    #[test]
+    #[sealed_test]
     fn get_repo_head_obj_err() -> Result<()> {
-        run_test_with_context(|context| {
-            let repo = Repository::init(&context.test_dir)?;
-            std::fs::write(context.test_dir.join("file"), "changes")?;
-            repo.add_all()?;
+        // Arrange
+        run_cmd!(
+            git init
+            echo changes > file
+            git add .
+        )?;
+        let repo = Repository::open(".")?;
 
-            let head = repo.get_head_commit();
+        // Act
+        let head = repo.get_head_commit();
 
-            assert_that!(head).is_err();
-            Ok(())
-        })
+        // Assert
+        assert_that!(head).is_err();
+        Ok(())
     }
 
-    #[test]
+    #[sealed_test]
     fn get_head_some() -> Result<()> {
-        run_test_with_context(|context| {
-            let repo = Repository::init(&context.test_dir)?;
-            std::fs::write(&context.test_dir.join("file"), "changes")?;
-            repo.add_all()?;
-            repo.commit("first commit")?;
+        // Arrange
+        run_cmd!(
+            git init
+            echo changes > file
+            git add .
+        )?;
+        let repo = Repository::open(".")?;
 
-            let tag = repo.get_head();
+        repo.commit("first commit")?;
 
-            assert_that!(tag).is_some();
-            Ok(())
-        })
+        // Act
+        let head = repo.get_head();
+
+        // Assert
+        assert_that!(head).is_some();
+        Ok(())
     }
 
-    #[test]
+    #[sealed_test]
     fn get_head_none() -> Result<()> {
-        run_test_with_context(|context| {
-            let repo = Repository::init(&context.test_dir)?;
-            std::fs::write(&context.test_dir.join("file"), "changes")?;
-            repo.add_all()?;
+        // Arrange
+        run_cmd!(
+            git init
+            echo changes > file
+            git add .
+        )?;
 
-            let tag = repo.get_head();
+        let repo = Repository::open(".")?;
 
-            assert_that!(tag).is_none();
-            Ok(())
-        })
+        // Act
+        let head = repo.get_head();
+
+        // Assert
+        assert_that!(head).is_none();
+        Ok(())
     }
 
-    #[test]
+    #[sealed_test]
     fn get_branch_short_hand() -> Result<()> {
-        run_test_with_context(|context| {
-            let repo = Repository::init(&context.test_dir)?;
-            std::fs::write(&context.test_dir.join("file"), "changes")?;
-            repo.add_all()?;
-            repo.commit("hello one")?;
+        // Arrange
+        run_cmd!(
+            git init
+            echo changes > file
+            git add .
+        )?;
+        let repo = Repository::open(".")?;
+        repo.commit("hello one")?;
 
-            let shorthand = repo.get_branch_shorthand();
+        // Act
+        let shorthand = repo.get_branch_shorthand();
 
-            assert_that!(shorthand).is_equal_to(Some("master".to_string()));
-            Ok(())
-        })
+        // Assert
+        assert_that!(shorthand).is_equal_to(Some("master".to_string()));
+        Ok(())
     }
 }
