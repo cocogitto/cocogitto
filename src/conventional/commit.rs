@@ -187,7 +187,14 @@ impl Ord for Commit {
 }
 
 pub fn verify(author: Option<String>, message: &str) -> Result<(), ParseError> {
-    let commit = conventional_commit_parser::parse(message);
+    // Strip away comments from git message before parsing
+    let msg: String = message
+        .lines()
+        .filter(|line| !line.trim_start().starts_with('#'))
+        .collect::<Vec<&str>>()
+        .join("\n");
+
+    let commit = conventional_commit_parser::parse(msg.as_str());
 
     match commit {
         Ok(message) => {
@@ -239,7 +246,7 @@ mod test {
         // Arrange
         let message = indoc!(
             "feat(database): add postgresql driver
-            
+
             The body
 
             footer: 123
@@ -278,6 +285,24 @@ mod test {
     fn should_verify_message_ok() {
         // Arrange
         let message = "feat(database): add postgresql driver";
+
+        // Act
+        let result = verify(Some("toml".into()), message);
+
+        // Assert
+        assert_that!(result).is_ok();
+    }
+
+    #[test]
+    fn should_verify_message_with_comments_ok() {
+        // Arrange
+        let message = indoc!(
+            "# testing a commit with a comment
+            feat(database): add postgresql driver
+
+            # Enter message body here
+            The body"
+        );
 
         // Act
         let result = verify(Some("toml".into()), message);
