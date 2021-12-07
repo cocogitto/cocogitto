@@ -57,12 +57,6 @@ jobs:
           token: ${{secrets.CODECOV_TOKEN}}
           fail_ci_if_error: true
 
-      - name: Archive code coverage results
-        uses: actions/upload-artifact@v1
-        with:
-          name: code-coverage-report
-          path: cobertura.xml
-
       - uses: Swatinem/rust-cache@v1
 
   lints:
