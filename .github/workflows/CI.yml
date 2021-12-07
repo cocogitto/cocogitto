@@ -63,6 +63,8 @@ jobs:
           name: code-coverage-report
           path: cobertura.xml
 
+      - uses: Swatinem/rust-cache@v1
+
   lints:
     name: Lints & Format
     runs-on: ubuntu-latest
@@ -91,3 +93,5 @@ jobs:
         with:
           command: clippy
           args: -- -D warnings
+
+      - uses: Swatinem/rust-cache@v1
