@@ -31,50 +31,75 @@ impl Repository {
 #[cfg(test)]
 mod test {
     use crate::git::repository::Repository;
-    use crate::test_helpers::run_test_with_context;
     use anyhow::Result;
+    use cmd_lib::run_cmd;
+    use sealed_test::prelude::*;
 
-    #[test]
+    #[sealed_test]
     fn get_diff_some() -> Result<()> {
-        run_test_with_context(|context| {
-            let repo = Repository::init(&context.test_dir)?;
-            std::fs::write(context.test_dir.join("file"), "changes")?;
-            repo.add_all()?;
+        // Arrange
+        run_cmd!(
+            git init
+            echo changes > file
+            git add .
+        )?;
 
-            assert!(repo.get_diff(false).is_some());
-            Ok(())
-        })
+        let repo = Repository::open(".")?;
+
+        // Act
+        let diffs = repo.get_diff(false);
+
+        // Assert
+        assert!(diffs.is_some());
+        Ok(())
     }
 
-    #[test]
+    #[sealed_test]
     fn get_diff_none() -> Result<()> {
-        run_test_with_context(|context| {
-            let repo = Repository::init(&context.test_dir)?;
-            std::fs::write(context.test_dir.join("file"), "changes")?;
+        // Arrange
+        run_cmd!(
+            git init
+            echo changes > file
+        )?;
 
-            assert!(repo.get_diff(false).is_none());
-            Ok(())
-        })
+        let repo = Repository::open(".")?;
+
+        // Act
+        let diffs = repo.get_diff(false);
+
+        // Assert
+        assert!(diffs.is_none());
+        Ok(())
     }
 
-    #[test]
+    #[sealed_test]
     fn get_diff_include_untracked_some() -> Result<()> {
-        run_test_with_context(|context| {
-            let repo = Repository::init(&context.test_dir)?;
-            std::fs::write(context.test_dir.join("file"), "changes")?;
+        // Arrange
+        run_cmd!(
+            git init
+            echo changes > file
+        )?;
 
-            assert!(repo.get_diff(true).is_some());
-            Ok(())
-        })
+        let repo = Repository::open(".")?;
+
+        // Act
+        let diffs = repo.get_diff(true);
+
+        // Assert
+        assert!(diffs.is_some());
+        Ok(())
     }
 
-    #[test]
+    #[sealed_test]
     fn get_diff_include_untracked_none() -> Result<()> {
-        run_test_with_context(|context| {
-            let repo = Repository::init(&context.test_dir)?;
+        // Arrange
+        let repo = Repository::init(".")?;
 
-            assert!(repo.get_diff(true).is_none());
-            Ok(())
-        })
+        // Act
+        let diffs = repo.get_diff(true);
+
+        // Assert
+        assert!(diffs.is_none());
+        Ok(())
     }
 }

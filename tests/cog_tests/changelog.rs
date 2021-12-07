@@ -3,6 +3,7 @@ use assert_cmd::Command;
 use chrono::Utc;
 use indoc::formatdoc;
 use pretty_assertions::assert_eq;
+use sealed_test::prelude::*;
 
 use cocogitto::settings::Settings;
 
@@ -10,8 +11,6 @@ use crate::helpers::*;
 
 #[test]
 fn get_changelog_range() -> Result<()> {
-    // Running against cocogitto git history here
-
     // Act
     let changelog = Command::cargo_bin("cog")?
         .arg("changelog")
@@ -83,69 +82,66 @@ fn get_changelog_range() -> Result<()> {
     Ok(())
 }
 
-#[test]
+#[sealed_test]
 fn get_changelog_from_untagged_repo() -> Result<()> {
-    run_test_with_context(|_| {
-        // Arrange
-        git_init()?;
-        let _ = git_commit("chore: init")?;
-        let commit_two = git_commit("feat(taef): feature")?;
-        let commit_three = git_commit("fix: bug fix")?;
+    // Arrange
+    git_init()?;
+    let _ = git_commit("chore: init")?;
+    let commit_two = git_commit("feat(taef): feature")?;
+    let commit_three = git_commit("fix: bug fix")?;
 
-        // Act
-        let changelog = Command::cargo_bin("cog")?
-            .arg("changelog")
-            // Assert
-            .assert()
-            .success();
+    // Act
+    let changelog = Command::cargo_bin("cog")?
+        .arg("changelog")
+        // Assert
+        .assert()
+        .success();
 
-        let changelog = changelog.get_output();
-        let changelog = &changelog.stdout;
-        let changelog = String::from_utf8_lossy(changelog.as_slice());
+    let changelog = changelog.get_output();
+    let changelog = &changelog.stdout;
+    let changelog = String::from_utf8_lossy(changelog.as_slice());
 
-        assert_eq!(
-            changelog.as_ref(),
-            formatdoc!(
-                "## Unreleased ({commit_two}..{commit_three})
+    assert_eq!(
+        changelog.as_ref(),
+        formatdoc!(
+            "## Unreleased ({commit_two}..{commit_three})
                     #### Bug Fixes
                     - bug fix - ({commit_three}) - Tom
                     #### Features
                     - **(taef)** feature - ({commit_two}) - Tom
                     ",
-                commit_two = &commit_two[0..7],
-                commit_three = &commit_three[0..7]
-            )
-        );
-        Ok(())
-    })
+            commit_two = &commit_two[0..7],
+            commit_three = &commit_three[0..7]
+        )
+    );
+    Ok(())
 }
 
-#[test]
+#[sealed_test]
 fn get_changelog_from_tagged_repo() -> Result<()> {
-    run_test_with_context(|_| {
-        // Arrange
-        git_init()?;
-        git_commit("chore: init")?;
-        let commit_one = git_commit("feat(taef): feature")?;
-        git_tag("1.0.0")?;
-        let commit_two = git_commit("fix: bug fix")?;
+    // Arrange
+    git_init()?;
+    git_commit("chore: init")?;
+    let commit_one = git_commit("feat(taef): feature")?;
+    git_tag("1.0.0")?;
+    let commit_two = git_commit("fix: bug fix")?;
 
-        // Act
-        let changelog = Command::cargo_bin("cog")?
-            .arg("changelog")
-            // Assert
-            .assert()
-            .success();
+    // Act
+    let changelog = Command::cargo_bin("cog")?
+        .arg("changelog")
+        // Assert
+        .assert()
+        .success();
 
-        let changelog = changelog.get_output();
-        let changelog = &changelog.stdout;
-        let changelog = String::from_utf8_lossy(changelog.as_slice());
-        let today = Utc::today().naive_utc().to_string();
+    let changelog = changelog.get_output();
+    let changelog = &changelog.stdout;
+    let changelog = String::from_utf8_lossy(changelog.as_slice());
+    let today = Utc::today().naive_utc().to_string();
 
-        assert_eq!(
-            changelog.as_ref(),
-            formatdoc!(
-                "## Unreleased ({commit_two}..{commit_two})
+    assert_eq!(
+        changelog.as_ref(),
+        formatdoc!(
+            "## Unreleased ({commit_two}..{commit_two})
                     #### Bug Fixes
                     - bug fix - ({commit_two}) - Tom
 
@@ -155,93 +151,87 @@ fn get_changelog_from_tagged_repo() -> Result<()> {
                     #### Features
                     - **(taef)** feature - ({commit_one}) - Tom
                     ",
-                commit_one = &commit_one[0..7],
-                commit_two = &commit_two[0..7],
-                today = today
-            )
-        );
-        Ok(())
-    })
+            commit_one = &commit_one[0..7],
+            commit_two = &commit_two[0..7],
+            today = today
+        )
+    );
+    Ok(())
 }
 
-#[test]
+#[sealed_test]
 fn get_changelog_at_tag() -> Result<()> {
-    run_test_with_context(|_| {
-        // Arrange
-        git_init()?;
-        git_commit("chore: init")?;
-        let commit_one = git_commit("feat(taef): feature")?;
-        let commit_two = git_commit("feat: feature 2")?;
-        git_tag("1.0.0")?;
-        let _ = git_commit("fix: bug fix")?;
-        git_log()?;
+    // Arrange
+    git_init()?;
+    git_commit("chore: init")?;
+    let commit_one = git_commit("feat(taef): feature")?;
+    let commit_two = git_commit("feat: feature 2")?;
+    git_tag("1.0.0")?;
+    let _ = git_commit("fix: bug fix")?;
 
-        // Act
-        let changelog = Command::cargo_bin("cog")?
-            .arg("changelog")
-            .arg("--at")
-            .arg("1.0.0")
-            // Assert
-            .assert()
-            .success();
+    // Act
+    let changelog = Command::cargo_bin("cog")?
+        .arg("changelog")
+        .arg("--at")
+        .arg("1.0.0")
+        // Assert
+        .assert()
+        .success();
 
-        let changelog = changelog.get_output();
-        let changelog = &changelog.stdout;
-        let changelog = String::from_utf8_lossy(changelog.as_slice());
-        let today = Utc::today().naive_utc();
+    let changelog = changelog.get_output();
+    let changelog = &changelog.stdout;
+    let changelog = String::from_utf8_lossy(changelog.as_slice());
+    let today = Utc::today().naive_utc();
 
-        assert_eq!(
-            changelog.as_ref(),
-            formatdoc!(
-                "## 1.0.0 - {today}
+    assert_eq!(
+        changelog.as_ref(),
+        formatdoc!(
+            "## 1.0.0 - {today}
                     #### Features
                     - **(taef)** feature - ({commit_one}) - Tom
                     - feature 2 - ({commit_two}) - Tom
                     ",
-                today = today,
-                commit_one = &commit_one[0..7],
-                commit_two = &commit_two[0..7]
-            )
-        );
-        Ok(())
-    })
+            today = today,
+            commit_one = &commit_one[0..7],
+            commit_two = &commit_two[0..7]
+        )
+    );
+    Ok(())
 }
 
-#[test]
+#[sealed_test]
 fn get_changelog_with_tag_prefix() -> Result<()> {
-    run_test_with_context(|context| {
-        // Arrange
-        let settings = Settings {
-            tag_prefix: Some("v".to_string()),
-            ..Default::default()
-        };
+    // Arrange
+    let settings = Settings {
+        tag_prefix: Some("v".to_string()),
+        ..Default::default()
+    };
 
-        let settings = toml::to_string(&settings);
-        std::fs::write(context.test_dir.join("cog.toml"), settings?)?;
+    let settings = toml::to_string(&settings);
+    std::fs::write("cog.toml", settings?)?;
 
-        git_init()?;
-        let _ = git_commit("chore: init")?;
-        let commit_one = git_commit("feat: feature 1")?;
-        git_tag("v1.0.0")?;
-        let commit_two = git_commit("fix: bug fix 1")?;
-        git_log()?;
+    git_init()?;
+    let _ = git_commit("chore: init")?;
+    let commit_one = git_commit("feat: feature 1")?;
+    git_tag("v1.0.0")?;
+    let commit_two = git_commit("fix: bug fix 1")?;
 
-        // Act
-        let changelog = Command::cargo_bin("cog")?
-            .arg("changelog")
-            // Assert
-            .assert()
-            .success();
+    // Act
+    let changelog = Command::cargo_bin("cog")?
+        .arg("changelog")
+        // Assert
+        .assert()
+        .success();
 
-        let changelog = changelog.get_output();
-        let changelog = &changelog.stdout;
-        let changelog = String::from_utf8_lossy(changelog.as_slice());
-        let today = Utc::today().naive_utc();
+    let changelog = changelog.get_output();
+    let changelog = &changelog.stdout;
+    let changelog = String::from_utf8_lossy(changelog.as_slice());
+    let today = Utc::today().naive_utc();
 
-        assert_eq!(
-            changelog.as_ref(),
-            formatdoc!(
-                "## Unreleased ({commit_two}..{commit_two})
+    assert_eq!(
+        changelog.as_ref(),
+        formatdoc!(
+            "## Unreleased ({commit_two}..{commit_two})
                     #### Bug Fixes
                     - bug fix 1 - ({commit_two}) - Tom
 
@@ -251,56 +241,53 @@ fn get_changelog_with_tag_prefix() -> Result<()> {
                     #### Features
                     - feature 1 - ({commit_one}) - Tom
                     ",
-                today = today,
-                commit_one = &commit_one[0..7],
-                commit_two = &commit_two[0..7]
-            )
-        );
+            today = today,
+            commit_one = &commit_one[0..7],
+            commit_two = &commit_two[0..7]
+        )
+    );
 
-        Ok(())
-    })
+    Ok(())
 }
 
-#[test]
+#[sealed_test]
 fn get_changelog_at_tag_prefix() -> Result<()> {
-    run_test_with_context(|context| {
-        // Arrange
-        let settings = Settings {
-            tag_prefix: Some("v".to_string()),
-            ..Default::default()
-        };
+    // Arrange
+    let settings = Settings {
+        tag_prefix: Some("v".to_string()),
+        ..Default::default()
+    };
 
-        let settings = toml::to_string(&settings);
-        std::fs::write(context.test_dir.join("cog.toml"), settings?)?;
+    let settings = toml::to_string(&settings);
+    std::fs::write("cog.toml", settings?)?;
 
-        git_init()?;
-        git_commit("chore: init")?;
-        let _ = git_commit("feat: start")?;
-        git_tag("v1.0.0")?;
-        let commit_two = git_commit("feat: feature 1")?;
-        let commit_three = git_commit("fix: bug fix 1")?;
-        let commit_four = git_commit("chore(version): v2.0.0")?;
-        git_tag("v2.0.0")?;
-        let _ = git_commit("feat: end")?;
-        git_log()?;
+    git_init()?;
+    git_commit("chore: init")?;
+    let _ = git_commit("feat: start")?;
+    git_tag("v1.0.0")?;
+    let commit_two = git_commit("feat: feature 1")?;
+    let commit_three = git_commit("fix: bug fix 1")?;
+    let commit_four = git_commit("chore(version): v2.0.0")?;
+    git_tag("v2.0.0")?;
+    let _ = git_commit("feat: end")?;
 
-        // Act
-        let changelog = Command::cargo_bin("cog")?
-            .arg("changelog")
-            .arg("--at")
-            .arg("v2.0.0")
-            // Assert
-            .assert()
-            .success();
+    // Act
+    let changelog = Command::cargo_bin("cog")?
+        .arg("changelog")
+        .arg("--at")
+        .arg("v2.0.0")
+        // Assert
+        .assert()
+        .success();
 
-        let changelog = changelog.get_output();
-        let changelog = String::from_utf8_lossy(&changelog.stdout);
-        let today = Utc::today().naive_utc();
+    let changelog = changelog.get_output();
+    let changelog = String::from_utf8_lossy(&changelog.stdout);
+    let today = Utc::today().naive_utc();
 
-        assert_eq!(
-            changelog.as_ref(),
-            formatdoc!(
-                "## v2.0.0 - {today}
+    assert_eq!(
+        changelog.as_ref(),
+        formatdoc!(
+            "## v2.0.0 - {today}
                     #### Bug Fixes
                     - bug fix 1 - ({commit_three}) - Tom
                     #### Features
@@ -308,46 +295,43 @@ fn get_changelog_at_tag_prefix() -> Result<()> {
                     #### Miscellaneous Chores
                     - **(version)** v2.0.0 - ({commit_four}) - Tom
                     ",
-                today = today,
-                commit_two = &commit_two[0..7],
-                commit_three = &commit_three[0..7],
-                commit_four = &commit_four[0..7]
-            )
-        );
-        Ok(())
-    })
+            today = today,
+            commit_two = &commit_two[0..7],
+            commit_three = &commit_three[0..7],
+            commit_four = &commit_four[0..7]
+        )
+    );
+    Ok(())
 }
 
-#[test]
+#[sealed_test]
 fn get_changelog_from_tag_to_tagged_head() -> Result<()> {
-    run_test_with_context(|_| {
-        // Arrange
-        git_init()?;
-        git_commit("chore: init")?;
-        let commit_one = git_commit("feat: start")?;
-        let commit_two = git_commit("feat: feature 1")?;
-        git_tag("1.0.0")?;
-        let commit_three = git_commit("feat: feature 2")?;
-        let commit_four = git_commit("fix: bug fix 1")?;
-        let commit_five = git_commit("chore(version): 2.0.0")?;
-        git_tag("2.0.0")?;
-        git_log()?;
+    // Arrange
+    git_init()?;
+    git_commit("chore: init")?;
+    let commit_one = git_commit("feat: start")?;
+    let commit_two = git_commit("feat: feature 1")?;
+    git_tag("1.0.0")?;
+    let commit_three = git_commit("feat: feature 2")?;
+    let commit_four = git_commit("fix: bug fix 1")?;
+    let commit_five = git_commit("chore(version): 2.0.0")?;
+    git_tag("2.0.0")?;
 
-        // Act
-        let changelog = Command::cargo_bin("cog")?
-            .arg("changelog")
-            // Assert
-            .assert()
-            .success();
+    // Act
+    let changelog = Command::cargo_bin("cog")?
+        .arg("changelog")
+        // Assert
+        .assert()
+        .success();
 
-        let changelog = changelog.get_output();
-        let changelog = String::from_utf8_lossy(&changelog.stdout);
-        let today = Utc::today().naive_utc();
+    let changelog = changelog.get_output();
+    let changelog = String::from_utf8_lossy(&changelog.stdout);
+    let today = Utc::today().naive_utc();
 
-        assert_eq!(
-            changelog.as_ref(),
-            formatdoc!(
-                "## 2.0.0 - {today}
+    assert_eq!(
+        changelog.as_ref(),
+        formatdoc!(
+            "## 2.0.0 - {today}
                 #### Bug Fixes
                 - bug fix 1 - ({commit_four}) - Tom
                 #### Features
@@ -362,14 +346,13 @@ fn get_changelog_from_tag_to_tagged_head() -> Result<()> {
                 - feature 1 - ({commit_two}) - Tom
                 - start - ({commit_one}) - Tom
                 ",
-                today = today,
-                commit_one = &commit_one[0..7],
-                commit_two = &commit_two[0..7],
-                commit_three = &commit_three[0..7],
-                commit_four = &commit_four[0..7],
-                commit_five = &commit_five[0..7],
-            )
-        );
-        Ok(())
-    })
+            today = today,
+            commit_one = &commit_one[0..7],
+            commit_two = &commit_two[0..7],
+            commit_three = &commit_three[0..7],
+            commit_four = &commit_four[0..7],
+            commit_five = &commit_five[0..7],
+        )
+    );
+    Ok(())
 }

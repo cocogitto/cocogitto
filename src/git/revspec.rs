@@ -268,14 +268,17 @@ impl Repository {
 mod test {
     use crate::conventional::changelog::release::Release;
     use anyhow::Result;
+    use cmd_lib::run_cmd;
     use git2::Oid;
+    use sealed_test::prelude::*;
     use speculoos::prelude::*;
 
     use crate::git::oid::OidOf;
     use crate::git::repository::Repository;
     use crate::git::revspec::RevspecPattern;
     use crate::git::tag::Tag;
-    use crate::test_helpers::run_test_with_context;
+
+    const COCOGITTO_REPOSITORY: &str = env!("CARGO_MANIFEST_DIR");
 
     #[test]
     fn convert_str_to_pattern_to() {
@@ -325,23 +328,21 @@ mod test {
 
     #[test]
     fn all_commits() -> Result<()> {
-        run_test_with_context(|context| {
-            // Arrange
-            let repo = Repository::open(&context.current_dir)?;
+        // Arrange
+        let repo = Repository::open(COCOGITTO_REPOSITORY)?;
 
-            // Act
-            let range = repo.all_commits()?;
+        // Act
+        let range = repo.all_commits()?;
 
-            // Assert
-            assert_that!(range.commits).is_not_empty();
-            Ok(())
-        })
+        // Assert
+        assert_that!(range.commits).is_not_empty();
+        Ok(())
     }
 
     #[test]
     fn get_release_range_integration_test() -> Result<()> {
         // Arrange
-        let repo = Repository::open(".")?;
+        let repo = Repository::open(COCOGITTO_REPOSITORY)?;
         let format_version = |release: &Release| format!("{}", release.version);
 
         // Act
@@ -360,160 +361,162 @@ mod test {
         Ok(())
     }
 
-    #[test]
+    #[sealed_test]
     fn get_tag_commits() -> Result<()> {
-        run_test_with_context(|context| {
-            // Arrange
-            let repo = Repository::init(&context.test_dir)?;
-            std::fs::write(&context.test_dir.join("file"), "changes")?;
-            repo.add_all()?;
-            let start = repo.commit("chore: init")?;
+        // Arrange
+        let repo = Repository::init(".")?;
+        run_cmd!(
+            git init
+            echo changes > file
+            git add .
+        )?;
 
-            std::fs::write(&context.test_dir.join("file2"), "changes")?;
-            repo.add_all()?;
-            let _end = repo.commit("chore: 1.0.0")?;
+        let start = repo.commit("chore: init")?;
 
-            repo.create_tag("1.0.0")?;
+        run_cmd!(
+            git init
+            echo changes > file2
+            git add .
+        )?;
 
-            std::fs::write(&context.test_dir.join("file3"), "changes")?;
-            repo.add_all()?;
-            repo.commit("feat: a commit")?;
+        let _end = repo.commit("chore: 1.0.0")?;
 
-            let commit_range = repo.get_commit_range(&RevspecPattern::from("..1.0.0"))?;
+        repo.create_tag("1.0.0")?;
 
-            assert_that!(commit_range.from).is_equal_to(OidOf::Other(start));
-            assert_that!(commit_range.to.to_string()).is_equal_to("1.0.0".to_string());
-            assert_that!(commit_range.commits).has_length(1);
-            Ok(())
-        })
+        run_cmd!(
+            git init
+            echo changes > file3
+            git add .
+        )?;
+
+        repo.commit("feat: a commit")?;
+
+        // Act
+        let commit_range = repo.get_commit_range(&RevspecPattern::from("..1.0.0"))?;
+
+        // Assert
+        assert_that!(commit_range.from).is_equal_to(OidOf::Other(start));
+        assert_that!(commit_range.to.to_string()).is_equal_to("1.0.0".to_string());
+        assert_that!(commit_range.commits).has_length(1);
+        Ok(())
     }
 
     #[test]
     fn from_tag_to_tag_ok() -> Result<()> {
-        run_test_with_context(|context| {
-            // Arrange
-            let repo = Repository::open(&context.current_dir)?;
-            let v1_0_0 = Oid::from_str("549070fa99986b059cbaa9457b6b6f065bbec46b")?;
-            let v1_0_0 = OidOf::Tag(Tag::new("1.0.0", Some(v1_0_0))?);
-            let v3_0_0 = Oid::from_str("c6508e243e2816e2d2f58828ee0c6721502958dd")?;
-            let v3_0_0 = OidOf::Tag(Tag::new("3.0.0", Some(v3_0_0))?);
+        // Arrange
+        let repo = Repository::open(COCOGITTO_REPOSITORY)?;
+        let v1_0_0 = Oid::from_str("549070fa99986b059cbaa9457b6b6f065bbec46b")?;
+        let v1_0_0 = OidOf::Tag(Tag::new("1.0.0", Some(v1_0_0))?);
+        let v3_0_0 = Oid::from_str("c6508e243e2816e2d2f58828ee0c6721502958dd")?;
+        let v3_0_0 = OidOf::Tag(Tag::new("3.0.0", Some(v3_0_0))?);
 
-            // Act
-            let range = repo.get_commit_range(&RevspecPattern::from("1.0.0..3.0.0"))?;
+        // Act
+        let range = repo.get_commit_range(&RevspecPattern::from("1.0.0..3.0.0"))?;
 
-            // Assert
-            assert_that!(range.from).is_equal_to(v1_0_0);
-            assert_that!(range.to).is_equal_to(v3_0_0);
+        // Assert
+        assert_that!(range.from).is_equal_to(v1_0_0);
+        assert_that!(range.to).is_equal_to(v3_0_0);
 
-            Ok(())
-        })
+        Ok(())
     }
 
     #[test]
     fn from_tag_to_head() -> Result<()> {
-        run_test_with_context(|context| {
-            // Arrange
-            let repo = Repository::open(&context.current_dir)?;
-            let head = repo.get_head_commit_oid()?;
-            let head = OidOf::Other(head);
-            let tag = repo.get_latest_tag()?;
+        // Arrange
+        let repo = Repository::open(COCOGITTO_REPOSITORY)?;
+        let head = repo.get_head_commit_oid()?;
+        let head = OidOf::Other(head);
+        let tag = repo.get_latest_tag()?;
 
-            // Cover the case when we release a version and run the test in the CI right after that
-            let head = if tag.oid() == Some(head.oid()) {
-                OidOf::Tag(tag)
-            } else {
-                head
-            };
+        // Cover the case when we release a version and run the test in the CI right after that
+        let head = if tag.oid() == Some(head.oid()) {
+            OidOf::Tag(tag)
+        } else {
+            head
+        };
 
-            let v1_0_0 = Oid::from_str("549070fa99986b059cbaa9457b6b6f065bbec46b")?;
-            let v1_0_0 = OidOf::Tag(Tag::new("1.0.0", Some(v1_0_0))?);
+        let v1_0_0 = Oid::from_str("549070fa99986b059cbaa9457b6b6f065bbec46b")?;
+        let v1_0_0 = OidOf::Tag(Tag::new("1.0.0", Some(v1_0_0))?);
 
-            // Act
-            let range = repo.get_commit_range(&RevspecPattern::from("1.0.0.."))?;
+        // Act
+        let range = repo.get_commit_range(&RevspecPattern::from("1.0.0.."))?;
 
-            // Assert
-            assert_that!(range.from).is_equal_to(v1_0_0);
-            assert_that!(range.to).is_equal_to(head);
+        // Assert
+        assert_that!(range.from).is_equal_to(v1_0_0);
+        assert_that!(range.to).is_equal_to(head);
 
-            Ok(())
-        })
+        Ok(())
     }
 
     #[test]
     fn from_latest_to_head() -> Result<()> {
-        run_test_with_context(|context| {
-            // Arrange
-            let repo = Repository::open(&context.current_dir)?;
-            let head = repo.get_head_commit_oid()?;
-            let head = OidOf::Other(head);
-            let mut tags = repo.all_tags()?;
-            tags.sort();
-            let mut latest = tags.last().unwrap();
+        // Arrange
+        let repo = Repository::open(COCOGITTO_REPOSITORY)?;
+        let head = repo.get_head_commit_oid()?;
+        let head = OidOf::Other(head);
+        let mut tags = repo.all_tags()?;
+        tags.sort();
+        let mut latest = tags.last().unwrap();
 
-            if latest.oid().unwrap() == head.oid() {
-                latest = &tags[tags.len() - 2];
-            }
+        if latest.oid().unwrap() == head.oid() {
+            latest = &tags[tags.len() - 2];
+        }
 
-            let latest = OidOf::Tag(latest.clone());
+        let latest = OidOf::Tag(latest.clone());
 
-            // Act
-            let range = repo.get_commit_range(&RevspecPattern::default())?;
+        // Act
+        let range = repo.get_commit_range(&RevspecPattern::default())?;
 
-            // Assert
-            assert_that!(range.from).is_equal_to(latest);
-            assert_that!(range.to.oid()).is_equal_to(head.oid());
+        // Assert
+        assert_that!(range.from).is_equal_to(latest);
+        assert_that!(range.to.oid()).is_equal_to(head.oid());
 
-            Ok(())
-        })
+        Ok(())
     }
 
     #[test]
     fn from_previous_to_tag() -> Result<()> {
-        run_test_with_context(|context| {
-            // Arrange
-            let repo = Repository::open(&context.current_dir)?;
-            let v2_1_1 = Oid::from_str("9dcf728d2eef6b5986633dd52ecbe9e416234898")?;
-            let v2_1_1 = OidOf::Tag(Tag::new("2.1.1", Some(v2_1_1))?);
-            let v3_0_0 = Oid::from_str("c6508e243e2816e2d2f58828ee0c6721502958dd")?;
-            let v3_0_0 = OidOf::Tag(Tag::new("3.0.0", Some(v3_0_0))?);
+        // Arrange
+        let repo = Repository::open(COCOGITTO_REPOSITORY)?;
+        let v2_1_1 = Oid::from_str("9dcf728d2eef6b5986633dd52ecbe9e416234898")?;
+        let v2_1_1 = OidOf::Tag(Tag::new("2.1.1", Some(v2_1_1))?);
+        let v3_0_0 = Oid::from_str("c6508e243e2816e2d2f58828ee0c6721502958dd")?;
+        let v3_0_0 = OidOf::Tag(Tag::new("3.0.0", Some(v3_0_0))?);
 
-            // Act
-            let range = repo.get_commit_range(&RevspecPattern::from("..3.0.0"))?;
+        // Act
+        let range = repo.get_commit_range(&RevspecPattern::from("..3.0.0"))?;
 
-            // Assert
-            assert_that!(range.from).is_equal_to(v2_1_1);
-            assert_that!(range.to).is_equal_to(v3_0_0);
+        // Assert
+        assert_that!(range.from).is_equal_to(v2_1_1);
+        assert_that!(range.to).is_equal_to(v3_0_0);
 
-            Ok(())
-        })
+        Ok(())
     }
 
     #[test]
     fn recursive_from_origin_to_head() -> Result<()> {
-        run_test_with_context(|context| {
-            // Arrange
-            let repo = Repository::open(&context.current_dir)?;
-            let mut tag_count = repo.0.tag_names(None)?.len();
-            let head = repo.get_head_commit_oid()?;
-            let latest = repo.get_latest_tag()?;
-            let latest = latest.oid();
-            if latest == Some(&head) {
-                tag_count -= 1;
-            };
+        // Arrange
+        let repo = Repository::open(COCOGITTO_REPOSITORY)?;
+        let mut tag_count = repo.0.tag_names(None)?.len();
+        let head = repo.get_head_commit_oid()?;
+        let latest = repo.get_latest_tag()?;
+        let latest = latest.oid();
+        if latest == Some(&head) {
+            tag_count -= 1;
+        };
 
-            // Act
-            let mut release = repo.get_release_range(RevspecPattern::from(".."))?;
-            let mut count = 0;
+        // Act
+        let mut release = repo.get_release_range(RevspecPattern::from(".."))?;
+        let mut count = 0;
 
-            while let Some(previous) = release.previous {
-                release = *previous;
-                count += 1;
-            }
+        while let Some(previous) = release.previous {
+            release = *previous;
+            count += 1;
+        }
 
-            // Assert
-            assert_that!(count).is_equal_to(tag_count);
+        // Assert
+        assert_that!(count).is_equal_to(tag_count);
 
-            Ok(())
-        })
+        Ok(())
     }
 }

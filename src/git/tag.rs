@@ -170,106 +170,108 @@ impl PartialOrd<Tag> for Tag {
 #[cfg(test)]
 mod test {
     use crate::git::repository::Repository;
-    use crate::test_helpers::run_test_with_context;
     use anyhow::Result;
+    use cmd_lib::run_cmd;
+    use sealed_test::prelude::*;
     use speculoos::prelude::*;
 
-    #[test]
+    #[sealed_test]
     fn resolve_lightweight_tag_ok() -> Result<()> {
-        run_test_with_context(|context| {
-            let repo = Repository::init(&context.test_dir)?;
-            std::fs::write(context.test_dir.join("file"), "changes")?;
-            repo.add_all()?;
-            repo.commit("first commit")?;
-            repo.create_tag("the_tag")?;
+        // Arrange
+        let repo = Repository::init(".")?;
+        run_cmd!(
+            git commit -m allow-empty -m "first commit"
+            git tag the_tag
+        )?;
 
-            let tag = repo.resolve_lightweight_tag("the_tag");
+        // Act
+        let tag = repo.resolve_lightweight_tag("the_tag");
 
-            assert_that!(tag).is_ok();
-            Ok(())
-        })
+        // Assert
+        assert_that!(tag).is_ok();
+        Ok(())
     }
 
-    #[test]
+    #[sealed_test]
     fn resolve_lightweight_tag_err() -> Result<()> {
-        run_test_with_context(|context| {
-            let repo = Repository::init(&context.test_dir)?;
-            std::fs::write(context.test_dir.join("file"), "changes")?;
-            repo.add_all()?;
-            repo.commit("first commit")?;
-            repo.create_tag("the_tag")?;
+        // Arrange
+        let repo = Repository::init(".")?;
+        run_cmd!(
+            git commit -m allow-empty -m "first commit"
+            git tag the_tag
+        )?;
 
-            let tag = repo.resolve_lightweight_tag("the_taaaag");
+        // Act
+        let tag = repo.resolve_lightweight_tag("the_taaaag");
 
-            assert_that!(tag).is_err();
-            Ok(())
-        })
+        // Assert
+        assert_that!(tag).is_err();
+        Ok(())
     }
 
-    #[test]
+    #[sealed_test]
     fn get_latest_tag_ok() -> Result<()> {
-        run_test_with_context(|context| {
-            let repo = Repository::init(&context.test_dir)?;
-            std::fs::write(&context.test_dir.join("file"), "changes")?;
-            repo.add_all()?;
-            repo.commit("first commit")?;
-            repo.create_tag("0.1.0")?;
+        // Arrange
+        let repo = Repository::init(".")?;
+        run_cmd!(
+            git commit -m allow-empty -m "first commit"
+            git tag 0.1.0
+            git commit -m allow-empty -m "second commit"
+            git tag 0.2.0
+        )?;
 
-            std::fs::write(&context.test_dir.join("file"), "changes2")?;
-            repo.add_all()?;
-            repo.commit("second commit")?;
-            repo.create_tag("0.2.0")?;
+        // Act
+        let tag = repo.get_latest_tag()?;
 
-            let tag = repo.get_latest_tag()?;
-
-            assert_that!(tag.to_string_with_prefix()).is_equal_to("0.2.0".to_string());
-            Ok(())
-        })
+        // Assert
+        assert_that!(tag.to_string_with_prefix()).is_equal_to("0.2.0".to_string());
+        Ok(())
     }
 
-    #[test]
+    #[sealed_test]
     fn get_latest_tag_err() -> Result<()> {
-        run_test_with_context(|context| {
-            let repo = Repository::init(&context.test_dir)?;
-            std::fs::write(&context.test_dir.join("file"), "changes")?;
-            repo.add_all()?;
-            repo.commit("first commit")?;
+        // Arrange
+        let repo = Repository::init(".")?;
+        run_cmd!(
+            git commit -m allow-empty -m "first commit"
+        )?;
 
-            let tag = repo.get_latest_tag();
+        // Act
+        let tag = repo.get_latest_tag();
 
-            assert_that!(tag).is_err();
-            Ok(())
-        })
+        // Assert
+        assert_that!(tag).is_err();
+        Ok(())
     }
 
-    #[test]
+    #[sealed_test]
     fn get_latest_tag_oid_ok() -> Result<()> {
-        run_test_with_context(|context| {
-            let repo = Repository::init(&context.test_dir)?;
-            std::fs::write(&context.test_dir.join("file"), "changes")?;
-            repo.add_all()?;
-            repo.commit("first commit")?;
-            repo.create_tag("1.0.0")?;
+        // Arrange
+        let repo = Repository::init(".")?;
+        run_cmd!(
+            git commit -m allow-empty -m "first commit"
+            git tag 0.1.0
+        )?;
 
-            let tag = repo.get_latest_tag_oid();
+        // Act
+        let tag = repo.get_latest_tag_oid();
 
-            assert_that!(tag).is_ok();
-            Ok(())
-        })
+        // Assert
+        assert_that!(tag).is_ok();
+        Ok(())
     }
 
-    #[test]
+    #[sealed_test]
     fn get_latest_tag_oid_err() -> Result<()> {
-        run_test_with_context(|context| {
-            let repo = Repository::init(&context.test_dir)?;
-            std::fs::write(&context.test_dir.join("file"), "changes")?;
-            repo.add_all()?;
-            repo.commit("first commit")?;
+        // Arrange
+        let repo = Repository::init(".")?;
+        run_cmd!(git commit -m allow-empty -m "first commit")?;
 
-            let tag = repo.get_latest_tag_oid();
+        // Act
+        let tag = repo.get_latest_tag_oid();
 
-            assert_that!(tag).is_err();
-            Ok(())
-        })
+        // Assert
+        assert_that!(tag).is_err();
+        Ok(())
     }
 }

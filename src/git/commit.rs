@@ -38,40 +38,58 @@ impl Repository {
 #[cfg(test)]
 mod test {
     use crate::git::repository::Repository;
-    use crate::test_helpers::run_test_with_context;
     use anyhow::Result;
+    use cmd_lib::run_cmd;
+    use sealed_test::prelude::*;
     use speculoos::prelude::*;
 
-    #[test]
+    #[sealed_test]
     fn create_commit_ok() -> Result<()> {
-        run_test_with_context(|context| {
-            let repo = Repository::init(&context.test_dir)?;
-            std::fs::write(context.test_dir.join("file"), "changes")?;
-            repo.add_all()?;
+        // Arrange
+        run_cmd!(
+            git init
+            echo changes > file
+            git add .
+        )?;
 
-            assert_that!(repo.commit("feat: a test commit")).is_ok();
-            Ok(())
-        })
+        let repo = Repository::open(".")?;
+
+        // Act
+        let oid = repo.commit("feat: a test commit");
+
+        // Assert
+        assert_that!(oid).is_ok();
+        Ok(())
     }
 
-    #[test]
+    #[sealed_test]
     fn not_create_empty_commit() -> Result<()> {
-        run_test_with_context(|context| {
-            let repo = Repository::init(&context.test_dir)?;
+        // Arrange
+        let repo = Repository::init(".")?;
 
-            assert_that!(repo.commit("feat: a test commit")).is_err();
-            Ok(())
-        })
+        // Act
+        let oid = repo.commit("feat: a test commit");
+
+        // Assert
+        assert_that!(oid).is_err();
+        Ok(())
     }
 
-    #[test]
+    #[sealed_test]
     fn not_create_empty_commit_with_unstaged_changed() -> Result<()> {
-        run_test_with_context(|context| {
-            let repo = Repository::init(&context.test_dir)?;
-            std::fs::write(context.test_dir.join("file"), "changes")?;
+        // Arrange
+        run_cmd!(
+            git init
+            echo changes > file
+        )?;
 
-            assert_that!(repo.commit("feat: a test commit")).is_err();
-            Ok(())
-        })
+        let repo = Repository::open(".")?;
+
+        // Act
+        let oid = repo.commit("feat: a test commit");
+
+        // Assert
+        assert_that!(oid).is_err();
+        Ok(())
     }
 }

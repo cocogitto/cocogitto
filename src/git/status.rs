@@ -127,59 +127,61 @@ mod test {
     use crate::git::status::{Changes, Statuses};
 
     use crate::git::repository::Repository;
-    use crate::test_helpers::run_test_with_context;
     use anyhow::{anyhow, Result};
     use git2::StatusOptions;
+    use sealed_test::prelude::*;
     use speculoos::prelude::*;
 
-    #[test]
+    #[sealed_test]
     fn get_repo_statuses_empty() -> Result<()> {
-        run_test_with_context(|context| {
-            let repo = Repository::init(&context.test_dir)?;
+        // Arrange
+        let repo = Repository::init(".")?;
 
-            let statuses = repo.get_statuses()?;
+        // Act
+        let statuses = repo.get_statuses()?;
 
-            assert_that!(statuses.0).has_length(0);
-            Ok(())
-        })
+        // Assert
+        assert_that!(statuses.0).has_length(0);
+        Ok(())
     }
 
-    #[test]
+    #[sealed_test]
     fn get_repo_statuses_not_empty() -> Result<()> {
-        run_test_with_context(|context| {
-            let repo = Repository::init(&context.test_dir)?;
-            std::fs::write(context.test_dir.join("file"), "changes")?;
+        // Arrange
+        let repo = Repository::init(".")?;
+        std::fs::write("file", "changes")?;
 
-            let statuses = repo.get_statuses()?;
+        // Act
+        let statuses = repo.get_statuses()?;
 
-            assert_that!(statuses.0).has_length(1);
-            Ok(())
-        })
+        // Assert
+        assert_that!(statuses.0).has_length(1);
+        Ok(())
     }
 
-    #[test]
+    #[sealed_test]
     fn should_get_statuses_from_git_statuses() -> Result<()> {
-        run_test_with_context(|context| {
-            let path = context.test_dir.join("test_repo");
-            let repo = Repository::init(&path)?;
-            fs::write(path.join("file"), "content")?;
+        // Arrange
+        let repo = Repository::init(".")?;
+        fs::write("file", "content")?;
 
-            let mut options = StatusOptions::new();
-            options.include_untracked(true);
-            options.exclude_submodules(true);
-            options.include_unmodified(false);
+        let mut options = StatusOptions::new();
+        options.include_untracked(true);
+        options.exclude_submodules(true);
+        options.include_unmodified(false);
 
-            let git_statuses = repo
-                .0
-                .statuses(Some(&mut options))
-                .map_err(|err| anyhow!(err))?;
+        let git_statuses = repo
+            .0
+            .statuses(Some(&mut options))
+            .map_err(|err| anyhow!(err))?;
 
-            let statuses = Statuses::from(git_statuses).0;
+        // Act
+        let statuses = Statuses::from(git_statuses).0;
 
-            assert_that!(statuses.iter())
-                .contains(&super::Status::Untracked(Changes::New("file".into())));
-            assert_that!(statuses).has_length(1);
-            Ok(())
-        })
+        // Assert
+        assert_that!(statuses.iter())
+            .contains(&super::Status::Untracked(Changes::New("file".into())));
+        assert_that!(statuses).has_length(1);
+        Ok(())
     }
 }
