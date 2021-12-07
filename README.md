@@ -12,7 +12,7 @@
       src="https://github.com/cocogitto/cocogitto/workflows/CI/badge.svg"
       alt="GitHub Actions workflow status"
   /></a>
-  <a href="https://codecov.io/gh/oknozor/cocogitto"
+  <a href="https://codecov.io/gh/cocogitto/cocogitto"
     ><img
       src="https://codecov.io/gh/cocogitto/cocogitto/branch/main/graph/badge.svg"
       alt="Code coverage status"
@@ -216,7 +216,7 @@ using [cocogitto-action](https://github.com/cocogitto/cocogitto-action).
 **Example:**
 ```yaml
   - name: Semver release
-    uses: oknozor/cocogitto-action@main
+    uses: cocogitto/cocogitto-action@main
     with:
       release: true
       git-user: 'Cog Bot'
