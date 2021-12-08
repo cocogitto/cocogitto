@@ -43,16 +43,16 @@
 
 <h1></h1>
 
-**The conventional commits toolbox**
+**The Conventional Commits toolbox**
 
 - **Verified commits️:** create conventional compliant commits with ease.
-- **Automatic Version bump and changelog:** automatically bump version and generate changelogs with your own custom steps
+- **Automatic Version bump and changelog:** automatically bump versions and generate changelogs with your own custom steps
   and workflows.
-- **Release profiles:** your branching model requires different steps for releases, prerelease, hotfix ? We got you
+- **Release profiles:** your branching model requires different steps for releases, pre-release, hotfixes ? We got you
   covered !
-- **Depends only on libgit2:** cocogitto has two standalone binary, the only system dependency is libgit2.
-- **Conventional git log:** search your commit history matching conventional commits items such as scope and commit type.
-- **Github integration:** enforce the conventional commits specification with our GitHub action and bot.
+- **Depends only on libgit2:** cocogitto has two standalone binaries, the only system dependency is libgit2.
+- **Conventional git log:** search your commit history matching Conventional Commits items such as scope and commit type.
+- **GitHub integration:** enforce the conventional commits specification with our GitHub action and bot.
 
 <p align="center">
 <a href="https://docs.cocogitto.io/"><strong>Explore Cocogitto's docs&nbsp;&nbsp;▶</strong></a>
@@ -62,32 +62,32 @@
 
 ### What is it ?
 
-Cocogitto is a CLI and GitOps toolbox for the [conventional commit](https://www.conventionalcommits.org/en/v1.0.0/)
-and [semver](https://semver.org/) specifications.
+Cocogitto is a CLI and GitOps toolbox for the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)
+and [Semver](https://semver.org/) specifications.
 
 ### Why ?
 
 There are plenty of tools listed on
 the [conventional commits web site](https://www.conventionalcommits.org/en/about/)
 to help you generate changelog, git hooks, commit template etc. Some of them are specifically designed for the
-conventional commits specification, and some of them are general purpose. 
+Conventional Commits specification, and some of them are general purpose. 
 
 **Cocogitto was designed to help you respect the
-conventional and semver standard and is not intended to be use in any other context.**
+conventional and semver standard and is not intended to be used in any other context.**
 
-It strives to be a set of simples, moderns and fast command line interfaces.
+It strives to be a set of simple, modern and fast command line interfaces.
 
 ### Goals
 
 - Make using the conventional commits spec easy and fun.
-- Enable people to focus on their work instead of correcting small mistakes and typo.
-- Correctness regarding semver and conventional commit.
+- Enable people to focus on their work instead of correcting small mistakes and typos.
+- Enforce correctness regarding Semver and Conventional Commits.
 - Automate things when possible (ex: bumping versions).
 
 ### Non goals
 
-- Coccogitto is not a `git` replacement. It uses some of libgit2 but only to provide features related to the
-  conventional commits specification. Anything else shall be done with `git`.
+- Cocogitto is not a `git` replacement. It uses some of libgit2 but only to provide features related to the
+  Conventional Commits specification. Anything else shall be done with `git`.
 - Supporting other commit conventions or git workflows.
 
 ## Quick start
@@ -112,9 +112,9 @@ cargo install cocogitto
 ## Conventional commits
 
 To create conventional commits you can use the `coco` binary. It has subcommands for the default `fix` and`feat`
-conventional commits type plus
+Conventional Commits types plus
 the [angular commit](https://github.com/angular/angular/blob/22b96b9/CONTRIBUTING.md#-commit-message-guidelines)
-conventional commits types.
+conventional commit types.
 
 **Example:**
 
@@ -130,13 +130,13 @@ See [Coco guide -> Conventional commits](https://docs.cocogitto.io/coco_guide/#c
 
 ## Auto-bumps
 
-Creating a version with cog bump will perform the following actions :
+Creating a version with `cog bump` will perform the following actions :
 
-1. calculate a version number according to your commit history.
-2. perform configuration defined pre-bump commands.
-3. append the version changelog to your repository changelog file.
-4. create a version commit and tag it.
-5. perform post-bump commands
+1. Determine a version number according to your commit history.
+2. Perform configuration defined pre-bump commands.
+3. Append the version's changelog to your repository changelog file.
+4. Create a version commit and tag it.
+5. Perform post-bump commands
 
 **Example:**
 
@@ -167,7 +167,7 @@ authors = [
 
 ## Changelogs
 
-`cog changelog` use [tera](https://tera.netlify.app/) templates to generate markdown changelogs. It has several built-in
+`cog changelog` uses [tera](https://tera.netlify.app/) templates to generate markdown changelogs. It has several built-in
 templates, and you can define your own.
 
 **Example:**
@@ -208,9 +208,9 @@ See [Cog guide -> Changelogs](https://docs.cocogitto.io/cog_guide/#changelogs).
 
 ## GitHub integration
 
-**Github action:**
+**GitHub action:**
 
-You can run cog check and perform auto releases via GitHub action
+You can run cog check and perform automatic releases via GitHub action
 using [cocogitto-action](https://github.com/cocogitto/cocogitto-action).
 
 **Example:**
@@ -225,10 +225,10 @@ using [cocogitto-action](https://github.com/cocogitto/cocogitto-action).
 
 See [Github integration -> GitHub action](https://docs.cocogitto.io/ci_cd/#github-action)
 
-**Github bot:**
+**GitHub bot:**
 
-[cocogitto-bot](https://github.com/cocogitto/cocogitto-bot) is a standalone, zero config bot checking your pull request
-against the conventional commits specification.
+[cocogitto-bot](https://github.com/cocogitto/cocogitto-bot) is a standalone, zero-config bot checking your pull requests
+against the Conventional Commits specification.
 
 ![cog bot example](./docs/assets/cog-bot-example.png)
 
