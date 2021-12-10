@@ -1,7 +1,7 @@
 <p align="center">
   <img
-    width="100"
-    src="https://raw.githubusercontent.com/cocogitto/cocogitto/main/docs/assets/cocogitto_logo_temp.png"
+    width="250"
+    src="./docs/logo/COCOGITTO_LP_LOGO_TEXT_72dpi.png"
     alt="Cocogitto – The conventional commits tool box"
   />
 </p>
