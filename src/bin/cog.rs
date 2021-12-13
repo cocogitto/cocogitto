@@ -1,4 +1,6 @@
 #![cfg(not(tarpaulin_include))]
+mod cog_commit;
+
 use std::path::PathBuf;
 
 use cocogitto::conventional::changelog::template::{RemoteContext, Template};
@@ -47,6 +49,9 @@ enum Cli {
         #[structopt(short = "l", long)]
         from_latest_tag: bool,
     },
+
+    /// Create a new conventional commit
+    Commit(CommitArgs),
 
     /// Interactively rename invalid commit messages
     #[structopt(no_version, settings = SUBCOMMAND_SETTINGS)]
@@ -172,6 +177,28 @@ enum Cli {
         #[structopt(name = "type", possible_values = &["bash", "elvish", "fish", "zsh"])]
         shell: Shell,
     },
+}
+
+#[derive(StructOpt)]
+#[structopt(flatten)]
+struct CommitArgs {
+    /// Conventional commit type
+    #[structopt(name = "type", possible_values = &cog_commit::commit_types())]
+    typ: String,
+
+    /// Commit description
+    message: String,
+
+    /// Conventional commit scope
+    scope: Option<String>,
+
+    /// Create a BREAKING CHANGE commit
+    #[structopt(short = "B", long)]
+    breaking_change: bool,
+
+    /// Open commit message in an editor
+    #[structopt(short, long)]
+    edit: bool,
 }
 
 fn main() -> Result<()> {
@@ -320,6 +347,22 @@ fn main() -> Result<()> {
         }
         Cli::GenerateCompletions { shell } => {
             Cli::clap().gen_completions_to("cog", shell, &mut std::io::stdout());
+        }
+        Cli::Commit(CommitArgs {
+            typ,
+            message,
+            scope,
+            breaking_change,
+            edit,
+        }) => {
+            let cocogitto = CocoGitto::get()?;
+            let (body, footer, breaking) = if edit {
+                cog_commit::edit_message(&typ, &message, scope.as_deref(), breaking_change)?
+            } else {
+                (None, None, breaking_change)
+            };
+
+            cocogitto.conventional_commit(&typ, scope, message, body, footer, breaking)?;
         }
     }
 
