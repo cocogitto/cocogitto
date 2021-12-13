@@ -1,3 +1,4 @@
+#![cfg(not(tarpaulin_include))]
 use std::fmt::Write;
 
 use cocogitto::COMMITS_METADATA;
