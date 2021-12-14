@@ -111,7 +111,7 @@ cargo install cocogitto
 
 ## Conventional commits
 
-To create conventional commits you can use the `coco` binary. It has subcommands for the default `fix` and`feat`
+To create conventional commits you can use the `cog commit` utility. It has subcommands for the default `fix` and `feat`
 Conventional Commits types plus
 the [angular commit](https://github.com/angular/angular/blob/22b96b9/CONTRIBUTING.md#-commit-message-guidelines)
 conventional commit types.
@@ -119,14 +119,14 @@ conventional commit types.
 **Example:**
 
 ```shell
-# With coco
-coco feat "add awesome feature"
+# With cocogitto
+cog commit feat "add awesome feature"
 
 # With git
 git commit -m "feat: add awesome feature"
 ```
 
-See [Coco guide -> Conventional commits](https://docs.cocogitto.io/coco_guide/#conventional-commits).
+See [User guide -> Conventional commits](https://docs.cocogitto.io/coco_guide/#conventional-commits).
 
 ## Auto-bumps
 

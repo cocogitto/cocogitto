@@ -64,11 +64,6 @@ name = "cog"
 path = "src/bin/cog.rs"
 required-features = ["structopt"]
 
-[[bin]]
-name = "coco"
-path = "src/bin/coco.rs"
-required-features = ["structopt"]
-
 [[test]]
 name = "all"
 path = "tests/common.rs"

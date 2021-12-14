@@ -30,7 +30,7 @@ post_bump_hooks = [
 ]
 
 # An optional list of additional allowed commit type
-# `coco {commit_type}` commit command will be generated at runtime
+# `cog commit {commit_type}` commit command will be generated at runtime
 [commit_types]
 ex = { changelog_title = "This is the markdown title for `ex` commit type" }
 

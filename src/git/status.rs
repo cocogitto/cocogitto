@@ -107,7 +107,7 @@ impl fmt::Display for Statuses {
             uncommitted.iter().for_each(|change| {
                 writeln!(f, "\t{}", change.to_string("green")).unwrap();
             });
-            writeln!(f, "Use `coco <type>` to commit changes").unwrap();
+            writeln!(f, "Use `cog commit <type>` to commit changes").unwrap();
         }
 
         write!(f, "\n\n")
