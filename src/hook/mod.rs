@@ -264,21 +264,29 @@ mod test {
 
     #[test]
     fn replace_version_with_nested_simple_quoted_arg() -> Result<()> {
-        let mut hook = Hook::from_str("coco chore 'bump snapshot to {{version+1minor-pre}}'")?;
+        let mut hook =
+            Hook::from_str("cog commit chore 'bump snapshot to {{version+1minor-pre}}'")?;
         hook.insert_versions(None, &HookVersion::new("1.0.0"))
             .unwrap();
 
-        assert_eq!(&hook.0, &["coco", "chore", "bump snapshot to 1.1.0-pre"]);
+        assert_eq!(
+            &hook.0,
+            &["cog", "commit", "chore", "bump snapshot to 1.1.0-pre"]
+        );
         Ok(())
     }
 
     #[test]
     fn replace_version_with_nested_double_quoted_arg() -> Result<()> {
-        let mut hook = Hook::from_str("coco chore \"bump snapshot to {{version+1minor-pre}}\"")?;
+        let mut hook =
+            Hook::from_str("cog commit chore \"bump snapshot to {{version+1minor-pre}}\"")?;
         hook.insert_versions(None, &HookVersion::new("1.0.0"))
             .unwrap();
 
-        assert_eq!(&hook.0, &["coco", "chore", "bump snapshot to 1.1.0-pre"]);
+        assert_eq!(
+            &hook.0,
+            &["cog", "commit", "chore", "bump snapshot to 1.1.0-pre"]
+        );
         Ok(())
     }
 
