@@ -30,13 +30,10 @@ release() {
       bin_folder="release"
    fi
 
-   coco_bin_path="${COCOGITTO_HOME}/target/${bin_folder}/coco"
    cog_bin_path="${COCOGITTO_HOME}/target/${bin_folder}/cog"
-   chmod +x "$coco_bin_path"
    chmod +x "$cog_bin_path"
    mkdir -p "$TAR_DIR" 2> /dev/null || true
 
-   cp "$coco_bin_path" "$TAR_DIR"
    cp "$cog_bin_path" "$TAR_DIR"
    cp "$COCOGITTO_HOME/LICENSE" "$TAR_DIR"
 

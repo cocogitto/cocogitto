@@ -134,7 +134,7 @@ cog commit feat "add awesome feature"
 git commit -m "feat: add awesome feature"
 ```
 
-See [Coco guide -> Conventional commits](https://docs.cocogitto.io/coco_guide/#conventional-commits).
+See [User guide -> Conventional commits](https://docs.cocogitto.io/coco_guide/#conventional-commits).
 
 ## Auto-bumps
 
@@ -212,7 +212,7 @@ Output :
 - add integration test - (bae629c) - *oknozor*
 ```
 
-See [Cog guide -> Changelogs](https://docs.cocogitto.io/cog_guide/#changelogs).
+See [User guide -> Changelogs](https://docs.cocogitto.io/cog_guide/#changelogs).
 
 ## GitHub integration
 

@@ -66,11 +66,6 @@ name = "cog"
 path = "src/bin/cog.rs"
 required-features = ["clap", "clap_complete"]
 
-[[bin]]
-name = "coco"
-path = "src/bin/coco.rs"
-required-features = ["clap", "clap_complete"]
-
 [[test]]
 name = "all"
 path = "tests/common.rs"

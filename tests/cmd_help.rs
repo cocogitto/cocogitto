@@ -9,10 +9,3 @@ fn cog_display_help() -> Result<()> {
 
     Ok(())
 }
-
-#[test]
-fn coco_display_help() -> Result<()> {
-    Command::cargo_bin("coco")?.arg("--help").assert().success();
-
-    Ok(())
-}
