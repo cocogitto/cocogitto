@@ -109,6 +109,12 @@ pacman -S cocogitto
 cargo install cocogitto
 ```
 
+#### NixOs
+
+```shell
+nix-env -iA cocogitto
+```
+
 ## Conventional commits
 
 To create conventional commits you can use the `coco` binary. It has subcommands for the default `fix` and`feat`
