@@ -100,7 +100,7 @@ to [the documentation](https://docs.cocogitto.io).
 #### Archlinux
 
 ```shell
-yay -S cocogitto-bin
+pacman -S cocogitto
 ```
 
 #### Cargo
