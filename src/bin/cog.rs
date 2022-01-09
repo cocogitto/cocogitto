@@ -13,7 +13,7 @@ use cocogitto::log::output::Output;
 use cocogitto::{CocoGitto, SETTINGS};
 
 use anyhow::{Context, Result};
-use clap::{AppSettings, Args, IntoApp, Parser};
+use clap::{AppSettings, ArgGroup, Args, IntoApp, Parser};
 use clap_complete::Shell;
 
 fn hook_profiles() -> Vec<&'static str> {
@@ -109,25 +109,26 @@ enum Cli {
     },
 
     /// Commit changelog from latest tag to HEAD and create new tag
+    #[clap(group = ArgGroup::new("bump-spec").required(true))]
     Bump {
         /// Manually set the next version
-        #[clap(short, long, required_unless_present_any = ["auto", "major", "minor", "patch"])]
+        #[clap(short, long, group = "bump-spec")]
         version: Option<String>,
 
         /// Automatically suggest the next version
-        #[clap(short, long, required_unless_present_any = ["version", "major", "minor", "patch"])]
+        #[clap(short, long, group = "bump-spec")]
         auto: bool,
 
         /// Increment the major version
-        #[clap(short = 'M', long, required_unless_present_any = ["version", "auto", "minor", "patch"])]
+        #[clap(short = 'M', long, group = "bump-spec")]
         major: bool,
 
         /// Increment the minor version
-        #[clap(short, long, required_unless_present_any = ["version", "auto", "major", "patch"])]
+        #[clap(short, long, group = "bump-spec")]
         minor: bool,
 
         /// Increment the patch version
-        #[clap(short, long, required_unless_present_any = ["version", "auto", "major", "minor"])]
+        #[clap(short, long, group = "bump-spec")]
         patch: bool,
 
         /// Set the pre-release version
