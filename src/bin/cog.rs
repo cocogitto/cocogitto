@@ -111,11 +111,11 @@ enum Cli {
     /// Commit changelog from latest tag to HEAD and create new tag
     #[clap(group = ArgGroup::new("bump-spec").required(true))]
     Bump {
-        /// Manually set the next version
+        /// Manually set the target version
         #[clap(short, long, group = "bump-spec")]
         version: Option<String>,
 
-        /// Automatically suggest the next version
+        /// Automatically suggest the target version
         #[clap(short, long, group = "bump-spec")]
         auto: bool,
 
