@@ -418,6 +418,16 @@ impl CocoGitto {
         // Fail if repo contains un-staged or un-committed changes
         ensure!(statuses.0.is_empty(), "{}", self.repository.get_statuses()?);
 
+        if !SETTINGS.branch_whitelist.is_empty() {
+            if let Some(branch) = self.repository.get_branch_shorthand() {
+                ensure!(
+                    SETTINGS.branch_whitelist.contains(&branch),
+                    "Version bump not allowed on branch {}",
+                    branch
+                )
+            }
+        };
+
         let current_tag = self.repository.get_latest_tag();
         let current_version = match current_tag {
             Ok(ref tag) => tag.to_version().unwrap_or_else(|_err| {
