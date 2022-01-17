@@ -24,6 +24,7 @@ pub enum HookType {
 #[serde(deny_unknown_fields)]
 pub struct Settings {
     #[serde(default)]
+    pub branch_whitelist: Vec<String>,
     pub tag_prefix: Option<String>,
     #[serde(default)]
     pub pre_bump_hooks: Vec<String>,
