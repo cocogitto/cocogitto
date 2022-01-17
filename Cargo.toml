@@ -2,7 +2,7 @@
 name = "cocogitto"
 version = "4.1.0"
 authors = ["Paul Delafosse <paul.delafosse@protonmail.com>"]
-edition = "2018"
+edition = "2021"
 readme = "README.md"
 license = "MIT"
 repository = "https://github.com/cocogitto/cocogitto"
