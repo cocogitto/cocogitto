@@ -2,6 +2,38 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## [4.1.0](https://github.com/cocogitto/cocogitto/compare/4.0.1..4.1.0) - 2022-01-18
+#### Bug Fixes
+- **(parser)** bump parser to 0.9.4 to support windows escape sequences in commit footers - ([415ec37](https://github.com/cocogitto/cocogitto/commit/415ec37921500bc375eb27b70722352fcd11d53b)) - [@oknozor](https://github.com/oknozor)
+- support annotated tags in cog check -l - ([66faca2](https://github.com/cocogitto/cocogitto/commit/66faca2312282108e50746cf2df1b8831e304122)) - [@lukehsiao](https://github.com/lukehsiao)
+- ignore comment lines in cog verify - ([2f25f5e](https://github.com/cocogitto/cocogitto/commit/2f25f5ea6e9b96882a11a271aad20db0ee420ffb)) - [@lukehsiao](https://github.com/lukehsiao)
+#### Continuous Integration
+- add cargo-bump and crates.io token - ([17fb92e](https://github.com/cocogitto/cocogitto/commit/17fb92eccde86a749e4df5d92382d92a03acd1e1)) - [@oknozor](https://github.com/oknozor)
+- trigger release from github action workflow dispatch - ([ab146d0](https://github.com/cocogitto/cocogitto/commit/ab146d0842d03c90fe8abc82af76f0ecf1b6e441)) - [@oknozor](https://github.com/oknozor)
+- fix code coverage breakage with latest rust nightly - ([cd76427](https://github.com/cocogitto/cocogitto/commit/cd7642729c2a56a091dd1497b37707ae8723e236)) - [@oknozor](https://github.com/oknozor)
+- remove codevov artifact upload - ([f7386c1](https://github.com/cocogitto/cocogitto/commit/f7386c1f4fd3aafe3d310cf5e11a81a4361c4d70)) - [@oknozor](https://github.com/oknozor)
+- add rust-cache action - ([f8dff56](https://github.com/cocogitto/cocogitto/commit/f8dff56213861fb6ea1696268ba3cb70b1602404)) - [@oknozor](https://github.com/oknozor)
+#### Documentation
+- **(readme)** update Arch Linux noting official package - ([79c1608](https://github.com/cocogitto/cocogitto/commit/79c16082407ff076852e3e8c5d06f212a5bae3fb)) - [@alerque](https://github.com/alerque)
+- **(readme)** fix language issues and typos - ([9d37de3](https://github.com/cocogitto/cocogitto/commit/9d37de36cabb21f0dbb70bb3106c21f234ce9472)) - Lucas Declercq
+- **(readme)** change some url to the org - ([573ef81](https://github.com/cocogitto/cocogitto/commit/573ef81dc6dd56c42ce7fe9e7916ce26324a3feb)) - [@oknozor](https://github.com/oknozor)
+- adjust `cog bump` help wording - ([ef032d5](https://github.com/cocogitto/cocogitto/commit/ef032d55d007092655e5368eeecd95a99f2e03dd)) - [@tranzystorek-io](https://github.com/tranzystorek-io)
+- add crates.io keywords and categories - ([7fcb0bd](https://github.com/cocogitto/cocogitto/commit/7fcb0bdd452880150e920521ab190e7c61835060)) - [@oknozor](https://github.com/oknozor)
+#### Features
+- **(cli)** add `cog commit` as duplicate of `coco` - ([128b9d0](https://github.com/cocogitto/cocogitto/commit/128b9d0e07d094ae004c0ee75a3f98182aabe983)) - [@tranzystorek-io](https://github.com/tranzystorek-io)
+#### Miscellaneous Chores
+- add @calerque to the list of contributors - ([50063e1](https://github.com/cocogitto/cocogitto/commit/50063e1d1540809d8e8ef22b30768f441dca5bb2)) - [@oknozor](https://github.com/oknozor)
+#### Refactoring
+- group `cog bump` flags together - ([337c7cc](https://github.com/cocogitto/cocogitto/commit/337c7ccd15d7e19a34582841dd0c2741403dc863)) - [@tranzystorek-io](https://github.com/tranzystorek-io)
+- switch arg parsing to clap v3 - ([13ebca5](https://github.com/cocogitto/cocogitto/commit/13ebca567291f3d38d73eaf76d524ba00666b921)) - [@tranzystorek-io](https://github.com/tranzystorek-io)
+#### Style
+- **(logo)** add the definitive logo and visual identities - ([e9b404e](https://github.com/cocogitto/cocogitto/commit/e9b404eb3f33eb847484aa6e9d5170a7f565f947)) - [@oknozor](https://github.com/oknozor)
+#### Tests
+- duplicate coco tests for cog commit - ([3a3249c](https://github.com/cocogitto/cocogitto/commit/3a3249cd0167adc5183f2a384155d5e1120a500d)) - [@tranzystorek-io](https://github.com/tranzystorek-io)
+- use sealed_test to run test in parallel - ([6f3ef7f](https://github.com/cocogitto/cocogitto/commit/6f3ef7f972ad4fa98e1922676cbde530b4adc3b1)) - [@oknozor](https://github.com/oknozor)
+- fix IT test failing when HEAD==latest tag - ([fb4a294](https://github.com/cocogitto/cocogitto/commit/fb4a2945eec1a2b5d76cea9803f673886e99d5bd)) - [@oknozor](https://github.com/oknozor)
+- - -
+
 ## [4.0.1](https://github.com/cocogitto/cocogitto/compare/4.0.0..4.0.1) - 2021-11-30
 #### Bug Fixes
 - **(bump)** correctly generate tag with prefix - ([9e8d592](https://github.com/cocogitto/cocogitto/commit/9e8d592d58f0200590ec3ac3d2b5c2b2c1720a06)) - [@oknozor](https://github.com/oknozor)

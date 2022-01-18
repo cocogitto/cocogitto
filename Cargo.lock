@@ -230,7 +230,7 @@ dependencies = [
 
 [[package]]
 name = "cocogitto"
-version = "4.0.1"
+version = "4.1.0"
 dependencies = [
  "anyhow",
  "assert_cmd",
