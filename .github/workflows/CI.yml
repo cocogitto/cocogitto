@@ -42,9 +42,16 @@ jobs:
         with:
           command: test
 
-      - name: Install Rust nightly
-        run: rustup toolchain install nightly --component llvm-tools-preview
-
+      - uses: actions-rs/toolchain@v1.0.7
+        with:
+          # Pinned to workaround issue making cargo-llvm-cov fail, see
+          # https://github.com/taiki-e/cargo-llvm-cov/issues/128
+          # TODO: restore to just `nightly` after it's fixed
+          toolchain: nightly-2022-01-14
+          override: true
+          profile: minimal
+          components: llvm-tools-preview
+         
       - name: Install cargo-llvm-cov
         run: curl -LsSf https://github.com/taiki-e/cargo-llvm-cov/releases/latest/download/cargo-llvm-cov-x86_64-unknown-linux-gnu.tar.gz | tar xzf - -C ~/.cargo/bin
 
