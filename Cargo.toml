@@ -7,7 +7,7 @@ readme = "README.md"
 license = "MIT"
 repository = "https://github.com/cocogitto/cocogitto"
 categories = ["command-line-utilities", "development-tools"]
-keywords = ["git", "conventional-commits", "changelog", "semver", "conventional-changelog", "release"]
+keywords = ["git", "conventional-commits", "changelog", "semver", "conventional-changelog"]
 description = """
 Cocogitto is a set of cli tools for the conventional commit
 and semver specifications.
