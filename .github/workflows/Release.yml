@@ -5,7 +5,7 @@ on:
 
 jobs:
   release:
-    name: Tests
+    name: SemVer release
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -23,6 +23,12 @@ jobs:
         with:
           profile: minimal
           toolchain: stable
+
+      - run: 
+          cargo install cargo-bump
+
+      - run:
+          cargo login ${{secrets.CARGO_TOKEN}}
 
       - name: SemVer release
         uses: cocogitto/cocogitto-action@v2
