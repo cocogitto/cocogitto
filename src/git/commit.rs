@@ -8,7 +8,7 @@ impl Repository {
         let sig = self.0.signature()?;
         let tree_id = self.0.index()?.write_tree()?;
         let tree = self.0.find_tree(tree_id)?;
-        let is_empty = self.0.is_empty()?;
+        let is_empty = self.0.head().is_err();
         let has_delta = self.get_diff(false).is_some();
 
         if !is_empty && has_delta {
@@ -60,6 +60,25 @@ mod test {
         // Assert
         assert_that!(oid).is_ok();
         Ok(())
+    }
+
+    #[sealed_test]
+    fn first_commit_custom_branch() {
+        // Arrange
+        run_cmd! {
+            git init -b main;
+            echo changes > file;
+            git add .;
+        }
+        .expect("could not initialize git repository");
+
+        let repo = Repository::open(".").expect("could not open git repository");
+
+        // Act
+        let oid = repo.commit("feat: a test commit");
+
+        // Assert
+        assert_that!(oid).is_ok();
     }
 
     #[sealed_test]
