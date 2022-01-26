@@ -39,9 +39,9 @@ mod test {
     fn get_diff_some() -> Result<()> {
         // Arrange
         run_cmd!(
-            git init
-            echo changes > file
-            git add .
+            git init;
+            echo changes > file;
+            git add .;
         )?;
 
         let repo = Repository::open(".")?;
@@ -58,8 +58,8 @@ mod test {
     fn get_diff_none() -> Result<()> {
         // Arrange
         run_cmd!(
-            git init
-            echo changes > file
+            git init;
+            echo changes > file;
         )?;
 
         let repo = Repository::open(".")?;
@@ -76,8 +76,8 @@ mod test {
     fn get_diff_include_untracked_some() -> Result<()> {
         // Arrange
         run_cmd!(
-            git init
-            echo changes > file
+            git init;
+            echo changes > file;
         )?;
 
         let repo = Repository::open(".")?;

@@ -379,17 +379,17 @@ mod test {
         // Arrange
         let repo = Repository::init(".")?;
         run_cmd!(
-            git init
-            echo changes > file
-            git add .
+            git init;
+            echo changes > file;
+            git add .;
         )?;
 
         let start = repo.commit("chore: init")?;
 
         run_cmd!(
-            git init
-            echo changes > file2
-            git add .
+            git init;
+            echo changes > file2;
+            git add .;
         )?;
 
         let _end = repo.commit("chore: 1.0.0")?;
@@ -401,9 +401,9 @@ mod test {
             .tag("1.0.0", &head.into_object(), &sig, "the_msg", false)?;
 
         run_cmd!(
-            git init
-            echo changes > file3
-            git add .
+            git init;
+            echo changes > file3;
+            git add .;
         )?;
 
         repo.commit("feat: a commit")?;
@@ -421,17 +421,17 @@ mod test {
         // Arrange
         let repo = Repository::init(".")?;
         run_cmd!(
-            git init
-            echo changes > file
-            git add .
+            git init;
+            echo changes > file;
+            git add .;
         )?;
 
         let start = repo.commit("chore: init")?;
 
         run_cmd!(
-            git init
-            echo changes > file2
-            git add .
+            git init;
+            echo changes > file2;
+            git add .;
         )?;
 
         let _end = repo.commit("chore: 1.0.0")?;
@@ -439,9 +439,9 @@ mod test {
         repo.create_tag("1.0.0")?;
 
         run_cmd!(
-            git init
-            echo changes > file3
-            git add .
+            git init;
+            echo changes > file3;
+            git add .;
         )?;
 
         repo.commit("feat: a commit")?;

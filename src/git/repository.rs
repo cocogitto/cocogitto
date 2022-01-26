@@ -134,9 +134,9 @@ mod test {
     fn get_repo_head_oid_ok() -> Result<()> {
         // Arrange
         run_cmd!(
-            git init
-            echo changes > file
-            git add .
+            git init;
+            echo changes > file;
+            git add .;
         )?;
         let repo = Repository::open(".")?;
         let commit_oid = repo.commit("first commit")?;
@@ -166,9 +166,9 @@ mod test {
     fn get_repo_head_obj_ok() -> Result<()> {
         // Arrange
         run_cmd!(
-            git init
-            echo changes > file
-            git add .
+            git init;
+            echo changes > file;
+            git add .;
         )?;
         let repo = Repository::open(".")?;
         let commit_oid = repo.commit("first commit")?;
@@ -185,9 +185,9 @@ mod test {
     fn get_repo_head_obj_err() -> Result<()> {
         // Arrange
         run_cmd!(
-            git init
-            echo changes > file
-            git add .
+            git init;
+            echo changes > file;
+            git add .;
         )?;
         let repo = Repository::open(".")?;
 
@@ -203,9 +203,9 @@ mod test {
     fn get_head_some() -> Result<()> {
         // Arrange
         run_cmd!(
-            git init
-            echo changes > file
-            git add .
+            git init;
+            echo changes > file;
+            git add .;
         )?;
         let repo = Repository::open(".")?;
 
@@ -223,9 +223,9 @@ mod test {
     fn get_head_none() -> Result<()> {
         // Arrange
         run_cmd!(
-            git init
-            echo changes > file
-            git add .
+            git init;
+            echo changes > file;
+            git add .;
         )?;
 
         let repo = Repository::open(".")?;
@@ -242,9 +242,9 @@ mod test {
     fn get_branch_short_hand() -> Result<()> {
         // Arrange
         run_cmd!(
-            git init
-            echo changes > file
-            git add .
+            git init;
+            echo changes > file;
+            git add .;
         )?;
         let repo = Repository::open(".")?;
         repo.commit("hello one")?;

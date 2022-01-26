@@ -47,9 +47,9 @@ mod test {
     fn create_commit_ok() -> Result<()> {
         // Arrange
         run_cmd!(
-            git init
-            echo changes > file
-            git add .
+            git init;
+            echo changes > file;
+            git add .;
         )?;
 
         let repo = Repository::open(".")?;
@@ -65,11 +65,11 @@ mod test {
     #[sealed_test]
     fn first_commit_custom_branch() {
         // Arrange
-        run_cmd! {
+        run_cmd!(
             git init -b main;
             echo changes > file;
             git add .;
-        }
+        )
         .expect("could not initialize git repository");
 
         let repo = Repository::open(".").expect("could not open git repository");
@@ -98,8 +98,8 @@ mod test {
     fn not_create_empty_commit_with_unstaged_changed() -> Result<()> {
         // Arrange
         run_cmd!(
-            git init
-            echo changes > file
+            git init;
+            echo changes > file;
         )?;
 
         let repo = Repository::open(".")?;
