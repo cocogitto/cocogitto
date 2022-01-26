@@ -180,8 +180,8 @@ mod test {
         // Arrange
         let repo = Repository::init(".")?;
         run_cmd!(
-            git commit -m allow-empty -m "first commit"
-            git tag the_tag
+            git commit -m allow-empty -m "first commit";
+            git tag the_tag;
         )?;
 
         // Act
@@ -197,8 +197,8 @@ mod test {
         // Arrange
         let repo = Repository::init(".")?;
         run_cmd!(
-            git commit -m allow-empty -m "first commit"
-            git tag the_tag
+            git commit -m allow-empty -m "first commit";
+            git tag the_tag;
         )?;
 
         // Act
@@ -214,10 +214,10 @@ mod test {
         // Arrange
         let repo = Repository::init(".")?;
         run_cmd!(
-            git commit -m allow-empty -m "first commit"
-            git tag 0.1.0
-            git commit -m allow-empty -m "second commit"
-            git tag 0.2.0
+            git commit -m allow-empty -m "first commit";
+            git tag 0.1.0;
+            git commit -m allow-empty -m "second commit";
+            git tag 0.2.0;
         )?;
 
         // Act
@@ -249,8 +249,8 @@ mod test {
         // Arrange
         let repo = Repository::init(".")?;
         run_cmd!(
-            git commit -m allow-empty -m "first commit"
-            git tag 0.1.0
+            git commit -m allow-empty -m "first commit";
+            git tag 0.1.0;
         )?;
 
         // Act
