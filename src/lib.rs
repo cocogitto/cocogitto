@@ -5,7 +5,7 @@ use std::io::Write;
 use std::path::Path;
 use std::process::{exit, Command, Stdio};
 
-use anyhow::{anyhow, bail, ensure, Context, Error, Result};
+use anyhow::{anyhow, bail, ensure, Context, Result};
 use colored::*;
 use conventional_commit_parser::commit::{CommitType, ConventionalCommit};
 use conventional_commit_parser::parse_footers;
@@ -256,31 +256,13 @@ impl CocoGitto {
             self.repository.all_commits()?
         };
 
-        let (successes, mut errors): (Vec<_>, Vec<_>) = commit_range
+        let errors: Vec<_> = commit_range
             .commits
             .iter()
             .filter(|commit| !commit.message().unwrap_or("").starts_with("Merge "))
             .map(Commit::from_git_commit)
-            .partition_result();
-
-        let type_errors: Vec<Error> = successes
-            .iter()
-            .map(|commit| {
-                let commit_type = &commit.message.commit_type;
-                match &SETTINGS.commit_types().get(commit_type) {
-                    Some(_) => Ok(()),
-                    None => Err(anyhow!(CocogittoError::CommitTypeNotAllowed {
-                        oid: commit.oid.clone(),
-                        summary: commit.format_summary(),
-                        commit_type: commit.message.commit_type.to_string(),
-                        author: commit.author.clone()
-                    })),
-                }
-            })
             .filter_map(Result::err)
             .collect();
-
-        errors.extend(type_errors);
 
         if errors.is_empty() {
             let msg = "No errored commits".green();

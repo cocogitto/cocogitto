@@ -54,8 +54,7 @@ impl VersionSpan {
         let version = version.to_version()?;
         let latest = latest
             .map(|version| version.to_version())
-            .map(Result::ok)
-            .flatten();
+            .and_then(Result::ok);
 
         // According to the pest grammar, a `version` or `latest_version` token is expected first
         let mut version = match self.tokens.pop_front() {
