@@ -3,6 +3,8 @@ use std::fmt::{self, Formatter};
 
 use crate::error::CocogittoError::CommitFormat;
 
+use crate::error::CocogittoError;
+use crate::SETTINGS;
 use anyhow::{anyhow, Result};
 use chrono::{NaiveDateTime, Utc};
 use colored::*;
@@ -46,12 +48,24 @@ impl Commit {
         let conventional_commit = conventional_commit_parser::parse(message);
 
         match conventional_commit {
-            Ok(message) => Ok(Commit {
-                oid,
-                message,
-                author,
-                date,
-            }),
+            Ok(message) => {
+                let commit = Commit {
+                    oid,
+                    message,
+                    author,
+                    date,
+                };
+
+                match &SETTINGS.commit_types().get(&commit.message.commit_type) {
+                    Some(_) => Ok(commit),
+                    None => Err(anyhow!(CocogittoError::CommitTypeNotAllowed {
+                        oid: commit.oid.to_string(),
+                        summary: commit.format_summary(),
+                        commit_type: commit.message.commit_type.to_string(),
+                        author: commit.author
+                    })),
+                }
+            }
             Err(cause) => {
                 let message = git2_message.trim_end();
                 let summary = Commit::short_summary_from_str(message);
@@ -218,9 +232,13 @@ mod test {
     use crate::conventional::commit::{verify, Commit};
 
     use chrono::NaiveDateTime;
+    use cmd_lib::run_fun;
 
+    use crate::Repository;
     use conventional_commit_parser::commit::{CommitType, ConventionalCommit, Footer, Separator};
+    use git2::Oid;
     use indoc::indoc;
+    use sealed_test::prelude::*;
     use speculoos::prelude::*;
 
     #[test]
@@ -371,5 +389,68 @@ mod test {
 
         // Assert
         assert_that!(summary).is_equal_to("fix: this is the message".to_string());
+    }
+
+    #[sealed_test]
+    fn should_map_conventional_commit() {
+        // Arrange
+        let oid = run_fun!(
+            git init;
+            git commit --allow-empty -q -m "feat: a commit";
+            git log --format=%H -n 1;
+        )
+        .unwrap();
+
+        let oid = Oid::from_str(&oid).unwrap();
+        let repo = Repository::open(".").unwrap();
+        let commit = repo.0.find_commit(oid).expect("Unable to find commit");
+
+        // Act
+        let commit = Commit::from_git_commit(&commit);
+
+        // Assert
+        assert_that!(commit).is_ok();
+    }
+
+    #[sealed_test]
+    fn map_conventional_commit_should_fail_with_invalid_type() {
+        // Arrange
+        let oid_str = run_fun!(
+            git init;
+            git commit --allow-empty -q -m "toto: a commit";
+            git log --format=%H -n 1;
+        )
+        .unwrap();
+
+        let oid = Oid::from_str(&oid_str).unwrap();
+        let repo = Repository::open(".").unwrap();
+        let commit = repo.0.find_commit(oid).expect("Unable to find commit");
+
+        // Act
+        let commit = Commit::from_git_commit(&commit);
+
+        // Assert
+        assert_that!(commit).is_err();
+    }
+
+    #[sealed_test]
+    fn map_conventional_commit_should_fail() {
+        // Arrange
+        let oid_str = run_fun!(
+            git init;
+            git commit --allow-empty -q -m "a commit";
+            git log --format=%H -n 1;
+        )
+        .unwrap();
+
+        let oid = Oid::from_str(&oid_str).unwrap();
+        let repo = Repository::open(".").unwrap();
+        let commit = repo.0.find_commit(oid).expect("Unable to find commit");
+
+        // Act
+        let commit = Commit::from_git_commit(&commit);
+
+        // Assert
+        assert_that!(commit).is_err();
     }
 }
