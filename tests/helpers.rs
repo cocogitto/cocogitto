@@ -25,8 +25,9 @@ pub fn git_init_and_set_current_path(path: &str) -> Result<()> {
     init_builtin_logger();
     run_cmd!(
         git init $path;
-        git config --local user.name Tom;
-        git config --local user.email toml.bombadil@themail.org;
+        cd $path;
+        git config --local user.name "Tom";
+        git config --local user.email "toml.bombadil@themail.org";
     )?;
 
     std::env::set_current_dir(path).expect("Unable to move into to test repository");
@@ -42,7 +43,9 @@ pub fn git_add<S: AsRef<Path>>(content: &str, path: S) -> Result<()>
 where
     S: ToString,
 {
+    let path = path.to_string();
     run_cmd!(
+        info writing $content to $path;
         echo $content > $path;
         git add $path;
     )
@@ -65,7 +68,7 @@ pub fn git_tag(tag: &str) -> Result<()> {
 }
 
 pub fn assert_tag(tag: &str) -> Result<()> {
-    let tags = run_fun!(git --no_pager tag)?;
+    let tags = run_fun!(git --no-pager tag)?;
     let tags: Vec<&str> = tags.split('\n').collect();
     assert_that!(tags).contains(&tag);
     Ok(())

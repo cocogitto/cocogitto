@@ -420,6 +420,7 @@ mod test {
     fn get_tag_commits() -> Result<()> {
         // Arrange
         let repo = Repository::init(".")?;
+
         run_cmd!(
             git init;
             echo changes > file;
@@ -429,22 +430,10 @@ mod test {
         let start = repo.commit("chore: init")?;
 
         run_cmd!(
-            git init;
-            echo changes > file2;
-            git add .;
+            git commit --allow-empty -m "chore: 1.0.0";
+            git tag 1.0.0;
+            git commit --allow-empty -m "feat: a commit";
         )?;
-
-        let _end = repo.commit("chore: 1.0.0")?;
-
-        repo.create_tag("1.0.0")?;
-
-        run_cmd!(
-            git init;
-            echo changes > file3;
-            git add .;
-        )?;
-
-        repo.commit("feat: a commit")?;
 
         // Act
         let commit_range = repo.get_commit_range(&RevspecPattern::from("..1.0.0"))?;

@@ -29,13 +29,11 @@ fn init_empty_repo_in_target_dir() -> Result<()> {
 fn init_existing_repo() -> Result<()> {
     // Arrange
     git_init_and_set_current_path("test_repo_existing")?;
-    assert_that!(Path::new("test_repo_existing")).exists();
     git_commit("chore: test commit")?;
 
     // Act
     Command::cargo_bin("cog")?
         .arg("init")
-        .arg("test_repo_existing")
         // Assert
         .assert()
         .success();
@@ -46,10 +44,7 @@ fn init_existing_repo() -> Result<()> {
 fn fail_if_config_exist() -> Result<()> {
     // Arrange
     git_init_and_set_current_path("test_repo_existing")?;
-    std::fs::write(
-        PathBuf::from_str("test_repo_existing")?.join(CONFIG_PATH),
-        "[hooks]",
-    )?;
+    std::fs::write(PathBuf::from_str(CONFIG_PATH)?, "[hooks]")?;
     git_commit("chore: test commit")?;
 
     // Act

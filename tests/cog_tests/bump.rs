@@ -216,9 +216,8 @@ fn pre_release_bump() -> Result<()> {
 #[cfg(target_os = "linux")]
 fn bump_with_hook() -> Result<()> {
     // Arrange
-    git_add(r#"pre_bump_hooks = ["touch {{version}}"]"#, "cog.toml")?;
-
     git_init()?;
+    git_add(r#"pre_bump_hooks = ["touch {{version}}"]"#, "cog.toml")?;
     git_commit("chore: init")?;
     git_tag("1.0.0")?;
     git_commit("feat: feature")?;
