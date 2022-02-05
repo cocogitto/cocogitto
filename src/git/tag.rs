@@ -180,7 +180,7 @@ mod test {
         // Arrange
         let repo = Repository::init(".")?;
         run_cmd!(
-            git commit -m allow-empty -m "first commit";
+            git commit --allow-empty -m "first commit";
             git tag the_tag;
         )?;
 
@@ -197,7 +197,7 @@ mod test {
         // Arrange
         let repo = Repository::init(".")?;
         run_cmd!(
-            git commit -m allow-empty -m "first commit";
+            git commit --allow-empty -m "first commit";
             git tag the_tag;
         )?;
 
@@ -214,9 +214,9 @@ mod test {
         // Arrange
         let repo = Repository::init(".")?;
         run_cmd!(
-            git commit -m allow-empty -m "first commit";
+            git commit --allow-empty -m "first commit";
             git tag 0.1.0;
-            git commit -m allow-empty -m "second commit";
+            git commit --allow-empty -m "second commit";
             git tag 0.2.0;
         )?;
 
@@ -233,7 +233,7 @@ mod test {
         // Arrange
         let repo = Repository::init(".")?;
         run_cmd!(
-            git commit -m allow-empty -m "first commit"
+            git commit --allow-empty -m "first commit"
         )?;
 
         // Act
@@ -249,7 +249,7 @@ mod test {
         // Arrange
         let repo = Repository::init(".")?;
         run_cmd!(
-            git commit -m allow-empty -m "first commit";
+            git commit --allow-empty -m "first commit";
             git tag 0.1.0;
         )?;
 
@@ -265,7 +265,7 @@ mod test {
     fn get_latest_tag_oid_err() -> Result<()> {
         // Arrange
         let repo = Repository::init(".")?;
-        run_cmd!(git commit -m allow-empty -m "first commit")?;
+        run_cmd!(git commit --allow-empty -m "first commit")?;
 
         // Act
         let tag = repo.get_latest_tag_oid();

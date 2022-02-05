@@ -1175,9 +1175,9 @@ checksum = "dcf128d1287d2ea9d80910b5f1120d0b8eede3fbf1abe91c40d39ea7d51e6fda"
 
 [[package]]
 name = "rusty-forkfork"
-version = "0.3.0"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b789de952aa213581071c4952d671ded68e7ac416bff70460d425595c1e0d855"
+checksum = "7ce85af4dfa2fb0c0143121ab5e424c71ea693867357c9159b8777b59984c218"
 dependencies = [
  "fnv",
  "quick-error",
@@ -1202,9 +1202,9 @@ dependencies = [
 
 [[package]]
 name = "sealed_test"
-version = "0.1.0"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2948f803c74b0311ca9587f2ec6aa61e82a773a53a23b1ca05293c8f91b88b4e"
+checksum = "58ca545976ef76ffde6109fd23b302704c1074456b16d6c72daa6a6517faac21"
 dependencies = [
  "rusty-forkfork",
  "sealed_test_derive",
