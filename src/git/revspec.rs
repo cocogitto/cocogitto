@@ -71,9 +71,10 @@ impl Repository {
         revwalk.push_head()?;
         let mut commits = vec![];
 
-        for oid in revwalk {
-            let commit = self.0.find_commit(oid?)?;
-            commits.push(commit);
+        for oid in revwalk.flatten() {
+            if let Ok(commit) = self.0.find_commit(oid) {
+                commits.push(commit);
+            }
         }
 
         let from = commits
@@ -183,9 +184,7 @@ impl Repository {
         let to = maybe_to_tag
             .map(OidOf::Tag)
             .unwrap_or_else(|| OidOf::Other(to));
-
         let commits = self.get_commit_range_from_spec(&spec)?;
-
         Ok(CommitRange { from, to, commits })
     }
 
@@ -218,8 +217,7 @@ impl Repository {
 
         let mut commits: Vec<Commit> = vec![];
 
-        for oid in revwalk {
-            let oid = oid?;
+        for oid in revwalk.flatten() {
             let commit = self.0.find_commit(oid)?;
             commits.push(commit);
         }

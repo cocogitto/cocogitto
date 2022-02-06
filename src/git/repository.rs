@@ -47,9 +47,9 @@ impl Repository {
         let mut revwalk = self.0.revwalk()?;
         revwalk.push_head()?;
         revwalk
+            .flatten()
             .last()
-            .ok_or_else(|| anyhow!("Could not find commit"))?
-            .map_err(|err| anyhow!(err))
+            .ok_or_else(|| anyhow!("Could not find first commit"))
     }
 
     pub(crate) fn get_head(&self) -> Option<Object> {
