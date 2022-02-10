@@ -1,10 +1,9 @@
-use crate::error::CocogittoError;
+use crate::git::error::Git2Error;
 use crate::git::repository::Repository;
-use anyhow::{anyhow, Result};
 use git2::Oid;
 
 impl Repository {
-    pub(crate) fn commit(&self, message: &str) -> Result<Oid> {
+    pub(crate) fn commit(&self, message: &str) -> Result<Oid, Git2Error> {
         let sig = self.0.signature()?;
         let tree_id = self.0.index()?.write_tree()?;
         let tree = self.0.find_tree(tree_id)?;
@@ -18,19 +17,17 @@ impl Repository {
 
             self.0
                 .commit(Some("HEAD"), &sig, &sig, message, &tree, &[tip])
-                .map_err(|err| anyhow!(err))
+                .map_err(Git2Error::from)
         } else if is_empty && has_delta {
             // First repo commit
             self.0
                 .commit(Some("HEAD"), &sig, &sig, message, &tree, &[])
-                .map_err(|err| anyhow!(err))
+                .map_err(Git2Error::from)
         } else {
-            let err = self
+            Err(self
                 .get_branch_shorthand()
-                .map(|branch| CocogittoError::NothingToCommitWithBranch { branch })
-                .unwrap_or_else(|| CocogittoError::NothingToCommit);
-
-            Err(anyhow!(err))
+                .map(|branch| Git2Error::NothingToCommitWithBranch { branch })
+                .unwrap_or_else(|| Git2Error::NothingToCommit))
         }
     }
 }

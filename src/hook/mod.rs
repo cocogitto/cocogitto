@@ -1,3 +1,4 @@
+mod error;
 mod parser;
 
 use std::collections::VecDeque;

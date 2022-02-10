@@ -1,5 +1,4 @@
-use anyhow::bail;
-use anyhow::Result;
+use crate::conventional::changelog::error::ChangelogError;
 use std::io;
 use std::path::PathBuf;
 
@@ -17,7 +16,7 @@ pub struct Template {
 }
 
 impl Template {
-    pub fn from_arg(value: &str, context: Option<RemoteContext>) -> Result<Self> {
+    pub fn from_arg(value: &str, context: Option<RemoteContext>) -> Result<Self, ChangelogError> {
         let template = TemplateKind::from_arg(value)?;
 
         Ok(Template {
@@ -43,7 +42,7 @@ impl Default for TemplateKind {
 
 impl TemplateKind {
     /// Returns either a predefined template or a custom template
-    fn from_arg(value: &str) -> Result<Self> {
+    fn from_arg(value: &str) -> Result<Self, ChangelogError> {
         match value {
             DEFAULT_TEMPLATE_NAME => Ok(TemplateKind::Default),
             REMOTE_TEMPLATE_NAME => Ok(TemplateKind::Remote),
@@ -51,7 +50,7 @@ impl TemplateKind {
             path => {
                 let path = PathBuf::from(path);
                 if !path.exists() {
-                    bail!("Changelog template not found at {:?}", path);
+                    return Err(ChangelogError::TemplateNotFound(path));
                 }
 
                 Ok(TemplateKind::Custom(path))

@@ -2,6 +2,7 @@ use std::collections::VecDeque;
 
 use crate::hook::{HookSpan, VersionSpan};
 
+use crate::hook::error::HookParseError;
 use pest::iterators::{Pair, Pairs};
 use pest::Parser;
 use pest_derive::Parser as ParserDerive;
@@ -25,7 +26,7 @@ pub enum Token {
     BuildMetadata(semver::BuildMetadata),
 }
 
-pub fn parse(hook: &str) -> anyhow::Result<HookSpan> {
+pub fn parse(hook: &str) -> Result<HookSpan, HookParseError> {
     let pairs = HookDslParser::parse(Rule::version_dsl, hook)?
         .next()
         .unwrap();
@@ -45,7 +46,7 @@ pub fn parse(hook: &str) -> anyhow::Result<HookSpan> {
     Ok(span)
 }
 
-fn parse_version(pair: Pair<Rule>) -> anyhow::Result<VersionSpan> {
+fn parse_version(pair: Pair<Rule>) -> Result<VersionSpan, HookParseError> {
     let mut tokens = VecDeque::new();
 
     let start = pair.as_span().start();
@@ -76,7 +77,10 @@ fn parse_version(pair: Pair<Rule>) -> anyhow::Result<VersionSpan> {
     })
 }
 
-fn parse_operator(tokens: &mut VecDeque<Token>, pairs: Pairs<'_, Rule>) -> anyhow::Result<()> {
+fn parse_operator(
+    tokens: &mut VecDeque<Token>,
+    pairs: Pairs<'_, Rule>,
+) -> Result<(), HookParseError> {
     for pair in pairs {
         match pair.as_rule() {
             Rule::add => tokens.push_back(Token::Add),

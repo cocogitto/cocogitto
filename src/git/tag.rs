@@ -1,7 +1,6 @@
+use crate::git::error::{Git2Error, TagError};
 use crate::git::repository::Repository;
-use crate::{error::CocogittoError, SETTINGS};
-use anyhow::{anyhow, ensure, Result};
-use colored::Colorize;
+use crate::SETTINGS;
 use git2::string_array::StringArray;
 use git2::Oid;
 use git2::Tag as Git2Tag;
@@ -15,13 +14,8 @@ impl Repository {
     /// Given a tag name return a [`Tag`], this will fail if the requested
     /// tag (without configured prefix) is not semver compliant or if the tag
     /// does not exist.
-    pub fn resolve_tag(&self, tag: &str) -> Result<Tag> {
-        let without_prefix = match SETTINGS.tag_prefix.as_ref() {
-            None => Ok(tag),
-            Some(prefix) => tag
-                .strip_prefix(prefix)
-                .ok_or_else(|| anyhow!("Expected a tag with prefix {}, got {}", prefix, tag)),
-        }?;
+    pub fn resolve_tag(&self, tag: &str) -> Result<Tag, TagError> {
+        let without_prefix = Tag::strip_prefix(tag)?;
 
         // Ensure the tag is SemVer compliant
         Version::parse(without_prefix)?;
@@ -30,46 +24,34 @@ impl Repository {
     }
 
     /// Resolve a tag from a given `&str`, return an error if the tag is not found.
-    pub fn resolve_lightweight_tag(&self, tag: &str) -> Result<Tag> {
+    fn resolve_lightweight_tag(&self, tag: &str) -> Result<Tag, TagError> {
         self.0
             .resolve_reference_from_short_name(tag)
+            .map_err(|err| TagError::not_found(tag, err))
             .map(|reference| reference.target().unwrap())
             .map(|oid| Tag::new(tag, Some(oid)))?
     }
 
-    pub(crate) fn create_tag(&self, name: &str) -> Result<()> {
-        ensure!(
-            self.get_diff(true).is_none(),
-            "{}{}",
-            self.get_statuses()?,
-            "Cannot create tag: changes need to be committed".red()
-        );
+    pub(crate) fn create_tag(&self, name: &str) -> Result<(), Git2Error> {
+        if self.get_diff(true).is_some() {
+            let statuses = self.get_statuses()?;
+            return Err(Git2Error::ChangesNeedToBeCommitted(statuses));
+        }
 
         let head = self.get_head_commit().unwrap();
         self.0
             .tag_lightweight(name, &head.into_object(), false)
             .map(|_| ())
-            .map_err(|err| {
-                let cause_key = "cause:".red();
-                anyhow!(CocogittoError::Git {
-                    level: "Git error".to_string(),
-                    cause: format!("{} {}", cause_key, err.message())
-                })
-            })
+            .map_err(Git2Error::from)
     }
 
-    pub(crate) fn get_latest_tag(&self) -> Result<Tag> {
+    pub(crate) fn get_latest_tag(&self) -> Result<Tag, TagError> {
         let tags: Vec<Tag> = self.all_tags()?;
 
-        let latest_tag: Option<&Tag> = tags.iter().max();
-
-        match latest_tag {
-            Some(tag) => Ok(tag.to_owned()),
-            None => Err(anyhow!("Unable to get any tag")),
-        }
+        tags.into_iter().max().ok_or(TagError::NoTag)
     }
 
-    pub(crate) fn all_tags(&self) -> Result<Vec<Tag>> {
+    pub(crate) fn all_tags(&self) -> Result<Vec<Tag>, TagError> {
         Ok(self
             .tags()?
             .iter()
@@ -79,13 +61,12 @@ impl Repository {
             .collect())
     }
 
-    pub(crate) fn get_latest_tag_oid(&self) -> Result<Oid> {
+    pub(crate) fn get_latest_tag_oid(&self) -> Result<Oid, TagError> {
         self.get_latest_tag()
             .map(|tag| tag.oid_unchecked().to_owned())
-            .map_err(|err| anyhow!("Could not resolve latest tag:{}", err))
     }
 
-    fn tags(&self) -> Result<StringArray> {
+    fn tags(&self) -> Result<StringArray, TagError> {
         let pattern = SETTINGS
             .tag_prefix
             .as_ref()
@@ -93,7 +74,7 @@ impl Repository {
 
         self.0
             .tag_names(pattern.as_deref())
-            .map_err(|err| anyhow!("{}", err))
+            .map_err(|err| TagError::NoMatchFound { pattern, err })
     }
 }
 
@@ -104,7 +85,7 @@ pub struct Tag {
 }
 
 impl TryFrom<Git2Tag<'_>> for Tag {
-    type Error = anyhow::Error;
+    type Error = TagError;
 
     fn try_from(tag: Git2Tag) -> std::result::Result<Self, Self::Error> {
         let name = tag.name().expect("Unexpected unnamed tag");
@@ -125,26 +106,31 @@ impl Tag {
         self.oid.as_ref()
     }
 
-    pub(crate) fn new(name: &str, oid: Option<Oid>) -> Result<Tag> {
-        let tag = match SETTINGS.tag_prefix.as_ref() {
-            None => Ok(name),
-            Some(prefix) => name
-                .strip_prefix(prefix)
-                .ok_or_else(|| anyhow!("Expected a tag with prefix {}, got {}", prefix, name)),
-        }?
-        .to_string();
-
+    pub(crate) fn new(name: &str, oid: Option<Oid>) -> Result<Tag, TagError> {
+        let tag = Tag::strip_prefix(name)?.to_string();
         Ok(Tag { tag, oid })
-    }
-
-    pub(crate) fn to_version(&self) -> Result<Version> {
-        Version::parse(&self.tag).map_err(|err| anyhow!("{}", err))
     }
 
     pub(crate) fn to_string_with_prefix(&self) -> String {
         match SETTINGS.tag_prefix.as_ref() {
             None => self.tag.to_string(),
             Some(prefix) => format!("{}{}", prefix, self.tag),
+        }
+    }
+
+    pub(crate) fn to_version(&self) -> Result<Version, TagError> {
+        Version::parse(&self.tag).map_err(<_>::into)
+    }
+
+    fn strip_prefix(tag: &str) -> Result<&str, TagError> {
+        match SETTINGS.tag_prefix.as_ref() {
+            None => Ok(tag),
+            Some(prefix) => tag
+                .strip_prefix(prefix)
+                .ok_or(TagError::InvalidPrefixError {
+                    prefix: prefix.to_string(),
+                    tag: tag.to_string(),
+                }),
         }
     }
 }

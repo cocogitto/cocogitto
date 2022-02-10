@@ -1,11 +1,10 @@
 use std::fmt;
 use std::fmt::Formatter;
 
-use anyhow::anyhow;
-use anyhow::Result;
 use git2::{Commit, Oid};
 
 use crate::conventional::changelog::release::Release;
+use crate::git::error::Git2Error;
 use crate::git::oid::OidOf;
 use crate::git::repository::Repository;
 use crate::git::tag::Tag;
@@ -66,7 +65,7 @@ impl From<(&str, &str)> for RevspecPattern {
 
 impl Repository {
     /// Return a [`CommitRange`] containing all commit in the current repository
-    pub fn all_commits(&self) -> Result<CommitRange> {
+    pub fn all_commits(&self) -> Result<CommitRange, Git2Error> {
         let mut revwalk = self.0.revwalk()?;
         revwalk.push_head()?;
         let mut commits = vec![];
@@ -76,22 +75,22 @@ impl Repository {
             commits.push(commit);
         }
 
-        let from = commits
+        let to = commits
             .first()
             .map(|commit| commit.id())
-            .map(OidOf::Other)
+            .map(OidOf::Head)
             .expect("No commit found");
 
-        let to = commits
+        let from = commits
             .last()
             .map(|commit| commit.id())
-            .map(OidOf::Head)
+            .map(OidOf::Other)
             .expect("No commit found");
 
         Ok(CommitRange { from, to, commits })
     }
 
-    pub(crate) fn get_release_range(&self, pattern: RevspecPattern) -> Result<Release> {
+    pub(crate) fn get_release_range(&self, pattern: RevspecPattern) -> Result<Release, Git2Error> {
         let target = if let Some(target) = pattern.from {
             self.resolve_oid_of(&target)
         } else {
@@ -113,7 +112,7 @@ impl Repository {
         &'a self,
         mut release: Release<'a>,
         target: &Oid,
-    ) -> Result<Release<'a>> {
+    ) -> Result<Release<'a>, Git2Error> {
         let pattern = format!("..{}", release.from);
         let pattern = RevspecPattern::from(pattern.as_str());
         let range = self.get_commit_range(&pattern)?;
@@ -138,7 +137,7 @@ impl Repository {
     /// Return a commit range
     /// `from` : either a tag or an oid, latest tag if none, fallbacks to first commit
     /// `to`: HEAD if none
-    pub fn get_commit_range(&self, pattern: &RevspecPattern) -> Result<CommitRange> {
+    pub fn get_commit_range(&self, pattern: &RevspecPattern) -> Result<CommitRange, Git2Error> {
         let from = pattern.from.as_deref();
         let to = pattern.to.as_deref();
 
@@ -211,7 +210,7 @@ impl Repository {
             })
     }
 
-    fn get_commit_range_from_spec(&self, spec: &str) -> Result<Vec<Commit>> {
+    fn get_commit_range_from_spec(&self, spec: &str) -> Result<Vec<Commit>, Git2Error> {
         let mut revwalk = self.0.revwalk()?;
 
         revwalk.push_range(spec)?;
@@ -228,7 +227,7 @@ impl Repository {
     }
 
     // Hide all commit after `starting_point` and get the closest tag
-    fn get_latest_tag_starting_from(&self, starting_point: Oid) -> Result<Tag> {
+    fn get_latest_tag_starting_from(&self, starting_point: Oid) -> Result<Tag, Git2Error> {
         let starting_point = self.0.find_commit(starting_point)?;
         let starting_point = starting_point.parent(0)?;
         let first_commit = self.get_first_commit()?;
@@ -270,10 +269,7 @@ impl Repository {
 
         let latest_tag: Option<Tag> = tags.into_iter().max();
 
-        match latest_tag {
-            Some(tag) => Ok(tag),
-            None => Err(anyhow!("Unable to get any tag")),
-        }
+        latest_tag.ok_or(Git2Error::NoTagFound)
     }
 }
 

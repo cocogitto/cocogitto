@@ -1,14 +1,14 @@
+use crate::git::error::Git2Error;
 use crate::git::repository::Repository;
-use anyhow::{anyhow, Result};
 
 impl Repository {
-    pub(crate) fn stash_failed_version(&mut self, version: &str) -> Result<()> {
+    pub(crate) fn stash_failed_version(&mut self, version: &str) -> Result<(), Git2Error> {
         let sig = self.0.signature()?;
         let message = &format!("cog_bump_{}", version);
         self.0
             .stash_save(&sig, message, None)
             .map(|_| ())
-            .map_err(|err| anyhow!(err))
+            .map_err(Git2Error::StashError)
     }
 }
 

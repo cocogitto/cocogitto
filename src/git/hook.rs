@@ -1,4 +1,5 @@
 use std::fs::{self, Permissions};
+use std::io;
 #[cfg(target_family = "unix")]
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
@@ -39,7 +40,7 @@ impl CocoGitto {
     }
 }
 
-fn create_hook(path: &Path, kind: HookKind) -> Result<()> {
+fn create_hook(path: &Path, kind: HookKind) -> io::Result<()> {
     let (hook_path, hook_content) = match kind {
         HookKind::PrepareCommit => (path.join(PRE_COMMIT_HOOK_PATH), PREPARE_COMMIT_HOOK),
         HookKind::PrePush => (path.join(PRE_PUSH_HOOK_PATH), PRE_PUSH_HOOK),

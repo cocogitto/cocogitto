@@ -1,8 +1,7 @@
 use std::fmt::{Debug, Formatter};
 use std::path::Path;
 
-use anyhow::{anyhow, Result};
-
+use crate::git::error::Git2Error;
 use git2::{
     Commit as Git2Commit, IndexAddOption, Object, ObjectType, Oid, Repository as Git2Repository,
 };
@@ -10,12 +9,14 @@ use git2::{
 pub(crate) struct Repository(pub(crate) Git2Repository);
 
 impl Repository {
-    pub(crate) fn init<S: AsRef<Path> + ?Sized>(path: &S) -> Result<Repository> {
-        Ok(Repository(Git2Repository::init(&path)?))
+    pub(crate) fn init<S: AsRef<Path> + ?Sized>(path: &S) -> Result<Repository, Git2Error> {
+        let repository =
+            Git2Repository::init(&path).map_err(Git2Error::FailedToInitializeRepository)?;
+        Ok(Repository(repository))
     }
 
-    pub(crate) fn open<S: AsRef<Path> + ?Sized>(path: &S) -> Result<Repository> {
-        let repo = Git2Repository::discover(&path)?;
+    pub(crate) fn open<S: AsRef<Path> + ?Sized>(path: &S) -> Result<Repository, Git2Error> {
+        let repo = Git2Repository::discover(&path).map_err(Git2Error::FailedToOpenRepository)?;
         Ok(Repository(repo))
     }
 
@@ -23,33 +24,31 @@ impl Repository {
         self.0.workdir()
     }
 
-    pub(crate) fn add_all(&self) -> Result<()> {
+    pub(crate) fn add_all(&self) -> Result<(), Git2Error> {
         let mut index = self.0.index()?;
         index.add_all(["*"], IndexAddOption::DEFAULT, None)?;
-        index.write().map_err(|err| anyhow!(err))
+        index.write().map_err(Git2Error::GitAddError)
     }
 
-    pub(crate) fn get_head_commit_oid(&self) -> Result<Oid> {
+    pub(crate) fn get_head_commit_oid(&self) -> Result<Oid, Git2Error> {
         self.get_head_commit().map(|commit| commit.id())
     }
 
-    pub(crate) fn get_head_commit(&self) -> Result<Git2Commit> {
+    pub(crate) fn get_head_commit(&self) -> Result<Git2Commit, Git2Error> {
         let head_ref = self.0.head();
         match head_ref {
-            Ok(head) => head
-                .peel_to_commit()
-                .map_err(|err| anyhow!("Could not peel head to commit {}", err)),
-            Err(err) => Err(anyhow!("Repo as not HEAD:{}", err)),
+            Ok(head) => head.peel_to_commit().map_err(Git2Error::PeelToCommitError),
+            Err(err) => Err(Git2Error::UnableToGetHead(err)),
         }
     }
 
-    pub(crate) fn get_first_commit(&self) -> Result<Oid> {
+    pub(crate) fn get_first_commit(&self) -> Result<Oid, Git2Error> {
         let mut revwalk = self.0.revwalk()?;
         revwalk.push_head()?;
         revwalk
             .last()
-            .ok_or_else(|| anyhow!("Could not find commit"))?
-            .map_err(|err| anyhow!(err))
+            .expect("No revision found")
+            .map_err(Git2Error::CommitNotFound)
     }
 
     pub(crate) fn get_head(&self) -> Option<Object> {
@@ -65,12 +64,12 @@ impl Repository {
             .and_then(|head| head.shorthand().map(|shorthand| shorthand.to_string()))
     }
 
-    pub(crate) fn get_author(&self) -> Result<String> {
+    pub(crate) fn get_author(&self) -> Result<String, Git2Error> {
         self.0
             .signature()?
             .name()
             .map(|name| name.to_string())
-            .ok_or_else(|| anyhow!("Cannot get committer name"))
+            .ok_or(Git2Error::CommitterNotFound)
     }
 
     fn tree_to_treeish<'a>(
