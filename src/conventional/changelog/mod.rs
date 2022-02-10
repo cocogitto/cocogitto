@@ -1,10 +1,12 @@
 use crate::conventional::changelog::release::Release;
 use crate::conventional::changelog::renderer::Renderer;
 
+use crate::conventional::changelog::error::ChangelogError;
 use crate::conventional::changelog::template::Template;
 use std::fs;
 use std::path::Path;
 
+mod error;
 pub(crate) mod release;
 pub(crate) mod renderer;
 pub(crate) mod serde;
@@ -25,7 +27,11 @@ impl Release<'_> {
         renderer.render(self)
     }
 
-    pub fn write_to_file<S: AsRef<Path>>(self, path: S, template: Template) -> anyhow::Result<()> {
+    pub fn write_to_file<S: AsRef<Path>>(
+        self,
+        path: S,
+        template: Template,
+    ) -> Result<(), ChangelogError> {
         let renderer = Renderer::try_new(template)?;
         let changelog = renderer.render(self)?;
 
@@ -45,9 +51,8 @@ impl Release<'_> {
 
             Ok(())
         } else {
-            Err(anyhow::anyhow!(
-                "Cannot find default separator '- - -' in {}",
-                path.as_ref().display()
+            Err(ChangelogError::SeparatorNotFound(
+                path.as_ref().to_path_buf(),
             ))
         }
     }

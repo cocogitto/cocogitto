@@ -1,11 +1,8 @@
 use std::cmp::Ordering;
 use std::fmt::{self, Formatter};
 
-use crate::error::CocogittoError::CommitFormat;
-
-use crate::error::CocogittoError;
+use crate::conventional::error::ConventionalCommitError;
 use crate::SETTINGS;
-use anyhow::{anyhow, Result};
 use chrono::{NaiveDateTime, Utc};
 use colored::*;
 use conventional_commit_parser::commit::ConventionalCommit;
@@ -35,7 +32,7 @@ impl CommitConfig {
 }
 
 impl Commit {
-    pub(crate) fn from_git_commit(commit: &Git2Commit) -> Result<Self> {
+    pub(crate) fn from_git_commit(commit: &Git2Commit) -> Result<Self, ConventionalCommitError> {
         let oid = commit.id().to_string();
 
         let commit = commit.to_owned();
@@ -58,24 +55,24 @@ impl Commit {
 
                 match &SETTINGS.commit_types().get(&commit.message.commit_type) {
                     Some(_) => Ok(commit),
-                    None => Err(anyhow!(CocogittoError::CommitTypeNotAllowed {
+                    None => Err(ConventionalCommitError::CommitTypeNotAllowed {
                         oid: commit.oid.to_string(),
                         summary: commit.format_summary(),
                         commit_type: commit.message.commit_type.to_string(),
-                        author: commit.author
-                    })),
+                        author: commit.author,
+                    }),
                 }
             }
             Err(cause) => {
                 let message = git2_message.trim_end();
                 let summary = Commit::short_summary_from_str(message);
 
-                Err(anyhow!(CommitFormat {
+                Err(ConventionalCommitError::CommitFormat {
                     oid,
                     summary,
                     author,
-                    cause
-                }))
+                    cause,
+                })
             }
         }
     }

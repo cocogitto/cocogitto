@@ -17,7 +17,7 @@ use tempfile::TempDir;
 
 use conventional::commit::{verify, Commit, CommitConfig};
 use conventional::version::VersionIncrement;
-use error::{CocogittoError, CogCheckReport, PreHookError};
+use error::{CogCheckReport, PreHookError};
 use git::repository::Repository;
 use hook::Hook;
 use log::filter::CommitFilters;
@@ -125,7 +125,7 @@ impl CocoGitto {
     }
 
     pub fn get_committer(&self) -> Result<String> {
-        self.repository.get_author()
+        self.repository.get_author().map_err(|err| anyhow!(err))
     }
 
     pub fn get_repo_tag_name(&self) -> Option<String> {
@@ -423,7 +423,7 @@ impl CocoGitto {
         };
 
         let mut next_version = increment
-            .bump(&current_version)
+            .bump(&current_version, &self.repository)
             .map_err(|err| anyhow!("Cannot bump version: {}", err))?;
 
         if next_version.le(&current_version) || next_version.eq(&current_version) {
@@ -434,10 +434,7 @@ impl CocoGitto {
                 cause_key, comparison
             );
 
-            bail!(CocogittoError::Semver {
-                level: "SemVer Error".red().to_string(),
-                cause
-            });
+            bail!("{}:\n\t{cause}\n", "SemVer Error".red().to_string());
         };
 
         if let Some(pre_release) = pre_release {
@@ -560,7 +557,9 @@ impl CocoGitto {
         with_child_releases: bool,
     ) -> Result<Release> {
         if with_child_releases {
-            self.repository.get_release_range(pattern)
+            self.repository
+                .get_release_range(pattern)
+                .map_err(<_>::into)
         } else {
             let commit_range = self.repository.get_commit_range(&pattern).map_err(|err| {
                 anyhow!(

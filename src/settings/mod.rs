@@ -6,13 +6,15 @@ use crate::git::repository::Repository;
 use crate::{CommitsMetadata, CONFIG_PATH, SETTINGS};
 
 use crate::conventional::changelog::template::{RemoteContext, Template};
-use anyhow::{anyhow, Result};
+use crate::settings::error::SettingError;
 use config::{Config, File};
 use conventional_commit_parser::commit::CommitType;
 use serde::{Deserialize, Serialize};
 
 type CommitsMetadataSettings = HashMap<String, CommitConfig>;
 pub(crate) type AuthorSettings = Vec<AuthorSetting>;
+
+mod error;
 
 #[derive(Copy, Clone)]
 pub enum HookType {
@@ -93,15 +95,15 @@ pub struct BumpProfile {
 
 impl Settings {
     // Fails only if config exists and is malformed
-    pub(crate) fn get(repository: &Repository) -> Result<Self> {
+    pub(crate) fn get(repository: &Repository) -> Result<Self, SettingError> {
         match repository.get_repo_dir() {
             Some(repo_path) => {
                 let settings_path = repo_path.join(CONFIG_PATH);
                 if settings_path.exists() {
                     let mut s = Config::new();
-                    s.merge(File::from(settings_path))?;
-                    s.try_into()
-                        .map_err(|err| anyhow!("Config format error:{}", err))
+                    s.merge(File::from(settings_path))
+                        .map_err(SettingError::from)?;
+                    s.try_into().map_err(SettingError::from)
                 } else {
                     Ok(Settings::default())
                 }

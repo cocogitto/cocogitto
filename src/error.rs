@@ -2,107 +2,13 @@ use std::fmt::{self, Debug, Display, Formatter};
 
 use crate::git::oid::OidOf;
 
-use anyhow::anyhow;
+use crate::conventional::error::ConventionalCommitError;
 use colored::*;
-use conventional_commit_parser::error::ParseError;
-
-#[derive(Debug)]
-pub(crate) enum CocogittoError {
-    CommitFormat {
-        oid: String,
-        summary: String,
-        author: String,
-        cause: ParseError,
-    },
-    CommitTypeNotAllowed {
-        oid: String,
-        summary: String,
-        commit_type: String,
-        author: String,
-    },
-    NothingToCommitWithBranch {
-        branch: String,
-    },
-    NothingToCommit,
-    Semver {
-        level: String,
-        cause: String,
-    },
-    Git {
-        level: String,
-        cause: String,
-    },
-}
-
-impl Display for CocogittoError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            CocogittoError::CommitFormat {
-                summary,
-                oid,
-                author,
-                cause,
-            } => {
-                let error_header = "Errored commit: ".bold().red();
-                let author = format!("<{}>", author).blue();
-                let cause = anyhow!(cause.clone());
-                let cause = format!("{:?}", cause)
-                    .lines()
-                    .collect::<Vec<&str>>()
-                    .join("\n\t");
-
-                writeln!(
-                    f,
-                    "{header}{oid} {author}\n\t{message_title}'{summary}'\n\t{cause_title}{cause}",
-                    header = error_header,
-                    oid = oid,
-                    author = author,
-                    message_title = "Commit message: ".yellow().bold(),
-                    summary = summary.italic(),
-                    cause_title = "Error: ".yellow().bold(),
-                    cause = cause
-                )
-            }
-            CocogittoError::CommitTypeNotAllowed {
-                summary,
-                commit_type,
-                oid,
-                author,
-            } => {
-                let error_header = "Errored commit: ".bold().red();
-                let author = format!("<{}>", author).blue();
-                writeln!(
-                    f,
-                    "{header}{oid} {author}\n\t{message}'{summary}'\n\t{cause}Commit type `{commit_type}` not allowed",
-                    header = error_header,
-                    oid = oid,
-                    author = author,
-                    message = "Commit message:".yellow().bold(),
-                    cause = "Error:".yellow().bold(),
-                    summary = summary.italic(),
-                    commit_type = commit_type.red()
-                )
-            }
-            CocogittoError::NothingToCommitWithBranch { branch } => {
-                writeln!(f, "On branch {}\nNothing to commit", branch)
-            }
-            CocogittoError::NothingToCommit => {
-                writeln!(f, "Nothing to commit")
-            }
-            CocogittoError::Semver { cause, level } => {
-                writeln!(f, "{}:\n\t{}\n", level, cause)
-            }
-            CocogittoError::Git { level, cause } => {
-                writeln!(f, "{}:\n\t{}\n", level, cause)
-            }
-        }
-    }
-}
 
 #[derive(Debug)]
 pub(crate) struct CogCheckReport {
     pub from: OidOf,
-    pub errors: Vec<anyhow::Error>,
+    pub errors: Vec<ConventionalCommitError>,
 }
 
 impl Display for CogCheckReport {

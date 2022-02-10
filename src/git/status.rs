@@ -2,14 +2,14 @@ use std::fmt::{self, Formatter};
 
 use crate::git::status::Changes::{Deleted, Modified, New, Renamed, TypeChange};
 
+use crate::git::error::Git2Error;
 use crate::git::repository::Repository;
-use anyhow::{anyhow, Result};
 use colored::*;
 use git2::Statuses as Git2Statuses;
 use git2::{StatusEntry as Git2StatusEntry, StatusOptions};
 
 impl Repository {
-    pub(crate) fn get_statuses(&self) -> Result<Statuses> {
+    pub(crate) fn get_statuses(&self) -> Result<Statuses, Git2Error> {
         let mut options = StatusOptions::new();
         options.include_untracked(true);
         options.exclude_submodules(true);
@@ -18,22 +18,22 @@ impl Repository {
         let statuses = self
             .0
             .statuses(Some(&mut options))
-            .map_err(|err| anyhow!(err))?;
+            .map_err(Git2Error::StatusError)?;
 
         Ok(Statuses::from(statuses))
     }
 }
 
-pub(crate) struct Statuses(pub Vec<Status>);
+pub struct Statuses(pub Vec<Status>);
 
 #[derive(Debug, Eq, PartialEq)]
-pub(crate) enum Status {
+pub enum Status {
     Untracked(Changes),
     UnCommitted(Changes),
 }
 
 #[derive(Debug, Eq, PartialEq)]
-pub(crate) enum Changes {
+pub enum Changes {
     New(String),
     Renamed(String),
     Deleted(String),
