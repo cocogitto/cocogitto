@@ -30,11 +30,20 @@ pub enum BumpError {
 
 impl Display for BumpError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "failed to bump version\n")?;
         match self {
-            BumpError::Git2Error(err) => writeln!(f, "Error creating version: {err}"),
-            BumpError::TagError(err) => writeln!(f, "Error creating version: {err}"),
-            BumpError::SemVerError(err) => writeln!(f, "Error creating version: {err}"),
-            BumpError::NoCommitFound => writeln!(f, "No commit found to bump current version"),
+            BumpError::Git2Error(err) => writeln!(f, "\t{err}"),
+            BumpError::TagError(err) => writeln!(f, "\t{err}"),
+            BumpError::SemVerError(err) => writeln!(f, "\t{err}"),
+            BumpError::NoCommitFound => writeln!(
+                f,
+                r#"cause: No conventional commit found to bump current version.
+    Only feature, bug fix and breaking change commits will trigger an automatic bump.
+
+suggestion: Please see https://conventionalcommits.org/en/v1.0.0/#summary for more information.
+    Alternatively consider using `cog bump <--version <VERSION>|--auto|--major|--minor>`
+"#
+            ),
         }
     }
 }

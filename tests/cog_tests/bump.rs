@@ -23,7 +23,7 @@ fn auto_bump_from_start_ok() -> Result<()> {
         .success();
 
     assert_that!(Path::new("CHANGELOG.md")).exists();
-    assert_tag("0.1.0")?;
+    assert_tag_exists("0.1.0")?;
     Ok(())
 }
 
@@ -45,7 +45,7 @@ fn auto_bump_minor_from_latest_tag() -> Result<()> {
         .success();
 
     assert_that!(Path::new("CHANGELOG.md")).exists();
-    assert_tag("1.1.0")?;
+    assert_tag_exists("1.1.0")?;
     Ok(())
 }
 
@@ -67,7 +67,7 @@ fn auto_bump_major_from_latest_tag() -> Result<()> {
         .success();
 
     assert_that!(Path::new("CHANGELOG.md")).exists();
-    assert_tag("2.0.0")?;
+    assert_tag_exists("2.0.0")?;
     Ok(())
 }
 
@@ -90,7 +90,7 @@ fn auto_bump_with_prefix() -> Result<()> {
         .success();
 
     assert_that!(Path::new("CHANGELOG.md")).exists();
-    assert_tag("v2.0.0")?;
+    assert_tag_exists("v2.0.0")?;
     Ok(())
 }
 
@@ -112,7 +112,7 @@ fn auto_bump_patch_from_latest_tag() -> Result<()> {
         .success();
 
     assert_that!(Path::new("CHANGELOG.md")).exists();
-    assert_tag("1.0.1")?;
+    assert_tag_exists("1.0.1")?;
     Ok(())
 }
 
@@ -135,7 +135,7 @@ fn auto_bump_respect_semver_sorting() -> Result<()> {
         .success();
 
     assert_that!(Path::new("CHANGELOG.md")).exists();
-    assert_tag("0.10.1")?;
+    assert_tag_exists("0.10.1")?;
     Ok(())
 }
 
@@ -153,7 +153,7 @@ fn minor_bump() -> Result<()> {
         .success();
 
     assert_that!(Path::new("CHANGELOG.md")).exists();
-    assert_tag("1.1.0")?;
+    assert_tag_exists("1.1.0")?;
     Ok(())
 }
 
@@ -171,7 +171,7 @@ fn major_bump() -> Result<()> {
         .success();
 
     assert_that!(Path::new("CHANGELOG.md")).exists();
-    assert_tag("2.0.0")?;
+    assert_tag_exists("2.0.0")?;
     Ok(())
 }
 
@@ -188,7 +188,7 @@ fn patch_bump() -> Result<()> {
         .assert()
         .success();
     assert_that!(Path::new("CHANGELOG.md")).exists();
-    assert_tag("1.0.1")?;
+    assert_tag_exists("1.0.1")?;
     Ok(())
 }
 
@@ -208,7 +208,7 @@ fn pre_release_bump() -> Result<()> {
         .success();
 
     assert_that!(Path::new("CHANGELOG.md")).exists();
-    assert_tag("2.0.0-alpha")?;
+    assert_tag_exists("2.0.0-alpha")?;
     Ok(())
 }
 
@@ -231,7 +231,7 @@ fn bump_with_hook() -> Result<()> {
         .success();
 
     assert_that!(Path::new("2.0.0")).exists();
-    assert_tag("2.0.0")?;
+    assert_tag_exists("2.0.0")?;
     Ok(())
 }
 
@@ -273,6 +273,6 @@ fn bump_with_profile_hook() -> Result<()> {
         .stdout(expected)
         .success();
 
-    assert_tag("1.0.1")?;
+    assert_tag_exists("1.0.1")?;
     Ok(())
 }

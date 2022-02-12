@@ -81,7 +81,7 @@ impl Display for Statuses {
         }
 
         if has_untracked_changes && has_uncommitted_changes {
-            write!(f, "\n")?;
+            writeln!(f)?;
         }
 
         if has_uncommitted_changes {

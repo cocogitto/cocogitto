@@ -2,17 +2,20 @@ use anyhow::Result;
 
 use cmd_lib::run_cmd;
 use cocogitto::{conventional::version::VersionIncrement, CocoGitto};
+use indoc::indoc;
 use sealed_test::prelude::*;
 use speculoos::prelude::*;
 
 use crate::helpers::*;
 
 #[sealed_test]
-fn bump_no_whitelisted_branch_ok() -> Result<()> {
+fn bump_ok() -> Result<()> {
     // Arrange
-    git_init().expect("Could not init repository");
-    git_commit("chore: first commit").expect("Could not create commit");
-    git_commit("feat: add a feature commit").expect("Could not create commit");
+    git_init()?;
+    git_commit("chore: first commit")?;
+    git_commit("feat: add a feature commit")?;
+    git_tag("1.0.0")?;
+    git_commit("feat: add another feature commit")?;
 
     let mut cocogitto = CocoGitto::get()?;
 
@@ -21,7 +24,51 @@ fn bump_no_whitelisted_branch_ok() -> Result<()> {
 
     // Assert
     assert_that!(result).is_ok();
+    assert_latest_tag("1.1.0")?;
+    Ok(())
+}
 
+#[sealed_test]
+fn should_fallback_to_0_0_0_when_there_is_no_tag() -> Result<()> {
+    // Arrange
+    git_init()?;
+    git_commit("chore: first commit")?;
+    git_commit("feat: add a feature commit")?;
+
+    let mut cocogitto = CocoGitto::get()?;
+
+    // Act
+    let result = cocogitto.create_version(VersionIncrement::Auto, None, None);
+
+    // Assert
+    assert_that!(result).is_ok();
+    assert_latest_tag("0.1.0")?;
+    Ok(())
+}
+
+#[sealed_test]
+fn should_fail_when_latest_tag_is_not_semver_compliant() -> Result<()> {
+    // Arrange
+    git_init()?;
+    git_commit("chore: first commit")?;
+    git_commit("feat: add a feature commit")?;
+    git_tag("toto")?;
+    git_commit("feat: add another feature commit")?;
+
+    let mut cocogitto = CocoGitto::get()?;
+
+    // Act
+    let result = cocogitto.create_version(VersionIncrement::Auto, None, None);
+    let error = result.unwrap_err().to_string();
+    let error = error.as_str();
+
+    // Assert
+    assert_that!(error).is_equal_to(indoc!(
+        "
+        tag `toto` is not SemVer compliant
+        \tcause: unexpected character 't' while parsing major version number
+        "
+    ));
     Ok(())
 }
 
@@ -37,8 +84,8 @@ fn bump_with_whitelisted_branch_ok() -> Result<()> {
     )
     .unwrap();
 
-    git_commit("chore: first commit").expect("Could not create commit");
-    git_commit("feat: add a feature commit").expect("Could not create commit");
+    git_commit("chore: first commit")?;
+    git_commit("feat: add a feature commit")?;
 
     let mut cocogitto = CocoGitto::get()?;
 
@@ -62,8 +109,8 @@ fn bump_with_whitelisted_branch_fails() -> Result<()> {
         git add .;
     )
     .unwrap();
-    git_commit("chore: first commit").expect("Could not create commit");
-    git_commit("feat: add a feature commit").expect("Could not create commit");
+    git_commit("chore: first commit")?;
+    git_commit("feat: add a feature commit")?;
 
     let mut cocogitto = CocoGitto::get()?;
 

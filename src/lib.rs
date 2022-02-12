@@ -25,6 +25,7 @@ use settings::{HookType, Settings};
 
 use crate::conventional::changelog::release::Release;
 use crate::conventional::changelog::template::Template;
+use crate::git::error::{Git2Error, TagError};
 use crate::git::oid::OidOf;
 use crate::git::revspec::RevspecPattern;
 use crate::git::tag::Tag;
@@ -63,7 +64,7 @@ pub fn init<S: AsRef<Path> + ?Sized>(path: &S) -> Result<()> {
 
     if !path.exists() {
         std::fs::create_dir(&path)
-            .map_err(|err| anyhow!("Could not create directory `{:?}`: {}", path, err))?;
+            .map_err(|err| anyhow!("failed to create directory `{path:?}` \n\ncause:{err}"))?;
     }
 
     let mut is_init_commit = false;
@@ -94,14 +95,12 @@ pub fn init<S: AsRef<Path> + ?Sized>(path: &S) -> Result<()> {
         std::fs::write(
             &settings_path,
             toml::to_string(&settings)
-                .map_err(|err| anyhow!("Failed to serialize {}:{}", CONFIG_PATH, err))?,
+                .map_err(|err| anyhow!("failed to serialize {CONFIG_PATH}\n\ncause: {err}"))?,
         )
-        .map_err(|err| anyhow!("Could not write file `{:?}`:{}", &settings_path, err))?;
+        .map_err(|err| anyhow!("failed to write file `{settings_path:?}`\n\ncause: {err}"))?;
     }
 
-    repository
-        .add_all()
-        .map_err(|err| anyhow!("Could not add file to repository index:{}", err))?;
+    repository.add_all()?;
 
     if is_init_commit {
         repository.commit("chore: initial commit")?;
@@ -124,8 +123,8 @@ impl CocoGitto {
         Ok(CocoGitto { repository })
     }
 
-    pub fn get_committer(&self) -> Result<String> {
-        self.repository.get_author().map_err(|err| anyhow!(err))
+    pub fn get_committer(&self) -> Result<String, Git2Error> {
+        self.repository.get_author()
     }
 
     pub fn get_repo_tag_name(&self) -> Option<String> {
@@ -412,19 +411,15 @@ impl CocoGitto {
 
         let current_tag = self.repository.get_latest_tag();
         let current_version = match current_tag {
-            Ok(ref tag) => tag.to_version().unwrap_or_else(|_err| {
-                println!("Failed to parse tag {}, falling back to 0.0.0", tag);
-                Version::new(0, 0, 0)
-            }),
-            Err(ref _err) => {
+            Ok(ref tag) => tag.to_version()?,
+            Err(ref err) if err == &TagError::NoTag => {
                 println!("Failed to get current version, falling back to 0.0.0");
                 Version::new(0, 0, 0)
             }
+            Err(ref err) => bail!("{err}"),
         };
 
-        let mut next_version = increment
-            .bump(&current_version, &self.repository)
-            .map_err(|err| anyhow!("Cannot bump version: {}", err))?;
+        let mut next_version = increment.bump(&current_version, &self.repository)?;
 
         if next_version.le(&current_version) || next_version.eq(&current_version) {
             let comparison = format!("{} <= {}", current_version, next_version).red();
@@ -535,13 +530,7 @@ impl CocoGitto {
         pattern: RevspecPattern,
         target_version: &str,
     ) -> Result<Release> {
-        let commit_range = self.repository.get_commit_range(&pattern).map_err(|err| {
-            anyhow!(
-                "Could not get commit range for pattern '{}': {}",
-                pattern,
-                err
-            )
-        })?;
+        let commit_range = self.repository.get_commit_range(&pattern)?;
 
         let mut release = Release::from(commit_range);
         release.version = OidOf::Tag(Tag::new(target_version, None)?);
@@ -559,15 +548,9 @@ impl CocoGitto {
         if with_child_releases {
             self.repository
                 .get_release_range(pattern)
-                .map_err(<_>::into)
+                .map_err(Into::into)
         } else {
-            let commit_range = self.repository.get_commit_range(&pattern).map_err(|err| {
-                anyhow!(
-                    "Could not get commit range for pattern '{}': {}",
-                    pattern,
-                    err
-                )
-            })?;
+            let commit_range = self.repository.get_commit_range(&pattern)?;
 
             Ok(Release::from(commit_range))
         }

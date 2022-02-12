@@ -26,7 +26,8 @@ impl From<pest::error::Error<hook::parser::Rule>> for HookParseError {
 
 impl Display for HookParseError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "Error parsing bump hook : {}", self.error)
+        writeln!(f, "failed to parse bump hook\n")?;
+        writeln!(f, "\tcause: {}", self.error)
     }
 }
 
