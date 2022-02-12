@@ -24,10 +24,14 @@ impl Repository {
                 .commit(Some("HEAD"), &sig, &sig, message, &tree, &[])
                 .map_err(Git2Error::from)
         } else {
-            Err(self
-                .get_branch_shorthand()
-                .map(|branch| Git2Error::NothingToCommitWithBranch { branch })
-                .unwrap_or_else(|| Git2Error::NothingToCommit))
+            let statuses = self.get_statuses()?;
+            let statuses = if statuses.0.is_empty() {
+                None
+            } else {
+                Some(statuses)
+            };
+            let branch = self.get_branch_shorthand();
+            Err(Git2Error::NothingToCommit { branch, statuses })
         }
     }
 }

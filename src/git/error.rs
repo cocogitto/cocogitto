@@ -7,8 +7,10 @@ use std::fmt::{Display, Formatter};
 
 #[derive(Debug)]
 pub enum Git2Error {
-    NothingToCommitWithBranch { branch: String },
-    NothingToCommit,
+    NothingToCommit {
+        statuses: Option<Statuses>,
+        branch: Option<String>,
+    },
     FailedToInitializeRepository(git2::Error),
     FailedToOpenRepository(git2::Error),
     GitAddError(git2::Error),
@@ -25,7 +27,7 @@ pub enum Git2Error {
 
 #[derive(Debug)]
 pub enum TagError {
-    SemvVerError(semver::Error),
+    SemVerError(semver::Error),
     InvalidPrefixError {
         prefix: String,
         tag: String,
@@ -45,7 +47,7 @@ impl StdError for TagError {}
 
 impl From<semver::Error> for TagError {
     fn from(err: semver::Error) -> Self {
-        TagError::SemvVerError(err)
+        TagError::SemVerError(err)
     }
 }
 
@@ -61,10 +63,19 @@ impl TagError {
 impl Display for Git2Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Git2Error::NothingToCommitWithBranch { branch } => {
-                writeln!(f, "On branch {branch}\nNothing to commit")
+            Git2Error::NothingToCommit { branch, statuses } => {
+                if let Some(branch) = branch {
+                    writeln!(f, "On branch {branch}\n")?;
+                }
+
+                match statuses {
+                    Some(statuses) if !statuses.0.is_empty() => write!(f, "{statuses}"),
+                    _ => writeln!(
+                        f,
+                        "nothing to commit (create/copy files and use \"git add\" to track)"
+                    ),
+                }
             }
-            Git2Error::NothingToCommit => writeln!(f, "Nothing to commit"),
             Git2Error::Other(err) => writeln!(f, "Unexpected git error: {err}"),
             Git2Error::FailedToInitializeRepository(err) => {
                 writeln!(f, "Failed to initialize repository: {err}")
@@ -98,7 +109,7 @@ impl Display for Git2Error {
 impl Display for TagError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            TagError::SemvVerError(err) => writeln!(f, "Error parsing version number: {err}"),
+            TagError::SemVerError(err) => writeln!(f, "Error parsing version number: {err}"),
             TagError::InvalidPrefixError { prefix, tag } => {
                 writeln!(f, "Expected a tag with prefix {prefix}, got {tag}")
             }
