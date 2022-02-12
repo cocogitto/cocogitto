@@ -18,7 +18,7 @@ impl Repository {
         let without_prefix = Tag::strip_prefix(tag)?;
 
         // Ensure the tag is SemVer compliant
-        Version::parse(without_prefix)?;
+        Version::parse(without_prefix).map_err(|err| TagError::semver(without_prefix, err))?;
 
         self.resolve_lightweight_tag(tag)
     }
@@ -119,7 +119,7 @@ impl Tag {
     }
 
     pub(crate) fn to_version(&self) -> Result<Version, TagError> {
-        Version::parse(&self.tag).map_err(<_>::into)
+        Version::parse(&self.tag).map_err(|err| TagError::semver(&self.tag, err))
     }
 
     fn strip_prefix(tag: &str) -> Result<&str, TagError> {

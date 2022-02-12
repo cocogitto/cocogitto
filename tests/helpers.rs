@@ -7,6 +7,7 @@ use anyhow::Result;
 use cmd_lib::{init_builtin_logger, run_cmd, run_fun};
 use speculoos::assert_that;
 use speculoos::iter::ContainingIntoIterAssertions;
+use speculoos::option::OptionAssertions;
 
 use cocogitto::CONFIG_PATH;
 
@@ -67,10 +68,17 @@ pub fn git_tag(tag: &str) -> Result<()> {
     .map_err(|e| anyhow!(e))
 }
 
-pub fn assert_tag(tag: &str) -> Result<()> {
+pub fn assert_tag_exists(tag: &str) -> Result<()> {
     let tags = run_fun!(git --no-pager tag)?;
     let tags: Vec<&str> = tags.split('\n').collect();
     assert_that!(tags).contains(&tag);
+    Ok(())
+}
+
+pub fn assert_latest_tag(tag: &str) -> Result<()> {
+    let tags = run_fun!(git --no-pager tag)?;
+    let tags: Vec<&str> = tags.split('\n').collect();
+    assert_that!(tags.last()).is_some().is_equal_to(&tag);
     Ok(())
 }
 

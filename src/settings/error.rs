@@ -7,7 +7,8 @@ pub(crate) struct SettingError(config::ConfigError);
 
 impl Display for SettingError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "Config format error: {}", self.0)
+        writeln!(f, "failed to parse config\n")?;
+        writeln!(f, "\tcause {}", self.0)
     }
 }
 

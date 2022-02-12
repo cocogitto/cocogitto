@@ -1,10 +1,11 @@
+use std::ffi::OsStr;
 use std::process::Command;
 
 use crate::helpers::*;
 
 use anyhow::Result;
 use assert_cmd::prelude::*;
-use indoc::indoc;
+use indoc::{formatdoc, indoc};
 use pretty_assertions::assert_eq;
 use sealed_test::prelude::*;
 
@@ -29,17 +30,31 @@ fn commit_ok() -> Result<()> {
 #[sealed_test]
 fn commit_fail_if_not_a_repository() -> Result<()> {
     // Act
-    Command::cargo_bin("cog")?
+    let output = Command::cargo_bin("cog")?
         .arg("commit")
         .arg("feat")
         .arg("this is a commit message")
         .arg("scope")
-        // Assert
-        .assert()
-        .failure()
-        .stderr(predicates::str::contains(
-            "Error: Failed to open repository",
-        ));
+        .output()?;
+
+    let stderr = String::from_utf8(output.stderr)?;
+
+    // Assert
+    let current_dir = std::env::current_dir()?;
+    let current_dir: &OsStr = current_dir.as_os_str();
+    let current_dir = current_dir.to_str().expect("utf8 error");
+
+    assert_eq!(
+        stderr,
+        formatdoc!(
+            "Error: failed to open repository
+
+        cause: could not find repository from '{}'; class=Repository (6); code=NotFound (-3)
+
+        ",
+            current_dir
+        )
+    );
     Ok(())
 }
 

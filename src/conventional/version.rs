@@ -25,7 +25,7 @@ impl VersionIncrement {
         repository: &Repository,
     ) -> Result<Version, BumpError> {
         match self {
-            VersionIncrement::Manual(version) => Version::parse(version).map_err(<_>::into),
+            VersionIncrement::Manual(version) => Version::parse(version).map_err(Into::into),
             VersionIncrement::Auto => {
                 VersionIncrement::create_version_from_commit_history(current_version, repository)
             }
@@ -195,6 +195,7 @@ mod test {
     use anyhow::Result;
     use chrono::Utc;
     use conventional_commit_parser::commit::{CommitType, ConventionalCommit};
+    use pretty_assertions::assert_eq;
     use sealed_test::prelude::*;
     use semver::Version;
     use speculoos::prelude::*;
@@ -385,6 +386,38 @@ mod test {
         assert_that!(version)
             .is_ok()
             .is_equal_to(VersionIncrement::Minor);
+
+        Ok(())
+    }
+
+    #[test]
+    fn should_fail_without_feature_bug_fix_or_breaking_change_commit() -> Result<()> {
+        // Arrange
+        let patch = Commit::commit_fixture(CommitType::Chore, false);
+        let feature = Commit::commit_fixture(CommitType::Documentation, false);
+
+        // Act
+        let version = VersionIncrement::version_increment_from_commit_history(
+            &Version::parse("1.0.0")?,
+            &[patch, feature],
+        );
+
+        let result = version.unwrap_err().to_string();
+        let result = result.as_str();
+
+        // Assert
+        assert_eq!(
+            result,
+            r#"failed to bump version
+
+cause: No conventional commit found to bump current version.
+    Only feature, bug fix and breaking change commits will trigger an automatic bump.
+
+suggestion: Please see https://conventionalcommits.org/en/v1.0.0/#summary for more information.
+    Alternatively consider using `cog bump <--version <VERSION>|--auto|--major|--minor>`
+
+"#
+        );
 
         Ok(())
     }

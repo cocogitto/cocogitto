@@ -11,6 +11,7 @@ pub enum Git2Error {
         statuses: Option<Statuses>,
         branch: Option<String>,
     },
+    ChangesNeedToBeCommitted(Statuses),
     FailedToInitializeRepository(git2::Error),
     FailedToOpenRepository(git2::Error),
     GitAddError(git2::Error),
@@ -19,15 +20,17 @@ pub enum Git2Error {
     StashError(git2::Error),
     StatusError(git2::Error),
     CommitNotFound(git2::Error),
-    ChangesNeedToBeCommitted(Statuses),
-    CommitterNotFound,
-    NoTagFound,
     Other(git2::Error),
+    NoTagFound,
+    CommitterNotFound,
 }
 
 #[derive(Debug)]
 pub enum TagError {
-    SemVerError(semver::Error),
+    SemVerError {
+        tag: String,
+        err: semver::Error,
+    },
     InvalidPrefixError {
         prefix: String,
         tag: String,
@@ -45,15 +48,22 @@ pub enum TagError {
 
 impl StdError for TagError {}
 
-impl From<semver::Error> for TagError {
-    fn from(err: semver::Error) -> Self {
-        TagError::SemVerError(err)
+impl PartialEq for TagError {
+    fn eq(&self, _other: &Self) -> bool {
+        matches!(self, _other)
     }
 }
 
 impl TagError {
     pub fn not_found(tag: &str, err: git2::Error) -> Self {
         TagError::NotFound {
+            tag: tag.to_string(),
+            err,
+        }
+    }
+
+    pub fn semver(tag: &str, err: semver::Error) -> Self {
+        TagError::SemVerError {
             tag: tag.to_string(),
             err,
         }
@@ -76,32 +86,45 @@ impl Display for Git2Error {
                     ),
                 }
             }
-            Git2Error::Other(err) => writeln!(f, "Unexpected git error: {err}"),
-            Git2Error::FailedToInitializeRepository(err) => {
-                writeln!(f, "Failed to initialize repository: {err}")
+            Git2Error::Other(_) => writeln!(f, "fatal error"),
+            Git2Error::FailedToInitializeRepository(_) => {
+                writeln!(f, "failed to initialize repository")
             }
-            Git2Error::FailedToOpenRepository(err) => {
-                writeln!(f, "Failed to open repository: {err}")
+            Git2Error::FailedToOpenRepository(_) => {
+                writeln!(f, "failed to open repository")
             }
-            Git2Error::GitAddError(err) => {
-                writeln!(f, "Error while adding content to index: {err}")
+            Git2Error::GitAddError(_) => {
+                writeln!(f, "failed to add content to index")
             }
-            Git2Error::UnableToGetHead(err) => {
-                writeln!(f, "Error trying to get repository HEAD: {err}")
+            Git2Error::UnableToGetHead(_) => {
+                writeln!(f, "failed to get repository HEAD")
             }
-            Git2Error::PeelToCommitError(err) => {
-                writeln!(f, "Error trying too peel commit: {err}",)
+            Git2Error::PeelToCommitError(_) => {
+                writeln!(f, "failed to peel git object to commit",)
             }
-            Git2Error::CommitNotFound(err) => writeln!(f, "Commit not found: {err}"),
-            Git2Error::CommitterNotFound => writeln!(f, "Unable to get committer"),
-            Git2Error::NoTagFound => writeln!(f, "No tag found"),
-            Git2Error::StashError(err) => writeln!(f, "Git stash failed: {err}"),
-            Git2Error::StatusError(err) => writeln!(f, "Failed to get git statuses: {err}"),
+            Git2Error::CommitNotFound(_) => writeln!(f, "commit not found"),
+            Git2Error::CommitterNotFound => writeln!(f, "unable to get committer"),
+            Git2Error::NoTagFound => writeln!(f, "no tag found"),
+            Git2Error::StashError(_) => writeln!(f, "git stash failed"),
+            Git2Error::StatusError(_) => writeln!(f, "failed to get git statuses"),
             Git2Error::ChangesNeedToBeCommitted(statuses) => writeln!(
                 f,
                 "{}{statuses}",
                 "Cannot create tag: changes need to be committed".red()
             ),
+        }?;
+
+        match self {
+            Git2Error::FailedToInitializeRepository(err)
+            | Git2Error::FailedToOpenRepository(err)
+            | Git2Error::GitAddError(err)
+            | Git2Error::UnableToGetHead(err)
+            | Git2Error::PeelToCommitError(err)
+            | Git2Error::StashError(err)
+            | Git2Error::StatusError(err)
+            | Git2Error::Other(err)
+            | Git2Error::CommitNotFound(err) => writeln!(f, "\ncause: {err}"),
+            _ => fmt::Result::Ok(()),
         }
     }
 }
@@ -109,16 +132,25 @@ impl Display for Git2Error {
 impl Display for TagError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            TagError::SemVerError(err) => writeln!(f, "Error parsing version number: {err}"),
+            TagError::SemVerError { tag, err } => {
+                writeln!(f, "tag `{tag}` is not SemVer compliant")?;
+                writeln!(f, "\tcause: {err}")
+            }
             TagError::InvalidPrefixError { prefix, tag } => {
                 writeln!(f, "Expected a tag with prefix {prefix}, got {tag}")
             }
-            TagError::NotFound { tag, err } => writeln!(f, "Tag {tag} not found: {err}"),
-            TagError::NoTag => writeln!(f, "Unable to get any tag"),
-            TagError::NoMatchFound { err, pattern } => match pattern {
-                None => writeln!(f, "No tag found: {err}"),
-                Some(pattern) => writeln!(f, "No tag matching pattern {pattern}: {err}"),
-            },
+            TagError::NotFound { tag, err } => {
+                writeln!(f, "tag {tag} not found")?;
+                writeln!(f, "\tcause: {err}")
+            }
+            TagError::NoTag => writeln!(f, "unable to get any tag"),
+            TagError::NoMatchFound { pattern, err } => {
+                match pattern {
+                    None => writeln!(f, "no tag found")?,
+                    Some(pattern) => writeln!(f, "no tag matching pattern {pattern}")?,
+                }
+                writeln!(f, "\tcause: {err}")
+            }
         }
     }
 }
