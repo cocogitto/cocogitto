@@ -1,4 +1,4 @@
-use std::fmt::{self, Formatter};
+use std::fmt::{self, Display, Formatter};
 
 use crate::git::status::Changes::{Deleted, Modified, New, Renamed, TypeChange};
 
@@ -24,6 +24,7 @@ impl Repository {
     }
 }
 
+#[derive(Debug)]
 pub struct Statuses(pub Vec<Status>);
 
 #[derive(Debug, Eq, PartialEq)]
@@ -42,14 +43,59 @@ pub enum Changes {
 }
 
 impl Changes {
-    fn to_string(&self, color: &str) -> String {
+    pub(crate) fn to_string(&self, color: &str) -> String {
         match &self {
-            New(p) => format!("{}: {}", "new: ".color(color), p),
-            Renamed(p) => format!("{}: {}", "renamed: ".color(color), p),
-            Deleted(p) => format!("{}: {}", "deleted: ".color(color), p),
-            TypeChange(p) => format!("{}  {}", "type changed: ".color(color), p),
-            Modified(p) => format!("{}: {}", "modified: ".color(color), p),
+            New(p) => format!("{}: {}", "new".color(color), p),
+            Renamed(p) => format!("{}: {}", "renamed".color(color), p),
+            Deleted(p) => format!("{}: {}", "deleted".color(color), p),
+            TypeChange(p) => format!("{}:  {}", "type changed".color(color), p),
+            Modified(p) => format!("{}: {}", "modified".color(color), p),
         }
+    }
+}
+
+impl Display for Statuses {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let mut untracked = vec![];
+        let mut uncommitted = vec![];
+
+        self.0.iter().for_each(|status| {
+            match status {
+                Status::Untracked(changes) => untracked.push(changes),
+                Status::UnCommitted(changes) => uncommitted.push(changes),
+            };
+        });
+
+        let has_untracked_changes = !untracked.is_empty();
+        let has_uncommitted_changes = !uncommitted.is_empty();
+
+        if has_untracked_changes {
+            writeln!(f, "Untracked files :")?;
+            for change in untracked {
+                writeln!(f, "\t{}", change.to_string("red"))?;
+            }
+            writeln!(
+                f,
+                "\nnothing added to commit but untracked files present (use \"git add\" to track)"
+            )?;
+        }
+
+        if has_untracked_changes && has_uncommitted_changes {
+            write!(f, "\n")?;
+        }
+
+        if has_uncommitted_changes {
+            writeln!(f, "Changes to be committed :")?;
+            writeln!(
+                f,
+                "(use \"git add <file>...\" to include in what will be committed)"
+            )?;
+            for change in uncommitted {
+                writeln!(f, "\t{}", change.to_string("green"))?;
+            }
+            writeln!(f, "\nUse `cog commit <type>` to commit changes")?;
+        }
+        fmt::Result::Ok(())
     }
 }
 
@@ -75,48 +121,6 @@ impl<'a, 'b: 'a> From<Git2StatusEntry<'b>> for Status {
             s if s.is_index_typechange() => Status::UnCommitted(TypeChange(path)),
             _ => unreachable!(),
         }
-    }
-}
-
-impl fmt::Display for Statuses {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let mut untracked = vec![];
-        let mut uncommitted = vec![];
-
-        self.0.iter().for_each(|status| {
-            match status {
-                Status::Untracked(changes) => untracked.push(changes),
-                Status::UnCommitted(changes) => uncommitted.push(changes),
-            };
-        });
-
-        if !untracked.is_empty() {
-            writeln!(f, "Untracked files :").unwrap();
-            untracked.iter().for_each(|change| {
-                writeln!(f, "\t{}", change.to_string("red")).unwrap();
-            });
-            writeln!(f, "Use `git add` to track").unwrap();
-        }
-
-        if !untracked.is_empty() && !uncommitted.is_empty() {
-            write!(f, "\n\n")?;
-        }
-
-        if !uncommitted.is_empty() {
-            writeln!(f, "Changes to be committed :").unwrap();
-            uncommitted.iter().for_each(|change| {
-                writeln!(f, "\t{}", change.to_string("green")).unwrap();
-            });
-            writeln!(f, "Use `coco <type>` to commit changes").unwrap();
-        }
-
-        write!(f, "\n\n")
-    }
-}
-
-impl fmt::Debug for Statuses {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", &self)
     }
 }
 
