@@ -82,6 +82,7 @@ impl OutputBuilder {
 
     /// Try to get path to pager from the given environment variable
     /// If this method is called several times, the last existing environment variable will be used
+    #[must_use]
     pub fn with_pager_from_env(self, env_key: &str) -> Self {
         let pager_cmd = std::env::var(env_key).ok();
 
@@ -92,6 +93,7 @@ impl OutputBuilder {
     }
 
     /// Specify the file name to be displayed in the pager header (corresponds to bat `--file-name` parameter)
+    #[must_use]
     pub fn with_file_name(self, file_name: impl Into<String>) -> Self {
         OutputBuilder {
             file_name: Some(file_name.into()),
