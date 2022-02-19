@@ -197,13 +197,22 @@ impl Ord for Commit {
     }
 }
 
-pub fn verify(author: Option<String>, message: &str) -> Result<(), ParseError> {
+pub fn verify(
+    author: Option<String>,
+    message: &str,
+    ignore_merge_commit: bool,
+) -> Result<(), ParseError> {
     // Strip away comments from git message before parsing
     let msg: String = message
         .lines()
         .filter(|line| !line.trim_start().starts_with('#'))
         .collect::<Vec<&str>>()
         .join("\n");
+
+    if ignore_merge_commit && msg.starts_with("Merge branch") {
+        println!("{}", "Ignoring merge commit.".yellow());
+        return Ok(());
+    }
 
     let commit = conventional_commit_parser::parse(msg.as_str());
 
@@ -302,7 +311,7 @@ mod test {
         let message = "feat(database): add postgresql driver";
 
         // Act
-        let result = verify(Some("toml".into()), message);
+        let result = verify(Some("toml".into()), message, true);
 
         // Assert
         assert_that!(result).is_ok();
@@ -320,7 +329,7 @@ mod test {
         );
 
         // Act
-        let result = verify(Some("toml".into()), message);
+        let result = verify(Some("toml".into()), message, true);
 
         // Assert
         assert_that!(result).is_ok();
@@ -332,7 +341,31 @@ mod test {
         let message = "feat add postgresql driver";
 
         // Act
-        let result = verify(Some("toml".into()), message);
+        let result = verify(Some("toml".into()), message, true);
+
+        // Assert
+        assert_that!(result).is_err();
+    }
+
+    #[test]
+    fn verify_should_skip_merge_commit() {
+        // Arrange
+        let message = "Merge branch 'main' of github.com:thalo-rs/thalo into dev";
+
+        // Act
+        let result = verify(Some("tqwewe".into()), message, true);
+
+        // Assert
+        assert_that!(result).is_ok();
+    }
+
+    #[test]
+    fn verify_should_fail_on_merge_commit() {
+        // Arrange
+        let message = "Merge branch 'main' of github.com:thalo-rs/thalo into dev";
+
+        // Act
+        let result = verify(Some("tqwewe".into()), message, false);
 
         // Assert
         assert_that!(result).is_err();

@@ -29,6 +29,8 @@ pub struct Settings {
     pub branch_whitelist: Vec<String>,
     pub tag_prefix: Option<String>,
     #[serde(default)]
+    pub ignore_merge_commit: bool,
+    #[serde(default)]
     pub pre_bump_hooks: Vec<String>,
     #[serde(default)]
     pub post_bump_hooks: Vec<String>,

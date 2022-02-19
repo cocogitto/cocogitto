@@ -220,7 +220,12 @@ impl CocoGitto {
                             .collect();
 
                         rebase.commit(None, &original_commit.committer(), Some(&new_message))?;
-                        match verify(self.repository.get_author().ok(), &new_message) {
+                        let ignore_merge_commit = SETTINGS.ignore_merge_commit;
+                        match verify(
+                            self.repository.get_author().ok(),
+                            &new_message,
+                            ignore_merge_commit,
+                        ) {
                             Ok(_) => println!(
                                 "Changed commit message to:\"{}\"",
                                 &new_message.trim_end()

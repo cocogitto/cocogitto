@@ -73,3 +73,36 @@ fn verify_fails() -> Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn verify_fails_on_merge_commit() -> Result<()> {
+    // Arrange
+    let message = "Merge branch 'main' of github.com:thalo-rs/thalo into dev";
+
+    // Act
+    Command::cargo_bin("cog")?
+        .arg("verify")
+        .arg(message)
+        // Assert
+        .assert()
+        .failure();
+
+    Ok(())
+}
+
+#[test]
+fn verify_ignores_merge_commit() -> Result<()> {
+    // Arrange
+    let message = "Merge branch 'main' of github.com:thalo-rs/thalo into dev";
+
+    // Act
+    Command::cargo_bin("cog")?
+        .arg("verify")
+        .arg("--ignore-merge-commit")
+        .arg(message)
+        // Assert
+        .assert()
+        .success();
+
+    Ok(())
+}

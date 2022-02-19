@@ -5,7 +5,7 @@ use serde::Serialize;
 use crate::conventional::commit::Commit;
 use crate::git::oid::OidOf;
 use crate::git::revspec::CommitRange;
-use crate::settings;
+use crate::{settings, SETTINGS};
 use colored::Colorize;
 
 #[derive(Debug, Serialize)]
@@ -23,9 +23,11 @@ impl<'a> From<CommitRange<'a>> for Release<'a> {
 
         for commit in commit_range.commits {
             // Ignore merge commits
-            if let Some(message) = commit.message() {
-                if message.starts_with("Merge") {
-                    continue;
+            if SETTINGS.ignore_merge_commit {
+                if let Some(message) = commit.message() {
+                    if message.starts_with("Merge branch") {
+                        continue;
+                    }
                 }
             }
 

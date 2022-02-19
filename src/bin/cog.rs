@@ -77,6 +77,9 @@ enum Cli {
     Verify {
         /// The commit message
         message: String,
+        /// Ignore merge commit or lint them
+        #[clap(short = 'i', long)]
+        ignore_merge_commit: bool,
     },
 
     /// Display a changelog for the given commit oid range
@@ -209,12 +212,21 @@ fn main() -> Result<()> {
 
             cocogitto.create_version(increment, pre.as_deref(), hook_profile.as_deref())?
         }
-        Cli::Verify { message } => {
+        Cli::Verify {
+            message,
+            ignore_merge_commit,
+        } => {
             let author = CocoGitto::get()
                 .map(|cogito| cogito.get_committer().unwrap())
                 .ok();
 
-            commit::verify(author, &message)?;
+            let ignore_merge_commit = if ignore_merge_commit {
+                true
+            } else {
+                SETTINGS.ignore_merge_commit
+            };
+
+            commit::verify(author, &message, ignore_merge_commit)?;
         }
         Cli::Check { from_latest_tag } => {
             let cocogitto = CocoGitto::get()?;
