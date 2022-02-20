@@ -150,7 +150,9 @@ impl CocoGitto {
             self.repository.all_commits()?
         };
 
-        let editor = std::env::var("EDITOR")?;
+        let editor = std::env::var("EDITOR")
+            .map_err(|_err| anyhow!("the 'EDITOR' environment variable was not found"))?;
+
         let dir = TempDir::new()?;
 
         let errored_commits: Vec<Oid> = commits
