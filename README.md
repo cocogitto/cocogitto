@@ -106,7 +106,7 @@ pacman -S cocogitto
 #### Cargo
 
 ```shell
-cargo install cocogitto
+cargo install --locked cocogitto
 ```
 
 #### NixOs
