@@ -6,7 +6,6 @@ use crate::SETTINGS;
 use chrono::{NaiveDateTime, Utc};
 use colored::*;
 use conventional_commit_parser::commit::ConventionalCommit;
-use conventional_commit_parser::error::ParseError;
 use git2::Commit as Git2Commit;
 use serde::{Deserialize, Serialize};
 
@@ -57,7 +56,7 @@ impl Commit {
                     Some(_) => Ok(commit),
                     None => Err(ConventionalCommitError::CommitTypeNotAllowed {
                         oid: commit.oid.to_string(),
-                        summary: commit.format_summary(),
+                        summary: format_summary(&commit.message),
                         commit_type: commit.message.commit_type.to_string(),
                         author: commit.author,
                     }),
@@ -156,18 +155,6 @@ impl Commit {
         }
     }
 
-    pub(crate) fn format_summary(&self) -> String {
-        match &self.message.scope {
-            None => format!("{}: {}", self.message.commit_type, self.message.summary,),
-            Some(scope) => {
-                format!(
-                    "{}({}): {}",
-                    self.message.commit_type, scope, self.message.summary,
-                )
-            }
-        }
-    }
-
     fn short_summary_from_str(summary: &str) -> String {
         if summary.len() > 80 {
             // display a maximum of 80 char (77 char + ...)
@@ -197,7 +184,7 @@ impl Ord for Commit {
     }
 }
 
-pub fn verify(author: Option<String>, message: &str) -> Result<(), ParseError> {
+pub fn verify(author: Option<String>, message: &str) -> Result<(), ConventionalCommitError> {
     // Strip away comments from git message before parsing
     let msg: String = message
         .lines()
@@ -208,25 +195,42 @@ pub fn verify(author: Option<String>, message: &str) -> Result<(), ParseError> {
     let commit = conventional_commit_parser::parse(msg.as_str());
 
     match commit {
-        Ok(message) => {
-            println!(
-                "{}",
-                Commit {
-                    oid: "not committed".to_string(),
-                    message,
-                    date: Utc::now().naive_utc(),
-                    author: author.unwrap_or_else(|| "Unknown".to_string()),
-                }
-            );
-            Ok(())
+        Ok(commit) => match &SETTINGS.commit_types().get(&commit.commit_type) {
+            Some(_) => {
+                println!(
+                    "{}",
+                    Commit {
+                        oid: "not committed".to_string(),
+                        message: commit,
+                        date: Utc::now().naive_utc(),
+                        author: author.unwrap_or_else(|| "Unknown".to_string()),
+                    }
+                );
+                Ok(())
+            }
+            None => Err(ConventionalCommitError::CommitTypeNotAllowed {
+                oid: "not committed".to_string(),
+                summary: format_summary(&commit),
+                commit_type: commit.commit_type.to_string(),
+                author: author.unwrap_or_else(|| "Unknown".to_string()),
+            }),
+        },
+        Err(err) => Err(ConventionalCommitError::ParseError(err)),
+    }
+}
+
+pub(crate) fn format_summary(commit: &ConventionalCommit) -> String {
+    match &commit.scope {
+        None => format!("{}: {}", commit.commit_type, commit.summary,),
+        Some(scope) => {
+            format!("{}({}): {}", commit.commit_type, scope, commit.summary,)
         }
-        Err(err) => Err(err),
     }
 }
 
 #[cfg(test)]
 mod test {
-    use crate::conventional::commit::{verify, Commit};
+    use crate::conventional::commit::{format_summary, verify, Commit};
 
     use chrono::NaiveDateTime;
     use cmd_lib::run_fun;
@@ -339,7 +343,19 @@ mod test {
     }
 
     #[test]
-    fn format_summary() {
+    fn verify_with_unknown_commit_type_fails() {
+        // Arrange
+        let message = "post: add postgresql driver";
+
+        // Act
+        let result = verify(Some("toml".into()), message);
+
+        // Assert
+        assert_that!(result).is_err();
+    }
+
+    #[test]
+    fn should_format_summary() {
         // Arrange
         let commit = Commit {
             oid: "1234567".to_string(),
@@ -357,7 +373,7 @@ mod test {
         };
 
         // Act
-        let summary = commit.format_summary();
+        let summary = format_summary(&commit.message);
 
         // Assert
         assert_that!(summary).is_equal_to("fix(scope): this is the message".to_string());
@@ -382,7 +398,7 @@ mod test {
         };
 
         // Act
-        let summary = commit.format_summary();
+        let summary = format_summary(&commit.message);
 
         // Assert
         assert_that!(summary).is_equal_to("fix: this is the message".to_string());

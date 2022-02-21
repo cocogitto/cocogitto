@@ -73,3 +73,19 @@ fn verify_fails() -> Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn verify_with_unknown_commit_type_fails() -> Result<()> {
+    // Arrange
+    let message = "toto: la totomobile";
+
+    // Act
+    Command::cargo_bin("cog")?
+        .arg("verify")
+        .arg(message)
+        // Assert
+        .assert()
+        .failure();
+
+    Ok(())
+}

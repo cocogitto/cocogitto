@@ -18,6 +18,7 @@ pub enum ConventionalCommitError {
         commit_type: String,
         author: String,
     },
+    ParseError(ParseError),
 }
 
 #[derive(Debug)]
@@ -106,6 +107,7 @@ impl Display for ConventionalCommitError {
                     commit_type = commit_type.red()
                 )
             }
+            ConventionalCommitError::ParseError(err) => writeln!(f, "{err}"),
         }
     }
 }
