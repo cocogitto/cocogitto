@@ -10,6 +10,7 @@ use colored::*;
 use conventional_commit_parser::commit::{CommitType, ConventionalCommit};
 use conventional_commit_parser::parse_footers;
 use git2::{Oid, RebaseOptions};
+use globset::Glob;
 use itertools::Itertools;
 use lazy_static::lazy_static;
 use semver::{Prerelease, Version};
@@ -403,11 +404,15 @@ impl CocoGitto {
 
         if !SETTINGS.branch_whitelist.is_empty() {
             if let Some(branch) = self.repository.get_branch_shorthand() {
-                ensure!(
-                    SETTINGS.branch_whitelist.contains(&branch),
-                    "Version bump not allowed on branch {}",
-                    branch
-                )
+                let whitelist = &SETTINGS.branch_whitelist;
+                let is_match = whitelist.iter().any(|pattern| {
+                    let glob = Glob::new(pattern)
+                        .expect("invalid glob pattern")
+                        .compile_matcher();
+                    glob.is_match(&branch)
+                });
+
+                ensure!(is_match, "No patterns matched in {whitelist:?} for branch '{branch}', bump is not allowed")
             }
         };
 

@@ -41,6 +41,7 @@ conventional_commit_parser = "0.9.4"
 pest = "2.1.3"
 pest_derive = "2.1.0"
 tera = "1.12.1"
+globset = "0.4.8"
 
 [dev-dependencies]
 assert_cmd = "1.0.3"
