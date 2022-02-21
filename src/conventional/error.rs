@@ -1,4 +1,5 @@
 use crate::git::error::{Git2Error, TagError};
+use anyhow::anyhow;
 use colored::Colorize;
 use conventional_commit_parser::error::ParseError;
 use serde::de::StdError;
@@ -78,7 +79,8 @@ impl Display for ConventionalCommitError {
             } => {
                 let error_header = "Errored commit: ".bold().red();
                 let author = format!("<{}>", author).blue();
-                let cause = format!("{cause}")
+                let cause = anyhow!(cause.clone());
+                let cause = format!("{cause:?}")
                     .lines()
                     .collect::<Vec<&str>>()
                     .join("\n\t");
@@ -107,7 +109,10 @@ impl Display for ConventionalCommitError {
                     commit_type = commit_type.red()
                 )
             }
-            ConventionalCommitError::ParseError(err) => writeln!(f, "{err}"),
+            ConventionalCommitError::ParseError(err) => {
+                let err = anyhow!(err.clone());
+                writeln!(f, "{err:?}")
+            }
         }
     }
 }
