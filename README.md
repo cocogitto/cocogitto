@@ -119,16 +119,16 @@ nix-env -iA cocogitto
 
 **Note: `coco` has been deprecated in favor of the `cog commit` command.**
 
-To create conventional commits you can use the `coco` binary. It has subcommands for the default `fix` and`feat`
-Conventional Commits types plus
-the [angular commit](https://github.com/angular/angular/blob/22b96b9/CONTRIBUTING.md#-commit-message-guidelines)
+To create conventional commits you can use the `cog commit` command.
+It has subcommands for the default `fix` and `feat` Conventional Commits types
+plus the [angular commit](https://github.com/angular/angular/blob/22b96b9/CONTRIBUTING.md#-commit-message-guidelines)
 conventional commit types.
 
 **Example:**
 
 ```shell
-# With coco
-coco feat "add awesome feature"
+# With cog
+cog commit feat "add awesome feature"
 
 # With git
 git commit -m "feat: add awesome feature"
