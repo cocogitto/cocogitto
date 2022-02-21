@@ -248,6 +248,7 @@ dependencies = [
  "conventional_commit_parser",
  "edit",
  "git2",
+ "globset",
  "indoc",
  "itertools",
  "lazy_static",
