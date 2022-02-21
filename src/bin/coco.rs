@@ -4,7 +4,7 @@ mod cog_commit;
 use cocogitto::CocoGitto;
 
 use anyhow::Result;
-use clap::{AppSettings, IntoApp, Parser};
+use clap::{AppSettings, CommandFactory, Parser};
 use clap_complete::Shell;
 
 /// A command line tool to create conventional commits
@@ -48,7 +48,7 @@ fn main() -> Result<()> {
     eprintln!("Warning: `coco` is deprecated, use `cog commit` instead");
 
     if let Some(shell) = cli.completion {
-        clap_complete::generate(shell, &mut Cli::into_app(), "coco", &mut std::io::stdout());
+        clap_complete::generate(shell, &mut Cli::command(), "coco", &mut std::io::stdout());
     } else {
         let cocogitto = CocoGitto::get()?;
 

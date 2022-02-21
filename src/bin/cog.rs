@@ -13,7 +13,7 @@ use cocogitto::log::output::Output;
 use cocogitto::{CocoGitto, SETTINGS};
 
 use anyhow::{Context, Result};
-use clap::{AppSettings, ArgGroup, Args, IntoApp, Parser};
+use clap::{AppSettings, ArgGroup, Args, CommandFactory, Parser};
 use clap_complete::Shell;
 
 fn hook_profiles() -> Vec<&'static str> {
@@ -328,7 +328,7 @@ fn main() -> Result<()> {
             }
         }
         Cli::GenerateCompletions { shell } => {
-            clap_complete::generate(shell, &mut Cli::into_app(), "cog", &mut std::io::stdout());
+            clap_complete::generate(shell, &mut Cli::command(), "cog", &mut std::io::stdout());
         }
         Cli::Commit(CommitArgs {
             typ,
