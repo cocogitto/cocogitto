@@ -13,6 +13,7 @@ use crate::SETTINGS;
 use parser::Token;
 
 use anyhow::{anyhow, ensure, Result};
+use itertools::Itertools;
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct VersionSpan {
@@ -162,9 +163,22 @@ impl Hook {
     pub fn run(&self) -> Result<()> {
         let (cmd, args) = self.0.split_first().expect("hook must not be empty");
 
-        let status = Command::new(&cmd).args(args).status()?;
+        #[cfg(target_family = "unix")]
+        {
+            let args = args.iter().join(" ");
+            let cmd = format!("{cmd} {args}");
 
-        ensure!(status.success(), "hook failed with status {}", status);
+            let status = Command::new("sh").arg("-c").arg(cmd).status()?;
+
+            ensure!(status.success(), "hook failed with status {}", status);
+        }
+
+        #[cfg(target_family = "windows")]
+        {
+            let status = Command::new(cmd).args(args).status()?;
+
+            ensure!(status.success(), "hook failed with status {}", status);
+        }
 
         Ok(())
     }
