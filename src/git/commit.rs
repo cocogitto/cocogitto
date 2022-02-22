@@ -44,14 +44,15 @@ impl Repository {
         sign: bool,
     ) -> Result<Oid, Git2Error> {
         if !sign {
-            return self.0
+            return self
+                .0
                 .commit(Some("HEAD"), sig, sig, commit_message, tree, parents)
-                .map_err(Git2Error::Other)
+                .map_err(Git2Error::Other);
         }
 
-        let commit_buf =
-            self.0
-                .commit_create_buffer(sig, sig, commit_message, tree, parents)?;
+        let commit_buf = self
+            .0
+            .commit_create_buffer(sig, sig, commit_message, tree, parents)?;
 
         let commit_as_str = std::str::from_utf8(&commit_buf)
             .expect("Invalid UTF-8 commit message")
@@ -104,7 +105,7 @@ fn gpg_sign_string(key: Option<String>, content: &str) -> Result<String, Git2Err
 mod test {
     use crate::git::repository::Repository;
     use anyhow::Result;
-    use cmd_lib::run_cmd;
+    use cmd_lib::{init_builtin_logger, run_cmd};
     use sealed_test::prelude::*;
     use speculoos::prelude::*;
 
@@ -121,6 +122,33 @@ mod test {
 
         // Act
         let oid = repo.commit("feat: a test commit", false);
+
+        // Assert
+        assert_that!(oid).is_ok();
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn create_signed_commit_ok() -> Result<()> {
+        init_builtin_logger();
+
+        // Arrange
+        let crate_dir = std::env::var("CARGO_MANIFEST_DIR")?;
+
+        run_cmd!(
+            gpg --import $crate_dir/tests/assets/pubkey.key;
+            gpg --import $crate_dir/tests/assets/privkey.key;
+            echo -e "5\ny\n" | gpg --no-tty --command-fd 0 --expert --edit-key test@cocogitto.org trust;
+            git init;
+            git config --local user.signingkey 35B66CC21AEBFC9B0E8C89F1FD753A01E06E05D7;
+            echo changes > file;
+            git add .;
+        )?;
+
+        let repo = Repository::open(".")?;
+
+        // Act
+        let oid = repo.commit("feat: a test commit", true);
 
         // Assert
         assert_that!(oid).is_ok();
