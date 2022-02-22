@@ -142,7 +142,7 @@ fn long_commit_summary_does_not_panic() -> Result<()> {
 
     let cocogitto = CocoGitto::get()?;
     git_add("Hello", "file")?;
-    cocogitto.conventional_commit("feat", None, message, None, None, false)?;
+    cocogitto.conventional_commit("feat", None, message, None, None, false, false)?;
 
     let check = cocogitto.check(false, false);
 

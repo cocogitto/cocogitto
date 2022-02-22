@@ -1,9 +1,11 @@
 use crate::git::error::Git2Error;
 use crate::git::repository::Repository;
-use git2::Oid;
+use git2::{Commit, ObjectType, Oid, ResetType, Signature, Tree};
+use std::io::Write;
+use std::process::{Command, Stdio};
 
 impl Repository {
-    pub(crate) fn commit(&self, message: &str) -> Result<Oid, Git2Error> {
+    pub(crate) fn commit(&self, message: &str, sign: bool) -> Result<Oid, Git2Error> {
         let sig = self.0.signature()?;
         let tree_id = self.0.index()?.write_tree()?;
         let tree = self.0.find_tree(tree_id)?;
@@ -15,13 +17,11 @@ impl Repository {
             let head_target = head.target().expect("Cannot get HEAD target");
             let tip = &self.0.find_commit(head_target)?;
 
-            self.0
-                .commit(Some("HEAD"), &sig, &sig, message, &tree, &[tip])
+            self.commit_or_signed_commit(&sig, message, &tree, &[tip], sign)
                 .map_err(Git2Error::from)
         } else if is_empty && has_delta {
             // First repo commit
-            self.0
-                .commit(Some("HEAD"), &sig, &sig, message, &tree, &[])
+            self.commit_or_signed_commit(&sig, message, &tree, &[], sign)
                 .map_err(Git2Error::from)
         } else {
             let statuses = self.get_statuses()?;
@@ -34,6 +34,70 @@ impl Repository {
             Err(Git2Error::NothingToCommit { branch, statuses })
         }
     }
+
+    fn commit_or_signed_commit(
+        &self,
+        sig: &Signature,
+        commit_message: &str,
+        tree: &Tree,
+        parents: &[&Commit],
+        sign: bool,
+    ) -> Result<Oid, Git2Error> {
+        if !sign {
+            return self.0
+                .commit(Some("HEAD"), sig, sig, commit_message, tree, parents)
+                .map_err(Git2Error::Other)
+        }
+
+        let commit_buf =
+            self.0
+                .commit_create_buffer(sig, sig, commit_message, tree, parents)?;
+
+        let commit_as_str = std::str::from_utf8(&commit_buf)
+            .expect("Invalid UTF-8 commit message")
+            .to_string();
+
+        let key = self.signin_key().ok();
+        let gpg_signature = gpg_sign_string(key, &commit_as_str)?;
+        let oid = self
+            .0
+            .commit_signed(&commit_as_str, &gpg_signature, Some("gpgsig"))?;
+
+        // This is needed because git2 does not update HEAD after creating a signed commit
+        let commit = self.0.find_object(oid, Some(ObjectType::Commit))?;
+        self.0.reset(&commit, ResetType::Mixed, None)?;
+        Ok(oid).map_err(Git2Error::Other)
+    }
+}
+
+fn gpg_sign_string(key: Option<String>, content: &str) -> Result<String, Git2Error> {
+    let mut child = Command::new("gpg");
+    child.args(["--armor", "--detach-sig"]);
+
+    if let Some(key) = &key {
+        child.args(["--default-key", key]);
+    }
+
+    let mut child = child
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("error calling gpg command, is gpg installed ?");
+
+    {
+        let stdin = child.stdin.as_mut().unwrap();
+        stdin.write_all(content.as_bytes())?;
+    }
+
+    child.wait_with_output().map(|output| {
+        if output.status.success() {
+            Ok(String::from_utf8_lossy(&output.stdout).to_string())
+        } else {
+            Err(Git2Error::GpgError(
+                String::from_utf8_lossy(&output.stderr).to_string(),
+            ))
+        }
+    })?
 }
 
 #[cfg(test)]
@@ -56,7 +120,7 @@ mod test {
         let repo = Repository::open(".")?;
 
         // Act
-        let oid = repo.commit("feat: a test commit");
+        let oid = repo.commit("feat: a test commit", false);
 
         // Assert
         assert_that!(oid).is_ok();
@@ -76,7 +140,7 @@ mod test {
         let repo = Repository::open(".").expect("could not open git repository");
 
         // Act
-        let oid = repo.commit("feat: a test commit");
+        let oid = repo.commit("feat: a test commit", false);
 
         // Assert
         assert_that!(oid).is_ok();
@@ -88,7 +152,7 @@ mod test {
         let repo = Repository::init(".")?;
 
         // Act
-        let oid = repo.commit("feat: a test commit");
+        let oid = repo.commit("feat: a test commit", false);
 
         // Assert
         assert_that!(oid).is_err();
@@ -106,7 +170,7 @@ mod test {
         let repo = Repository::open(".")?;
 
         // Act
-        let oid = repo.commit("feat: a test commit");
+        let oid = repo.commit("feat: a test commit", false);
 
         // Assert
         assert_that!(oid).is_err();

@@ -9,6 +9,16 @@ use git2::{
 pub(crate) struct Repository(pub(crate) Git2Repository);
 
 impl Repository {
+    pub(crate) fn signin_key(&self) -> Result<String, Git2Error> {
+        let config = self.0.config()?;
+        config.get_string("user.signingKey").map_err(Into::into)
+    }
+
+    pub(crate) fn gpg_sign(&self) -> bool {
+        let config = self.0.config().expect("failed to retrieve gitconfig");
+        config.get_bool("commit.gpgSign").unwrap_or(false)
+    }
+
     pub(crate) fn init<S: AsRef<Path> + ?Sized>(path: &S) -> Result<Repository, Git2Error> {
         let repository =
             Git2Repository::init(&path).map_err(Git2Error::FailedToInitializeRepository)?;
@@ -138,7 +148,7 @@ mod test {
             git add .;
         )?;
         let repo = Repository::open(".")?;
-        let commit_oid = repo.commit("first commit")?;
+        let commit_oid = repo.commit("first commit", false)?;
 
         // Act
         let oid = repo.get_head_commit_oid();
@@ -170,7 +180,7 @@ mod test {
             git add .;
         )?;
         let repo = Repository::open(".")?;
-        let commit_oid = repo.commit("first commit")?;
+        let commit_oid = repo.commit("first commit", false)?;
 
         // Act
         let head = repo.get_head_commit().map(|head| head.id());
@@ -208,7 +218,7 @@ mod test {
         )?;
         let repo = Repository::open(".")?;
 
-        repo.commit("first commit")?;
+        repo.commit("first commit", false)?;
 
         // Act
         let head = repo.get_head();
@@ -246,7 +256,7 @@ mod test {
             git add .;
         )?;
         let repo = Repository::open(".")?;
-        repo.commit("hello one")?;
+        repo.commit("hello one", false)?;
 
         // Act
         let shorthand = repo.get_branch_shorthand();

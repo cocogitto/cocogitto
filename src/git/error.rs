@@ -2,8 +2,8 @@ use crate::git::status::Statuses;
 use colored::Colorize;
 use git2::Error;
 use serde::de::StdError;
-use std::fmt;
 use std::fmt::{Display, Formatter};
+use std::{fmt, io};
 
 #[derive(Debug)]
 pub enum Git2Error {
@@ -20,6 +20,8 @@ pub enum Git2Error {
     StashError(git2::Error),
     StatusError(git2::Error),
     CommitNotFound(git2::Error),
+    IOError(io::Error),
+    GpgError(String),
     Other(git2::Error),
     NoTagFound,
     CommitterNotFound,
@@ -113,6 +115,8 @@ impl Display for Git2Error {
                 "Cannot create tag: changes need to be committed".red(),
                 statuses
             ),
+            Git2Error::IOError(_) => writeln!(f, "IO Error"),
+            Git2Error::GpgError(_) => writeln!(f, "failed to sign commit"),
         }?;
 
         match self {
@@ -125,6 +129,8 @@ impl Display for Git2Error {
             | Git2Error::StatusError(err)
             | Git2Error::Other(err)
             | Git2Error::CommitNotFound(err) => writeln!(f, "\ncause: {}", err),
+            Git2Error::GpgError(err) => writeln!(f, "\ncause: {}", err),
+            Git2Error::IOError(err) => writeln!(f, "\ncause: {}", err),
             _ => fmt::Result::Ok(()),
         }
     }
@@ -159,6 +165,12 @@ impl Display for TagError {
 impl From<git2::Error> for Git2Error {
     fn from(err: Error) -> Self {
         Git2Error::Other(err)
+    }
+}
+
+impl From<io::Error> for Git2Error {
+    fn from(err: io::Error) -> Self {
+        Git2Error::IOError(err)
     }
 }
 

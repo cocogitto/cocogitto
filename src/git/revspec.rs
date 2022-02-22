@@ -388,7 +388,7 @@ mod test {
             git add .;
         )?;
 
-        let start = repo.commit("chore: init")?;
+        let start = repo.commit("chore: init", false)?;
 
         run_cmd!(
             git init;
@@ -396,7 +396,7 @@ mod test {
             git add .;
         )?;
 
-        let _end = repo.commit("chore: 1.0.0")?;
+        let _end = repo.commit("chore: 1.0.0", false)?;
 
         // Create an annotated tag
         let head = repo.get_head_commit().unwrap();
@@ -410,7 +410,7 @@ mod test {
             git add .;
         )?;
 
-        repo.commit("feat: a commit")?;
+        repo.commit("feat: a commit", false)?;
 
         let commit_range = repo.get_commit_range(&RevspecPattern::from("..1.0.0"))?;
 
@@ -431,7 +431,7 @@ mod test {
             git add .;
         )?;
 
-        let start = repo.commit("chore: init")?;
+        let start = repo.commit("chore: init", false)?;
 
         run_cmd!(
             git commit --allow-empty -m "chore: 1.0.0";
