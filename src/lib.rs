@@ -110,7 +110,8 @@ pub fn init<S: AsRef<Path> + ?Sized>(path: &S) -> Result<()> {
     repository.add_all()?;
 
     if is_init_commit {
-        repository.commit("chore: initial commit")?;
+        let sign = repository.gpg_sign();
+        repository.commit("chore: initial commit", sign)?;
     }
 
     Ok(())
@@ -359,6 +360,7 @@ impl CocoGitto {
         Ok(conventional_message)
     }
 
+    #[allow(clippy::too_many_arguments)] // FIXME
     pub fn conventional_commit(
         &self,
         commit_type: &str,
@@ -367,6 +369,7 @@ impl CocoGitto {
         body: Option<String>,
         footer: Option<String>,
         is_breaking_change: bool,
+        sign: bool,
     ) -> Result<()> {
         // Ensure commit type is known
         let commit_type = CommitType::from(commit_type);
@@ -391,7 +394,8 @@ impl CocoGitto {
         conventional_commit_parser::parse(&conventional_message)?;
 
         // Git commit
-        let oid = self.repository.commit(&conventional_message)?;
+        let sign = sign || self.repository.gpg_sign();
+        let oid = self.repository.commit(&conventional_message, sign)?;
 
         // Pretty print a conventional commit summary
         let commit = self.repository.0.find_commit(oid)?;
@@ -524,8 +528,10 @@ impl CocoGitto {
 
         let version_str = Self::prefix_version(version_str);
 
-        self.repository
-            .commit(&format!("chore(version): {}", next_version.prefixed_tag))?;
+        self.repository.commit(
+            &format!("chore(version): {}", next_version.prefixed_tag),
+            false,
+        )?;
 
         self.repository.create_tag(&version_str)?;
 

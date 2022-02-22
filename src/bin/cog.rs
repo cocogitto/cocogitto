@@ -186,6 +186,10 @@ struct CommitArgs {
     /// Open commit message in an editor
     #[clap(short, long)]
     edit: bool,
+
+    /// Sign this commit
+    #[clap(short, long)]
+    sign: bool,
 }
 
 fn main() -> Result<()> {
@@ -338,6 +342,7 @@ fn main() -> Result<()> {
             scope,
             breaking_change,
             edit,
+            sign,
         }) => {
             let cocogitto = CocoGitto::get()?;
             let (body, footer, breaking) = if edit {
@@ -346,7 +351,7 @@ fn main() -> Result<()> {
                 (None, None, breaking_change)
             };
 
-            cocogitto.conventional_commit(&typ, scope, message, body, footer, breaking)?;
+            cocogitto.conventional_commit(&typ, scope, message, body, footer, breaking, sign)?;
         }
     }
 
