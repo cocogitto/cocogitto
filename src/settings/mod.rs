@@ -100,10 +100,12 @@ impl Settings {
             Some(repo_path) => {
                 let settings_path = repo_path.join(CONFIG_PATH);
                 if settings_path.exists() {
-                    let mut s = Config::new();
-                    s.merge(File::from(settings_path))
-                        .map_err(SettingError::from)?;
-                    s.try_into().map_err(SettingError::from)
+                    Config::builder()
+                        .add_source(File::from(settings_path))
+                        .build()
+                        .map_err(SettingError::from)?
+                        .try_deserialize()
+                        .map_err(SettingError::from)
                 } else {
                     Ok(Settings::default())
                 }
