@@ -25,7 +25,7 @@ jobs:
           toolchain: stable
 
       - run: 
-          cargo install cargo-bump
+          cargo install cargo-edit
 
       - run:
           cargo login ${{secrets.CARGO_TOKEN}}
