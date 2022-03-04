@@ -6,7 +6,7 @@ pre_bump_hooks = [
     "cargo test",
     "cargo clippy",
     "cargo fmt --all",
-    "cargo bump {{version}}",
+    "cargo set-version {{version}}",
     "cargo build --release",
 ]
 
