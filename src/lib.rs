@@ -456,8 +456,8 @@ impl CocoGitto {
         let changelog = self.get_changelog_with_target_version(pattern, &version_str)?;
 
         let path = settings::changelog_path();
-
-        changelog.write_to_file(path, SETTINGS.to_changelog_template().unwrap_or_default())?;
+        let template = SETTINGS.get_changelog_template()?;
+        changelog.write_to_file(path, template)?;
 
         let current = self
             .repository

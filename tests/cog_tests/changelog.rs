@@ -1,9 +1,12 @@
 use anyhow::Result;
 use assert_cmd::Command;
 use chrono::Utc;
-use indoc::formatdoc;
+use cmd_lib::run_cmd;
+use indoc::{formatdoc, indoc};
 use pretty_assertions::assert_eq;
 use sealed_test::prelude::*;
+use std::fs;
+use std::path::PathBuf;
 
 use cocogitto::settings::Settings;
 
@@ -352,6 +355,83 @@ fn get_changelog_from_tag_to_tagged_head() -> Result<()> {
             commit_three = &commit_three[0..7],
             commit_four = &commit_four[0..7],
             commit_five = &commit_five[0..7],
+        )
+    );
+    Ok(())
+}
+
+#[sealed_test]
+fn get_changelog_whith_custom_template() -> Result<()> {
+    // Arrange
+    let crate_dir = env!("CARGO_MANIFEST_DIR");
+    let template = PathBuf::from(crate_dir).join("tests/cog_tests/template.md");
+
+    git_init()?;
+
+    let cog_toml = indoc!(
+        "[changelog]
+        remote = \"github.com\"
+        repository = \"test\"
+        owner = \"test\""
+    );
+
+    run_cmd!(echo $cog_toml > cog.toml;)?;
+
+    let string = fs::read_to_string("cog.toml")?;
+    println!("{}", string);
+
+    let init_commit = git_commit("chore: init")?;
+    let commit_one = git_commit("feat(scope1): start")?;
+    let commit_two = git_commit("feat: feature 1")?;
+    git_tag("1.0.0")?;
+    let commit_three = git_commit("feat: feature 2")?;
+    let commit_four = git_commit("fix: bug fix 1")?;
+    let commit_five = git_commit("chore(version): 2.0.0")?;
+    git_tag("2.0.0")?;
+
+    // Act
+    let changelog = Command::cargo_bin("cog")?
+        .arg("changelog")
+        .arg("-t")
+        .arg(template)
+        // Assert
+        .assert()
+        .success();
+
+    let changelog = changelog.get_output();
+    let changelog = String::from_utf8_lossy(&changelog.stdout);
+    let today = Utc::today().naive_utc();
+
+    assert_eq!(
+        changelog.as_ref(),
+        formatdoc!(
+            "## [2.0.0](https://github.com/test/test/compare/1.0.0..2.0.0) - {today}
+            #### Bug Fixes
+            -  bug fix 1 - ([{commit_four_short}](https://github.com/test/test/commit/{commit_four})) - Tom
+            #### Features
+            -  feature 2 - ([{commit_three_short}](https://github.com/test/test/commit/{commit_three})) - Tom
+            #### Miscellaneous Chores
+            - **(version)** 2.0.0 - ([{commit_five_short}](https://github.com/test/test/commit/{commit_five})) - Tom
+
+            - - -
+
+            ## [1.0.0](https://github.com/test/test/compare/{init_commit}..1.0.0) - {today}
+            #### Features
+            -  feature 1 - ([{commit_two_short}](https://github.com/test/test/commit/{commit_two})) - Tom
+            - **(scope1)** start - ([{commit_one_short}](https://github.com/test/test/commit/{commit_one})) - Tom
+            ",
+            today = today,
+            init_commit = &init_commit,
+            commit_one = &commit_one,
+            commit_one_short = &commit_one[0..7],
+            commit_two = &commit_two,
+            commit_two_short = &commit_two[0..7],
+            commit_three = &commit_three,
+            commit_three_short = &commit_three[0..7],
+            commit_four = &commit_four,
+            commit_four_short = &commit_four[0..7],
+            commit_five = &commit_five,
+            commit_five_short = &commit_five[0..7],
         )
     );
     Ok(())

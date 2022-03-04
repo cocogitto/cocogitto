@@ -86,11 +86,19 @@ pub struct RemoteContext {
 }
 
 impl RemoteContext {
-    pub fn new(remote: String, repository: String, owner: String) -> Self {
-        Self {
-            remote,
-            repository,
-            owner,
+    pub fn try_new(
+        remote: Option<String>,
+        repository: Option<String>,
+        owner: Option<String>,
+    ) -> Option<Self> {
+        match (remote, repository, owner) {
+            (Some(remote), Some(repository), Some(owner)) => Some(Self {
+                remote,
+                repository,
+                owner,
+            }),
+            (None, None, None) => None,
+            _ => panic!("Changelog remote context should be set. Missing one of 'remote', 'repository', 'owner' in changelog configuration")
         }
     }
 

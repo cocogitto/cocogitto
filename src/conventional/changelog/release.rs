@@ -153,11 +153,11 @@ mod test {
         // Arrange
         let release = Release::fixture();
         let renderer = Renderer::try_new(Template {
-            context: Some(RemoteContext::new(
-                "github.com".into(),
-                "cocogitto".into(),
-                "cocogitto".into(),
-            )),
+            context: RemoteContext::try_new(
+                Some("github.com".into()),
+                Some("cocogitto".into()),
+                Some("cocogitto".into()),
+            ),
             kind: TemplateKind::Remote,
         })?;
 

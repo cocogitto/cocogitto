@@ -96,15 +96,15 @@ enum Cli {
         template: Option<String>,
 
         /// Url to use during template generation
-        #[clap(name = "remote", long, short, required_if_eq("template", "remote"))]
+        #[clap(name = "remote", long, short, requires_all(& ["owner", "repository"]))]
         remote: Option<String>,
 
         /// Repository owner to use during template generation
-        #[clap(name = "owner", long, short, required_if_eq("template", "remote"))]
+        #[clap(name = "owner", long, short, requires_all(& ["remote", "repository"]))]
         owner: Option<String>,
 
         /// Name of the repository used during template generation
-        #[clap(name = "repository", long, required_if_eq("template", "remote"))]
+        #[clap(name = "repository", long, requires_all(&["owner", "remote"]))]
         repository: Option<String>,
     },
 
@@ -284,25 +284,14 @@ fn main() -> Result<()> {
         } => {
             let cocogitto = CocoGitto::get()?;
 
-            // Get a template either from arg or from config
-            let template = match template {
-                None => SETTINGS.to_changelog_template(),
-                Some(template) => {
-                    let context = if template == "remote" {
-                        let remote = remote.expect("'remote' should be set for remote template");
-                        let repository =
-                            repository.expect("'repository' should be set for remote template");
-                        let owner = owner.expect("'owner' should be set for remote template");
-                        Some(RemoteContext::new(remote, repository, owner))
-                    } else {
-                        None
-                    };
-
-                    Some(Template::from_arg(&template, context)?)
-                }
+            let context = RemoteContext::try_new(remote, repository, owner)
+                .or_else(|| SETTINGS.get_template_context());
+            let template = template.as_ref().or(SETTINGS.changelog.template.as_ref());
+            let template = if let Some(template) = template {
+                Template::from_arg(template, context)?
+            } else {
+                Template::default()
             };
-
-            let template = template.unwrap_or_default();
 
             let pattern = pattern.as_deref().map(RevspecPattern::from);
 
