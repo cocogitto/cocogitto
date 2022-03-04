@@ -4,7 +4,7 @@ use itertools::Itertools;
 use tera::{get_json_pointer, to_value, try_get_value, Context, Tera, Value};
 
 use crate::conventional::changelog::release::Release;
-use crate::conventional::changelog::template::Template;
+use crate::conventional::changelog::template::{RemoteContext, Template};
 
 #[derive(Debug)]
 pub struct Renderer {
@@ -44,12 +44,11 @@ impl Renderer {
     }
     fn render_release(&self, version: &Release) -> Result<String, tera::Error> {
         let mut template_context = Context::from_serialize(version)?;
-
         let context = self
             .template
             .context
             .as_ref()
-            .map(|context| context.to_tera_context());
+            .map(RemoteContext::to_tera_context);
 
         if let Some(context) = context {
             template_context.extend(context);

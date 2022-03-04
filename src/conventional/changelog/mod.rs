@@ -6,7 +6,7 @@ use crate::conventional::changelog::template::Template;
 use std::fs;
 use std::path::Path;
 
-mod error;
+pub mod error;
 pub(crate) mod release;
 pub(crate) mod renderer;
 pub(crate) mod serde;

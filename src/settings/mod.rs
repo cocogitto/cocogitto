@@ -5,6 +5,7 @@ use crate::conventional::commit::CommitConfig;
 use crate::git::repository::Repository;
 use crate::{CommitsMetadata, CONFIG_PATH, SETTINGS};
 
+use crate::conventional::changelog::error::ChangelogError;
 use crate::conventional::changelog::template::{RemoteContext, Template};
 use crate::settings::error::SettingError;
 use config::{Config, File};
@@ -146,11 +147,8 @@ impl Settings {
         default_types.insert(CommitType::Style, CommitConfig::new("Style"));
         default_types.insert(CommitType::Refactor, CommitConfig::new("Refactoring"));
         default_types.insert(CommitType::Test, CommitConfig::new("Tests"));
-
         default_types.insert(CommitType::Build, CommitConfig::new("Build system"));
-
         default_types.insert(CommitType::Ci, CommitConfig::new("Continuous Integration"));
-
         default_types
     }
 
@@ -172,34 +170,20 @@ impl Settings {
         }
     }
 
-    pub fn to_changelog_template(&self) -> Option<Template> {
-        self.changelog.template.as_ref().map(|template| {
-            let context = if template == "remote" {
-                let remote = self
-                    .changelog
-                    .remote
-                    .as_ref()
-                    .expect("'remote' should be set for remote template");
-                let repository = self
-                    .changelog
-                    .repository
-                    .as_ref()
-                    .expect("'repository' should be set for remote template");
-                let owner = self
-                    .changelog
-                    .owner
-                    .as_ref()
-                    .expect("'owner' should be set for remote template");
-                Some(RemoteContext::new(
-                    remote.to_owned(),
-                    repository.to_owned(),
-                    owner.to_owned(),
-                ))
-            } else {
-                None
-            };
+    pub fn get_template_context(&self) -> Option<RemoteContext> {
+        let remote = self.changelog.remote.as_ref().cloned();
 
-            Template::from_arg(template, context).expect("Unable to get template from config")
-        })
+        let repository = self.changelog.repository.as_ref().cloned();
+
+        let owner = self.changelog.owner.as_ref().cloned();
+
+        RemoteContext::try_new(remote, repository, owner)
+    }
+
+    pub fn get_changelog_template(&self) -> Result<Template, ChangelogError> {
+        let context = self.get_template_context();
+        let template = self.changelog.template.as_deref().unwrap_or("default");
+
+        Template::from_arg(template, context)
     }
 }
