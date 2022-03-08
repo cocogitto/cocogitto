@@ -184,13 +184,22 @@ impl Ord for Commit {
     }
 }
 
-pub fn verify(author: Option<String>, message: &str) -> Result<(), ConventionalCommitError> {
+pub fn verify(
+    author: Option<String>,
+    message: &str,
+    ignore_merge_commit: bool,
+) -> Result<(), ConventionalCommitError> {
     // Strip away comments from git message before parsing
     let msg: String = message
         .lines()
         .filter(|line| !line.trim_start().starts_with('#'))
         .collect::<Vec<&str>>()
         .join("\n");
+
+    if msg.starts_with("Merge ") && ignore_merge_commit {
+        println!("{}", "Merge commit was ignored".yellow());
+        return Ok(());
+    }
 
     let commit = conventional_commit_parser::parse(msg.as_str());
 
@@ -306,7 +315,7 @@ mod test {
         let message = "feat(database): add postgresql driver";
 
         // Act
-        let result = verify(Some("toml".into()), message);
+        let result = verify(Some("toml".into()), message, false);
 
         // Assert
         assert_that!(result).is_ok();
@@ -324,7 +333,7 @@ mod test {
         );
 
         // Act
-        let result = verify(Some("toml".into()), message);
+        let result = verify(Some("toml".into()), message, false);
 
         // Assert
         assert_that!(result).is_ok();
@@ -336,7 +345,7 @@ mod test {
         let message = "feat add postgresql driver";
 
         // Act
-        let result = verify(Some("toml".into()), message);
+        let result = verify(Some("toml".into()), message, false);
 
         // Assert
         assert_that!(result).is_err();
@@ -348,7 +357,7 @@ mod test {
         let message = "post: add postgresql driver";
 
         // Act
-        let result = verify(Some("toml".into()), message);
+        let result = verify(Some("toml".into()), message, false);
 
         // Assert
         assert_that!(result).is_err();

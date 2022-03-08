@@ -4,6 +4,7 @@ use crate::helpers::*;
 
 use anyhow::Result;
 use assert_cmd::prelude::*;
+use cmd_lib::run_cmd;
 use indoc::indoc;
 use sealed_test::prelude::*;
 
@@ -86,6 +87,64 @@ fn verify_with_unknown_commit_type_fails() -> Result<()> {
         // Assert
         .assert()
         .failure();
+
+    Ok(())
+}
+
+#[test]
+fn should_not_ignore_merge_commit_by_default() -> Result<()> {
+    // Arrange
+    let message = "Merge toto into titi";
+
+    // Act
+    Command::cargo_bin("cog")?
+        .arg("verify")
+        .arg(message)
+        // Assert
+        .assert()
+        .failure();
+
+    Ok(())
+}
+
+#[test]
+fn should_ignore_merge_commit_with_ignore_flag() -> Result<()> {
+    // Arrange
+    let message = "Merge toto into titi";
+
+    // Act
+    Command::cargo_bin("cog")?
+        .arg("verify")
+        .arg("--ignore-merge-commits")
+        .arg(message)
+        // Assert
+        .assert()
+        .success();
+
+    Ok(())
+}
+
+#[sealed_test]
+fn should_ignore_merge_commit_via_config() -> Result<()> {
+    // Arrange
+    git_init()?;
+    let settings = r#"ignore_merge_commits = true"#;
+
+    run_cmd!(
+        echo $settings > cog.toml;
+        git add .;
+        git commit -m "feat: cog.toml config"
+    )?;
+
+    let message = "Merge toto into titi";
+
+    // Act
+    Command::cargo_bin("cog")?
+        .arg("verify")
+        .arg(message)
+        // Assert
+        .assert()
+        .success();
 
     Ok(())
 }

@@ -223,7 +223,12 @@ impl CocoGitto {
                             .collect();
 
                         rebase.commit(None, &original_commit.committer(), Some(&new_message))?;
-                        match verify(self.repository.get_author().ok(), &new_message) {
+                        let ignore_merge_commit = SETTINGS.ignore_merge_commits;
+                        match verify(
+                            self.repository.get_author().ok(),
+                            &new_message,
+                            ignore_merge_commit,
+                        ) {
                             Ok(_) => println!(
                                 "Changed commit message to:\"{}\"",
                                 &new_message.trim_end()
@@ -250,7 +255,7 @@ impl CocoGitto {
         Ok(())
     }
 
-    pub fn check(&self, check_from_latest_tag: bool) -> Result<()> {
+    pub fn check(&self, check_from_latest_tag: bool, ignore_merge_commits: bool) -> Result<()> {
         let commit_range = if check_from_latest_tag {
             self.repository
                 .get_commit_range(&RevspecPattern::default())?
@@ -258,13 +263,22 @@ impl CocoGitto {
             self.repository.all_commits()?
         };
 
-        let errors: Vec<_> = commit_range
-            .commits
-            .iter()
-            .filter(|commit| !commit.message().unwrap_or("").starts_with("Merge "))
-            .map(Commit::from_git_commit)
-            .filter_map(Result::err)
-            .collect();
+        let errors: Vec<_> = if ignore_merge_commits {
+            commit_range
+                .commits
+                .iter()
+                .filter(|commit| !commit.message().unwrap_or("").starts_with("Merge "))
+                .map(Commit::from_git_commit)
+                .filter_map(Result::err)
+                .collect()
+        } else {
+            commit_range
+                .commits
+                .iter()
+                .map(Commit::from_git_commit)
+                .filter_map(Result::err)
+                .collect()
+        };
 
         if errors.is_empty() {
             let msg = "No errored commits".green();
