@@ -1,4 +1,3 @@
-#![cfg(not(tarpaulin_include))]
 mod cog_commit;
 
 use std::path::PathBuf;
