@@ -27,6 +27,8 @@ pub enum HookType {
 #[serde(deny_unknown_fields)]
 pub struct Settings {
     #[serde(default)]
+    pub ignore_merge_commits: bool,
+    #[serde(default)]
     pub branch_whitelist: Vec<String>,
     pub tag_prefix: Option<String>,
     #[serde(default)]

@@ -38,6 +38,9 @@ enum Cli {
         /// Check commit history, starting from the latest tag to HEAD
         #[clap(short = 'l', long)]
         from_latest_tag: bool,
+        /// Ignore merge commits messages
+        #[clap(short, long)]
+        ignore_merge_commits: bool,
     },
 
     /// Create a new conventional commit
@@ -77,6 +80,9 @@ enum Cli {
     Verify {
         /// The commit message
         message: String,
+        /// Ignore merge commits messages
+        #[clap(short, long)]
+        ignore_merge_commits: bool,
     },
 
     /// Display a changelog for the given commit oid range
@@ -96,7 +102,7 @@ enum Cli {
         template: Option<String>,
 
         /// Url to use during template generation
-        #[clap(name = "remote", long, short, requires_all(& ["owner", "repository"]))]
+        #[clap(name = "remote", long, short, requires_all(&["owner", "repository"]))]
         remote: Option<String>,
 
         /// Repository owner to use during template generation
@@ -104,7 +110,7 @@ enum Cli {
         owner: Option<String>,
 
         /// Name of the repository used during template generation
-        #[clap(name = "repository", long, requires_all(&["owner", "remote"]))]
+        #[clap(name = "repository", long, requires_all(& ["owner", "remote"]))]
         repository: Option<String>,
     },
 
@@ -209,16 +215,24 @@ fn main() -> Result<()> {
 
             cocogitto.create_version(increment, pre.as_deref(), hook_profile.as_deref())?
         }
-        Cli::Verify { message } => {
+        Cli::Verify {
+            message,
+            ignore_merge_commits,
+        } => {
+            let ignore_merge_commits = ignore_merge_commits || SETTINGS.ignore_merge_commits;
             let author = CocoGitto::get()
                 .map(|cogito| cogito.get_committer().unwrap())
                 .ok();
 
-            commit::verify(author, &message)?;
+            commit::verify(author, &message, ignore_merge_commits)?;
         }
-        Cli::Check { from_latest_tag } => {
+        Cli::Check {
+            from_latest_tag,
+            ignore_merge_commits,
+        } => {
             let cocogitto = CocoGitto::get()?;
-            cocogitto.check(from_latest_tag)?;
+            let ignore_merge_commits = ignore_merge_commits || SETTINGS.ignore_merge_commits;
+            cocogitto.check(from_latest_tag, ignore_merge_commits)?;
         }
         Cli::Edit { from_latest_tag } => {
             let cocogitto = CocoGitto::get()?;
