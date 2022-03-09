@@ -91,7 +91,7 @@ fn verify_with_unknown_commit_type_fails() -> Result<()> {
     Ok(())
 }
 
-#[test]
+#[sealed_test]
 fn should_not_ignore_merge_commit_by_default() -> Result<()> {
     // Arrange
     let message = "Merge toto into titi";
