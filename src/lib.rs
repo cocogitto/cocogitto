@@ -65,7 +65,7 @@ pub fn init<S: AsRef<Path> + ?Sized>(path: &S) -> Result<()> {
 
     if !path.exists() {
         std::fs::create_dir(&path)
-            .map_err(|err| anyhow!("failed to create directory `{path:?}` \n\ncause:{err}"))?;
+            .map_err(|err| anyhow!("failed to create directory `{:?}` \n\ncause: {}", path, err))?;
     }
 
     let mut is_init_commit = false;
@@ -96,9 +96,15 @@ pub fn init<S: AsRef<Path> + ?Sized>(path: &S) -> Result<()> {
         std::fs::write(
             &settings_path,
             toml::to_string(&settings)
-                .map_err(|err| anyhow!("failed to serialize {CONFIG_PATH}\n\ncause: {err}"))?,
+                .map_err(|err| anyhow!("failed to serialize {}\n\ncause: {}", CONFIG_PATH, err))?,
         )
-        .map_err(|err| anyhow!("failed to write file `{settings_path:?}`\n\ncause: {err}"))?;
+        .map_err(|err| {
+            anyhow!(
+                "failed to write file `{:?}`\n\ncause: {}",
+                settings_path,
+                err
+            )
+        })?;
     }
 
     repository.add_all()?;
@@ -426,7 +432,12 @@ impl CocoGitto {
                     glob.is_match(&branch)
                 });
 
-                ensure!(is_match, "No patterns matched in {whitelist:?} for branch '{branch}', bump is not allowed")
+                ensure!(
+                    is_match,
+                    "No patterns matched in {:?} for branch '{}', bump is not allowed",
+                    whitelist,
+                    branch
+                )
             }
         };
 
@@ -437,7 +448,7 @@ impl CocoGitto {
                 println!("Failed to get current version, falling back to 0.0.0");
                 Version::new(0, 0, 0)
             }
-            Err(ref err) => bail!("{err}"),
+            Err(ref err) => bail!("{}", err),
         };
 
         let mut next_version = increment.bump(&current_version, &self.repository)?;
@@ -450,7 +461,7 @@ impl CocoGitto {
                 cause_key, comparison
             );
 
-            bail!("{}:\n\t{cause}\n", "SemVer Error".red().to_string());
+            bail!("{}:\n\t{}\n", "SemVer Error".red().to_string(), cause);
         };
 
         if let Some(pre_release) = pre_release {
