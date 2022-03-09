@@ -31,7 +31,8 @@ jobs:
           cargo login ${{secrets.CARGO_TOKEN}}
 
       - name: SemVer release
-        uses: cocogitto/cocogitto-action@v2
+        id: release
+        uses: cocogitto/cocogitto-action@v3
         with:
           check-latest-tag-only: true
           release: true
