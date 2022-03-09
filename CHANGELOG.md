@@ -2,6 +2,49 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## [5.0.0](https://github.com/cocogitto/cocogitto/compare/4.1.0..5.0.0) - 2022-03-09
+#### Bug Fixes
+- **(changelog)** allow template context to be used in custom templates - ([974587c](https://github.com/cocogitto/cocogitto/commit/974587c9b3d41e9ff57c9ff271c6d3d35bc0f962)) - [@oknozor](https://github.com/oknozor)
+- **(error)** restore parse error formatting - ([71bec5d](https://github.com/cocogitto/cocogitto/commit/71bec5d8dc3b664475f7c2cd619630a7f0b90f66)) - [@oknozor](https://github.com/oknozor)
+- updated config to 0.12.0 (latest as of now) + usage - ([fc4d1a3](https://github.com/cocogitto/cocogitto/commit/fc4d1a3dfdedf55ec65c26f74fada8869700bfd2)) - Kristof Mattei
+- check allowed commit type when using 'cog verify' - ([a57de18](https://github.com/cocogitto/cocogitto/commit/a57de18b25a8be350db55304d226ca8d68771527)) - [@oknozor](https://github.com/oknozor)
+- make env var error more explicit - ([22120dc](https://github.com/cocogitto/cocogitto/commit/22120dcbfa35144e50999500940ddaacba68086e)) - [@oknozor](https://github.com/oknozor)
+- build commit type error regardless of the command used - ([3685651](https://github.com/cocogitto/cocogitto/commit/36856519b432fcd523294c3b1dea8e19e07c493e)) - [@oknozor](https://github.com/oknozor)
+- add missing ';' in `run_cmd!` calls - ([ce6b70f](https://github.com/cocogitto/cocogitto/commit/ce6b70f83e0f352b5f25721de5a5d53cbdf100c3)) - [@Zshoham](https://github.com/Zshoham)
+- correctly identify empty repository when commiting - ([c442f07](https://github.com/cocogitto/cocogitto/commit/c442f0792fc4497cf65b92dad9ca598fead1c0a3)) - [@Zshoham](https://github.com/Zshoham)
+#### Continuous Integration
+- **(codecov)** fix codecov threshhold - ([f992c21](https://github.com/cocogitto/cocogitto/commit/f992c2196dc88fe1f126802bd880cafd3eddda64)) - [@oknozor](https://github.com/oknozor)
+- **(coverage)** set coverage target threshold to 1% - ([bf2eb5d](https://github.com/cocogitto/cocogitto/commit/bf2eb5d6f67c67acc69e1e5029e967abe28bc884)) - [@oknozor](https://github.com/oknozor)
+- update code coverage action - ([8c13a45](https://github.com/cocogitto/cocogitto/commit/8c13a45f48862d4e224e957168426e55998e2c26)) - [@oknozor](https://github.com/oknozor)
+- use keyword with shorter lenght to comply with crates.io rules - ([cd847de](https://github.com/cocogitto/cocogitto/commit/cd847de37cda51950e65d4b4868b8faa6ffcd880)) - [@oknozor](https://github.com/oknozor)
+- remove cargo manifest keyword to comply with crates.io max keyword rule - ([896bcb3](https://github.com/cocogitto/cocogitto/commit/896bcb30b93e47b65e4885e5f6e1e748ab9cdfae)) - [@oknozor](https://github.com/oknozor)
+#### Documentation
+- replace AUR badges with repology in the installation section - ([466dffe](https://github.com/cocogitto/cocogitto/commit/466dffeb187fd117e423559974a914e991f894e8)) - [@oknozor](https://github.com/oknozor)
+- add discord badge to readme - ([e8eef80](https://github.com/cocogitto/cocogitto/commit/e8eef8024c238be5e1873236ea069936ffaf47e1)) - [@oknozor](https://github.com/oknozor)
+- use the `cog commit` command - ([ab50816](https://github.com/cocogitto/cocogitto/commit/ab508165533ada56aab79d77da619e901793dc6e)) - [@tranzystorek-io](https://github.com/tranzystorek-io)
+- add coco deprecation notice to README - ([8e8f7b2](https://github.com/cocogitto/cocogitto/commit/8e8f7b276c2f932f321ff0fba104bbad2598faa7)) - [@tranzystorek-io](https://github.com/tranzystorek-io)
+- suggest running a locked install when using cargo - ([80a4737](https://github.com/cocogitto/cocogitto/commit/80a4737359d0452e6dcc24331c775efab2ac0c12)) - [@tranzystorek-io](https://github.com/tranzystorek-io)
+- nixos install onliner - ([22abfd3](https://github.com/cocogitto/cocogitto/commit/22abfd3276c91e47dd02d06f6e2b044abbbcc7a8)) - Travis Davis
+#### Features
+- **(bump)** use glob pattern for branch whitelist - ([654baa9](https://github.com/cocogitto/cocogitto/commit/654baa959257add03d292bb5fd12ab14d3704076)) - [@oknozor](https://github.com/oknozor)
+- **(hook)** use a subshell by default on linux - ([fe47333](https://github.com/cocogitto/cocogitto/commit/fe47333de7c63af966e24ea3d0c9c199573008cf)) - [@oknozor](https://github.com/oknozor)
+- **(verify)** add the ability to forbid merge commit via configuration - ([d932d91](https://github.com/cocogitto/cocogitto/commit/d932d91d786708069286bd2c7cc81c7d2a366185)) - [@oknozor](https://github.com/oknozor)
+- add branch whitelist to cog bump #165 - ([d78071a](https://github.com/cocogitto/cocogitto/commit/d78071a190b8f85e290f02904d19a71a4432197d)) - [@oknozor](https://github.com/oknozor)
+#### Miscellaneous Chores
+- remove tarpaulin conditional config - ([a8484ac](https://github.com/cocogitto/cocogitto/commit/a8484acb909e92dba4ca368d78f9b64eb532f6c5)) - [@oknozor](https://github.com/oknozor)
+- remove deprecated coco utility - ([2c10235](https://github.com/cocogitto/cocogitto/commit/2c10235220cdf4f09c3c5a30631143683448ba98)) - [@tranzystorek-io](https://github.com/tranzystorek-io)
+- use cargo-edit for bumping crate version - ([6cb774e](https://github.com/cocogitto/cocogitto/commit/6cb774ee8daeb56a6171725cc2c4f57dc578201b)) - [@tranzystorek-io](https://github.com/tranzystorek-io)
+- update clap and config - ([421ef1f](https://github.com/cocogitto/cocogitto/commit/421ef1f70f22bf2196c247120d3a73db19c2aecf)) - [@oknozor](https://github.com/oknozor)
+- clippy lints - ([cc961d3](https://github.com/cocogitto/cocogitto/commit/cc961d3360595a89cf0131519ae63078435dadfa)) - [@oknozor](https://github.com/oknozor)
+- use rust 2021 edition - ([db8cfb5](https://github.com/cocogitto/cocogitto/commit/db8cfb581d954148d7109d80f61a356892b13c39)) - [@oknozor](https://github.com/oknozor)
+#### Refactoring
+- **(commit)** improve git statuses error output on commit - ([cbdad51](https://github.com/cocogitto/cocogitto/commit/cbdad511a489a2100305f0400ca1b328ba00b94e)) - [@oknozor](https://github.com/oknozor)
+- **(error)** display underlying errors when possible - ([41053e2](https://github.com/cocogitto/cocogitto/commit/41053e2732b3e015a86a3a7fdf53032292131365)) - [@oknozor](https://github.com/oknozor)
+- **(error)** remove anyhow from private API - ([2346112](https://github.com/cocogitto/cocogitto/commit/23461123e45dc1933ea4472b28a045d1d81ce4dc)) - [@oknozor](https://github.com/oknozor)
+#### Tests
+- fix sealed_test question mark unwrapping - ([a138911](https://github.com/cocogitto/cocogitto/commit/a1389119d033de6d65b59251a08c48424558f9ba)) - [@oknozor](https://github.com/oknozor)
+- - -
+
 ## [4.1.0](https://github.com/cocogitto/cocogitto/compare/4.0.1..4.1.0) - 2022-01-18
 #### Bug Fixes
 - **(parser)** bump parser to 0.9.4 to support windows escape sequences in commit footers - ([415ec37](https://github.com/cocogitto/cocogitto/commit/415ec37921500bc375eb27b70722352fcd11d53b)) - [@oknozor](https://github.com/oknozor)
