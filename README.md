@@ -17,9 +17,6 @@
       src="https://codecov.io/gh/cocogitto/cocogitto/branch/main/graph/badge.svg"
       alt="Code coverage status"
   /></a>
-    <a href="https://repology.org/project/cocogitto/versions">
-        <img src="https://repology.org/badge/version-for-repo/aur/cocogitto.svg" alt="AUR package">
-  </a>
   <br />
   <a href="https://conventionalcommits.org"
     ><img
@@ -34,6 +31,7 @@
   <a href="https://discord.gg/951009223121195021">
     <img alt="Discord logo" src="https://img.shields.io/discord/951009223121195021?color=blue&logo=discord">
   </a>
+
 </p>
 
 <p align="center">
@@ -99,6 +97,8 @@ This readme is a quick tour of what you can do with Cocogitto, for an in-depth g
 to [the documentation](https://docs.cocogitto.io).
 
 ## Installation
+
+[![Packaging status](https://repology.org/badge/vertical-allrepos/cocogitto.svg)](https://repology.org/project/cocogitto/versions)
 
 #### Archlinux
 
