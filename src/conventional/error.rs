@@ -34,9 +34,9 @@ impl Display for BumpError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "failed to bump version\n")?;
         match self {
-            BumpError::Git2Error(err) => writeln!(f, "\t{err}"),
-            BumpError::TagError(err) => writeln!(f, "\t{err}"),
-            BumpError::SemVerError(err) => writeln!(f, "\t{err}"),
+            BumpError::Git2Error(err) => writeln!(f, "\t{}", err),
+            BumpError::TagError(err) => writeln!(f, "\t{}", err),
+            BumpError::SemVerError(err) => writeln!(f, "\t{}", err),
             BumpError::NoCommitFound => writeln!(
                 f,
                 r#"cause: No conventional commit found to bump current version.
@@ -80,13 +80,18 @@ impl Display for ConventionalCommitError {
                 let error_header = "Errored commit: ".bold().red();
                 let author = format!("<{}>", author).blue();
                 let cause = anyhow!(cause.clone());
-                let cause = format!("{cause:?}")
+                let cause = format!("{:?}", cause)
                     .lines()
                     .collect::<Vec<&str>>()
                     .join("\n\t");
 
                 writeln!(
-                    f, "{error_header}{oid} {author}\n\t{message_title}'{summary}'\n\t{cause_title}{cause}",
+                    f,
+                    "{}{} {}\n\t{message_title}'{summary}'\n\t{cause_title}{}",
+                    error_header,
+                    oid,
+                    author,
+                    cause,
                     message_title = "Commit message: ".yellow().bold(),
                     summary = summary.italic(),
                     cause_title = "Error: ".yellow().bold(),
@@ -99,10 +104,13 @@ impl Display for ConventionalCommitError {
                 author,
             } => {
                 let error_header = "Errored commit: ".bold().red();
-                let author = format!("<{author}>").blue();
+                let author = format!("<{}>", author).blue();
                 writeln!(
                     f,
-                    "{error_header}{oid} {author}\n\t{message}'{summary}'\n\t{cause}Commit type `{commit_type}` not allowed",
+                    "{}{} {}\n\t{message}'{summary}'\n\t{cause}Commit type `{commit_type}` not allowed",
+                    error_header,
+                    oid,
+                    author,
                     message = "Commit message:".yellow().bold(),
                     cause = "Error:".yellow().bold(),
                     summary = summary.italic(),
@@ -111,7 +119,7 @@ impl Display for ConventionalCommitError {
             }
             ConventionalCommitError::ParseError(err) => {
                 let err = anyhow!(err.clone());
-                writeln!(f, "{err:?}")
+                writeln!(f, "{:?}", err)
             }
         }
     }

@@ -166,7 +166,7 @@ impl Hook {
         #[cfg(target_family = "unix")]
         {
             let args = args.iter().join(" ");
-            let cmd = format!("{cmd} {args}");
+            let cmd = format!("{} {}", cmd, args);
 
             let status = Command::new("sh").arg("-c").arg(cmd).status()?;
 
