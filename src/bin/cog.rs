@@ -11,6 +11,7 @@ use cocogitto::log::filter::{CommitFilter, CommitFilters};
 use cocogitto::log::output::Output;
 use cocogitto::{CocoGitto, SETTINGS};
 
+use crate::cog_commit::explain_commit_type;
 use anyhow::{Context, Result};
 use clap::{AppSettings, ArgGroup, Args, CommandFactory, Parser};
 use clap_complete::Shell;
@@ -51,7 +52,12 @@ enum Cli {
         #[clap(short = 'l', long)]
         from_latest_tag: bool,
     },
-
+    /// Explain commit types
+    Explain {
+        /// A commit type to explain
+        #[clap(possible_values = cog_commit::commit_types())]
+        commit_type: String,
+    },
     /// Like git log but for conventional commits
     Log {
         /// filter BREAKING CHANGE commits
@@ -237,6 +243,9 @@ fn main() -> Result<()> {
             let cocogitto = CocoGitto::get()?;
             cocogitto.check_and_edit(from_latest_tag)?;
         }
+        Cli::Explain { commit_type } => {
+            println!("{}", explain_commit_type(&commit_type))
+        }
         Cli::Log {
             breaking_change,
             typ,
@@ -287,6 +296,7 @@ fn main() -> Result<()> {
                 .write_all(content.as_bytes())
                 .context("failed to write log into the pager")?;
         }
+
         Cli::Changelog {
             pattern,
             at,
