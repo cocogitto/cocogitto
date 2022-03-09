@@ -31,6 +31,9 @@
       src="https://img.shields.io/github/license/cocogitto/cocogitto"
       alt="Repository license"
   /></a>
+  <a href="https://discord.gg/951009223121195021">
+    <img alt="Discord logo" src="https://img.shields.io/discord/951009223121195021?color=blue&logo=discord">
+  </a>
 </p>
 
 <p align="center">
