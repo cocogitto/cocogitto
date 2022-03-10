@@ -1,16 +1,16 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use crate::conventional::commit::CommitConfig;
-use crate::git::repository::Repository;
-use crate::{CommitsMetadata, CONFIG_PATH, SETTINGS};
-
-use crate::conventional::changelog::error::ChangelogError;
-use crate::conventional::changelog::template::{RemoteContext, Template};
-use crate::settings::error::SettingError;
 use config::{Config, File};
 use conventional_commit_parser::commit::CommitType;
 use serde::{Deserialize, Serialize};
+
+use crate::conventional::changelog::error::ChangelogError;
+use crate::conventional::changelog::template::{RemoteContext, Template};
+use crate::conventional::commit::CommitConfig;
+use crate::git::repository::Repository;
+use crate::settings::error::SettingError;
+use crate::{CommitsMetadata, CONFIG_PATH, SETTINGS};
 
 type CommitsMetadataSettings = HashMap<String, CommitConfig>;
 pub(crate) type AuthorSettings = Vec<AuthorSetting>;
@@ -134,23 +134,74 @@ impl Settings {
 
     fn default_commit_config() -> CommitsMetadata {
         let mut default_types = HashMap::new();
-        default_types.insert(CommitType::Feature, CommitConfig::new("Features"));
-        default_types.insert(CommitType::BugFix, CommitConfig::new("Bug Fixes"));
-        default_types.insert(CommitType::Chore, CommitConfig::new("Miscellaneous Chores"));
-        default_types.insert(CommitType::Revert, CommitConfig::new("Revert"));
+        default_types.insert(
+            CommitType::Feature,
+            CommitConfig::new(
+                "Features",
+                Some("patches a bug in your codebase".to_string()),
+            ),
+        );
+        default_types.insert(
+            CommitType::BugFix,
+            CommitConfig::new(
+                "Bug Fixes",
+                Some("introduces a new feature to the codebase".to_string()),
+            ),
+        );
+        default_types.insert(
+            CommitType::Chore,
+            CommitConfig::new(
+                "Miscellaneous Chores",
+                Some("miscellaneous chores".to_string()),
+            ),
+        );
+        default_types.insert(
+            CommitType::Revert,
+            CommitConfig::new("Revert", Some("a rollback of a previous change\nSee here how conventional commit handles reverts : https://www.conventionalcommits.org/en/v1.0.0/#how-does-conventional-commits-handle-revert-commits".to_string())),
+        );
         default_types.insert(
             CommitType::Performances,
-            CommitConfig::new("Performance Improvements"),
+            CommitConfig::new(
+                "Performance Improvements",
+                Some("a code change that improves performance".to_string()),
+            ),
         );
         default_types.insert(
             CommitType::Documentation,
-            CommitConfig::new("Documentation"),
+            CommitConfig::new(
+                "Documentation",
+                Some("documentation only changes (ex: README, Javadoc, Rustdoc)".to_string()),
+            ),
         );
-        default_types.insert(CommitType::Style, CommitConfig::new("Style"));
-        default_types.insert(CommitType::Refactor, CommitConfig::new("Refactoring"));
-        default_types.insert(CommitType::Test, CommitConfig::new("Tests"));
-        default_types.insert(CommitType::Build, CommitConfig::new("Build system"));
-        default_types.insert(CommitType::Ci, CommitConfig::new("Continuous Integration"));
+        default_types.insert(
+            CommitType::Style,
+            CommitConfig::new(
+                "Style",
+                Some("a code change that improves performance".to_string()),
+            ),
+        );
+        default_types.insert(
+            CommitType::Refactor,
+            CommitConfig::new(
+                "Refactoring",
+                Some("a code change that neither fixes a bug nor adds a feature".to_string()),
+            ),
+        );
+        default_types.insert(
+            CommitType::Test,
+            CommitConfig::new(
+                "Tests",
+                Some("adding missing tests or correcting existing tests".to_string()),
+            ),
+        );
+        default_types.insert(
+            CommitType::Build,
+            CommitConfig::new("Build system", Some("changes that affect the build system or external dependencies (example: Maven, NPM, cargo)".to_string())),
+        );
+        default_types.insert(
+            CommitType::Ci,
+            CommitConfig::new("Continuous Integration", Some("changes to the CI configuration files and scripts (example: Travis, Circle, Github Actions)".to_string())),
+        );
         default_types
     }
 

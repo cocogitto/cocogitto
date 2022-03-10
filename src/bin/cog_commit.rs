@@ -1,10 +1,12 @@
 use std::fmt::Write;
 
 use anyhow::{bail, Result};
+use colored::Colorize;
 use conventional_commit_parser::commit::{CommitType, Separator};
 use itertools::Itertools;
 
-use cocogitto::COMMITS_METADATA;
+use cocogitto::settings::Settings;
+use cocogitto::{COMMITS_METADATA, SETTINGS};
 
 pub fn commit_types() -> Vec<&'static str> {
     COMMITS_METADATA
@@ -14,31 +16,59 @@ pub fn commit_types() -> Vec<&'static str> {
 }
 
 pub fn explain_commit_type(commit_type: &str) -> String {
+    let semantic_versioning_minor_msg = format!(
+        "{} : this correlates with {}",
+        "Semantic versioning".italic(),
+        "MINOR".bold()
+    );
+    let semantic_versioning_patch_msg = format!(
+        "{} : this correlates with {}",
+        "Semantic versioning".italic(),
+        "PATCH".bold()
+    );
+    let semantic_versioning_no_correlation_msg =
+        format!("{} : no correlation", "Semantic versioning".italic());
+
+    let commit_type = CommitType::from(commit_type);
+
+    match commit_type {
+        CommitType::BugFix => {
+            get_formatted_explain_msg(&commit_type, &semantic_versioning_patch_msg)
+        }
+        CommitType::Feature => {
+            get_formatted_explain_msg(&commit_type, &semantic_versioning_minor_msg)
+        }
+        _ => get_formatted_explain_msg(&commit_type, &semantic_versioning_no_correlation_msg),
+    }
+}
+
+fn get_formatted_explain_msg(
+    commit_type: &CommitType,
+    semantic_versioning_correlation_msg: &str,
+) -> String {
     let learn_more_msg = "Learn more about supported commit types :\r
 - The Conventional Commit Specification : https://www.conventionalcommits.org \r
 - The Angular Commit Convention : https://github.com/angular/angular/blob/master/CONTRIBUTING.md#type \r
 - Custom commit types : https://docs.cocogitto.io/guide/#custom-commit-types";
 
-    let semantic_versioning_minor_msg = "Semantic versioning : this correlates with MINOR";
-    let semantic_versioning_patch_msg = "Semantic versioning : this correlates with PATCH";
-    let semantic_versioning_no_correlation_msg = "Semantic versioning : no correlation";
+    format!(
+        "{}: {}\n\n{}\n\n{}",
+        commit_type.as_ref().yellow().bold(),
+        get_commit_type_description(commit_type),
+        semantic_versioning_correlation_msg,
+        learn_more_msg
+    )
+}
 
-    let commit_type = CommitType::from(commit_type);
-
-    match commit_type {
-        CommitType::BugFix => format!("fix: patches a bug in your codebase\n\n{}\n\n{}", semantic_versioning_minor_msg, learn_more_msg),
-        CommitType::Feature => format!("feat: introduces a new feature to the codebase\n\n{}\n\n{}", semantic_versioning_patch_msg, learn_more_msg),
-        CommitType::Chore => format!("chore: miscellaneous chores\n\n{}\n\n{}", semantic_versioning_no_correlation_msg, learn_more_msg),
-        CommitType::Build => format!("build: changes that affect the build system or external dependencies (example: Maven, NPM, cargo)\n\n{}\n\n{}", semantic_versioning_no_correlation_msg, learn_more_msg),
-        CommitType::Performances => format!("perf: a code change that improves performance\n\n{}\n\n{}", semantic_versioning_no_correlation_msg, learn_more_msg),
-        CommitType::Ci => format!("ci: changes to the CI configuration files and scripts (example: Travis, Circle, Github Actions)\n\n{}\n\n{}", semantic_versioning_no_correlation_msg, learn_more_msg),
-        CommitType::Documentation => format!("docs:Documentation only changes\n\n {}\n\n{}", semantic_versioning_no_correlation_msg, learn_more_msg),
-        CommitType::Refactor => format!("refactor: a code change that neither fixes a bug nor adds a feature\n\n{}\n\n{}", semantic_versioning_no_correlation_msg, learn_more_msg),
-        CommitType::Style => format!("style: a code change that improves performance\n\n{}\n\n{}", semantic_versioning_no_correlation_msg, learn_more_msg),
-        CommitType::Test => format!("test: a adding missing tests or correcting existing tests\n\n{}\n\n{}", semantic_versioning_no_correlation_msg, learn_more_msg),
-        CommitType::Revert => format!("revert: a rollback of a previous change\nSee here how conventional commit handles reverts : https://www.conventionalcommits.org/en/v1.0.0/#how-does-conventional-commits-handle-revert-commits\n\n{}\n\n{}", semantic_versioning_no_correlation_msg, learn_more_msg),
-        unknown => format!("Commit type {} is unknown {}", unknown, learn_more_msg)
-    }
+fn get_commit_type_description(commit_type: &CommitType) -> String {
+    COMMITS_METADATA
+        .get(commit_type)
+        .map(|v| {
+            v.description
+                .clone()
+                .unwrap_or("no description for this commit type".to_string())
+        })
+        .unwrap_or("no commit of this type exists".to_string())
 }
 
 pub fn edit_message(

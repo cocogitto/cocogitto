@@ -34,7 +34,7 @@ post_bump_hooks = [
 # An optional list of additional allowed commit type
 # `cog commit {commit_type}` commit command will be generated at runtime
 [commit_types]
-ex = { changelog_title = "This is the markdown title for `ex` commit type" }
+ex = { changelog_title = "This is the markdown title for `ex` commit type", description = "some useful description" }
 
 [changelog]
 path = "CHANGELOG.md"

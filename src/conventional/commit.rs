@@ -20,12 +20,14 @@ pub struct Commit {
 #[derive(Debug, Deserialize, Serialize, Clone, Eq, PartialEq)]
 pub struct CommitConfig {
     pub changelog_title: String,
+    pub description: Option<String>,
 }
 
 impl CommitConfig {
-    pub(crate) fn new(changelog_title: &str) -> Self {
+    pub(crate) fn new(changelog_title: &str, description: Option<String>) -> Self {
         CommitConfig {
             changelog_title: changelog_title.to_string(),
+            description,
         }
     }
 }
