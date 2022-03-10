@@ -255,7 +255,7 @@ See [Github integration -> GitHub-bot](https://docs.cocogitto.io/ci_cd/#github-b
 
 ## Contributing
 
-Found a bug, have a suggestion for a new feature ? Please read the contribution guideline and [submit an issue](https://github.com/cocogitto/cocogitto/issues/new/choose).
+Found a bug, have a suggestion for a new feature? Please read the [contribution guideline](CONTRIBUTING.md) and [submit an issue](https://github.com/cocogitto/cocogitto/issues/new/choose).
 
 ## Licence
 

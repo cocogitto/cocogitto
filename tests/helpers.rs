@@ -9,6 +9,8 @@ use speculoos::option::OptionAssertions;
 
 use cocogitto::CONFIG_PATH;
 
+/// - Init a repository in the current directory
+/// - Setup a local git user named Tom <toml.bombadil@themail.org>
 pub fn git_init() -> Result<()> {
     init_builtin_logger();
     run_cmd!(
@@ -20,6 +22,9 @@ pub fn git_init() -> Result<()> {
     Ok(())
 }
 
+/// - Init a repository in the given path
+/// - Change the current directory to the newly created repository
+/// - Setup a local git user named Tom <toml.bombadil@themail.org>
 pub fn git_init_and_set_current_path(path: &str) -> Result<()> {
     init_builtin_logger();
     run_cmd!(
@@ -34,10 +39,12 @@ pub fn git_init_and_set_current_path(path: &str) -> Result<()> {
     Ok(())
 }
 
+/// Can be used to make assertion on 'git status' output.
 pub fn git_status() -> Result<String> {
     run_fun!(git status).map_err(|e| anyhow!(e))
 }
 
+/// Write the given content to the provided path and add it to the git index
 pub fn git_add<S: AsRef<Path>>(content: &str, path: S) -> Result<()>
 where
     S: ToString,
@@ -51,6 +58,7 @@ where
     .map_err(|e| anyhow!(e))
 }
 
+/// Create an empty git commit and return its sha1
 pub fn git_commit(message: &str) -> Result<String> {
     run_fun!(
         git commit --allow-empty -q -m $message;
@@ -80,10 +88,12 @@ pub fn assert_latest_tag(tag: &str) -> Result<()> {
     Ok(())
 }
 
+/// Git log showing only the HEAD commit, this can be used to make assertion on the last commit
 pub fn git_log_head() -> Result<String> {
     run_fun!(git log -1 --pretty=%B).map_err(|e| anyhow!(e))
 }
 
+/// Create an empty `cog.toml` config file in the current directory
 pub fn create_empty_config() -> Result<()> {
     std::fs::File::create(CONFIG_PATH)?;
     Ok(())
