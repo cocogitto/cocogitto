@@ -78,6 +78,7 @@ fn get_changelog_range() -> Result<()> {
                 - remove test generated dir - (a6fba9c) - oknozor
                 #### Tests
                 - **(cli)** add verify it tests - (9da7321) - *oknozor*
+
                 ",
             today = today
         )
@@ -112,6 +113,7 @@ fn get_changelog_from_untagged_repo() -> Result<()> {
                     - bug fix - ({commit_three}) - Tom
                     #### Features
                     - **(taef)** feature - ({commit_two}) - Tom
+
                     ",
             commit_two = &commit_two[0..7],
             commit_three = &commit_three[0..7]
@@ -153,6 +155,7 @@ fn get_changelog_from_tagged_repo() -> Result<()> {
                     ## 1.0.0 - {today}
                     #### Features
                     - **(taef)** feature - ({commit_one}) - Tom
+
                     ",
             commit_one = &commit_one[0..7],
             commit_two = &commit_two[0..7],
@@ -193,6 +196,7 @@ fn get_changelog_at_tag() -> Result<()> {
                     #### Features
                     - **(taef)** feature - ({commit_one}) - Tom
                     - feature 2 - ({commit_two}) - Tom
+
                     ",
             today = today,
             commit_one = &commit_one[0..7],
@@ -243,6 +247,7 @@ fn get_changelog_with_tag_prefix() -> Result<()> {
                     ## v1.0.0 - {today}
                     #### Features
                     - feature 1 - ({commit_one}) - Tom
+
                     ",
             today = today,
             commit_one = &commit_one[0..7],
@@ -297,6 +302,7 @@ fn get_changelog_at_tag_prefix() -> Result<()> {
                     - feature 1 - ({commit_two}) - Tom
                     #### Miscellaneous Chores
                     - **(version)** v2.0.0 - ({commit_four}) - Tom
+
                     ",
             today = today,
             commit_two = &commit_two[0..7],
@@ -348,6 +354,7 @@ fn get_changelog_from_tag_to_tagged_head() -> Result<()> {
                 #### Features
                 - feature 1 - ({commit_two}) - Tom
                 - start - ({commit_one}) - Tom
+
                 ",
             today = today,
             commit_one = &commit_one[0..7],
@@ -419,6 +426,7 @@ fn get_changelog_whith_custom_template() -> Result<()> {
             #### Features
             -  feature 1 - ([{commit_two_short}](https://github.com/test/test/commit/{commit_two})) - Tom
             - **(scope1)** start - ([{commit_one_short}](https://github.com/test/test/commit/{commit_one})) - Tom
+
             ",
             today = today,
             init_commit = &init_commit,

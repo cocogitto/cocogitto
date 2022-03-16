@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use itertools::Itertools;
 use tera::{get_json_pointer, to_value, try_get_value, Context, Tera, Value};
 
 use crate::conventional::changelog::release::Release;
@@ -35,7 +34,7 @@ impl Renderer {
         let mut release = self.render_release(&version)?;
         let mut version = version;
         while let Some(previous) = version.previous.map(|v| *v) {
-            release.push_str("\n\n- - -\n\n");
+            release.push_str("\n- - -\n\n");
             release.push_str(self.render_release(&previous)?.as_str());
             version = previous;
         }
@@ -56,13 +55,6 @@ impl Renderer {
 
         self.tera
             .render(self.template.kind.name(), &template_context)
-            .map(|changelog| {
-                changelog
-                    .lines()
-                    .map(|line| line.trim())
-                    .filter(|line| *line != "\\")
-                    .join("\n")
-            })
     }
 
     // From git-cliff: https://github.com/orhun/git-cliff/blob/main/git-cliff-core/src/template.rs
