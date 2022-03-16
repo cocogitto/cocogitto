@@ -87,7 +87,7 @@ mod test {
     use conventional_commit_parser::commit::{CommitType, ConventionalCommit, Footer};
     use git2::Oid;
     use indoc::indoc;
-    use speculoos::prelude::*;
+    use pretty_assertions::assert_eq;
 
     use crate::conventional::changelog::release::{ChangelogCommit, Release};
     use crate::conventional::changelog::renderer::Renderer;
@@ -103,26 +103,27 @@ mod test {
         let renderer = Renderer::default();
 
         // Act
-        let changelog = renderer.render(release);
+        let changelog = renderer.render(release)?;
 
         // Assert
-        assert_that!(changelog).is_ok().is_equal_to(
+        assert_eq!(
+            changelog,
             indoc! {
                 "## 1.0.0 - 2015-09-05
                 #### Bug Fixes
                 - **(parser)** fix parser implementation - (17f7e23) - *oknozor*
                 #### Features
                 - **(parser)** implement the changelog generator - (17f7e23) - *oknozor*
-                - awesome feature - (17f7e23) - Paul Delafosse"
+                - awesome feature - (17f7e23) - Paul Delafosse
+                "
             }
-            .to_string(),
         );
 
         Ok(())
     }
 
     #[test]
-    fn should_full_hash_template() -> Result<()> {
+    fn should_render_full_hash_template() -> Result<()> {
         // Arrange
         let release = Release::fixture();
         let renderer = Renderer::try_new(Template {
@@ -131,18 +132,20 @@ mod test {
         })?;
 
         // Act
-        let changelog = renderer.render(release);
+        let changelog = renderer.render(release)?;
 
         // Assert
-        assert_that!(changelog).is_ok().is_equal_to(
+        assert_eq!(
+            changelog,
             indoc! {
                 "#### Bug Fixes
                 - 17f7e23081db15e9318aeb37529b1d473cf41cbe - **(parser)** fix parser implementation - @oknozor
                 #### Features
                 - 17f7e23081db15e9318aeb37529b1d473cf41cbe - **(parser)** implement the changelog generator - @oknozor
-                - 17f7e23081db15e9318aeb37529b1d473cf41cbe - awesome feature - Paul Delafosse"
+                - 17f7e23081db15e9318aeb37529b1d473cf41cbe - awesome feature - Paul Delafosse
+
+                "
             }
-                .to_string(),
         );
 
         Ok(())
@@ -162,19 +165,20 @@ mod test {
         })?;
 
         // Act
-        let changelog = renderer.render(release);
+        let changelog = renderer.render(release)?;
 
         // Assert
-        assert_that!(changelog).is_ok().is_equal_to(
+        assert_eq!(
+            changelog,
             indoc! {
                 "## [1.0.0](https://github.com/cocogitto/cocogitto/compare/0.1.0..1.0.0) - 2015-09-05
                 #### Bug Fixes
                 - **(parser)** fix parser implementation - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
                 #### Features
                 - **(parser)** implement the changelog generator - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
-                - awesome feature - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - Paul Delafosse"
+                - awesome feature - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - Paul Delafosse
+                "
             }
-                .to_string(),
         );
 
         Ok(())
