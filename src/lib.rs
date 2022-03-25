@@ -377,21 +377,26 @@ impl CocoGitto {
             None => Vec::with_capacity(0),
         };
 
-        let conventional_message = ConventionalCommit {
+        let mut conventional_message = ConventionalCommit {
             commit_type,
-            scope,
+            scope: scope.clone(),
             body,
             footers,
             summary,
             is_breaking_change,
+        };
+
+        if let Some(scope) = scope {
+            let scope = self.repository.suggest_scope(&scope)?;
+            conventional_message.scope = Some(scope);
         }
-        .to_string();
 
         // Validate the message
-        conventional_commit_parser::parse(&conventional_message)?;
+        let message_str = &conventional_message.to_string();
+        conventional_commit_parser::parse(message_str)?;
 
         // Git commit
-        let oid = self.repository.commit(&conventional_message)?;
+        let oid = self.repository.commit(message_str)?;
 
         // Pretty print a conventional commit summary
         let commit = self.repository.0.find_commit(oid)?;
