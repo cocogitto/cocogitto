@@ -13,7 +13,6 @@ use crate::SETTINGS;
 use parser::Token;
 
 use anyhow::{anyhow, ensure, Result};
-use itertools::Itertools;
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct VersionSpan {
@@ -122,21 +121,20 @@ impl HookSpan {
 }
 
 #[derive(Debug)]
-pub struct Hook(Vec<String>);
+pub struct Hook(String);
 
 impl FromStr for Hook {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         ensure!(!s.is_empty(), "hook must not be an empty string");
-        Ok(Hook(shell_words::split(s)?))
+        Ok(Hook(s.to_string()))
     }
 }
 
 impl fmt::Display for Hook {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let command = shell_words::join(&self.0);
-        f.write_str(&command)
+        f.write_str(&self.0)
     }
 }
 
@@ -146,50 +144,27 @@ impl Hook {
         current_version: Option<&HookVersion>,
         next_version: &HookVersion,
     ) -> Result<()> {
-        let parts = self
-            .0
-            .iter()
-            .map(|part| parser::parse(part))
-            .map(Result::unwrap)
-            .map(|mut span| span.replace_versions(next_version, current_version))
-            .map(Result::unwrap)
-            .collect();
-
-        self.0 = parts;
+        let mut parts = parser::parse(&self.0)?;
+        self.0 = parts.replace_versions(next_version, current_version)?;
 
         Ok(())
     }
 
     pub fn run(&self) -> Result<()> {
-        let (cmd, args) = self.0.split_first().expect("hook must not be empty");
-
-        #[cfg(target_family = "unix")]
-        {
-            let args = args.iter().join(" ");
-            let cmd = format!("{} {}", cmd, args);
-
-            let status = Command::new("sh").arg("-c").arg(cmd).status()?;
-
-            ensure!(status.success(), "hook failed with status {}", status);
-        }
-
-        #[cfg(target_family = "windows")]
-        {
-            let status = Command::new(cmd).args(args).status()?;
-
-            ensure!(status.success(), "hook failed with status {}", status);
-        }
-
+        let status = Command::new("sh").arg("-c").arg(&self.0).status()?;
+        ensure!(status.success(), "hook failed with status {}", status);
         Ok(())
     }
 }
 
 #[cfg(test)]
 mod test {
+    use git2::Repository;
     use std::str::FromStr;
 
     use crate::{Hook, HookVersion, Result};
 
+    use sealed_test::prelude::*;
     use speculoos::prelude::*;
 
     #[test]
@@ -201,7 +176,7 @@ mod test {
     #[test]
     fn parse_valid_string() -> Result<()> {
         let hook = Hook::from_str("cargo bump {{version}}")?;
-        assert_eq!(&hook.0, &["cargo", "bump", "{{version}}"]);
+        assert_that!(hook.0.as_str()).is_equal_to("cargo bump {{version}}");
         Ok(())
     }
 
@@ -211,11 +186,7 @@ mod test {
         hook.insert_versions(None, &HookVersion::new("1.0.0"))
             .unwrap();
 
-        assert_that!(hook.0).contains_all_of(&vec![
-            &"cargo".to_string(),
-            &"bump".to_string(),
-            &"1.0.0".to_string(),
-        ]);
+        assert_that!(hook.0.as_str()).is_equal_to("cargo bump 1.0.0");
         Ok(())
     }
 
@@ -225,7 +196,7 @@ mod test {
         hook.insert_versions(None, &HookVersion::new("1.0.0"))
             .unwrap();
 
-        assert_eq!(&hook.0, &["mvn", "versions:set", "-DnewVersion=1.0.0"]);
+        assert_that!(hook.0.as_str()).is_equal_to("mvn versions:set -DnewVersion=1.0.0");
         Ok(())
     }
 
@@ -235,10 +206,7 @@ mod test {
         hook.insert_versions(None, &HookVersion::new("1.0.0"))
             .unwrap();
 
-        assert_eq!(
-            &hook.0,
-            &["mvn", "versions:set", "-DnewVersion=1.1.0-SNAPSHOT"]
-        );
+        assert_that!(hook.0.as_str()).is_equal_to("mvn versions:set -DnewVersion=1.1.0-SNAPSHOT");
         Ok(())
     }
 
@@ -248,7 +216,7 @@ mod test {
         hook.insert_versions(None, &HookVersion::new("1.0.0"))
             .unwrap();
 
-        assert_eq!(&hook.0, &["echo", "Hello World"]);
+        assert_that!(hook.0.as_str()).is_equal_to("echo \"Hello World\"");
         Ok(())
     }
 
@@ -258,7 +226,7 @@ mod test {
         hook.insert_versions(None, &HookVersion::new("1.0.0"))
             .unwrap();
 
-        assert_eq!(&hook.0, &["echo", "1.0.0"]);
+        assert_that!(hook.0.as_str()).is_equal_to("echo \"1.0.0\"");
         Ok(())
     }
 
@@ -269,10 +237,7 @@ mod test {
         hook.insert_versions(None, &HookVersion::new("1.0.0"))
             .unwrap();
 
-        assert_eq!(
-            &hook.0,
-            &["cog", "commit", "chore", "bump snapshot to 1.1.0-pre"]
-        );
+        assert_that!(hook.0.as_str()).is_equal_to("cog commit chore 'bump snapshot to 1.1.0-pre'");
         Ok(())
     }
 
@@ -283,10 +248,8 @@ mod test {
         hook.insert_versions(None, &HookVersion::new("1.0.0"))
             .unwrap();
 
-        assert_eq!(
-            &hook.0,
-            &["cog", "commit", "chore", "bump snapshot to 1.1.0-pre"]
-        );
+        assert_that!(hook.0.as_str())
+            .is_equal_to("cog commit chore \"bump snapshot to 1.1.0-pre\"");
         Ok(())
     }
 
@@ -296,7 +259,7 @@ mod test {
         hook.insert_versions(Some(&HookVersion::new("0.5.9")), &HookVersion::new("1.0.0"))
             .unwrap();
 
-        assert_eq!(&hook.0, &["echo", "the latest 0.5.9, the greatest 1.0.0"]);
+        assert_that!(hook.0.as_str()).is_equal_to("echo \"the latest 0.5.9, the greatest 1.0.0\"");
         Ok(())
     }
 
@@ -308,7 +271,7 @@ mod test {
         hook.insert_versions(Some(&HookVersion::new("0.5.9")), &HookVersion::new("1.0.0"))
             .unwrap();
 
-        assert_eq!(&hook.0, &["echo", "the latest 3.1.0, the greatest 1.0.2"]);
+        assert_that!(hook.0.as_str()).is_equal_to("echo \"the latest 3.1.0, the greatest 1.0.2\"");
         Ok(())
     }
 
@@ -319,10 +282,24 @@ mod test {
         hook.insert_versions(None, &HookVersion::new("1.0.0"))
             .unwrap();
 
-        assert_eq!(
-            &hook.0,
-            &["echo", "the latest 2.0.0-pre.alpha-bravo+build.42"]
-        );
+        assert_that!(hook.0.as_str())
+            .is_equal_to("echo \"the latest 2.0.0-pre.alpha-bravo+build.42\"");
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn parenthesis_in_hook_works() -> Result<()> {
+        Repository::init(".")?;
+
+        let mut hook = Hook::from_str("git commit --allow-empty -m 'chore(snapshot): bump snapshot to {{version+1patch-SNAPSHOT}}'")?;
+
+        hook.insert_versions(None, &HookVersion::new("1.0.0"))
+            .unwrap();
+
+        let outcome = hook.run();
+
+        assert_that!(outcome).is_ok();
+
         Ok(())
     }
 }
