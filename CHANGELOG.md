@@ -2,6 +2,17 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## [5.0.1](https://github.com/cocogitto/cocogitto/compare/5.0.0..5.0.1) - 2022-03-29
+#### Bug Fixes
+- **(hook)** correctly escape hook commands by removing shell-word usage - ([aaa9e78](https://github.com/cocogitto/cocogitto/commit/aaa9e78723f6a5f0ae7437258405d65cfb8827e2)) - [@oknozor](https://github.com/oknozor)
+- avoid using the format ident capturing Rust feature - ([4c8c8ca](https://github.com/cocogitto/cocogitto/commit/4c8c8cae1378a2de7e4386ad9d03f194e011d4ac)) - [@tranzystorek-io](https://github.com/tranzystorek-io)
+#### Continuous Integration
+- ignore merge commits in cog checks - ([b6bda19](https://github.com/cocogitto/cocogitto/commit/b6bda199930bdacbefcc4e66defe27da1c121438)) - [@oknozor](https://github.com/oknozor)
+- update cocogitto action and add branch whitelist to cog.toml - ([45f93c2](https://github.com/cocogitto/cocogitto/commit/45f93c2a753dad8ba2007a3b61e81689e1ad4b9c)) - [@oknozor](https://github.com/oknozor)
+#### Documentation
+- add a contribution guide - ([905d0a3](https://github.com/cocogitto/cocogitto/commit/905d0a32c1c504f58106a5d4998e66ad180696a9)) - [@oknozor](https://github.com/oknozor)
+- - -
+
 ## [5.0.0](https://github.com/cocogitto/cocogitto/compare/4.1.0..5.0.0) - 2022-03-09
 #### Bug Fixes
 - **(changelog)** allow template context to be used in custom templates - ([974587c](https://github.com/cocogitto/cocogitto/commit/974587c9b3d41e9ff57c9ff271c6d3d35bc0f962)) - [@oknozor](https://github.com/oknozor)
