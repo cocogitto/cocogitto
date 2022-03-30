@@ -196,12 +196,14 @@ pub fn verify(
         .collect::<Vec<&str>>()
         .join("\n");
 
+    let msg = msg.trim();
+
     if msg.starts_with("Merge ") && ignore_merge_commit {
         println!("{}", "Merge commit was ignored".yellow());
         return Ok(());
     }
 
-    let commit = conventional_commit_parser::parse(msg.as_str());
+    let commit = conventional_commit_parser::parse(msg);
 
     match commit {
         Ok(commit) => match &SETTINGS.commit_types().get(&commit.commit_type) {
@@ -245,6 +247,7 @@ mod test {
     use cmd_lib::run_fun;
 
     use crate::Repository;
+    use anyhow::Result;
     use conventional_commit_parser::commit::{CommitType, ConventionalCommit, Footer, Separator};
     use git2::Oid;
     use indoc::indoc;
@@ -361,6 +364,27 @@ mod test {
 
         // Assert
         assert_that!(result).is_err();
+    }
+
+    #[test]
+    fn verify_with_comment_and_trailing_whitespace_succeeds() -> Result<()> {
+        let message = indoc!(
+            "fix: test
+
+            # Please enter the commit message for your changes. Lines starting
+            # with '#' will be ignored, and an empty message aborts the commit.
+            #
+            # On branch master
+            # Changes to be committed:
+            #       modified:   file
+            #
+            "
+        );
+
+        let outcome = verify(None, message, false);
+
+        assert_that!(outcome).is_ok();
+        Ok(())
     }
 
     #[test]
