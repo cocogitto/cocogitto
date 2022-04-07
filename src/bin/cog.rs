@@ -143,6 +143,10 @@ enum Cli {
         /// Specify the bump profile hooks to run
         #[clap(short = 'H', long, possible_values = hook_profiles())]
         hook_profile: Option<String>,
+
+        /// Dry-run : get the target version. No action taken
+        #[clap(short, long)]
+        dry_run: bool,
     },
 
     /// Install cog config files
@@ -200,6 +204,7 @@ fn main() -> Result<()> {
             patch,
             pre,
             hook_profile,
+            dry_run,
         } => {
             let mut cocogitto = CocoGitto::get()?;
 
@@ -212,7 +217,7 @@ fn main() -> Result<()> {
                 _ => unreachable!(),
             };
 
-            cocogitto.create_version(increment, pre.as_deref(), hook_profile.as_deref())?
+            cocogitto.create_version(increment, pre.as_deref(), hook_profile.as_deref(), dry_run)?
         }
         Cli::Verify {
             message,
