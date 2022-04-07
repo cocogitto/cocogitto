@@ -406,6 +406,7 @@ impl CocoGitto {
         increment: VersionIncrement,
         pre_release: Option<&str>,
         hooks_config: Option<&str>,
+        dry_run: bool,
     ) -> Result<()> {
         if *SETTINGS == Settings::default() {
             let part1 = "Warning: using".yellow();
@@ -472,6 +473,11 @@ impl CocoGitto {
             None => next_version.to_string(),
             Some(prefix) => format!("{}{}", prefix, next_version),
         };
+
+        if dry_run {
+            println!("{}", version_str);
+            return Ok(());
+        }
 
         let origin = if current_version == Version::new(0, 0, 0) {
             self.repository.get_first_commit()?.to_string()
