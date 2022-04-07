@@ -19,7 +19,7 @@ fn cog_check_ok() -> Result<()> {
         // Assert
         .assert()
         .success()
-        .stdout(predicate::str::contains("No errored commits"));
+        .stderr(predicate::str::contains("No errored commits"));
     Ok(())
 }
 
@@ -58,7 +58,7 @@ fn cog_check_from_latest_tag_ok() -> Result<()> {
         // Assert
         .assert()
         .success()
-        .stdout(predicate::str::contains("No errored commits"));
+        .stderr(predicate::str::contains("No errored commits"));
     Ok(())
 }
 
