@@ -53,7 +53,7 @@ fn fail_if_config_exist() -> Result<()> {
         .arg("test_repo_existing")
         // Assert
         .assert()
-        .stdout("Found git repository in \"test_repo_existing\", skipping initialisation\n")
+        .stderr("Found git repository in \"test_repo_existing\", skipping initialisation\n")
         .success();
 
     assert_that!(PathBuf::from("cog.toml")).exists();

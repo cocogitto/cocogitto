@@ -29,7 +29,7 @@ fn verify_ok() -> Result<()> {
         // Assert
         .assert()
         .success()
-        .stdout(expected);
+        .stderr(expected);
 
     Ok(())
 }
@@ -55,7 +55,7 @@ fn verify_with_scope() -> Result<()> {
         // Assert
         .assert()
         .success()
-        .stdout(expected);
+        .stderr(expected);
     Ok(())
 }
 

@@ -7,6 +7,7 @@ use crate::git::oid::OidOf;
 use crate::git::revspec::CommitRange;
 use crate::settings;
 use colored::Colorize;
+use log::warn;
 
 #[derive(Debug, Serialize)]
 pub struct Release<'a> {
@@ -33,7 +34,7 @@ impl<'a> From<CommitRange<'a>> for Release<'a> {
                 Ok(commit) => commits.push(ChangelogCommit::from(commit)),
                 Err(err) => {
                     let err = err.to_string().red();
-                    eprintln!("{}", err);
+                    warn!("{}", err);
                 }
             };
         }

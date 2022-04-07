@@ -7,6 +7,7 @@ use chrono::{NaiveDateTime, Utc};
 use colored::*;
 use conventional_commit_parser::commit::ConventionalCommit;
 use git2::Commit as Git2Commit;
+use log::info;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Eq, PartialEq)]
@@ -65,7 +66,6 @@ impl Commit {
             Err(cause) => {
                 let message = git2_message.trim_end();
                 let summary = Commit::short_summary_from_str(message);
-
                 Err(ConventionalCommitError::CommitFormat {
                     oid,
                     summary,
@@ -199,7 +199,7 @@ pub fn verify(
     let msg = msg.trim();
 
     if msg.starts_with("Merge ") && ignore_merge_commit {
-        println!("{}", "Merge commit was ignored".yellow());
+        info!("{}", "Merge commit was ignored".yellow());
         return Ok(());
     }
 
@@ -208,7 +208,7 @@ pub fn verify(
     match commit {
         Ok(commit) => match &SETTINGS.commit_types().get(&commit.commit_type) {
             Some(_) => {
-                println!(
+                info!(
                     "{}",
                     Commit {
                         oid: "not committed".to_string(),

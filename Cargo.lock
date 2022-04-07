@@ -252,6 +252,7 @@ dependencies = [
  "indoc",
  "itertools",
  "lazy_static",
+ "log",
  "pest",
  "pest_derive",
  "predicates 1.0.8",
@@ -262,6 +263,7 @@ dependencies = [
  "serde",
  "shell-words",
  "speculoos",
+ "stderrlog",
  "tempfile",
  "tera",
  "toml",
@@ -649,9 +651,9 @@ dependencies = [
 
 [[package]]
 name = "log"
-version = "0.4.14"
+version = "0.4.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "51b9bbe6c47d51fc3e1a9b945965946b4c44142ab8792c50835a980d362c2710"
+checksum = "6389c490849ff5bc16be905ae24bc913a9c8892e19b2341dbc175e14c341c2b8"
 dependencies = [
  "cfg-if",
 ]
@@ -774,12 +776,6 @@ checksum = "9a64b1ec5cda2586e284722486d802acf1f7dbdc623e2bfc57e65ca1cd099290"
 dependencies = [
  "autocfg",
 ]
-
-[[package]]
-name = "once_cell"
-version = "1.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "da32515d9f6e6e489d7bc9d84c71b060db7247dc035bbe44eac88cf87486d8d5"
 
 [[package]]
 name = "opaque-debug"
@@ -1323,6 +1319,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "stderrlog"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "45a53e2eff3e94a019afa6265e8ee04cb05b9d33fe9f5078b14e4e391d155a38"
+dependencies = [
+ "atty",
+ "chrono",
+ "log",
+ "termcolor",
+ "thread_local",
+]
+
+[[package]]
 name = "strsim"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1398,11 +1407,11 @@ checksum = "0066c8d12af8b5acd21e00547c3797fde4e8677254a7ee429176ccebbe93dd80"
 
 [[package]]
 name = "thread_local"
-version = "1.1.4"
+version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5516c27b78311c50bf42c071425c560ac799b11c30b31f87e3081965fe5e0180"
+checksum = "d40c6d1b69745a6ec6fb1ca717914848da4b44ae29d9b3080cbee91d72a69b14"
 dependencies = [
- "once_cell",
+ "lazy_static",
 ]
 
 [[package]]

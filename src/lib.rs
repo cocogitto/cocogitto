@@ -1,3 +1,4 @@
+use ::log::{error, info, warn};
 use std::collections::HashMap;
 use std::fmt::Write as FmtWrite;
 use std::fs::File;
@@ -16,12 +17,12 @@ use lazy_static::lazy_static;
 use semver::{Prerelease, Version};
 use tempfile::TempDir;
 
+use crate::log::filter::CommitFilters;
 use conventional::commit::{verify, Commit, CommitConfig};
 use conventional::version::VersionIncrement;
 use error::{CogCheckReport, PreHookError};
 use git::repository::Repository;
 use hook::Hook;
-use log::filter::CommitFilters;
 use settings::{HookType, Settings};
 
 use crate::conventional::changelog::release::Release;
@@ -71,7 +72,7 @@ pub fn init<S: AsRef<Path> + ?Sized>(path: &S) -> Result<()> {
     let mut is_init_commit = false;
     let repository = match Repository::open(&path) {
         Ok(repo) => {
-            println!(
+            info!(
                 "Found git repository in {:?}, skipping initialisation",
                 &path
             );
@@ -79,7 +80,7 @@ pub fn init<S: AsRef<Path> + ?Sized>(path: &S) -> Result<()> {
         }
         Err(_) => match Repository::init(&path) {
             Ok(repo) => {
-                println!("Empty git repository initialized in {:?}", &path);
+                info!("Empty git repository initialized in {:?}", &path);
                 is_init_commit = true;
                 repo
             }
@@ -200,7 +201,7 @@ impl CocoGitto {
                     let oid = rebase_operation.id();
                     let original_commit = self.repository.0.find_commit(oid)?;
                     if errored_commits.contains(&oid) {
-                        println!("Found errored commits:{}", &oid.to_string()[0..7]);
+                        warn!("Found errored commits:{}", &oid.to_string()[0..7]);
                         let file_path = dir.path().join(&commit.id().to_string());
                         let mut file = File::create(&file_path)?;
 
@@ -235,11 +236,10 @@ impl CocoGitto {
                             &new_message,
                             ignore_merge_commit,
                         ) {
-                            Ok(_) => println!(
-                                "Changed commit message to:\"{}\"",
-                                &new_message.trim_end()
-                            ),
-                            Err(err) => eprintln!(
+                            Ok(_) => {
+                                info!("Changed commit message to:\"{}\"", &new_message.trim_end())
+                            }
+                            Err(err) => error!(
                                 "Error: {}\n\t{}",
                                 "Edited message is still not compliant".red(),
                                 err
@@ -249,13 +249,13 @@ impl CocoGitto {
                         rebase.commit(None, &original_commit.committer(), None)?;
                     }
                 } else {
-                    eprintln!("{:?}", op);
+                    error!("{:?}", op);
                 }
             }
 
             rebase.finish(None)?;
         } else {
-            println!("{}", "No errored commit, skipping rebase".green());
+            info!("{}", "No errored commit, skipping rebase".green());
         }
 
         Ok(())
@@ -288,7 +288,7 @@ impl CocoGitto {
 
         if errors.is_empty() {
             let msg = "No errored commits".green();
-            println!("{}", msg);
+            info!("{}", msg);
             Ok(())
         } else {
             let report = CogCheckReport {
@@ -396,7 +396,7 @@ impl CocoGitto {
         // Pretty print a conventional commit summary
         let commit = self.repository.0.find_commit(oid)?;
         let commit = Commit::from_git_commit(&commit)?;
-        println!("{}", commit);
+        info!("{}", commit);
 
         Ok(())
     }
@@ -413,7 +413,7 @@ impl CocoGitto {
             let part2 = "with the default configuration. \n".yellow();
             let part3 = "You may want to create a".yellow();
             let part4 = "file in your project root to configure bumps.\n".yellow();
-            println!(
+            warn!(
                 "{} 'cog bump' {}{} 'cog.toml' {}",
                 part1, part2, part3, part4
             );
@@ -446,7 +446,7 @@ impl CocoGitto {
         let current_version = match current_tag {
             Ok(ref tag) => tag.to_version()?,
             Err(ref err) if err == &TagError::NoTag => {
-                println!("Failed to get current version, falling back to 0.0.0");
+                warn!("Failed to get current version, falling back to 0.0.0");
                 Version::new(0, 0, 0)
             }
             Err(ref err) => bail!("{}", err),
@@ -516,7 +516,7 @@ impl CocoGitto {
         // the repository to a clean state
         if let Err(err) = hook_result {
             self.repository.stash_failed_version(&version_str)?;
-            eprintln!(
+            error!(
                 "{}",
                 PreHookError {
                     cause: err.to_string(),
@@ -546,7 +546,7 @@ impl CocoGitto {
             .map(|current| current.prefixed_tag)
             .unwrap_or_else(|| "...".to_string());
         let bump = format!("{} -> {}", current, next_version.prefixed_tag).green();
-        println!("Bumped version: {}", bump);
+        info!("Bumped version: {}", bump);
 
         Ok(())
     }

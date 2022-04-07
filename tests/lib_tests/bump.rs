@@ -20,7 +20,7 @@ fn bump_ok() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result = cocogitto.create_version(VersionIncrement::Auto, None, None);
+    let result = cocogitto.create_version(VersionIncrement::Auto, None, None, false);
 
     // Assert
     assert_that!(result).is_ok();
@@ -38,7 +38,7 @@ fn should_fallback_to_0_0_0_when_there_is_no_tag() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result = cocogitto.create_version(VersionIncrement::Auto, None, None);
+    let result = cocogitto.create_version(VersionIncrement::Auto, None, None, false);
 
     // Assert
     assert_that!(result).is_ok();
@@ -58,7 +58,7 @@ fn should_fail_when_latest_tag_is_not_semver_compliant() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result = cocogitto.create_version(VersionIncrement::Auto, None, None);
+    let result = cocogitto.create_version(VersionIncrement::Auto, None, None, false);
     let error = result.unwrap_err().to_string();
     let error = error.as_str();
 
@@ -89,7 +89,7 @@ fn bump_with_whitelisted_branch_ok() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result = cocogitto.create_version(VersionIncrement::Auto, None, None);
+    let result = cocogitto.create_version(VersionIncrement::Auto, None, None, false);
 
     // Assert
     assert_that!(result).is_ok();
@@ -114,7 +114,7 @@ fn bump_with_whitelisted_branch_fails() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result = cocogitto.create_version(VersionIncrement::Auto, None, None);
+    let result = cocogitto.create_version(VersionIncrement::Auto, None, None, false);
 
     // Assert
     assert_that!(result.unwrap_err().to_string()).is_equal_to(
@@ -143,7 +143,7 @@ fn bump_with_whitelisted_branch_pattern_ok() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result = cocogitto.create_version(VersionIncrement::Auto, None, None);
+    let result = cocogitto.create_version(VersionIncrement::Auto, None, None, false);
 
     // Assert
     assert_that!(result).is_ok();
@@ -168,7 +168,7 @@ fn bump_with_whitelisted_branch_pattern_err() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result = cocogitto.create_version(VersionIncrement::Auto, None, None);
+    let result = cocogitto.create_version(VersionIncrement::Auto, None, None, false);
 
     // Assert
     assert_that!(result).is_err();

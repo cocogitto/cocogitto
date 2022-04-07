@@ -12,7 +12,7 @@ use cocogitto::log::output::Output;
 use cocogitto::{CocoGitto, SETTINGS};
 
 use anyhow::{Context, Result};
-use clap::{AppSettings, ArgGroup, Args, CommandFactory, Parser};
+use clap::{AppSettings, ArgGroup, Args, CommandFactory, Parser, Subcommand};
 use clap_complete::Shell;
 
 fn hook_profiles() -> Vec<&'static str> {
@@ -31,7 +31,18 @@ fn hook_profiles() -> Vec<&'static str> {
     name = "Cog",
     author = "Paul D. <paul.delafosse@protonmail.com>"
 )]
-enum Cli {
+struct Cli {
+    #[clap(long, short = 'v', parse(from_occurrences))]
+    verbose: i8,
+
+    #[clap(long, short = 'q')]
+    quiet: bool,
+    #[clap(subcommand)]
+    command: Command,
+}
+
+#[derive(Subcommand)]
+enum Command {
     /// Verify all commit messages against the conventional commit specification
     Check {
         /// Check commit history, starting from the latest tag to HEAD
@@ -117,7 +128,7 @@ enum Cli {
     #[clap(group = ArgGroup::new("bump-spec").required(true))]
     Bump {
         /// Manually set the target version
-        #[clap(short, long, group = "bump-spec")]
+        #[clap(long, group = "bump-spec")]
         version: Option<String>,
 
         /// Automatically suggest the target version
@@ -195,8 +206,10 @@ struct CommitArgs {
 fn main() -> Result<()> {
     let cli = Cli::parse();
 
-    match cli {
-        Cli::Bump {
+    init_logs(cli.verbose, cli.quiet);
+
+    match cli.command {
+        Command::Bump {
             version,
             auto,
             major,
@@ -219,7 +232,7 @@ fn main() -> Result<()> {
 
             cocogitto.create_version(increment, pre.as_deref(), hook_profile.as_deref(), dry_run)?
         }
-        Cli::Verify {
+        Command::Verify {
             message,
             ignore_merge_commits,
         } => {
@@ -230,7 +243,7 @@ fn main() -> Result<()> {
 
             commit::verify(author, &message, ignore_merge_commits)?;
         }
-        Cli::Check {
+        Command::Check {
             from_latest_tag,
             ignore_merge_commits,
         } => {
@@ -238,11 +251,11 @@ fn main() -> Result<()> {
             let ignore_merge_commits = ignore_merge_commits || SETTINGS.ignore_merge_commits;
             cocogitto.check(from_latest_tag, ignore_merge_commits)?;
         }
-        Cli::Edit { from_latest_tag } => {
+        Command::Edit { from_latest_tag } => {
             let cocogitto = CocoGitto::get()?;
             cocogitto.check_and_edit(from_latest_tag)?;
         }
-        Cli::Log {
+        Command::Log {
             breaking_change,
             typ,
             author,
@@ -292,7 +305,7 @@ fn main() -> Result<()> {
                 .write_all(content.as_bytes())
                 .context("failed to write log into the pager")?;
         }
-        Cli::Changelog {
+        Command::Changelog {
             pattern,
             at,
             template,
@@ -322,10 +335,10 @@ fn main() -> Result<()> {
             };
             println!("{}", result);
         }
-        Cli::Init { path } => {
+        Command::Init { path } => {
             cocogitto::init(&path)?;
         }
-        Cli::InstallHook { hook_type } => {
+        Command::InstallHook { hook_type } => {
             let cocogitto = CocoGitto::get()?;
             match hook_type.as_str() {
                 "commit-msg" => cocogitto.install_hook(HookKind::PrepareCommit)?,
@@ -334,10 +347,10 @@ fn main() -> Result<()> {
                 _ => unreachable!(),
             }
         }
-        Cli::GenerateCompletions { shell } => {
+        Command::GenerateCompletions { shell } => {
             clap_complete::generate(shell, &mut Cli::command(), "cog", &mut std::io::stdout());
         }
-        Cli::Commit(CommitArgs {
+        Command::Commit(CommitArgs {
             typ,
             message,
             scope,
@@ -356,4 +369,17 @@ fn main() -> Result<()> {
     }
 
     Ok(())
+}
+
+fn init_logs(verbose: i8, quiet: bool) {
+    let verbosity = if verbose == 0 { 2 } else { verbose - 1 };
+    stderrlog::new()
+        .module(module_path!())
+        .modules(vec!["cocogitto"])
+        .quiet(quiet)
+        .verbosity(verbosity as usize)
+        .show_level(false)
+        .show_module_names(false)
+        .init()
+        .unwrap();
 }

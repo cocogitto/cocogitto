@@ -7,6 +7,7 @@ use colored::*;
 use conventional_commit_parser::commit::CommitType;
 use git2::Commit as Git2Commit;
 use itertools::Itertools;
+use log::info;
 use semver::Version;
 
 #[derive(Debug, PartialEq)]
@@ -148,7 +149,7 @@ impl VersionIncrement {
             skip_message.push_str(&format!("\t- {}: {}\n", commit_type.as_ref(), count))
         }
 
-        println!("{}", skip_message);
+        info!("{}", skip_message);
 
         let bump_commits = conventional_commits
             .iter()
@@ -163,7 +164,7 @@ impl VersionIncrement {
         for commit in bump_commits {
             match commit {
                 Ok(commit) if commit.message.is_breaking_change => {
-                    println!(
+                    info!(
                         "Found {} commit {} with type: {}",
                         "BREAKING CHANGE".red(),
                         commit.shorthand().blue(),
@@ -171,10 +172,10 @@ impl VersionIncrement {
                     )
                 }
                 Ok(commit) if commit.message.commit_type == CommitType::BugFix => {
-                    println!("Found bug fix commit {}", commit.shorthand().blue())
+                    info!("Found bug fix commit {}", commit.shorthand().blue())
                 }
                 Ok(commit) if commit.message.commit_type == CommitType::Feature => {
-                    println!("Found feature commit {}", commit.shorthand().blue())
+                    info!("Found feature commit {}", commit.shorthand().blue())
                 }
                 _ => (),
             }
