@@ -51,7 +51,7 @@ where
 {
     let path = path.to_string();
     run_cmd!(
-        info writing $content to $path;
+        echo "writing $content to $path";
         echo $content > $path;
         git add $path;
     )
