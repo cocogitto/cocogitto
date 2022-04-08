@@ -81,6 +81,13 @@ pub fn assert_tag_exists(tag: &str) -> Result<()> {
     Ok(())
 }
 
+pub fn assert_tag_does_not_exist(tag: &str) -> Result<()> {
+    let tags = run_fun!(git --no-pager tag)?;
+    let tags: Vec<&str> = tags.split('\n').collect();
+    assert_that!(tags).does_not_contain(&tag);
+    Ok(())
+}
+
 pub fn assert_latest_tag(tag: &str) -> Result<()> {
     let tags = run_fun!(git --no-pager tag)?;
     let tags: Vec<&str> = tags.split('\n').collect();

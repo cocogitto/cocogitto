@@ -475,7 +475,7 @@ impl CocoGitto {
         };
 
         if dry_run {
-            println!("{}", version_str);
+            print!("{}", version_str);
             return Ok(());
         }
 

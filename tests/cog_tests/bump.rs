@@ -50,6 +50,30 @@ fn auto_bump_minor_from_latest_tag() -> Result<()> {
 }
 
 #[sealed_test]
+fn auto_bump_dry_run_from_latest_tag() -> Result<()> {
+    git_init()?;
+    git_commit("chore: init")?;
+    git_commit("feat(taef): feature")?;
+    git_commit("fix: bug fix")?;
+    git_tag("1.0.0")?;
+    git_commit("feat(taef): feature")?;
+    git_commit("feat: feature 1")?;
+    git_commit("feat: feature 2")?;
+
+    Command::cargo_bin("cog")?
+        .arg("bump")
+        .arg("--auto")
+        .arg("--dry-run")
+        .assert()
+        .success()
+        .stdout("1.1.0");
+
+    assert_that!(Path::new("CHANGELOG.md")).does_not_exist();
+    assert_tag_does_not_exist("1.1.0")?;
+    Ok(())
+}
+
+#[sealed_test]
 fn auto_bump_major_from_latest_tag() -> Result<()> {
     git_init()?;
     git_commit("chore: init")?;
