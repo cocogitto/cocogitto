@@ -118,6 +118,12 @@ cargo install --locked cocogitto
 nix-env -iA cocogitto
 ```
 
+#### Void Linux
+
+```shell
+xbps-install cocogitto
+```
+
 ## Conventional commits
 
 **Note: `coco` has been deprecated in favor of the `cog commit` command.**
