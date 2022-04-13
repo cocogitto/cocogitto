@@ -32,11 +32,14 @@ fn hook_profiles() -> Vec<&'static str> {
     author = "Paul D. <paul.delafosse@protonmail.com>"
 )]
 struct Cli {
+    /// The level of verbosity: -v for ERROR, -vv for WARNING, -vvv for INFO
     #[clap(long, short = 'v', parse(from_occurrences))]
     verbose: i8,
 
+    /// Silence all output, no matter the value of verbosity
     #[clap(long, short = 'q')]
     quiet: bool,
+
     #[clap(subcommand)]
     command: Command,
 }
