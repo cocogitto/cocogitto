@@ -2,6 +2,26 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## [5.1.0](https://github.com/cocogitto/cocogitto/compare/5.0.1..5.1.0) - 2022-04-13
+#### Bug Fixes
+- **(verify)** remove trailing whitespace on cog verify messages - ([9a42c05](https://github.com/cocogitto/cocogitto/commit/9a42c056b6cdbe70e9645d0bbe0054623d9bf511)) - [@oknozor](https://github.com/oknozor)
+#### Continuous Integration
+- switch to stable channel for code coverage - ([60af851](https://github.com/cocogitto/cocogitto/commit/60af85103066f4004888fa67cbb24c6473b52ebf)) - [@oknozor](https://github.com/oknozor)
+#### Documentation
+- update cli generated help - ([d9773ba](https://github.com/cocogitto/cocogitto/commit/d9773baee55860817d7c02a1dafe27e408e9bcfd)) - [@oknozor](https://github.com/oknozor)
+- add install instructions for Void Linux - ([2e4ffd8](https://github.com/cocogitto/cocogitto/commit/2e4ffd8ce579ecea3622d8efb595d33632563782)) - [@tranzystorek-io](https://github.com/tranzystorek-io)
+#### Features
+- add a test for dry_run option - ([c9437bb](https://github.com/cocogitto/cocogitto/commit/c9437bb2d45daac34b2ea1c9f5157cf9b4997f34)) - [@darlaam](https://github.com/darlaam)
+- use stderr log to differentiate app output (for dry_run, for example) and app infos - ([ad46106](https://github.com/cocogitto/cocogitto/commit/ad4610638952db8a09faaf9ba409854aab19c474)) - [@darlaam](https://github.com/darlaam)
+- Add dry run for cog bump - ([6524f43](https://github.com/cocogitto/cocogitto/commit/6524f430147ae99fe7b71b9f34aaee4475d2788f)) - [@darlaam](https://github.com/darlaam)
+#### Miscellaneous Chores
+- add darlaam to the author list - ([04bba91](https://github.com/cocogitto/cocogitto/commit/04bba915e032c414a6d50df05cccba42926401ec)) - [@oknozor](https://github.com/oknozor)
+#### Refactoring
+- **(changelog)** use tera whitespace escapes instead of antislash - ([54b3d95](https://github.com/cocogitto/cocogitto/commit/54b3d957342f4c624fab116c61d8629beb304eee)) - [@oknozor](https://github.com/oknozor)
+#### Tests
+- fix failing tests - ([2507a68](https://github.com/cocogitto/cocogitto/commit/2507a68204dd8c593539e07cbe0acced9736be7e)) - [@darlaam](https://github.com/darlaam)
+- - -
+
 ## [5.0.1](https://github.com/cocogitto/cocogitto/compare/5.0.0..5.0.1) - 2022-03-29
 #### Bug Fixes
 - **(hook)** correctly escape hook commands by removing shell-word usage - ([aaa9e78](https://github.com/cocogitto/cocogitto/commit/aaa9e78723f6a5f0ae7437258405d65cfb8827e2)) - [@oknozor](https://github.com/oknozor)
