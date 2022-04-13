@@ -35,21 +35,15 @@ jobs:
           profile: minimal
           toolchain: stable
           override: true
-
-      - name: Test
-        uses: actions-rs/cargo@v1
-        continue-on-error: false
-        with:
-          command: test
-
-      - name: Install Rust
-        run: rustup toolchain install nightly --component llvm-tools-preview
+          components: llvm-tools-preview
 
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
 
-      - name: Generate code coverage
-        run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
+      - uses: actions-rs/cargo@v1
+        with:
+          command: llvm-cov
+          args: --all-features --workspace --lcov --output-path lcov.info
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v2
