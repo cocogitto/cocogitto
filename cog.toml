@@ -57,5 +57,6 @@ authors = [
     { signature = "Clément Poissonnier", username = "cpoissonnier" },
     { signature = "Luke Hsiao", username = "lukehsiao" },
     { signature = "Caleb Maclennan", username = "alerque" },
-    { signature = "Zshoham", username = "Zshoham" }
+    { signature = "Zshoham", username = "Zshoham" },
+    { signature = "darlaam", username = "darlaam" }
 ]
