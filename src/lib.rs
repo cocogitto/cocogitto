@@ -40,6 +40,9 @@ pub mod hook;
 pub mod log;
 pub mod settings;
 
+#[cfg(feature = "cli")]
+pub mod cli;
+
 pub type CommitsMetadata = HashMap<CommitType, CommitConfig>;
 
 pub const CONFIG_PATH: &str = "cog.toml";

@@ -9,7 +9,7 @@ pre_bump_hooks = [
     "cargo clippy",
     "cargo fmt --all",
     "cargo set-version {{version}}",
-    "cargo build --release",
+    "cargo build --release --all-features",
 ]
 
 # A list of command to run AFTER creating a version.

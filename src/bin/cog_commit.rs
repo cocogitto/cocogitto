@@ -1,17 +1,8 @@
 use std::fmt::Write;
 
-use cocogitto::COMMITS_METADATA;
-
 use anyhow::{bail, Result};
 use conventional_commit_parser::commit::Separator;
 use itertools::Itertools;
-
-pub fn commit_types() -> Vec<&'static str> {
-    COMMITS_METADATA
-        .iter()
-        .map(|(commit_type, _)| commit_type.as_ref())
-        .collect()
-}
 
 pub fn edit_message(
     typ: &str,
