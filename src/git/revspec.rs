@@ -1,7 +1,7 @@
 use std::fmt;
 use std::fmt::Formatter;
 
-use git2::{Commit, Oid};
+use git2::{Commit, ErrorCode, Oid};
 
 use crate::conventional::changelog::release::Release;
 use crate::git::error::Git2Error;
@@ -71,8 +71,16 @@ impl Repository {
         let mut commits = vec![];
 
         for oid in revwalk {
-            let commit = self.0.find_commit(oid?)?;
-            commits.push(commit);
+            match oid {
+                Ok(oid) => {
+                    let commit = self.0.find_commit(oid)?;
+                    commits.push(commit)
+                }
+                Err(e) if e.code() == ErrorCode::NotFound => {
+                    break;
+                }
+                Err(e) => return Err(Git2Error::from(e)),
+            }
         }
 
         let to = commits
