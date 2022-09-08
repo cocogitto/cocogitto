@@ -10,7 +10,7 @@ use itertools::Itertools;
 use log::info;
 use semver::Version;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum VersionIncrement {
     Major,
     Minor,
