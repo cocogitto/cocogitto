@@ -112,7 +112,15 @@ impl Repository {
 
         let range = self.get_commit_range(&pattern)?;
         let release = Release::from(range);
-        let release = self.populate_previous_release(release, target.oid())?;
+
+        let mut release = if !release.contains_oid(target.oid()) {
+            self.populate_previous_release(release, target.oid())?
+        } else {
+            release
+        };
+
+        release.drain_to_target(target.oid());
+
         Ok(release)
     }
 
@@ -125,13 +133,19 @@ impl Repository {
         let pattern = RevspecPattern::from(pattern.as_str());
         let range = self.get_commit_range(&pattern)?;
 
+        let target_in_range = range.commits.iter().any(|commit| commit.id() == *target);
+
         // Target tag or commit reached
         if range.to.oid() == target {
-            // We are not on first commit
+            return Ok(release);
+        }
+        // We have reached the `from` target commit
+        else if target_in_range {
             if range.from != range.to {
                 let previous = Release::from(range);
                 release.previous = Some(Box::new(previous));
             }
+
             return Ok(release);
         }
 
@@ -284,8 +298,8 @@ impl Repository {
 #[cfg(test)]
 mod test {
     use crate::conventional::changelog::release::Release;
-    use anyhow::Result;
-    use cmd_lib::run_cmd;
+    use anyhow::{anyhow, Result};
+    use cmd_lib::{run_cmd, run_fun};
     use git2::Oid;
     use sealed_test::prelude::*;
     use speculoos::prelude::*;
@@ -370,9 +384,6 @@ mod test {
 
         let release = *release.previous.unwrap();
         assert_that!(format_version(&release)).is_equal_to("0.32.2".to_string());
-
-        let release = *release.previous.unwrap();
-        assert_that!(format_version(&release)).is_equal_to("0.32.1".to_string());
 
         assert_that!(release.previous).is_none();
         Ok(())
@@ -564,6 +575,104 @@ mod test {
 
         // Assert
         assert_that!(count).is_equal_to(tag_count);
+
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn from_commit_to_head() -> Result<()> {
+        // Arrange
+        let repo = Repository::init(".")?;
+
+        let commit: fn(&str) -> Result<String> = |message| {
+            run_fun!(
+                git commit --allow-empty -q -m $message;
+                git log --format=%H -n 1;
+            )
+            .map_err(|e| anyhow!(e))
+        };
+
+        run_cmd!(
+            git init;
+            echo changes > file;
+            git add .;
+        )?;
+
+        commit("chore: init")?;
+        commit("feat: a commit")?;
+
+        let from = commit("chore: another commit")?;
+        let one = commit("feat: a feature")?;
+        let two = commit("chore: 1.0.0")?;
+        let three = commit("fix: the bug")?;
+
+        let pattern = format!("{}..", &from[0..7]);
+
+        // Act
+        let release = repo.get_release_range(RevspecPattern::from(pattern.as_str()))?;
+
+        // Assert
+        let oids: Vec<String> = release
+            .commits
+            .iter()
+            .map(|commit| commit.commit.oid.to_string())
+            .collect();
+
+        assert_that!(oids).is_equal_to(vec![three, two, one, from]);
+
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn from_commit_to_head_with_overlapping_tag() -> Result<()> {
+        // Arrange
+        let repo = Repository::init(".")?;
+
+        let commit: fn(&str) -> Result<String> = |message| {
+            run_fun!(
+                git commit --allow-empty -q -m $message;
+                git log --format=%H -n 1;
+            )
+            .map_err(|e| anyhow!(e))
+        };
+
+        run_cmd!(
+            git init;
+            echo changes > file;
+            git add .;
+        )?;
+
+        commit("chore: init")?;
+        commit("feat: a commit")?;
+
+        let from = commit("chore: another commit")?;
+        let one = commit("feat: a feature")?;
+        let two = commit("chore: 1.0.0")?;
+        run_cmd!(git tag 1.0.0)?;
+        let three = commit("fix: the bug")?;
+
+        let pattern = format!("{}..", &from[0..7]);
+
+        // Act
+        let release = repo.get_release_range(RevspecPattern::from(pattern.as_str()))?;
+
+        // Assert
+        let head_to_v1: Vec<String> = release
+            .commits
+            .iter()
+            .map(|commit| commit.commit.oid.to_string())
+            .collect();
+
+        let commit_before_v1: Vec<String> = release
+            .previous
+            .unwrap()
+            .commits
+            .iter()
+            .map(|commit| commit.commit.oid.to_string())
+            .collect();
+
+        assert_that!(head_to_v1).is_equal_to(vec![three.clone()]);
+        assert_that!(commit_before_v1).is_equal_to(vec![two, one, from]);
 
         Ok(())
     }

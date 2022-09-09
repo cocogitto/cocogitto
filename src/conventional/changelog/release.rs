@@ -7,6 +7,7 @@ use crate::git::oid::OidOf;
 use crate::git::revspec::CommitRange;
 use crate::settings;
 use colored::Colorize;
+use git2::Oid;
 use log::warn;
 
 #[derive(Debug, Serialize)]
@@ -16,6 +17,36 @@ pub struct Release<'a> {
     pub date: NaiveDateTime,
     pub commits: Vec<ChangelogCommit<'a>>,
     pub previous: Option<Box<Release<'a>>>,
+}
+
+impl Release<'_> {
+    pub fn drain_to_target(&mut self, target: &Oid) {
+        let target_idx = self
+            .commits
+            .iter()
+            .enumerate()
+            .find(|(_idx, commit)| commit.commit.oid == target.to_string())
+            .map(|(idx, _)| idx);
+
+        match target_idx {
+            None => {
+                if let Some(previous) = &mut self.previous {
+                    previous.drain_to_target(target)
+                }
+            }
+            Some(idx) => {
+                if self.commits.get(idx + 1).is_some() {
+                    self.commits.drain(idx + 1..);
+                }
+            }
+        }
+    }
+
+    pub fn contains_oid(&self, oid: &Oid) -> bool {
+        self.commits
+            .iter()
+            .any(|commit| commit.commit.oid == oid.to_string())
+    }
 }
 
 impl<'a> From<CommitRange<'a>> for Release<'a> {

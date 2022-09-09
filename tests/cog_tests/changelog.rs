@@ -66,19 +66,6 @@ fn get_changelog_range() -> Result<()> {
                 #### Refactoring
                 - change config name to cog.toml - (d4aa61b) - oknozor
 
-                - - -
-
-                ## 0.30.0 - {today}
-                #### Continuous Integration
-                - **(cd)** fix publish action script - (d0d0ae9) - *oknozor*
-                #### Features
-                - **(changelog)** improve changelog title formatting - (d713886) - *oknozor*
-                #### Miscellaneous Chores
-                - **(version)** 0.30.0 - (d7ff5d9) - *oknozor*
-                - remove test generated dir - (a6fba9c) - oknozor
-                #### Tests
-                - **(cli)** add verify it tests - (9da7321) - *oknozor*
-
                 ",
             today = today
         )
