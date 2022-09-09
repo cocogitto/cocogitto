@@ -2,6 +2,21 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## [5.2.0](https://github.com/cocogitto/cocogitto/compare/5.1.0..5.2.0) - 2022-09-09
+#### Bug Fixes
+- fix stackover flow on 'oid..' resvpec - ([d4c3def](https://github.com/cocogitto/cocogitto/commit/d4c3defc6c6fbc4141edb3d1dda18be6b1f195c3)) - [@oknozor](https://github.com/oknozor)
+- do not exit on parent not found (all_commits) - ([476d0d6](https://github.com/cocogitto/cocogitto/commit/476d0d6e98734878f9e1a8613eab8da1c5385490)) - Benoît CORTIER
+#### Features
+- **(commit)** implement signed commit - ([9b7c2d7](https://github.com/cocogitto/cocogitto/commit/9b7c2d73b3513d83feca7b37fd96314430d41882)) - [@oknozor](https://github.com/oknozor)
+#### Miscellaneous Chores
+- bump Cargo.lock - ([b7a55ef](https://github.com/cocogitto/cocogitto/commit/b7a55ef29ca7703c344f3beeeed033ec1e61f7ea)) - [@oknozor](https://github.com/oknozor)
+- fix clippy lints on rust stable - ([cff1a15](https://github.com/cocogitto/cocogitto/commit/cff1a1526edb62dcb2d06786ab5dcb6226cb1323)) - [@oknozor](https://github.com/oknozor)
+- fix clippy lints - ([991007c](https://github.com/cocogitto/cocogitto/commit/991007ceb18e3cb3e642f362f77ce2f3e8f4ffad)) - [@oknozor](https://github.com/oknozor)
+- fix clippy lints - ([fe53d89](https://github.com/cocogitto/cocogitto/commit/fe53d891d75d6da197ef4c2f74eaf24a690107ef)) - [@oknozor](https://github.com/oknozor)
+#### Tests
+- **(commit)** add integration test for signed commit - ([ed3250c](https://github.com/cocogitto/cocogitto/commit/ed3250c356b2c7919155c9afcf7717821afae47a)) - [@oknozor](https://github.com/oknozor)
+- - -
+
 ## [5.1.0](https://github.com/cocogitto/cocogitto/compare/5.0.1..5.1.0) - 2022-04-13
 #### Bug Fixes
 - **(verify)** remove trailing whitespace on cog verify messages - ([9a42c05](https://github.com/cocogitto/cocogitto/commit/9a42c056b6cdbe70e9645d0bbe0054623d9bf511)) - [@oknozor](https://github.com/oknozor)
