@@ -32,7 +32,9 @@ impl CommitConfig {
 }
 
 impl Commit {
-    pub(crate) fn from_git_commit(commit: &Git2Commit) -> Result<Self, ConventionalCommitError> {
+    pub(crate) fn from_git_commit(
+        commit: &Git2Commit,
+    ) -> Result<Self, Box<ConventionalCommitError>> {
         let oid = commit.id().to_string();
 
         let commit = commit.to_owned();
@@ -55,23 +57,23 @@ impl Commit {
 
                 match &SETTINGS.commit_types().get(&commit.message.commit_type) {
                     Some(_) => Ok(commit),
-                    None => Err(ConventionalCommitError::CommitTypeNotAllowed {
+                    None => Err(Box::new(ConventionalCommitError::CommitTypeNotAllowed {
                         oid: commit.oid.to_string(),
                         summary: format_summary(&commit.message),
                         commit_type: commit.message.commit_type.to_string(),
                         author: commit.author,
-                    }),
+                    })),
                 }
             }
             Err(cause) => {
                 let message = git2_message.trim_end();
                 let summary = Commit::short_summary_from_str(message);
-                Err(ConventionalCommitError::CommitFormat {
+                Err(Box::new(ConventionalCommitError::CommitFormat {
                     oid,
                     summary,
                     author,
                     cause,
-                })
+                }))
             }
         }
     }
@@ -188,7 +190,7 @@ pub fn verify(
     author: Option<String>,
     message: &str,
     ignore_merge_commit: bool,
-) -> Result<(), ConventionalCommitError> {
+) -> Result<(), Box<ConventionalCommitError>> {
     // Strip away comments from git message before parsing
     let msg: String = message
         .lines()
@@ -219,14 +221,14 @@ pub fn verify(
                 );
                 Ok(())
             }
-            None => Err(ConventionalCommitError::CommitTypeNotAllowed {
+            None => Err(Box::new(ConventionalCommitError::CommitTypeNotAllowed {
                 oid: "not committed".to_string(),
                 summary: format_summary(&commit),
                 commit_type: commit.commit_type.to_string(),
                 author: author.unwrap_or_else(|| "Unknown".to_string()),
-            }),
+            })),
         },
-        Err(err) => Err(ConventionalCommitError::ParseError(err)),
+        Err(err) => Err(Box::new(ConventionalCommitError::ParseError(err))),
     }
 }
 

@@ -21,12 +21,12 @@ impl Repository {
 
     pub(crate) fn init<S: AsRef<Path> + ?Sized>(path: &S) -> Result<Repository, Git2Error> {
         let repository =
-            Git2Repository::init(&path).map_err(Git2Error::FailedToInitializeRepository)?;
+            Git2Repository::init(path).map_err(Git2Error::FailedToInitializeRepository)?;
         Ok(Repository(repository))
     }
 
     pub(crate) fn open<S: AsRef<Path> + ?Sized>(path: &S) -> Result<Repository, Git2Error> {
-        let repo = Git2Repository::discover(&path).map_err(Git2Error::FailedToOpenRepository)?;
+        let repo = Git2Repository::discover(path).map_err(Git2Error::FailedToOpenRepository)?;
         Ok(Repository(repo))
     }
 

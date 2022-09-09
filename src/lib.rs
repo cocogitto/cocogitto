@@ -65,7 +65,7 @@ pub fn init<S: AsRef<Path> + ?Sized>(path: &S) -> Result<()> {
     let path = path.as_ref();
 
     if !path.exists() {
-        std::fs::create_dir(&path)
+        std::fs::create_dir(path)
             .map_err(|err| anyhow!("failed to create directory `{:?}` \n\ncause: {}", path, err))?;
     }
 
@@ -294,7 +294,7 @@ impl CocoGitto {
         } else {
             let report = CogCheckReport {
                 from: commit_range.from,
-                errors,
+                errors: errors.into_iter().map(|err| *err).collect(),
             };
             Err(anyhow!("{}", report))
         }
