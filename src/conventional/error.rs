@@ -3,6 +3,7 @@ use anyhow::anyhow;
 use colored::Colorize;
 use conventional_commit_parser::error::ParseError;
 use serde::de::StdError;
+use std::fmt;
 use std::fmt::{Display, Formatter};
 
 #[derive(Debug)]
@@ -27,6 +28,7 @@ pub enum BumpError {
     Git2Error(Git2Error),
     TagError(TagError),
     SemVerError(semver::Error),
+    FmtError(fmt::Error),
     NoCommitFound,
 }
 
@@ -37,6 +39,7 @@ impl Display for BumpError {
             BumpError::Git2Error(err) => writeln!(f, "\t{}", err),
             BumpError::TagError(err) => writeln!(f, "\t{}", err),
             BumpError::SemVerError(err) => writeln!(f, "\t{}", err),
+            BumpError::FmtError(err) => writeln!(f, "\t{}", err),
             BumpError::NoCommitFound => writeln!(
                 f,
                 r#"cause: No conventional commit found to bump current version.
@@ -65,6 +68,12 @@ impl From<TagError> for BumpError {
 impl From<semver::Error> for BumpError {
     fn from(err: semver::Error) -> Self {
         Self::SemVerError(err)
+    }
+}
+
+impl From<fmt::Error> for BumpError {
+    fn from(err: fmt::Error) -> Self {
+        Self::FmtError(err)
     }
 }
 

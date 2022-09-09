@@ -1,5 +1,6 @@
 use crate::conventional::commit::Commit;
 use crate::git::repository::Repository;
+use std::fmt;
 
 use crate::conventional::error::BumpError;
 use crate::git::revspec::RevspecPattern;
@@ -9,6 +10,7 @@ use git2::Commit as Git2Commit;
 use itertools::Itertools;
 use log::info;
 use semver::Version;
+use std::fmt::Write;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum VersionIncrement {
@@ -68,7 +70,7 @@ impl VersionIncrement {
             .filter(|commit| !commit.message().unwrap_or("").starts_with("Merge "))
             .collect();
 
-        VersionIncrement::display_history(&commits);
+        VersionIncrement::display_history(&commits)?;
 
         let conventional_commits: Vec<Commit> = commits
             .iter()
@@ -118,7 +120,7 @@ impl VersionIncrement {
         }
     }
 
-    fn display_history(commits: &[&Git2Commit]) {
+    fn display_history(commits: &[&Git2Commit]) -> Result<(), fmt::Error> {
         let conventional_commits: Vec<Result<_, _>> = commits
             .iter()
             .map(|commit| Commit::from_git_commit(commit))
@@ -146,7 +148,7 @@ impl VersionIncrement {
 
         let mut skip_message = "Skipping irrelevant commits:\n".to_string();
         for (count, commit_type) in non_bump_commits {
-            skip_message.push_str(&format!("\t- {}: {}\n", commit_type.as_ref(), count))
+            writeln!(skip_message, "\t- {}: {}", commit_type.as_ref(), count)?;
         }
 
         info!("{}", skip_message);
@@ -180,6 +182,8 @@ impl VersionIncrement {
                 _ => (),
             }
         }
+
+        Ok(())
     }
 }
 
