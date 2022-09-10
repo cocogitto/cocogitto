@@ -12,7 +12,6 @@ description = """
 Cocogitto is a set of cli tools for the conventional commit
 and semver specifications.
 """
-autobins = false
 
 [profile.release]
 opt-level = 2
@@ -65,7 +64,6 @@ path = "src/lib.rs"
 
 [[bin]]
 name = "cog"
-path = "src/bin/cog.rs"
 required-features = ["clap", "clap_complete"]
 
 [[test]]
