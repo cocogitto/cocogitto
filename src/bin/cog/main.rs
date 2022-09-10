@@ -1,9 +1,9 @@
-mod cog_commit;
+mod commit;
 
 use std::path::PathBuf;
 
 use cocogitto::conventional::changelog::template::{RemoteContext, Template};
-use cocogitto::conventional::commit;
+use cocogitto::conventional::commit as conv_commit;
 use cocogitto::conventional::version::VersionIncrement;
 use cocogitto::git::hook::HookKind;
 use cocogitto::git::revspec::RevspecPattern;
@@ -188,7 +188,7 @@ enum Command {
 #[derive(Args)]
 struct CommitArgs {
     /// Conventional commit type
-    #[clap(name = "type", value_name = "TYPE", possible_values = cog_commit::commit_types())]
+    #[clap(name = "type", value_name = "TYPE", possible_values = commit::commit_types())]
     typ: String,
 
     /// Commit description
@@ -248,7 +248,7 @@ fn main() -> Result<()> {
                 .map(|cogito| cogito.get_committer().unwrap())
                 .ok();
 
-            commit::verify(author, &message, ignore_merge_commits)?;
+            conv_commit::verify(author, &message, ignore_merge_commits)?;
         }
         Command::Check {
             from_latest_tag,
@@ -367,7 +367,7 @@ fn main() -> Result<()> {
         }) => {
             let cocogitto = CocoGitto::get()?;
             let (body, footer, breaking) = if edit {
-                cog_commit::edit_message(&typ, &message, scope.as_deref(), breaking_change)?
+                commit::edit_message(&typ, &message, scope.as_deref(), breaking_change)?
             } else {
                 (None, None, breaking_change)
             };
