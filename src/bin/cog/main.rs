@@ -12,35 +12,36 @@ use cocogitto::log::output::Output;
 use cocogitto::{CocoGitto, SETTINGS};
 
 use anyhow::{Context, Result};
-use clap::{AppSettings, ArgGroup, Args, CommandFactory, Parser, Subcommand};
+use clap::builder::PossibleValuesParser;
+use clap::{ArgAction, ArgGroup, Args, CommandFactory, Parser, Subcommand};
 use clap_complete::Shell;
 
-fn hook_profiles() -> Vec<&'static str> {
-    SETTINGS
+fn hook_profiles() -> PossibleValuesParser {
+    let profiles = SETTINGS
         .bump_profiles
         .keys()
-        .map(|profile| profile.as_ref())
-        .collect()
+        .map(|profile| -> &str { profile });
+
+    profiles.into()
 }
 
 /// A command line tool for the conventional commits and semver specifications
 #[derive(Parser)]
-#[clap(global_setting = AppSettings::DeriveDisplayOrder)]
-#[clap(
+#[command(
     version,
     name = "Cog",
     author = "Paul D. <paul.delafosse@protonmail.com>"
 )]
 struct Cli {
     /// The level of verbosity: -v for ERROR, -vv for WARNING, -vvv for INFO
-    #[clap(long, short = 'v', parse(from_occurrences))]
-    verbose: i8,
+    #[arg(long, short = 'v', action = ArgAction::Count)]
+    verbose: u8,
 
     /// Silence all output, no matter the value of verbosity
-    #[clap(long, short = 'q')]
+    #[arg(long, short = 'q')]
     quiet: bool,
 
-    #[clap(subcommand)]
+    #[command(subcommand)]
     command: Command,
 }
 
@@ -49,10 +50,11 @@ enum Command {
     /// Verify all commit messages against the conventional commit specification
     Check {
         /// Check commit history, starting from the latest tag to HEAD
-        #[clap(short = 'l', long)]
+        #[arg(short = 'l', long)]
         from_latest_tag: bool,
+
         /// Ignore merge commits messages
-        #[clap(short, long)]
+        #[arg(short, long)]
         ignore_merge_commits: bool,
     },
 
@@ -62,30 +64,30 @@ enum Command {
     /// Interactively rename invalid commit messages
     Edit {
         /// Edit non conventional commits, starting from the latest tag to HEAD
-        #[clap(short = 'l', long)]
+        #[arg(short = 'l', long)]
         from_latest_tag: bool,
     },
 
     /// Like git log but for conventional commits
     Log {
-        /// filter BREAKING CHANGE commits
-        #[clap(short = 'B', long)]
+        /// Filter BREAKING CHANGE commits
+        #[arg(short = 'B', long)]
         breaking_change: bool,
 
-        /// filter on commit type
-        #[clap(short, long = "type", value_name = "type")]
+        /// Filter on commit type
+        #[arg(short, long = "type", value_name = "type")]
         typ: Option<Vec<String>>,
 
-        /// filter on commit author
-        #[clap(short, long)]
+        /// Filter on commit author
+        #[arg(short, long)]
         author: Option<Vec<String>>,
 
-        /// filter on commit scope
-        #[clap(short, long)]
+        /// Filter on commit scope
+        #[arg(short, long)]
         scope: Option<Vec<String>>,
 
-        /// omit error on the commit log
-        #[clap(short = 'e', long)]
+        /// Omit error on the commit log
+        #[arg(short = 'e', long)]
         no_error: bool,
     },
 
@@ -93,94 +95,96 @@ enum Command {
     Verify {
         /// The commit message
         message: String,
-        /// Ignore merge commits messages
-        #[clap(short, long)]
+
+        /// Ignore merge commit messages
+        #[arg(short, long)]
         ignore_merge_commits: bool,
     },
 
     /// Display a changelog for the given commit oid range
     Changelog {
-        /// Generate the changelog from in the given spec range
-        #[clap(conflicts_with = "at")]
+        /// Generate the changelog in the given spec range
+        #[arg(conflicts_with = "at")]
         pattern: Option<String>,
 
         /// Generate the changelog for a specific git tag
-        #[clap(short, long)]
+        #[arg(short, long)]
         at: Option<String>,
 
         /// Generate the changelog with the given template.
+        ///
         /// Possible values are 'remote', 'full_hash', 'default' or the path to your template.  
         /// If not specified cog will use cog.toml template config or fallback to 'default'.
-        #[clap(name = "template", long, short)]
+        #[arg(long, short)]
         template: Option<String>,
 
         /// Url to use during template generation
-        #[clap(name = "remote", long, short, requires_all(&["owner", "repository"]))]
+        #[arg(long, short, requires_all = ["owner", "repository"])]
         remote: Option<String>,
 
         /// Repository owner to use during template generation
-        #[clap(name = "owner", long, short, requires_all(& ["remote", "repository"]))]
+        #[arg(long, short, requires_all = ["remote", "repository"])]
         owner: Option<String>,
 
         /// Name of the repository used during template generation
-        #[clap(name = "repository", long, requires_all(& ["owner", "remote"]))]
+        #[arg(long, requires_all = ["owner", "remote"])]
         repository: Option<String>,
     },
 
     /// Commit changelog from latest tag to HEAD and create new tag
-    #[clap(group = ArgGroup::new("bump-spec").required(true))]
+    #[command(group = ArgGroup::new("bump-spec").required(true))]
     Bump {
         /// Manually set the target version
-        #[clap(long, group = "bump-spec")]
+        #[arg(long, group = "bump-spec")]
         version: Option<String>,
 
         /// Automatically suggest the target version
-        #[clap(short, long, group = "bump-spec")]
+        #[arg(short, long, group = "bump-spec")]
         auto: bool,
 
         /// Increment the major version
-        #[clap(short = 'M', long, group = "bump-spec")]
+        #[arg(short = 'M', long, group = "bump-spec")]
         major: bool,
 
         /// Increment the minor version
-        #[clap(short, long, group = "bump-spec")]
+        #[arg(short, long, group = "bump-spec")]
         minor: bool,
 
         /// Increment the patch version
-        #[clap(short, long, group = "bump-spec")]
+        #[arg(short, long, group = "bump-spec")]
         patch: bool,
 
         /// Set the pre-release version
-        #[clap(long)]
+        #[arg(long)]
         pre: Option<String>,
 
         /// Specify the bump profile hooks to run
-        #[clap(short = 'H', long, possible_values = hook_profiles())]
+        #[arg(short = 'H', long, value_parser = hook_profiles())]
         hook_profile: Option<String>,
 
-        /// Dry-run : get the target version. No action taken
-        #[clap(short, long)]
+        /// Dry-run: print the target version. No action taken
+        #[arg(short, long)]
         dry_run: bool,
     },
 
     /// Install cog config files
     Init {
-        /// path to init
-        #[clap(default_value = ".")]
+        /// Path to initialized dir
+        #[arg(default_value = ".")]
         path: PathBuf,
     },
 
     /// Add git hooks to the repository
     InstallHook {
         /// Type of hook to install
-        #[clap(possible_values = &["commit-msg", "pre-push", "all"])]
+        #[arg(value_parser = ["commit-msg", "pre-push", "all"])]
         hook_type: String,
     },
 
     /// Generate shell completions
     GenerateCompletions {
-        /// Type of completions to generate
-        #[clap(name = "type", arg_enum)]
+        /// Shell to generate completions for
+        #[arg(value_enum)]
         shell: Shell,
     },
 }
@@ -188,7 +192,7 @@ enum Command {
 #[derive(Args)]
 struct CommitArgs {
     /// Conventional commit type
-    #[clap(name = "type", value_name = "TYPE", possible_values = commit::commit_types())]
+    #[arg(name = "type", value_name = "TYPE", value_parser = commit::commit_types())]
     typ: String,
 
     /// Commit description
@@ -198,15 +202,15 @@ struct CommitArgs {
     scope: Option<String>,
 
     /// Create a BREAKING CHANGE commit
-    #[clap(short = 'B', long)]
+    #[arg(short = 'B', long)]
     breaking_change: bool,
 
     /// Open commit message in an editor
-    #[clap(short, long)]
+    #[arg(short, long)]
     edit: bool,
 
     /// Sign this commit
-    #[clap(short, long)]
+    #[arg(short, long)]
     sign: bool,
 }
 
@@ -379,7 +383,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn init_logs(verbose: i8, quiet: bool) {
+fn init_logs(verbose: u8, quiet: bool) {
     let verbosity = if verbose == 0 { 2 } else { verbose - 1 };
     stderrlog::new()
         .module(module_path!())

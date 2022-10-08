@@ -3,14 +3,16 @@ use std::fmt::Write;
 use cocogitto::COMMITS_METADATA;
 
 use anyhow::{bail, Result};
+use clap::builder::PossibleValuesParser;
 use conventional_commit_parser::commit::Separator;
 use itertools::Itertools;
 
-pub fn commit_types() -> Vec<&'static str> {
-    COMMITS_METADATA
+pub fn commit_types() -> PossibleValuesParser {
+    let types = COMMITS_METADATA
         .iter()
-        .map(|(commit_type, _)| commit_type.as_ref())
-        .collect()
+        .map(|(commit_type, _)| -> &str { commit_type.as_ref() });
+
+    types.into()
 }
 
 pub fn edit_message(
