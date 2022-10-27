@@ -259,11 +259,13 @@ fn main() -> Result<()> {
             ignore_merge_commits,
         } => {
             let cocogitto = CocoGitto::get()?;
+            let from_latest_tag = from_latest_tag || SETTINGS.from_latest_tag;
             let ignore_merge_commits = ignore_merge_commits || SETTINGS.ignore_merge_commits;
             cocogitto.check(from_latest_tag, ignore_merge_commits)?;
         }
         Command::Edit { from_latest_tag } => {
             let cocogitto = CocoGitto::get()?;
+            let from_latest_tag = from_latest_tag || SETTINGS.from_latest_tag;
             cocogitto.check_and_edit(from_latest_tag)?;
         }
         Command::Log {
