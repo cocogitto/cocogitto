@@ -187,6 +187,10 @@ enum Command {
         #[arg(value_enum)]
         shell: Shell,
     },
+
+    /// Generate manpage
+    #[command(hide = true)]
+    GenerateManpage { cmd: String },
 }
 
 #[derive(Args)]
@@ -362,6 +366,18 @@ fn main() -> Result<()> {
         }
         Command::GenerateCompletions { shell } => {
             clap_complete::generate(shell, &mut Cli::command(), "cog", &mut std::io::stdout());
+        }
+        Command::GenerateManpage { cmd } => {
+            let cog_cmd = Cli::command();
+            let cmd = match cmd.as_str() {
+                "cog" => cog_cmd,
+                cmd => cog_cmd
+                    .find_subcommand(cmd)
+                    .expect("Requested non-existent subcommand")
+                    .clone(),
+            };
+            let man = clap_mangen::Man::new(cmd);
+            man.render(&mut std::io::stdout())?;
         }
         Command::Commit(CommitArgs {
             typ,
