@@ -251,7 +251,7 @@ mod test {
     fn get_branch_short_hand() -> Result<()> {
         // Arrange
         run_cmd!(
-            git init;
+            git init -b master;
             echo changes > file;
             git add .;
         )?;

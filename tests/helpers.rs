@@ -14,7 +14,7 @@ use cocogitto::CONFIG_PATH;
 pub fn git_init() -> Result<()> {
     init_builtin_logger();
     run_cmd!(
-        git init;
+        git init -b master;
         git config --local user.name Tom;
         git config --local user.email toml.bombadil@themail.org;
     )?;
