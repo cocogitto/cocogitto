@@ -15,7 +15,7 @@ impl Repository {
     /// tag (without configured prefix) is not semver compliant or if the tag
     /// does not exist.
     pub fn resolve_tag(&self, tag: &str) -> Result<Tag, TagError> {
-        let without_prefix = Tag::strip_prefix(tag)?;
+        let without_prefix = Tag::strip_default_prefix(tag)?;
 
         // Ensure the tag is SemVer compliant
         Version::parse(without_prefix).map_err(|err| TagError::semver(without_prefix, err))?;
@@ -87,7 +87,7 @@ pub struct Tag {
 impl TryFrom<Git2Tag<'_>> for Tag {
     type Error = TagError;
 
-    fn try_from(tag: Git2Tag) -> std::result::Result<Self, Self::Error> {
+    fn try_from(tag: Git2Tag) -> Result<Self, Self::Error> {
         let name = tag.name().expect("Unexpected unnamed tag");
         Self::new(name, Some(tag.id()))
     }
@@ -107,7 +107,7 @@ impl Tag {
     }
 
     pub(crate) fn new(name: &str, oid: Option<Oid>) -> Result<Tag, TagError> {
-        let tag = Tag::strip_prefix(name)?.to_string();
+        let tag = Tag::strip_default_prefix(name)?.to_string();
         Ok(Tag { tag, oid })
     }
 
@@ -122,7 +122,17 @@ impl Tag {
         Version::parse(&self.tag).map_err(|err| TagError::semver(&self.tag, err))
     }
 
-    fn strip_prefix(tag: &str) -> Result<&str, TagError> {
+    pub(crate) fn to_package_version(&self, package_name: &str) -> Result<Version, TagError> {
+        let prefix = format!("{package_name}-");
+        let version = self.tag.strip_prefix(&prefix).ok_or(TagError::InvalidPrefixError {
+            prefix,
+            tag: self.tag.clone(),
+        })?;
+
+        Version::parse(version).map_err(|err| TagError::semver(&self.tag, err))
+    }
+
+    fn strip_default_prefix(tag: &str) -> Result<&str, TagError> {
         match SETTINGS.tag_prefix.as_ref() {
             None => Ok(tag),
             Some(prefix) => tag

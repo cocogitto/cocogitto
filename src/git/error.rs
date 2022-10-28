@@ -25,6 +25,7 @@ pub enum Git2Error {
     Other(git2::Error),
     NoTagFound,
     CommitterNotFound,
+    TagError(TagError),
 }
 
 #[derive(Debug)]
@@ -115,6 +116,7 @@ impl Display for Git2Error {
                 "Cannot create tag: changes need to be committed".red(),
                 statuses
             ),
+            Git2Error::TagError(_) => writeln!(f, "Tag error"),
             Git2Error::IOError(_) => writeln!(f, "IO Error"),
             Git2Error::GpgError(_) => writeln!(f, "failed to sign commit"),
         }?;
@@ -130,6 +132,7 @@ impl Display for Git2Error {
             | Git2Error::Other(err)
             | Git2Error::CommitNotFound(err) => writeln!(f, "\ncause: {}", err),
             Git2Error::GpgError(err) => writeln!(f, "\ncause: {}", err),
+            Git2Error::TagError(err) => writeln!(f, "\ncause: {}", err),
             Git2Error::IOError(err) => writeln!(f, "\ncause: {}", err),
             _ => fmt::Result::Ok(()),
         }
@@ -171,6 +174,12 @@ impl From<git2::Error> for Git2Error {
 impl From<io::Error> for Git2Error {
     fn from(err: io::Error) -> Self {
         Git2Error::IOError(err)
+    }
+}
+
+impl From<TagError> for Git2Error {
+    fn from(err: TagError) -> Self {
+        Git2Error::TagError(err)
     }
 }
 

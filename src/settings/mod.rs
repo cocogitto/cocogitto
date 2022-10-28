@@ -7,6 +7,7 @@ use crate::{CommitsMetadata, CONFIG_PATH, SETTINGS};
 
 use crate::conventional::changelog::error::ChangelogError;
 use crate::conventional::changelog::template::{RemoteContext, Template};
+use crate::git::hook::Hooks;
 use crate::settings::error::SettingError;
 use config::{Config, File};
 use conventional_commit_parser::commit::CommitType;
@@ -43,6 +44,27 @@ pub struct Settings {
     pub changelog: Changelog,
     #[serde(default)]
     pub bump_profiles: HashMap<String, BumpProfile>,
+    #[serde(default)]
+    pub packages: HashMap<String, MonoRepoPackage>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Eq, PartialEq, Default)]
+#[serde(deny_unknown_fields, default)]
+pub struct MonoRepoPackage {
+    pub path: PathBuf,
+    pub changelog_path: Option<String>,
+    pub pre_bump_hooks: Vec<String>,
+    pub post_bump_hooks: Vec<String>,
+    pub bump_profiles: HashMap<String, BumpProfile>,
+}
+
+impl MonoRepoPackage {
+    pub fn changelog_path(&self) -> PathBuf {
+        self.changelog_path
+            .as_ref()
+            .map(PathBuf::from)
+            .unwrap_or_else(|| self.path.join("CHANGELOG.md"))
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone, Eq, PartialEq)]
@@ -156,24 +178,6 @@ impl Settings {
         default_types
     }
 
-    pub fn get_hooks(&self, hook_type: HookType) -> &Vec<String> {
-        match hook_type {
-            HookType::PreBump => &self.pre_bump_hooks,
-            HookType::PostBump => &self.post_bump_hooks,
-        }
-    }
-
-    pub fn get_profile_hook(&self, profile: &str, hook_type: HookType) -> &Vec<String> {
-        let profile = self
-            .bump_profiles
-            .get(profile)
-            .expect("Bump profile not found");
-        match hook_type {
-            HookType::PreBump => &profile.pre_bump_hooks,
-            HookType::PostBump => &profile.post_bump_hooks,
-        }
-    }
-
     pub fn get_template_context(&self) -> Option<RemoteContext> {
         let remote = self.changelog.remote.as_ref().cloned();
 
@@ -189,5 +193,33 @@ impl Settings {
         let template = self.changelog.template.as_deref().unwrap_or("default");
 
         Template::from_arg(template, context)
+    }
+}
+
+impl Hooks for Settings {
+    fn bump_profiles(&self) -> &HashMap<String, BumpProfile> {
+        &self.bump_profiles
+    }
+
+    fn pre_bump_hooks(&self) -> &Vec<String> {
+        &self.pre_bump_hooks
+    }
+
+    fn post_bump_hooks(&self) -> &Vec<String> {
+        &self.post_bump_hooks
+    }
+}
+
+impl Hooks for MonoRepoPackage {
+    fn bump_profiles(&self) -> &HashMap<String, BumpProfile> {
+        &self.bump_profiles
+    }
+
+    fn pre_bump_hooks(&self) -> &Vec<String> {
+        &self.pre_bump_hooks
+    }
+
+    fn post_bump_hooks(&self) -> &Vec<String> {
+        &self.post_bump_hooks
     }
 }

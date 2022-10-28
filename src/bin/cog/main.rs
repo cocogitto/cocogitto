@@ -11,7 +11,7 @@ use cocogitto::log::filter::{CommitFilter, CommitFilters};
 use cocogitto::log::output::Output;
 use cocogitto::{CocoGitto, SETTINGS};
 
-use anyhow::{Context, Result};
+use anyhow::{bail, Context, Result};
 use clap::builder::{PossibleValue, PossibleValuesParser};
 use clap::{ArgAction, ArgGroup, Args, CommandFactory, Parser, Subcommand, ValueEnum};
 use clap_complete::{shells, Generator};
@@ -22,6 +22,12 @@ fn hook_profiles() -> PossibleValuesParser {
         .bump_profiles
         .keys()
         .map(|profile| -> &str { profile });
+
+    profiles.into()
+}
+
+fn packages() -> PossibleValuesParser {
+    let profiles = SETTINGS.packages.keys().map(|profile| -> &str { profile });
 
     profiles.into()
 }
@@ -230,6 +236,10 @@ enum Command {
         #[arg(short = 'H', long, value_parser = hook_profiles())]
         hook_profile: Option<String>,
 
+        /// Specify which package to bump for monorepo
+        #[arg(long, value_parser = packages())]
+        package: Option<String>,
+
         /// Dry-run: print the target version. No action taken
         #[arg(short, long)]
         dry_run: bool,
@@ -300,6 +310,7 @@ fn main() -> Result<()> {
             patch,
             pre,
             hook_profile,
+            package,
             dry_run,
         } => {
             let mut cocogitto = CocoGitto::get()?;
@@ -313,7 +324,36 @@ fn main() -> Result<()> {
                 _ => unreachable!(),
             };
 
-            cocogitto.create_version(increment, pre.as_deref(), hook_profile.as_deref(), dry_run)?
+            let is_monorepo = !SETTINGS.packages.is_empty();
+
+            if is_monorepo {
+                if increment == VersionIncrement::Auto && package.is_none() {
+                    cocogitto.create_monorepo_version(
+                        pre.as_deref(),
+                        hook_profile.as_deref(),
+                        dry_run,
+                    )?
+                } else if let Some(package_name) = package {
+                    // Safe unwrap here, package name is validated by clap
+                    let package = SETTINGS.packages.get(&package_name).unwrap();
+                    cocogitto.create_package_version(
+                        (&package_name, package),
+                        increment,
+                        pre.as_deref(),
+                        hook_profile.as_deref(),
+                        dry_run,
+                    )?
+                } else {
+                    bail!("Cannot bump monorepo manually, use `--package` to update a specific package.")
+                }
+            } else {
+                cocogitto.create_version(
+                    increment,
+                    pre.as_deref(),
+                    hook_profile.as_deref(),
+                    dry_run,
+                )?
+            }
         }
         Command::Verify {
             message,

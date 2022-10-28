@@ -28,10 +28,12 @@ use settings::{HookType, Settings};
 use crate::conventional::changelog::release::Release;
 use crate::conventional::changelog::template::Template;
 use crate::git::error::{Git2Error, TagError};
+use crate::git::hook::Hooks;
 use crate::git::oid::OidOf;
 use crate::git::revspec::RevspecPattern;
 use crate::git::tag::Tag;
 use crate::hook::HookVersion;
+use crate::settings::MonoRepoPackage;
 
 pub mod conventional;
 pub mod error;
@@ -412,39 +414,7 @@ impl CocoGitto {
         hooks_config: Option<&str>,
         dry_run: bool,
     ) -> Result<()> {
-        if *SETTINGS == Settings::default() {
-            let part1 = "Warning: using".yellow();
-            let part2 = "with the default configuration. \n".yellow();
-            let part3 = "You may want to create a".yellow();
-            let part4 = "file in your project root to configure bumps.\n".yellow();
-            warn!(
-                "{} 'cog bump' {}{} 'cog.toml' {}",
-                part1, part2, part3, part4
-            );
-        }
-        let statuses = self.repository.get_statuses()?;
-
-        // Fail if repo contains un-staged or un-committed changes
-        ensure!(statuses.0.is_empty(), "{}", self.repository.get_statuses()?);
-
-        if !SETTINGS.branch_whitelist.is_empty() {
-            if let Some(branch) = self.repository.get_branch_shorthand() {
-                let whitelist = &SETTINGS.branch_whitelist;
-                let is_match = whitelist.iter().any(|pattern| {
-                    let glob = Glob::new(pattern)
-                        .expect("invalid glob pattern")
-                        .compile_matcher();
-                    glob.is_match(&branch)
-                });
-
-                ensure!(
-                    is_match,
-                    "No patterns matched in {:?} for branch '{}', bump is not allowed",
-                    whitelist,
-                    branch
-                )
-            }
-        };
+        self.pre_bump_checks()?;
 
         let current_tag = self.repository.get_latest_tag();
         let current_version = match current_tag {
@@ -512,6 +482,7 @@ impl CocoGitto {
             current.as_ref(),
             &next_version,
             hooks_config,
+            None,
         );
 
         self.repository.add_all()?;
@@ -547,6 +518,7 @@ impl CocoGitto {
             current.as_ref(),
             &next_version,
             hooks_config,
+            None,
         )?;
 
         let current = current
@@ -554,6 +526,301 @@ impl CocoGitto {
             .unwrap_or_else(|| "...".to_string());
         let bump = format!("{} -> {}", current, next_version.prefixed_tag).green();
         info!("Bumped version: {}", bump);
+
+        Ok(())
+    }
+
+    pub fn create_monorepo_version(
+        &mut self,
+        pre_release: Option<&str>,
+        hooks_config: Option<&str>,
+        dry_run: bool,
+    ) -> Result<()> {
+        self.pre_bump_checks()?;
+        let mut package_bumps = vec![];
+
+        for (package_name, package) in &SETTINGS.packages {
+            let current_tag = self.repository.get_latest_package_tag(package_name);
+            let current_version = match current_tag {
+                Ok(ref tag) => tag.to_package_version(package_name)?,
+                Err(ref err) if err == &TagError::NoTag => {
+                    warn!("Failed to get current version, falling back to 0.0.0");
+                    Version::new(0, 0, 0)
+                }
+                Err(ref err) => bail!("{}", err),
+            };
+
+            let mut next_version = VersionIncrement::Auto.bump(&current_version, &self.repository)?;
+
+            if next_version.le(&current_version) || next_version.eq(&current_version) {
+                let comparison = format!("{} <= {}", current_version, next_version).red();
+                let cause_key = "cause:".red();
+                let cause = format!(
+                    "{} version MUST be greater than current one: {}",
+                    cause_key, comparison
+                );
+
+                bail!("{}:\n\t{}\n", "SemVer Error".red().to_string(), cause);
+            };
+
+            if let Some(pre_release) = pre_release {
+                next_version.pre = Prerelease::new(pre_release)?;
+            }
+
+            let version_str = format!("{}-{}", package_name, next_version);
+
+            if dry_run {
+                print!("{}", version_str);
+                continue
+            }
+
+            let origin = if current_version == Version::new(0, 0, 0) {
+                self.repository.get_first_commit()?.to_string()
+            } else {
+                current_tag?.oid_unchecked().to_string()
+            };
+
+            let target = self.repository.get_head_commit_oid()?.to_string();
+            let pattern = (origin.as_str(), target.as_str());
+
+            let pattern = RevspecPattern::from(pattern);
+            let changelog =
+                self.get_changelog_with_target_package_version(pattern, &version_str, package)?;
+
+            if changelog.is_none() {
+                println!("No commit found to bump package {package_name}, skipping.");
+                continue
+            }
+
+            let changelog = changelog.unwrap();
+            let path = package.changelog_path();
+            let template = SETTINGS.get_changelog_template()?;
+            changelog.write_to_file(path, template)?;
+
+            let current = self
+                .repository
+                .get_latest_package_tag(package_name)
+                .map(|tag| HookVersion::new(&tag.to_string_with_prefix()))
+                .ok();
+
+            let next_version = HookVersion::new(&Self::prefix_version(next_version.to_string()));
+
+            let hook_result = self.run_hooks(
+                HookType::PreBump,
+                current.as_ref(),
+                &next_version,
+                hooks_config,
+                Some(package),
+            );
+
+            self.repository.add_all()?;
+
+            // Hook failed, we need to stop here and reset
+            // the repository to a clean state
+            if let Err(err) = hook_result {
+                self.repository.stash_failed_version(&version_str)?;
+                error!(
+                "{}",
+                PreHookError {
+                    cause: err.to_string(),
+                    version: version_str,
+                    stash_number: 0,
+                }
+            );
+
+                exit(1);
+            }
+
+            package_bumps.push((package_name, package, current, next_version, version_str));
+        }
+
+        // Todo: meta version
+        self.repository
+            .commit("chore(version): Bump", false)?;
+
+        for (package_name, package, current, next_version, version_str) in package_bumps {
+            let version_str = Self::prefix_version(version_str);
+
+            self.repository.create_tag(&version_str)?;
+
+            self.run_hooks(
+                HookType::PostBump,
+                current.as_ref(),
+                &next_version,
+                hooks_config,
+                Some(package),
+            )?;
+
+            let current = current
+                .map(|current| current.prefixed_tag)
+                .unwrap_or_else(|| "...".to_string());
+            let bump = format!("{} -> {}", current, next_version.prefixed_tag).green();
+            info!("Bumped package {package_name} version: {}", bump);
+        }
+
+
+
+        Ok(())
+    }
+
+    pub fn create_package_version(
+        &mut self,
+        (package_name, package): (&str, &MonoRepoPackage),
+        increment: VersionIncrement,
+        pre_release: Option<&str>,
+        hooks_config: Option<&str>,
+        dry_run: bool,
+    ) -> Result<()> {
+        self.pre_bump_checks()?;
+
+        let current_tag = self.repository.get_latest_package_tag(package_name);
+        let current_version = match current_tag {
+            Ok(ref tag) => tag.to_package_version(package_name)?,
+            Err(ref err) if err == &TagError::NoTag => {
+                warn!("Failed to get current version, falling back to 0.0.0");
+                Version::new(0, 0, 0)
+            }
+            Err(ref err) => bail!("{}", err),
+        };
+
+        let mut next_version = increment.bump(&current_version, &self.repository)?;
+
+        if next_version.le(&current_version) || next_version.eq(&current_version) {
+            let comparison = format!("{} <= {}", current_version, next_version).red();
+            let cause_key = "cause:".red();
+            let cause = format!(
+                "{} version MUST be greater than current one: {}",
+                cause_key, comparison
+            );
+
+            bail!("{}:\n\t{}\n", "SemVer Error".red().to_string(), cause);
+        };
+
+        if let Some(pre_release) = pre_release {
+            next_version.pre = Prerelease::new(pre_release)?;
+        }
+
+        let version_str = format!("{}-{}", package_name, next_version);
+
+        if dry_run {
+            print!("{}", version_str);
+            return Ok(());
+        }
+
+        let origin = if current_version == Version::new(0, 0, 0) {
+            self.repository.get_first_commit()?.to_string()
+        } else {
+            current_tag?.oid_unchecked().to_string()
+        };
+
+        let target = self.repository.get_head_commit_oid()?.to_string();
+        let pattern = (origin.as_str(), target.as_str());
+
+        let pattern = RevspecPattern::from(pattern);
+        let changelog =
+            self.get_changelog_with_target_package_version(pattern, &version_str, package)?;
+
+        if changelog.is_none() {
+            bail!("No commit matching package {package_name} path");
+        }
+
+        let changelog = changelog.unwrap();
+        let path = package.changelog_path();
+        let template = SETTINGS.get_changelog_template()?;
+        changelog.write_to_file(path, template)?;
+
+        let current = self
+            .repository
+            .get_latest_package_tag(package_name)
+            .map(|tag| HookVersion::new(&tag.to_string_with_prefix()))
+            .ok();
+
+        let next_version = HookVersion::new(&Self::prefix_version(next_version.to_string()));
+
+        let hook_result = self.run_hooks(
+            HookType::PreBump,
+            current.as_ref(),
+            &next_version,
+            hooks_config,
+            Some(package),
+        );
+
+        self.repository.add_all()?;
+
+        // Hook failed, we need to stop here and reset
+        // the repository to a clean state
+        if let Err(err) = hook_result {
+            self.repository.stash_failed_version(&version_str)?;
+            error!(
+                "{}",
+                PreHookError {
+                    cause: err.to_string(),
+                    version: version_str,
+                    stash_number: 0,
+                }
+            );
+
+            exit(1);
+        }
+
+        let version_str = Self::prefix_version(version_str);
+
+        self.repository
+            .commit(&format!("chore(version): {}", version_str), false)?;
+
+        self.repository.create_tag(&version_str)?;
+
+        self.run_hooks(
+            HookType::PostBump,
+            current.as_ref(),
+            &next_version,
+            hooks_config,
+            Some(package),
+        )?;
+
+        let current = current
+            .map(|current| current.prefixed_tag)
+            .unwrap_or_else(|| "...".to_string());
+        let bump = format!("{} -> {}", current, next_version.prefixed_tag).green();
+        info!("Bumped package {package_name} version: {}", bump);
+
+        Ok(())
+    }
+
+    fn pre_bump_checks(&mut self) -> Result<()> {
+        if *SETTINGS == Settings::default() {
+            let part1 = "Warning: using".yellow();
+            let part2 = "with the default configuration. \n".yellow();
+            let part3 = "You may want to create a".yellow();
+            let part4 = "file in your project root to configure bumps.\n".yellow();
+            warn!(
+                "{} 'cog bump' {}{} 'cog.toml' {}",
+                part1, part2, part3, part4
+            );
+        }
+        let statuses = self.repository.get_statuses()?;
+
+        // Fail if repo contains un-staged or un-committed changes
+        ensure!(statuses.0.is_empty(), "{}", self.repository.get_statuses()?);
+
+        if !SETTINGS.branch_whitelist.is_empty() {
+            if let Some(branch) = self.repository.get_branch_shorthand() {
+                let whitelist = &SETTINGS.branch_whitelist;
+                let is_match = whitelist.iter().any(|pattern| {
+                    let glob = Glob::new(pattern)
+                        .expect("invalid glob pattern")
+                        .compile_matcher();
+                    glob.is_match(&branch)
+                });
+
+                ensure!(
+                    is_match,
+                    "No patterns matched in {:?} for branch '{}', bump is not allowed",
+                    whitelist,
+                    branch
+                )
+            }
+        };
 
         Ok(())
     }
@@ -582,6 +849,26 @@ impl CocoGitto {
         Ok(release)
     }
 
+    /// Used for cog bump. the target version
+    /// is not created yet when generating the changelog.
+    pub fn get_changelog_with_target_package_version(
+        &self,
+        pattern: RevspecPattern,
+        target_version: &str,
+        package: &MonoRepoPackage,
+    ) -> Result<Option<Release>> {
+        let mut release = self
+            .repository
+            .get_commit_range_for_packages(package, &pattern)?
+            .map(Release::from);
+
+        if let Some(release) = &mut release {
+            release.version = OidOf::Tag(Tag::new(target_version, None)?);
+        }
+
+        Ok(release)
+    }
+
     /// ## Get a changelog between two oids
     /// - `from` default value:latest tag or else first commit
     /// - `to` default value:`HEAD` or else first commit
@@ -607,12 +894,13 @@ impl CocoGitto {
         current_tag: Option<&HookVersion>,
         next_version: &HookVersion,
         hook_profile: Option<&str>,
+        package: Option<&MonoRepoPackage>,
     ) -> Result<()> {
         let settings = Settings::get(&self.repository)?;
 
-        let hooks: Vec<Hook> = match hook_profile {
-            Some(profile) => settings
-                .get_profile_hook(profile, hook_type)
+        let hooks: Vec<Hook> = match (package, hook_profile) {
+            (None, Some(profile)) => settings
+                .get_profile_hooks(profile, hook_type)
                 .iter()
                 .map(|s| s.parse())
                 .enumerate()
@@ -623,7 +911,30 @@ impl CocoGitto {
                     ))
                 })
                 .try_collect()?,
-            None => settings
+
+            (Some(package), Some(profile)) => {
+                let hooks = package.get_profile_hooks(profile, hook_type);
+
+                hooks
+                    .iter()
+                    .map(|s| s.parse())
+                    .enumerate()
+                    .map(|(idx, result)| {
+                        result.context(format!(
+                            "Cannot parse bump profile {} hook at index {}",
+                            profile, idx
+                        ))
+                    })
+                    .try_collect()?
+            }
+            (Some(package), None) => package
+                .get_hooks(hook_type)
+                .iter()
+                .map(|s| s.parse())
+                .enumerate()
+                .map(|(idx, result)| result.context(format!("Cannot parse hook at index {}", idx)))
+                .try_collect()?,
+            (None, None) => settings
                 .get_hooks(hook_type)
                 .iter()
                 .map(|s| s.parse())
