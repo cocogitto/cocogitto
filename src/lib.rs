@@ -6,7 +6,7 @@ use std::io::Write;
 use std::path::Path;
 use std::process::{exit, Command, Stdio};
 
-use anyhow::{anyhow, bail, ensure, Context, Result};
+use anyhow::{anyhow, bail, ensure, Context, Error, Result};
 use colored::*;
 use conventional_commit_parser::commit::{CommitType, ConventionalCommit};
 use conventional_commit_parser::parse_footers;
@@ -443,10 +443,10 @@ impl CocoGitto {
             next_version.pre = Prerelease::new(pre_release)?;
         }
 
-        let next_tag = Tag::create(next_version, None);
+        let tag = Tag::create(next_version, None);
 
         if dry_run {
-            print!("{}", next_tag);
+            print!("{}", tag);
             return Ok(());
         }
 
@@ -460,7 +460,7 @@ impl CocoGitto {
         let pattern = (origin.as_str(), target.as_str());
 
         let pattern = RevspecPattern::from(pattern);
-        let changelog = self.get_changelog_with_target_version(pattern, next_tag.clone())?;
+        let changelog = self.get_changelog_with_target_version(pattern, tag.clone())?;
 
         let path = settings::changelog_path();
         let template = SETTINGS.get_changelog_template()?;
@@ -468,7 +468,7 @@ impl CocoGitto {
 
         let current = self.repository.get_latest_tag().map(HookVersion::new).ok();
 
-        let next_version = HookVersion::new(next_tag.clone());
+        let next_version = HookVersion::new(tag.clone());
 
         let hook_result = self.run_hooks(
             HookType::PreBump,
@@ -483,17 +483,7 @@ impl CocoGitto {
         // Hook failed, we need to stop here and reset
         // the repository to a clean state
         if let Err(err) = hook_result {
-            self.repository.stash_failed_version(next_tag.clone())?;
-            error!(
-                "{}",
-                PreHookError {
-                    cause: err.to_string(),
-                    version: next_tag.to_string(),
-                    stash_number: 0,
-                }
-            );
-
-            exit(1);
+            self.stash_failed_version(&tag, err)?;
         }
 
         let version_str = Self::prefix_version(version_str);
@@ -504,7 +494,7 @@ impl CocoGitto {
             sign,
         )?;
 
-        self.repository.create_tag(&next_tag)?;
+        self.repository.create_tag(&tag)?;
 
         self.run_hooks(
             HookType::PostBump,
@@ -612,17 +602,7 @@ impl CocoGitto {
             // Hook failed, we need to stop here and reset
             // the repository to a clean state
             if let Err(err) = hook_result {
-                self.repository.stash_failed_version(tag.clone())?;
-                error!(
-                    "{}",
-                    PreHookError {
-                        cause: err.to_string(),
-                        version: tag.to_string(),
-                        stash_number: 0,
-                    }
-                );
-
-                exit(1);
+                self.stash_failed_version(&tag, err)?;
             }
 
             package_bumps.push((package_name, package, current, next_version, tag));
@@ -740,17 +720,7 @@ impl CocoGitto {
         // Hook failed, we need to stop here and reset
         // the repository to a clean state
         if let Err(err) = hook_result {
-            self.repository.stash_failed_version(tag.clone())?;
-            error!(
-                "{}",
-                PreHookError {
-                    cause: err.to_string(),
-                    version: tag.to_string(),
-                    stash_number: 0,
-                }
-            );
-
-            exit(1);
+            self.stash_failed_version(&tag, err)?;
         }
 
         self.repository
@@ -773,6 +743,20 @@ impl CocoGitto {
         info!("Bumped package {package_name} version: {}", bump);
 
         Ok(())
+    }
+
+    fn stash_failed_version(&mut self, tag: &Tag, err: Error) -> Result<()> {
+        self.repository.stash_failed_version(tag.clone())?;
+        error!(
+            "{}",
+            PreHookError {
+                cause: err.to_string(),
+                version: tag.to_string(),
+                stash_number: 0,
+            }
+        );
+
+        exit(1);
     }
 
     fn pre_bump_checks(&mut self) -> Result<()> {
