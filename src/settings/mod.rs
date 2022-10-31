@@ -196,6 +196,14 @@ impl Settings {
 
         Template::from_arg(template, context)
     }
+
+    pub fn monorepo_separator(&self) -> Option<&str> {
+        if self.packages.is_empty() {
+            None
+        } else {
+            self.monorepo_version_separator.as_deref().or(Some("-"))
+        }
+    }
 }
 
 impl Hooks for Settings {

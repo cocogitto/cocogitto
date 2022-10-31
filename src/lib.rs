@@ -14,7 +14,7 @@ use git2::{Oid, RebaseOptions};
 use globset::Glob;
 use itertools::Itertools;
 use lazy_static::lazy_static;
-use semver::{Prerelease, Version};
+use semver::Prerelease;
 use tempfile::TempDir;
 
 use crate::log::filter::CommitFilters;
@@ -199,13 +199,15 @@ impl CocoGitto {
                     .0
                     .rebase(None, Some(&commit), None, Some(&mut options))?;
 
+            let editor = &editor;
+
             while let Some(op) = rebase.next() {
                 if let Ok(rebase_operation) = op {
                     let oid = rebase_operation.id();
                     let original_commit = self.repository.0.find_commit(oid)?;
                     if errored_commits.contains(&oid) {
                         warn!("Found errored commits:{}", &oid.to_string()[0..7]);
-                        let file_path = dir.path().join(&commit.id().to_string());
+                        let file_path = dir.path().join(commit.id().to_string());
                         let mut file = File::create(&file_path)?;
 
                         let hint = format!(
@@ -219,7 +221,7 @@ impl CocoGitto {
                         message_bytes.extend_from_slice(original_commit.message_bytes());
                         file.write_all(&message_bytes)?;
 
-                        Command::new(&editor)
+                        Command::new(editor)
                             .arg(&file_path)
                             .stdout(Stdio::inherit())
                             .stdin(Stdio::inherit())
@@ -407,6 +409,25 @@ impl CocoGitto {
         Ok(())
     }
 
+    /// ## Get a changelog between two oids
+    /// - `from` default value:latest tag or else first commit
+    /// - `to` default value:`HEAD` or else first commit
+    pub fn get_changelog(
+        &self,
+        pattern: RevspecPattern,
+        with_child_releases: bool,
+    ) -> Result<Release> {
+        if with_child_releases {
+            self.repository
+                .get_release_range(pattern)
+                .map_err(Into::into)
+        } else {
+            let commit_range = self.repository.get_commit_range(&pattern)?;
+
+            Ok(Release::from(commit_range))
+        }
+    }
+
     pub fn create_version(
         &mut self,
         increment: VersionIncrement,
@@ -417,49 +438,31 @@ impl CocoGitto {
         self.pre_bump_checks()?;
 
         let current_tag = self.repository.get_latest_tag();
-        let current_version = match current_tag {
-            Ok(ref tag) => tag.version.clone(),
+        let current_tag = match current_tag {
+            Ok(ref tag) => tag.to_owned(),
             Err(ref err) if err == &TagError::NoTag => {
                 warn!("Failed to get current version, falling back to 0.0.0");
-                Version::new(0, 0, 0)
+                Tag::default()
             }
             Err(ref err) => bail!("{}", err),
         };
 
-        let mut next_version = increment.bump(&current_version, &self.repository)?;
+        let mut tag = current_tag.bump(increment, &self.repository)?;
 
-        if next_version.le(&current_version) || next_version.eq(&current_version) {
-            let comparison = format!("{} <= {}", current_version, next_version).red();
-            let cause_key = "cause:".red();
-            let cause = format!(
-                "{} version MUST be greater than current one: {}",
-                cause_key, comparison
-            );
-
-            bail!("{}:\n\t{}\n", "SemVer Error".red().to_string(), cause);
-        };
+        ensure_tag_is_greater_than_previous(&current_tag, &tag)?;
 
         if let Some(pre_release) = pre_release {
-            next_version.pre = Prerelease::new(pre_release)?;
+            tag.version.pre = Prerelease::new(pre_release)?;
         }
 
-        let tag = Tag::create(next_version, None);
+        let tag = Tag::create(tag.version, None);
 
         if dry_run {
             print!("{}", tag);
             return Ok(());
         }
 
-        let origin = if current_version == Version::new(0, 0, 0) {
-            self.repository.get_first_commit()?.to_string()
-        } else {
-            current_tag?.oid_unchecked().to_string()
-        };
-
-        let target = self.repository.get_head_commit_oid()?.to_string();
-        let pattern = (origin.as_str(), target.as_str());
-
-        let pattern = RevspecPattern::from(pattern);
+        let pattern = self.get_revspec_for_tag(&current_tag)?;
         let changelog = self.get_changelog_with_target_version(pattern, tag.clone())?;
 
         let path = settings::changelog_path();
@@ -486,7 +489,6 @@ impl CocoGitto {
             self.stash_failed_version(&tag, err)?;
         }
 
-        let version_str = Self::prefix_version(version_str);
         let sign = self.repository.gpg_sign();
 
         self.repository.commit(
@@ -523,60 +525,29 @@ impl CocoGitto {
         let mut package_bumps = vec![];
 
         for (package_name, package) in &SETTINGS.packages {
-            let current_tag = self.repository.get_latest_package_tag(package_name);
-            let current_version = match current_tag {
-                Ok(ref tag) => tag.version.clone(),
-                Err(ref err) if err == &TagError::NoTag => {
-                    warn!("Failed to get current version, falling back to 0.0.0");
-                    Version::new(0, 0, 0)
-                }
-                Err(ref err) => bail!("{}", err),
-            };
-
-            let mut next_version =
-                VersionIncrement::Auto.bump(&current_version, &self.repository)?;
-
-            if next_version.le(&current_version) || next_version.eq(&current_version) {
-                let comparison = format!("{} <= {}", current_version, next_version).red();
-                let cause_key = "cause:".red();
-                let cause = format!(
-                    "{} version MUST be greater than current one: {}",
-                    cause_key, comparison
-                );
-
-                bail!("{}:\n\t{}\n", "SemVer Error".red().to_string(), cause);
-            };
+            let old = self.repository.get_latest_package_tag(package_name);
+            let old = tag_or_fallback_to_zero(old)?;
+            info!("Package {}, current version {old}  ", package_name.bold());
+            let mut next_version = old.bump(VersionIncrement::Auto, &self.repository)?;
+            ensure_tag_is_greater_than_previous(&old, &next_version)?;
 
             if let Some(pre_release) = pre_release {
-                next_version.pre = Prerelease::new(pre_release)?;
+                next_version.version.pre = Prerelease::new(pre_release)?;
             }
 
-            let tag = Tag::create(next_version, Some(package_name.to_string()));
+            let tag = Tag::create(next_version.version, Some(package_name.to_string()));
 
             if dry_run {
                 print!("{}", tag);
                 continue;
             }
 
-            let origin = if current_version == Version::new(0, 0, 0) {
-                self.repository.get_first_commit()?.to_string()
-            } else {
-                current_tag?.oid_unchecked().to_string()
+            let pattern = self.get_revspec_for_tag(&old)?;
+            let Some(changelog) = self.get_changelog_with_target_package_version(pattern, tag.clone(), package)? else {
+                println!("\t No commit found to bump package, skipping.");
+                continue;
             };
 
-            let target = self.repository.get_head_commit_oid()?.to_string();
-            let pattern = (origin.as_str(), target.as_str());
-
-            let pattern = RevspecPattern::from(pattern);
-            let changelog =
-                self.get_changelog_with_target_package_version(pattern, tag.clone(), package)?;
-
-            if changelog.is_none() {
-                println!("No commit found to bump package {package_name}, skipping.");
-                continue;
-            }
-
-            let changelog = changelog.unwrap();
             let path = package.changelog_path();
             let template = SETTINGS.get_changelog_template()?;
             changelog.write_to_file(path, template)?;
@@ -643,57 +614,25 @@ impl CocoGitto {
         self.pre_bump_checks()?;
 
         let current_tag = self.repository.get_latest_package_tag(package_name);
-        let current_version = match current_tag {
-            Ok(ref tag) => tag.version.clone(),
-            Err(ref err) if err == &TagError::NoTag => {
-                warn!("Failed to get current version, falling back to 0.0.0");
-                Version::new(0, 0, 0)
-            }
-            Err(ref err) => bail!("{}", err),
-        };
-
-        let mut next_version = increment.bump(&current_version, &self.repository)?;
-
-        if next_version.le(&current_version) || next_version.eq(&current_version) {
-            let comparison = format!("{} <= {}", current_version, &next_version).red();
-            let cause_key = "cause:".red();
-            let cause = format!(
-                "{} version MUST be greater than current one: {}",
-                cause_key, comparison
-            );
-
-            bail!("{}:\n\t{}\n", "SemVer Error".red().to_string(), cause);
-        };
-
+        let current_tag = tag_or_fallback_to_zero(current_tag)?;
+        let mut next_version = current_tag.bump(increment, &self.repository)?;
+        ensure_tag_is_greater_than_previous(&current_tag, &next_version)?;
         if let Some(pre_release) = pre_release {
-            next_version.pre = Prerelease::new(pre_release)?;
+            next_version.version.pre = Prerelease::new(pre_release)?;
         }
 
-        let tag = Tag::create(next_version.clone(), Some(package_name.to_string()));
+        let tag = Tag::create(next_version.version.clone(), Some(package_name.to_string()));
 
         if dry_run {
             print!("{}", tag);
             return Ok(());
         }
 
-        let origin = if current_version == Version::new(0, 0, 0) {
-            self.repository.get_first_commit()?.to_string()
-        } else {
-            current_tag?.oid_unchecked().to_string()
+        let pattern = self.get_revspec_for_tag(&current_tag)?;
+        let Some(changelog) = self.get_changelog_with_target_package_version(pattern, tag.clone(), package)? else {
+            bail!("No commit matching package {package_name} path");
         };
 
-        let target = self.repository.get_head_commit_oid()?.to_string();
-        let pattern = (origin.as_str(), target.as_str());
-
-        let pattern = RevspecPattern::from(pattern);
-        let changelog =
-            self.get_changelog_with_target_package_version(pattern, tag.clone(), package)?;
-
-        if changelog.is_none() {
-            bail!("No commit matching package {package_name} path");
-        }
-
-        let changelog = changelog.unwrap();
         let path = package.changelog_path();
         let template = SETTINGS.get_changelog_template()?;
         changelog.write_to_file(path, template)?;
@@ -704,8 +643,10 @@ impl CocoGitto {
             .map(HookVersion::new)
             .ok();
 
-        let next_version =
-            HookVersion::new(Tag::create(next_version, Some(package_name.to_string())));
+        let next_version = HookVersion::new(Tag::create(
+            next_version.version,
+            Some(package_name.to_string()),
+        ));
 
         let hook_result = self.run_hooks(
             HookType::PreBump,
@@ -823,7 +764,7 @@ impl CocoGitto {
 
     /// Used for cog bump. the target version
     /// is not created yet when generating the changelog.
-    pub fn get_changelog_with_target_package_version(
+    fn get_changelog_with_target_package_version(
         &self,
         pattern: RevspecPattern,
         target_tag: Tag,
@@ -839,25 +780,6 @@ impl CocoGitto {
         }
 
         Ok(release)
-    }
-
-    /// ## Get a changelog between two oids
-    /// - `from` default value:latest tag or else first commit
-    /// - `to` default value:`HEAD` or else first commit
-    pub fn get_changelog(
-        &self,
-        pattern: RevspecPattern,
-        with_child_releases: bool,
-    ) -> Result<Release> {
-        if with_child_releases {
-            self.repository
-                .get_release_range(pattern)
-                .map_err(Into::into)
-        } else {
-            let commit_range = self.repository.get_commit_range(&pattern)?;
-
-            Ok(Release::from(commit_range))
-        }
     }
 
     fn run_hooks(
@@ -921,5 +843,40 @@ impl CocoGitto {
         }
 
         Ok(())
+    }
+
+    fn get_revspec_for_tag(&mut self, tag: &Tag) -> Result<RevspecPattern> {
+        let origin = if tag.is_zero() {
+            self.repository.get_first_commit()?.to_string()
+        } else {
+            tag.oid_unchecked().to_string()
+        };
+
+        let target = self.repository.get_head_commit_oid()?.to_string();
+        let pattern = (origin.as_str(), target.as_str());
+        Ok(RevspecPattern::from(pattern))
+    }
+}
+
+fn ensure_tag_is_greater_than_previous(current: &Tag, next: &Tag) -> Result<()> {
+    if next <= current {
+        let comparison = format!("{} <= {}", current, next).red();
+        let cause_key = "cause:".red();
+        let cause = format!(
+            "{} version MUST be greater than current one: {}",
+            cause_key, comparison
+        );
+
+        bail!("{}:\n\t{}\n", "SemVer Error".red().to_string(), cause);
+    };
+
+    Ok(())
+}
+
+fn tag_or_fallback_to_zero(tag: Result<Tag, TagError>) -> Result<Tag> {
+    match tag {
+        Ok(ref tag) => Ok(tag.clone()),
+        Err(ref err) if err == &TagError::NoTag => Ok(Tag::default()),
+        Err(err) => Err(anyhow!(err)),
     }
 }

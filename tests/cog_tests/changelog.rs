@@ -371,9 +371,7 @@ fn get_changelog_whith_custom_template() -> Result<()> {
 
     run_cmd!(echo $cog_toml > cog.toml;)?;
 
-    let string = fs::read_to_string("cog.toml")?;
-    println!("{}", string);
-
+    let _string = fs::read_to_string("cog.toml")?;
     let init_commit = git_commit("chore: init")?;
     let commit_one = git_commit("feat(scope1): start")?;
     let commit_two = git_commit("feat: feature 1")?;

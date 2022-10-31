@@ -60,7 +60,6 @@ impl Repository {
         let tags: Vec<Tag> = self.all_tags()?;
 
         tags.into_iter()
-            .filter(|tag| tag.prefix.is_some())
             .filter(|tag| {
                 tag.package
                     .as_ref()

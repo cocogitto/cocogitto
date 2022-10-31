@@ -671,7 +671,7 @@ mod test {
             .map(|commit| commit.commit.oid.to_string())
             .collect();
 
-        assert_that!(head_to_v1).is_equal_to(vec![three.clone()]);
+        assert_that!(head_to_v1).is_equal_to(vec![three]);
         assert_that!(commit_before_v1).is_equal_to(vec![two, one, from]);
 
         Ok(())

@@ -38,7 +38,8 @@ impl Commit {
         let oid = commit.id().to_string();
 
         let commit = commit.to_owned();
-        let date = NaiveDateTime::from_timestamp(commit.time().seconds(), 0);
+        let date = NaiveDateTime::from_timestamp_opt(commit.time().seconds(), 0)
+            .expect("valid commit date");
         let message = commit.message();
         let git2_message = message.unwrap().to_owned();
         let author = commit.author().name().unwrap_or("").to_string();

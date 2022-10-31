@@ -77,14 +77,14 @@ pub fn git_tag(tag: &str) -> Result<()> {
 pub fn assert_tag_exists(tag: &str) -> Result<()> {
     let tags = run_fun!(git --no-pager tag)?;
     let tags: Vec<&str> = tags.split('\n').collect();
-    assert_that!(tags).contains(&tag);
+    assert_that!(tags).contains(tag);
     Ok(())
 }
 
 pub fn assert_tag_does_not_exist(tag: &str) -> Result<()> {
     let tags = run_fun!(git --no-pager tag)?;
     let tags: Vec<&str> = tags.split('\n').collect();
-    assert_that!(tags).does_not_contain(&tag);
+    assert_that!(tags).does_not_contain(tag);
     Ok(())
 }
 

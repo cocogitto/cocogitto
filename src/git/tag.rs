@@ -1,7 +1,6 @@
 use crate::git::error::{Git2Error, TagError};
 use crate::git::repository::Repository;
 use crate::SETTINGS;
-use git2::string_array::StringArray;
 use git2::Oid;
 use semver::Version;
 use std::cmp::Ordering;
@@ -48,7 +47,6 @@ impl Repository {
         Ok(self
             .tags()?
             .iter()
-            .flatten()
             .map(|tag| self.resolve_lightweight_tag(tag))
             .filter_map(Result::ok)
             .collect())
@@ -59,24 +57,86 @@ impl Repository {
             .map(|tag| tag.oid_unchecked().to_owned())
     }
 
-    fn tags(&self) -> Result<StringArray, TagError> {
-        let pattern = SETTINGS
-            .tag_prefix
-            .as_ref()
-            .map(|prefix| format!("{}*", prefix));
+    fn tags(&self) -> Result<Vec<String>, TagError> {
+        let packages: Vec<&str> = SETTINGS
+            .packages
+            .keys()
+            .map(|profile| -> &str { profile })
+            .collect();
 
-        self.0
-            .tag_names(pattern.as_deref())
-            .map_err(|err| TagError::NoMatchFound { pattern, err })
+        let tags = if packages.is_empty() {
+            let pattern = SETTINGS
+                .tag_prefix
+                .as_ref()
+                .map(|prefix| format!("{}*", prefix));
+
+            self.0
+                .tag_names(pattern.as_deref())
+                .map_err(|err| TagError::NoMatchFound { pattern, err })?
+                .iter()
+                .flatten()
+                .map(str::to_string)
+                .collect()
+        } else {
+            let separator = SETTINGS
+                .monorepo_separator()
+                .expect("monorepo_version_separator");
+            let tags = self.0.tag_names(None).map_err(|_| TagError::NoTag)?;
+
+            tags.into_iter()
+                .flatten()
+                .filter(|tag| match tag.split_once(separator) {
+                    None => false,
+                    Some((tag_package, _)) => packages.contains(&tag_package),
+                })
+                .map(str::to_string)
+                .collect()
+        };
+
+        Ok(tags)
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, Eq, Clone)]
 pub struct Tag {
     pub package: Option<String>,
     pub prefix: Option<String>,
     pub version: Version,
     pub oid: Option<Oid>,
+}
+
+impl Ord for Tag {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.partial_cmp(other).unwrap_or(Ordering::Less)
+    }
+}
+
+impl PartialEq for Tag {
+    fn eq(&self, other: &Self) -> bool {
+        self.package == other.package
+            && self.version == other.version
+            && self.prefix == other.prefix
+    }
+}
+
+impl PartialOrd<Tag> for Tag {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        if self.package != other.package {
+            return None;
+        }
+
+        if self.prefix != other.prefix {
+            return None;
+        }
+
+        self.version.partial_cmp(&other.version)
+    }
+}
+
+impl Default for Tag {
+    fn default() -> Self {
+        Tag::create(Version::new(0, 0, 0), None)
+    }
 }
 
 impl Tag {
@@ -96,6 +156,7 @@ impl Tag {
             oid: None,
         }
     }
+
     pub(crate) fn oid(&self) -> Option<&Oid> {
         self.oid.as_ref()
     }
@@ -104,7 +165,7 @@ impl Tag {
         let prefix = SETTINGS.tag_prefix.as_ref();
 
         let tag = SETTINGS
-            .monorepo_version_separator
+            .monorepo_separator()
             .as_ref()
             .and_then(|separator| raw.split_once(separator))
             .map(|(package, remains)| {
@@ -146,17 +207,26 @@ impl Tag {
             })
         }
     }
+
+    pub(crate) fn is_zero(&self) -> bool {
+        self.version == Version::new(0, 0, 0)
+    }
 }
 
 impl fmt::Display for Tag {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let version = self.version.to_string();
-        if let Some((prefix, package)) = self.package.as_ref().zip(self.prefix.as_ref()) {
-            let separator = &SETTINGS.monorepo_version_separator.as_ref().unwrap_or_else(||
+        if let Some((package, prefix)) = self.package.as_ref().zip(self.prefix.as_ref()) {
+            let separator = SETTINGS.monorepo_separator().unwrap_or_else(||
+                panic!("Found a tag with monorepo package prefix but 'monorepo_version_separator' is not defined")
+            );
+            write!(f, "{package}{separator}{prefix}{version}")
+        } else if let Some(package) = self.package.as_ref() {
+            let separator = SETTINGS.monorepo_separator().unwrap_or_else(||
                 panic!("Found a tag with monorepo package prefix but 'monorepo_version_separator' is not defined")
             );
 
-            write!(f, "{package}{separator}{prefix}{version}")
+            write!(f, "{package}{separator}{version}")
         } else if let Some(prefix) = self.prefix.as_ref() {
             write!(f, "{prefix}{version}")
         } else {
@@ -165,25 +235,136 @@ impl fmt::Display for Tag {
     }
 }
 
-impl Ord for Tag {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.partial_cmp(other).unwrap()
-    }
-}
-
-impl PartialOrd<Tag> for Tag {
-    fn partial_cmp(&self, other: &Tag) -> Option<Ordering> {
-        Some(self.version.cmp(&other.version))
-    }
-}
-
 #[cfg(test)]
 mod test {
     use crate::git::repository::Repository;
+    use crate::git::tag::Tag;
+    use crate::settings::Settings;
     use anyhow::Result;
     use cmd_lib::run_cmd;
     use sealed_test::prelude::*;
+    use semver::Version;
     use speculoos::prelude::*;
+    use std::collections::HashMap;
+    use std::fs;
+
+    #[test]
+    fn should_get_tag_from_str() -> Result<()> {
+        let tag = Tag::from_str("1.0.0", None);
+        assert_that!(tag).is_ok().is_equal_to(Tag {
+            package: None,
+            prefix: None,
+            version: Version::new(1, 0, 0),
+            oid: None,
+        });
+
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn should_get_tag_from_str_with_prefix() -> Result<()> {
+        Repository::init(".")?;
+
+        let settings = Settings {
+            tag_prefix: Some("v".to_string()),
+            ..Default::default()
+        };
+
+        let settings = toml::to_string(&settings)?;
+        fs::write("cog.toml", settings)?;
+
+        let tag = Tag::from_str("v1.0.0", None);
+
+        assert_that!(tag).is_ok().is_equal_to(Tag {
+            package: None,
+            prefix: Some("v".to_string()),
+            version: Version::new(1, 0, 0),
+            oid: None,
+        });
+
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn should_get_tag_from_str_with_separator() -> Result<()> {
+        Repository::init(".")?;
+
+        let mut packages = HashMap::new();
+        packages.insert("one".to_string(), Default::default());
+        let settings = Settings {
+            packages,
+            ..Default::default()
+        };
+
+        let settings = toml::to_string(&settings)?;
+        fs::write("cog.toml", settings)?;
+
+        let tag = Tag::from_str("one-1.0.0", None);
+
+        assert_that!(tag).is_ok().is_equal_to(Tag {
+            package: Some("one".to_string()),
+            prefix: None,
+            version: Version::new(1, 0, 0),
+            oid: None,
+        });
+
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn should_get_tag_from_str_with_prefix_and_separator() -> Result<()> {
+        Repository::init(".")?;
+
+        let mut packages = HashMap::new();
+        packages.insert("one".to_string(), Default::default());
+        let settings = Settings {
+            tag_prefix: Some("v".to_string()),
+            packages,
+            ..Default::default()
+        };
+
+        let settings = toml::to_string(&settings)?;
+        fs::write("cog.toml", settings)?;
+
+        let tag = Tag::from_str("one-v1.0.0", None);
+
+        assert_that!(tag).is_ok().is_equal_to(Tag {
+            package: Some("one".to_string()),
+            prefix: Some("v".to_string()),
+            version: Version::new(1, 0, 0),
+            oid: None,
+        });
+
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn should_get_tag_from_str_with_prefix_and_custom_separator() -> Result<()> {
+        Repository::init(".")?;
+
+        let mut packages = HashMap::new();
+        packages.insert("one".to_string(), Default::default());
+        let settings = Settings {
+            tag_prefix: Some("v".to_string()),
+            monorepo_version_separator: Some("#".to_string()),
+            packages,
+            ..Default::default()
+        };
+
+        let settings = toml::to_string(&settings)?;
+        fs::write("cog.toml", settings)?;
+
+        let tag = Tag::from_str("one#v1.0.0", None);
+
+        assert_that!(tag).is_ok().is_equal_to(Tag {
+            package: Some("one".to_string()),
+            prefix: Some("v".to_string()),
+            version: Version::new(1, 0, 0),
+            oid: None,
+        });
+
+        Ok(())
+    }
 
     #[sealed_test]
     fn resolve_lightweight_tag_ok() -> Result<()> {
