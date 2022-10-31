@@ -418,7 +418,7 @@ impl CocoGitto {
 
         let current_tag = self.repository.get_latest_tag();
         let current_version = match current_tag {
-            Ok(ref tag) => tag.to_version()?,
+            Ok(ref tag) => tag.version.clone(),
             Err(ref err) if err == &TagError::NoTag => {
                 warn!("Failed to get current version, falling back to 0.0.0");
                 Version::new(0, 0, 0)
@@ -443,13 +443,10 @@ impl CocoGitto {
             next_version.pre = Prerelease::new(pre_release)?;
         }
 
-        let version_str = match &SETTINGS.tag_prefix {
-            None => next_version.to_string(),
-            Some(prefix) => format!("{}{}", prefix, next_version),
-        };
+        let next_tag = Tag::create(next_version, None);
 
         if dry_run {
-            print!("{}", version_str);
+            print!("{}", next_tag);
             return Ok(());
         }
 
@@ -463,19 +460,15 @@ impl CocoGitto {
         let pattern = (origin.as_str(), target.as_str());
 
         let pattern = RevspecPattern::from(pattern);
-        let changelog = self.get_changelog_with_target_version(pattern, &version_str)?;
+        let changelog = self.get_changelog_with_target_version(pattern, next_tag.clone())?;
 
         let path = settings::changelog_path();
         let template = SETTINGS.get_changelog_template()?;
         changelog.write_to_file(path, template)?;
 
-        let current = self
-            .repository
-            .get_latest_tag()
-            .map(|tag| HookVersion::new(&tag.to_string_with_prefix()))
-            .ok();
+        let current = self.repository.get_latest_tag().map(HookVersion::new).ok();
 
-        let next_version = HookVersion::new(&Self::prefix_version(next_version.to_string()));
+        let next_version = HookVersion::new(next_tag.clone());
 
         let hook_result = self.run_hooks(
             HookType::PreBump,
@@ -490,12 +483,12 @@ impl CocoGitto {
         // Hook failed, we need to stop here and reset
         // the repository to a clean state
         if let Err(err) = hook_result {
-            self.repository.stash_failed_version(&version_str)?;
+            self.repository.stash_failed_version(next_tag.clone())?;
             error!(
                 "{}",
                 PreHookError {
                     cause: err.to_string(),
-                    version: version_str,
+                    version: next_tag.to_string(),
                     stash_number: 0,
                 }
             );
@@ -511,7 +504,7 @@ impl CocoGitto {
             sign,
         )?;
 
-        self.repository.create_tag(&version_str)?;
+        self.repository.create_tag(&next_tag)?;
 
         self.run_hooks(
             HookType::PostBump,
@@ -522,7 +515,7 @@ impl CocoGitto {
         )?;
 
         let current = current
-            .map(|current| current.prefixed_tag)
+            .map(|current| current.prefixed_tag.to_string())
             .unwrap_or_else(|| "...".to_string());
         let bump = format!("{} -> {}", current, next_version.prefixed_tag).green();
         info!("Bumped version: {}", bump);
@@ -542,7 +535,7 @@ impl CocoGitto {
         for (package_name, package) in &SETTINGS.packages {
             let current_tag = self.repository.get_latest_package_tag(package_name);
             let current_version = match current_tag {
-                Ok(ref tag) => tag.to_package_version(package_name)?,
+                Ok(ref tag) => tag.version.clone(),
                 Err(ref err) if err == &TagError::NoTag => {
                     warn!("Failed to get current version, falling back to 0.0.0");
                     Version::new(0, 0, 0)
@@ -550,7 +543,8 @@ impl CocoGitto {
                 Err(ref err) => bail!("{}", err),
             };
 
-            let mut next_version = VersionIncrement::Auto.bump(&current_version, &self.repository)?;
+            let mut next_version =
+                VersionIncrement::Auto.bump(&current_version, &self.repository)?;
 
             if next_version.le(&current_version) || next_version.eq(&current_version) {
                 let comparison = format!("{} <= {}", current_version, next_version).red();
@@ -567,11 +561,11 @@ impl CocoGitto {
                 next_version.pre = Prerelease::new(pre_release)?;
             }
 
-            let version_str = format!("{}-{}", package_name, next_version);
+            let tag = Tag::create(next_version, Some(package_name.to_string()));
 
             if dry_run {
-                print!("{}", version_str);
-                continue
+                print!("{}", tag);
+                continue;
             }
 
             let origin = if current_version == Version::new(0, 0, 0) {
@@ -585,11 +579,11 @@ impl CocoGitto {
 
             let pattern = RevspecPattern::from(pattern);
             let changelog =
-                self.get_changelog_with_target_package_version(pattern, &version_str, package)?;
+                self.get_changelog_with_target_package_version(pattern, tag.clone(), package)?;
 
             if changelog.is_none() {
                 println!("No commit found to bump package {package_name}, skipping.");
-                continue
+                continue;
             }
 
             let changelog = changelog.unwrap();
@@ -600,10 +594,10 @@ impl CocoGitto {
             let current = self
                 .repository
                 .get_latest_package_tag(package_name)
-                .map(|tag| HookVersion::new(&tag.to_string_with_prefix()))
+                .map(HookVersion::new)
                 .ok();
 
-            let next_version = HookVersion::new(&Self::prefix_version(next_version.to_string()));
+            let next_version = HookVersion::new(tag.clone());
 
             let hook_result = self.run_hooks(
                 HookType::PreBump,
@@ -618,30 +612,27 @@ impl CocoGitto {
             // Hook failed, we need to stop here and reset
             // the repository to a clean state
             if let Err(err) = hook_result {
-                self.repository.stash_failed_version(&version_str)?;
+                self.repository.stash_failed_version(tag.clone())?;
                 error!(
-                "{}",
-                PreHookError {
-                    cause: err.to_string(),
-                    version: version_str,
-                    stash_number: 0,
-                }
-            );
+                    "{}",
+                    PreHookError {
+                        cause: err.to_string(),
+                        version: tag.to_string(),
+                        stash_number: 0,
+                    }
+                );
 
                 exit(1);
             }
 
-            package_bumps.push((package_name, package, current, next_version, version_str));
+            package_bumps.push((package_name, package, current, next_version, tag));
         }
 
         // Todo: meta version
-        self.repository
-            .commit("chore(version): Bump", false)?;
+        self.repository.commit("chore(version): Bump", false)?;
 
-        for (package_name, package, current, next_version, version_str) in package_bumps {
-            let version_str = Self::prefix_version(version_str);
-
-            self.repository.create_tag(&version_str)?;
+        for (package_name, package, current, next_version, tag) in package_bumps {
+            self.repository.create_tag(&tag)?;
 
             self.run_hooks(
                 HookType::PostBump,
@@ -652,13 +643,11 @@ impl CocoGitto {
             )?;
 
             let current = current
-                .map(|current| current.prefixed_tag)
+                .map(|current| current.prefixed_tag.to_string())
                 .unwrap_or_else(|| "...".to_string());
             let bump = format!("{} -> {}", current, next_version.prefixed_tag).green();
             info!("Bumped package {package_name} version: {}", bump);
         }
-
-
 
         Ok(())
     }
@@ -675,7 +664,7 @@ impl CocoGitto {
 
         let current_tag = self.repository.get_latest_package_tag(package_name);
         let current_version = match current_tag {
-            Ok(ref tag) => tag.to_package_version(package_name)?,
+            Ok(ref tag) => tag.version.clone(),
             Err(ref err) if err == &TagError::NoTag => {
                 warn!("Failed to get current version, falling back to 0.0.0");
                 Version::new(0, 0, 0)
@@ -686,7 +675,7 @@ impl CocoGitto {
         let mut next_version = increment.bump(&current_version, &self.repository)?;
 
         if next_version.le(&current_version) || next_version.eq(&current_version) {
-            let comparison = format!("{} <= {}", current_version, next_version).red();
+            let comparison = format!("{} <= {}", current_version, &next_version).red();
             let cause_key = "cause:".red();
             let cause = format!(
                 "{} version MUST be greater than current one: {}",
@@ -700,10 +689,10 @@ impl CocoGitto {
             next_version.pre = Prerelease::new(pre_release)?;
         }
 
-        let version_str = format!("{}-{}", package_name, next_version);
+        let tag = Tag::create(next_version.clone(), Some(package_name.to_string()));
 
         if dry_run {
-            print!("{}", version_str);
+            print!("{}", tag);
             return Ok(());
         }
 
@@ -718,7 +707,7 @@ impl CocoGitto {
 
         let pattern = RevspecPattern::from(pattern);
         let changelog =
-            self.get_changelog_with_target_package_version(pattern, &version_str, package)?;
+            self.get_changelog_with_target_package_version(pattern, tag.clone(), package)?;
 
         if changelog.is_none() {
             bail!("No commit matching package {package_name} path");
@@ -732,10 +721,11 @@ impl CocoGitto {
         let current = self
             .repository
             .get_latest_package_tag(package_name)
-            .map(|tag| HookVersion::new(&tag.to_string_with_prefix()))
+            .map(HookVersion::new)
             .ok();
 
-        let next_version = HookVersion::new(&Self::prefix_version(next_version.to_string()));
+        let next_version =
+            HookVersion::new(Tag::create(next_version, Some(package_name.to_string())));
 
         let hook_result = self.run_hooks(
             HookType::PreBump,
@@ -750,12 +740,12 @@ impl CocoGitto {
         // Hook failed, we need to stop here and reset
         // the repository to a clean state
         if let Err(err) = hook_result {
-            self.repository.stash_failed_version(&version_str)?;
+            self.repository.stash_failed_version(tag.clone())?;
             error!(
                 "{}",
                 PreHookError {
                     cause: err.to_string(),
-                    version: version_str,
+                    version: tag.to_string(),
                     stash_number: 0,
                 }
             );
@@ -763,12 +753,10 @@ impl CocoGitto {
             exit(1);
         }
 
-        let version_str = Self::prefix_version(version_str);
-
         self.repository
-            .commit(&format!("chore(version): {}", version_str), false)?;
+            .commit(&format!("chore(version): {}", tag), false)?;
 
-        self.repository.create_tag(&version_str)?;
+        self.repository.create_tag(&tag)?;
 
         self.run_hooks(
             HookType::PostBump,
@@ -779,7 +767,7 @@ impl CocoGitto {
         )?;
 
         let current = current
-            .map(|current| current.prefixed_tag)
+            .map(|current| current.prefixed_tag.to_string())
             .unwrap_or_else(|| "...".to_string());
         let bump = format!("{} -> {}", current, next_version.prefixed_tag).green();
         info!("Bumped package {package_name} version: {}", bump);
@@ -840,12 +828,12 @@ impl CocoGitto {
     pub fn get_changelog_with_target_version(
         &self,
         pattern: RevspecPattern,
-        target_version: &str,
+        tag: Tag,
     ) -> Result<Release> {
         let commit_range = self.repository.get_commit_range(&pattern)?;
 
         let mut release = Release::from(commit_range);
-        release.version = OidOf::Tag(Tag::new(target_version, None)?);
+        release.version = OidOf::Tag(tag);
         Ok(release)
     }
 
@@ -854,7 +842,7 @@ impl CocoGitto {
     pub fn get_changelog_with_target_package_version(
         &self,
         pattern: RevspecPattern,
-        target_version: &str,
+        target_tag: Tag,
         package: &MonoRepoPackage,
     ) -> Result<Option<Release>> {
         let mut release = self
@@ -863,7 +851,7 @@ impl CocoGitto {
             .map(Release::from);
 
         if let Some(release) = &mut release {
-            release.version = OidOf::Tag(Tag::new(target_version, None)?);
+            release.version = OidOf::Tag(target_tag);
         }
 
         Ok(release)
@@ -949,17 +937,5 @@ impl CocoGitto {
         }
 
         Ok(())
-    }
-
-    fn prefix_version(version: String) -> String {
-        if let Some(prefix) = SETTINGS.tag_prefix.as_ref() {
-            if !version.starts_with(prefix) {
-                format!("{}{}", prefix, version)
-            } else {
-                version
-            }
-        } else {
-            version
-        }
     }
 }

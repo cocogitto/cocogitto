@@ -3,10 +3,8 @@ use crate::git::repository::Repository;
 use crate::SETTINGS;
 use git2::string_array::StringArray;
 use git2::Oid;
-use git2::Tag as Git2Tag;
 use semver::Version;
 use std::cmp::Ordering;
-use std::convert::TryFrom;
 use std::fmt;
 use std::fmt::Formatter;
 
@@ -15,11 +13,6 @@ impl Repository {
     /// tag (without configured prefix) is not semver compliant or if the tag
     /// does not exist.
     pub fn resolve_tag(&self, tag: &str) -> Result<Tag, TagError> {
-        let without_prefix = Tag::strip_default_prefix(tag)?;
-
-        // Ensure the tag is SemVer compliant
-        Version::parse(without_prefix).map_err(|err| TagError::semver(without_prefix, err))?;
-
         self.resolve_lightweight_tag(tag)
     }
 
@@ -29,10 +22,10 @@ impl Repository {
             .resolve_reference_from_short_name(tag)
             .map_err(|err| TagError::not_found(tag, err))
             .map(|reference| reference.target().unwrap())
-            .map(|oid| Tag::new(tag, Some(oid)))?
+            .map(|oid| Tag::from_str(tag, Some(oid)))?
     }
 
-    pub(crate) fn create_tag(&self, name: &str) -> Result<(), Git2Error> {
+    pub(crate) fn create_tag(&self, tag: &Tag) -> Result<(), Git2Error> {
         if self.get_diff(true).is_some() {
             let statuses = self.get_statuses()?;
             return Err(Git2Error::ChangesNeedToBeCommitted(statuses));
@@ -40,7 +33,7 @@ impl Repository {
 
         let head = self.get_head_commit().unwrap();
         self.0
-            .tag_lightweight(name, &head.into_object(), false)
+            .tag_lightweight(&tag.to_string(), &head.into_object(), false)
             .map(|_| ())
             .map_err(Git2Error::from)
     }
@@ -80,17 +73,10 @@ impl Repository {
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Tag {
-    tag: String,
-    oid: Option<Oid>,
-}
-
-impl TryFrom<Git2Tag<'_>> for Tag {
-    type Error = TagError;
-
-    fn try_from(tag: Git2Tag) -> Result<Self, Self::Error> {
-        let name = tag.name().expect("Unexpected unnamed tag");
-        Self::new(name, Some(tag.id()))
-    }
+    pub package: Option<String>,
+    pub prefix: Option<String>,
+    pub version: Version,
+    pub oid: Option<Oid>,
 }
 
 impl Tag {
@@ -102,52 +88,80 @@ impl Tag {
         self.oid.as_ref().unwrap()
     }
 
+    pub(crate) fn create(version: Version, package: Option<String>) -> Self {
+        Tag {
+            package,
+            prefix: SETTINGS.tag_prefix.clone(),
+            version,
+            oid: None,
+        }
+    }
     pub(crate) fn oid(&self) -> Option<&Oid> {
         self.oid.as_ref()
     }
 
-    pub(crate) fn new(name: &str, oid: Option<Oid>) -> Result<Tag, TagError> {
-        let tag = Tag::strip_default_prefix(name)?.to_string();
-        Ok(Tag { tag, oid })
-    }
+    pub(crate) fn from_str(raw: &str, oid: Option<Oid>) -> Result<Tag, TagError> {
+        let prefix = SETTINGS.tag_prefix.as_ref();
 
-    pub(crate) fn to_string_with_prefix(&self) -> String {
-        match SETTINGS.tag_prefix.as_ref() {
-            None => self.tag.to_string(),
-            Some(prefix) => format!("{}{}", prefix, self.tag),
-        }
-    }
+        let tag = SETTINGS
+            .monorepo_version_separator
+            .as_ref()
+            .and_then(|separator| raw.split_once(separator))
+            .map(|(package, remains)| {
+                let version = prefix
+                    .and_then(|prefix| remains.strip_prefix(prefix))
+                    .unwrap_or(remains);
 
-    pub(crate) fn to_version(&self) -> Result<Version, TagError> {
-        Version::parse(&self.tag).map_err(|err| TagError::semver(&self.tag, err))
-    }
+                if SETTINGS.packages.keys().any(|name| name == package) {
+                    Version::parse(version)
+                        .map(|version| Tag {
+                            package: Some(package.to_string()),
+                            prefix: prefix.cloned(),
+                            version,
+                            oid,
+                        })
+                        .map_err(|err| TagError::semver(raw, err))
+                } else {
+                    Err(TagError::InvalidPrefixError {
+                        prefix: package.to_string(),
+                        tag: raw.to_string(),
+                    })
+                }
+            });
 
-    pub(crate) fn to_package_version(&self, package_name: &str) -> Result<Version, TagError> {
-        let prefix = format!("{package_name}-");
-        let version = self.tag.strip_prefix(&prefix).ok_or(TagError::InvalidPrefixError {
-            prefix,
-            tag: self.tag.clone(),
-        })?;
+        if let Some(Ok(tag)) = tag {
+            Ok(tag)
+        } else {
+            let version = prefix
+                .and_then(|prefix| raw.strip_prefix(prefix))
+                .unwrap_or(raw);
 
-        Version::parse(version).map_err(|err| TagError::semver(&self.tag, err))
-    }
+            let version = Version::parse(version).map_err(|err| TagError::semver(raw, err))?;
 
-    fn strip_default_prefix(tag: &str) -> Result<&str, TagError> {
-        match SETTINGS.tag_prefix.as_ref() {
-            None => Ok(tag),
-            Some(prefix) => tag
-                .strip_prefix(prefix)
-                .ok_or(TagError::InvalidPrefixError {
-                    prefix: prefix.to_string(),
-                    tag: tag.to_string(),
-                }),
+            Ok(Tag {
+                package: None,
+                prefix: prefix.cloned(),
+                version,
+                oid,
+            })
         }
     }
 }
 
 impl fmt::Display for Tag {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.to_string_with_prefix())
+        let version = self.version.to_string();
+        if let Some((prefix, package)) = self.package.as_ref().zip(self.prefix.as_ref()) {
+            let separator = &SETTINGS.monorepo_version_separator.as_ref().unwrap_or_else(||
+                panic!("Found a tag with monorepo package prefix but 'monorepo_version_separator' is not defined")
+            );
+
+            write!(f, "{package}{separator}{prefix}{version}")
+        } else if let Some(prefix) = self.prefix.as_ref() {
+            write!(f, "{prefix}{version}")
+        } else {
+            write!(f, "{version}")
+        }
     }
 }
 
@@ -159,7 +173,7 @@ impl Ord for Tag {
 
 impl PartialOrd<Tag> for Tag {
     fn partial_cmp(&self, other: &Tag) -> Option<Ordering> {
-        Some(self.to_version().ok().cmp(&other.to_version().ok()))
+        Some(self.version.cmp(&other.version))
     }
 }
 
@@ -177,11 +191,11 @@ mod test {
         let repo = Repository::init(".")?;
         run_cmd!(
             git commit --allow-empty -m "first commit";
-            git tag the_tag;
+            git tag 1.0.0;
         )?;
 
         // Act
-        let tag = repo.resolve_lightweight_tag("the_tag");
+        let tag = repo.resolve_lightweight_tag("1.0.0");
 
         // Assert
         assert_that!(tag).is_ok();
@@ -220,7 +234,7 @@ mod test {
         let tag = repo.get_latest_tag()?;
 
         // Assert
-        assert_that!(tag.to_string_with_prefix()).is_equal_to("0.2.0".to_string());
+        assert_that!(tag.to_string()).is_equal_to("0.2.0".to_string());
         Ok(())
     }
 

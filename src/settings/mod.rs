@@ -32,6 +32,8 @@ pub struct Settings {
     #[serde(default)]
     pub ignore_merge_commits: bool,
     #[serde(default)]
+    pub monorepo_version_separator: Option<String>,
+    #[serde(default)]
     pub branch_whitelist: Vec<String>,
     pub tag_prefix: Option<String>,
     #[serde(default)]

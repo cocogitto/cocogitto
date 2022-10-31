@@ -2,7 +2,6 @@ use anyhow::Result;
 
 use cmd_lib::run_cmd;
 use cocogitto::{conventional::version::VersionIncrement, CocoGitto};
-use indoc::indoc;
 use sealed_test::prelude::*;
 use speculoos::prelude::*;
 
@@ -46,31 +45,33 @@ fn should_fallback_to_0_0_0_when_there_is_no_tag() -> Result<()> {
     Ok(())
 }
 
-#[sealed_test]
-fn should_fail_when_latest_tag_is_not_semver_compliant() -> Result<()> {
-    // Arrange
-    git_init()?;
-    git_commit("chore: first commit")?;
-    git_commit("feat: add a feature commit")?;
-    git_tag("toto")?;
-    git_commit("feat: add another feature commit")?;
-
-    let mut cocogitto = CocoGitto::get()?;
-
-    // Act
-    let result = cocogitto.create_version(VersionIncrement::Auto, None, None, false);
-    let error = result.unwrap_err().to_string();
-    let error = error.as_str();
-
-    // Assert
-    assert_that!(error).is_equal_to(indoc!(
-        "
-        tag `toto` is not SemVer compliant
-        \tcause: unexpected character 't' while parsing major version number
-        "
-    ));
-    Ok(())
-}
+// FIXME: Failing on non compliant tag should be configurable
+//  until it's implemented we will ignore non compliant tags
+// #[sealed_test]
+// fn should_fail_when_latest_tag_is_not_semver_compliant() -> Result<()> {
+//     // Arrange
+//     git_init()?;
+//     git_commit("chore: first commit")?;
+//     git_commit("feat: add a feature commit")?;
+//     git_tag("toto")?;
+//     git_commit("feat: add another feature commit")?;
+//
+//     let mut cocogitto = CocoGitto::get()?;
+//
+//     // Act
+//     let result = cocogitto.create_version(VersionIncrement::Auto, None, None, false);
+//     let error = result.unwrap_err().to_string();
+//     let error = error.as_str();
+//
+//     // Assert
+//     assert_that!(error).is_equal_to(indoc!(
+//         "
+//         tag `toto` is not SemVer compliant
+//         \tcause: unexpected character 't' while parsing major version number
+//         "
+//     ));
+//     Ok(())
+// }
 
 #[sealed_test]
 fn bump_with_whitelisted_branch_ok() -> Result<()> {

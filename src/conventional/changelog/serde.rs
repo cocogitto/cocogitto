@@ -11,7 +11,7 @@ impl Serialize for Tag {
     where
         S: Serializer,
     {
-        serializer.serialize_str(&self.to_string_with_prefix())
+        serializer.serialize_str(&self.to_string())
     }
 }
 
@@ -58,7 +58,7 @@ impl Serialize for OidOf {
         let mut oidof = serializer.serialize_struct("OidOf", 1)?;
         match self {
             OidOf::Tag(tag) => {
-                oidof.serialize_field("tag", &tag.to_string_with_prefix())?;
+                oidof.serialize_field("tag", &tag.to_string())?;
                 if let Some(oid) = tag.oid() {
                     oidof.serialize_field("id", &oid.to_string())?;
                 }
@@ -84,7 +84,7 @@ mod test {
 
     #[test]
     fn should_serialize_tag() {
-        let tag = Tag::new("1.0.0", Some(Oid::from_str("1234567890").unwrap())).unwrap();
+        let tag = Tag::from_str("1.0.0", Some(Oid::from_str("1234567890").unwrap())).unwrap();
 
         let result = toml::to_string(&tag);
 

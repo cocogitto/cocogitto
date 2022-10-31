@@ -60,7 +60,13 @@ impl Repository {
         let tags: Vec<Tag> = self.all_tags()?;
 
         tags.into_iter()
-            .filter(|tag| tag.to_string_with_prefix().starts_with(package_prefix))
+            .filter(|tag| tag.prefix.is_some())
+            .filter(|tag| {
+                tag.package
+                    .as_ref()
+                    .map(|package| package == package_prefix)
+                    .unwrap_or_default()
+            })
             .max()
             .ok_or(TagError::NoTag)
     }
