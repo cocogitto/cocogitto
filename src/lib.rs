@@ -533,10 +533,11 @@ impl CocoGitto {
         }
 
         let version_str = Self::prefix_version(version_str);
+        let sign = self.repository.gpg_sign();
 
         self.repository.commit(
             &format!("chore(version): {}", next_version.prefixed_tag),
-            false,
+            sign,
         )?;
 
         self.repository.create_tag(&version_str)?;
