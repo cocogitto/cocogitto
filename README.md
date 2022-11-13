@@ -51,7 +51,7 @@
   and workflows.
 - **Release profiles:** your branching model requires different steps for releases, pre-release, hotfixes ? We got you
   covered !
-- **Depends only on libgit2:** cocogitto has two standalone binaries, the only system dependency is libgit2.
+- **Depends only on libgit2:** cocogitto has one standalone binary, the only system dependency is libgit2.
 - **Conventional git log:** search your commit history matching Conventional Commits items such as scope and commit type.
 - **GitHub integration:** enforce the conventional commits specification with our GitHub action and bot.
 
