@@ -16,7 +16,6 @@ use clap::builder::{PossibleValue, PossibleValuesParser};
 use clap::{ArgAction, ArgGroup, Args, CommandFactory, Parser, Subcommand, ValueEnum};
 use clap_complete::{Generator, shells};
 use clap_complete_nushell::Nushell;
-use toml::to_string;
 
 fn hook_profiles() -> PossibleValuesParser {
     let profiles = SETTINGS
