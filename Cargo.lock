@@ -178,6 +178,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "clap_complete_nushell"
+version = "0.1.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "956ceeff3734be0ba9e15998f1f1a487cd2928b31444209e8fcd92b30efac13a"
+dependencies = [
+ "clap",
+ "clap_complete",
+]
+
+[[package]]
 name = "clap_derive"
 version = "4.0.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -243,6 +253,7 @@ dependencies = [
  "chrono",
  "clap",
  "clap_complete",
+ "clap_complete_nushell",
  "clap_mangen",
  "cmd_lib",
  "colored",

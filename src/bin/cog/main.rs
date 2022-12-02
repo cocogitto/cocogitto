@@ -12,9 +12,11 @@ use cocogitto::log::output::Output;
 use cocogitto::{CocoGitto, SETTINGS};
 
 use anyhow::{Context, Result};
-use clap::builder::PossibleValuesParser;
-use clap::{ArgAction, ArgGroup, Args, CommandFactory, Parser, Subcommand};
-use clap_complete::Shell;
+use clap::builder::{PossibleValue, PossibleValuesParser};
+use clap::{ArgAction, ArgGroup, Args, CommandFactory, Parser, Subcommand, ValueEnum};
+use clap_complete::{Generator, shells};
+use clap_complete_nushell::Nushell;
+use toml::to_string;
 
 fn hook_profiles() -> PossibleValuesParser {
     let profiles = SETTINGS
@@ -23,6 +25,73 @@ fn hook_profiles() -> PossibleValuesParser {
         .map(|profile| -> &str { profile });
 
     profiles.into()
+}
+
+/// Shell with auto-generated completion script available.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[non_exhaustive]
+pub enum Shell {
+    /// Bourne Again SHell (bash)
+    Bash,
+    /// Elvish shell
+    Elvish,
+    /// Friendly Interactive SHell (fish)
+    Fish,
+    /// PowerShell
+    PowerShell,
+    /// Z SHell (zsh)
+    Zsh,
+    /// Nu shell (nu)
+    Nu,
+}
+
+impl Generator for Shell {
+    fn file_name(&self, name: &str) -> String {
+        match self {
+            Shell::Bash => shells::Bash.file_name(name),
+            Shell::Elvish => shells::Elvish.file_name(name),
+            Shell::Fish => shells::Fish.file_name(name),
+            Shell::PowerShell => shells::PowerShell.file_name(name),
+            Shell::Zsh => shells::Zsh.file_name(name),
+            Shell::Nu => Nushell.file_name(name),
+        }
+    }
+
+    fn generate(&self, cmd: &clap::Command, buf: &mut dyn std::io::Write) {
+        match self {
+            Shell::Bash => shells::Bash.generate(cmd, buf),
+            Shell::Elvish => shells::Elvish.generate(cmd, buf),
+            Shell::Fish => shells::Fish.generate(cmd, buf),
+            Shell::PowerShell => shells::PowerShell.generate(cmd, buf),
+            Shell::Zsh => shells::Zsh.generate(cmd, buf),
+            Shell::Nu => Nushell.generate(cmd, buf),
+        }
+    }
+}
+
+// Hand-rolled so it can work even when `derive` feature is disabled
+impl ValueEnum for Shell {
+    fn value_variants<'a>() -> &'a [Self] {
+        &[
+            Shell::Bash,
+            Shell::Elvish,
+            Shell::Fish,
+            Shell::PowerShell,
+            Shell::Zsh,
+            Shell::Nu
+        ]
+    }
+
+    fn to_possible_value<'a>(&self) -> Option<PossibleValue> {
+        Some(match self {
+            Shell::Bash => PossibleValue::new("bash"),
+            Shell::Elvish => PossibleValue::new("elvish"),
+            Shell::Fish => PossibleValue::new("fish"),
+            Shell::PowerShell => PossibleValue::new("powershell"),
+            Shell::Zsh => PossibleValue::new("zsh"),
+            Shell::Nu => PossibleValue::new("nu"),
+        })
+    }
 }
 
 /// A command line tool for the conventional commits and semver specifications
