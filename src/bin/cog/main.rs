@@ -14,7 +14,7 @@ use cocogitto::{CocoGitto, SETTINGS};
 use anyhow::{Context, Result};
 use clap::builder::{PossibleValue, PossibleValuesParser};
 use clap::{ArgAction, ArgGroup, Args, CommandFactory, Parser, Subcommand, ValueEnum};
-use clap_complete::{Generator, shells};
+use clap_complete::{shells, Generator};
 use clap_complete_nushell::Nushell;
 
 fn hook_profiles() -> PossibleValuesParser {
@@ -77,7 +77,7 @@ impl ValueEnum for Shell {
             Shell::Fish,
             Shell::PowerShell,
             Shell::Zsh,
-            Shell::Nu
+            Shell::Nu,
         ]
     }
 
