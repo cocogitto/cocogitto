@@ -205,6 +205,17 @@ enum Command {
         repository: Option<String>,
     },
 
+    /// Get current version
+    GetVersion {
+        /// Fallback version. Has to be semver compliant.
+        #[arg(short, long, conflicts_with("disable_fallback"))]
+        fallback: Option<String>,
+
+        /// Fails if no version is specified, instead of returning a default version.
+        #[arg(long, default_value = "false")]
+        disable_fallback: bool,
+    },
+
     /// Commit changelog from latest tag to HEAD and create new tag
     #[command(group = ArgGroup::new("bump-spec").required(true))]
     Bump {
@@ -306,6 +317,13 @@ fn main() -> Result<()> {
     init_logs(cli.verbose, cli.quiet);
 
     match cli.command {
+        Command::GetVersion {
+            fallback,
+            disable_fallback,
+        } => {
+            let cocogitto = CocoGitto::get()?;
+            cocogitto.get_latest_version(fallback, disable_fallback)?
+        }
         Command::Bump {
             version,
             auto,
