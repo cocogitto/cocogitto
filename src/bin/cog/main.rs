@@ -461,7 +461,7 @@ fn main() -> Result<()> {
             println!("{}", result);
         }
         Command::Init { path } => {
-            cocogitto::init(&path)?;
+            cocogitto::command::init::init(&path)?;
         }
         Command::InstallHook { hook_type } => {
             let cocogitto = CocoGitto::get()?;

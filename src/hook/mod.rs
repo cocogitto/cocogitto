@@ -142,8 +142,9 @@ mod test {
     use git2::Repository;
     use std::str::FromStr;
 
-    use crate::{Hook, HookVersion, Result, Tag};
+    use crate::{Result, Tag};
 
+    use crate::hook::{Hook, HookVersion};
     use sealed_test::prelude::*;
     use speculoos::prelude::*;
 

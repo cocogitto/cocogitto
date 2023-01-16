@@ -40,7 +40,7 @@ pub(crate) struct PreHookError {
     pub(crate) stash_number: u32,
 }
 
-impl fmt::Display for PreHookError {
+impl Display for PreHookError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let header = format!(
             "Error: {} `{}` {}",

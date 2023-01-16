@@ -1,15 +1,16 @@
 use crate::git::repository::Repository;
 use crate::git::revspec::CommitRange;
-use crate::settings::MonoRepoPackage;
+
 use crate::{Git2Error, OidOf, RevspecPattern, Tag, TagError};
 use std::path::Path;
 
 impl Repository {
     /// Get commits from latest tag and return a map of commit ranges by their respective packages.
-    pub fn get_commit_range_for_packages(
+    pub fn get_commit_range_filtered(
         &self,
-        package: &MonoRepoPackage,
+        start: Option<OidOf>,
         pattern: &RevspecPattern,
+        path_filter: impl Fn(&Path) -> bool,
     ) -> Result<Option<CommitRange>, Git2Error> {
         let range = self.get_commit_range(pattern)?;
 
@@ -20,21 +21,23 @@ impl Repository {
             let t1 = self
                 .tree_to_treeish(Some(&parent))?
                 .expect("Failed to get parent tree");
+
             let t2 = self
                 .tree_to_treeish(Some(&commit.id().to_string()))?
                 .expect("Failed to get commit tree");
+
             let diff = self.0.diff_tree_to_tree(t1.as_tree(), t2.as_tree(), None)?;
 
             for delta in diff.deltas() {
                 if let Some(old) = delta.old_file().path() {
-                    if package.match_path(old) {
+                    if path_filter(old) {
                         commits.push(commit);
                         break;
                     }
                 }
 
                 if let Some(new) = delta.new_file().path() {
-                    if package.match_path(new) {
+                    if path_filter(new) {
                         commits.push(commit);
                         break;
                     }
@@ -43,9 +46,8 @@ impl Repository {
         }
 
         if !commits.is_empty() {
-            // TODO: resolve tags here
             Ok(Some(CommitRange {
-                from: OidOf::Other(commits.first().unwrap().id()),
+                from: start.unwrap_or(OidOf::Other(commits.first().unwrap().id())),
                 // Safe unwrap, matches are not empty
                 to: OidOf::Other(commits.last().unwrap().id()),
                 commits,
@@ -71,15 +73,9 @@ impl Repository {
     }
 }
 
-impl MonoRepoPackage {
-    fn match_path(&self, path: &Path) -> bool {
-        path.starts_with(&self.path)
-    }
-}
-
 #[cfg(test)]
 mod test {
-    use crate::{MonoRepoPackage, Repository, RevspecPattern};
+    use crate::{Repository, RevspecPattern};
     use anyhow::Result;
     use cmd_lib::run_cmd;
     use indoc::formatdoc;
@@ -126,16 +122,10 @@ mod test {
         )?;
 
         // Act
-        let range = repo.get_commit_range_for_packages(
-            &MonoRepoPackage {
-                path: PathBuf::from("two"),
-                changelog_path: None,
-                pre_bump_hooks: vec![],
-                post_bump_hooks: vec![],
-                bump_profiles: Default::default(),
-            },
-            &RevspecPattern::from("..HEAD"),
-        )?;
+        let range =
+            repo.get_commit_range_filtered(None, &RevspecPattern::from("..HEAD"), |path| {
+                path.starts_with(PathBuf::from("two"))
+            })?;
 
         // Assert
         assert_that!(range)

@@ -10,7 +10,7 @@ use speculoos::prelude::*;
 fn should_init_a_cog_repository() -> Result<()> {
     // Arrange
     // Act
-    cocogitto::init(".")?;
+    cocogitto::command::init::init(".")?;
 
     // Assert
     assert_that!(Path::new("cog.toml")).exists();
@@ -25,7 +25,7 @@ fn should_skip_initialization_if_repository_exists() -> Result<()> {
     git_commit("The first commit")?;
 
     // Act
-    cocogitto::init(".")?;
+    cocogitto::command::init::init(".")?;
 
     // Assert
     assert_that!(Path::new("cog.toml")).exists();
