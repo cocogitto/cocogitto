@@ -1,11 +1,12 @@
 use crate::command::bump::{ensure_tag_is_greater_than_previous, tag_or_fallback_to_zero};
-use crate::conventional::version::VersionIncrement;
-use crate::git::oid::OidOf;
+use crate::conventional::changelog::template::PackageContext;
+use crate::conventional::changelog::ReleaseType;
+use crate::conventional::version::IncrementCommand;
 use crate::git::tag::Tag;
 use crate::hook::HookVersion;
 use crate::settings::{HookType, MonoRepoPackage};
 use crate::{CocoGitto, SETTINGS};
-use anyhow::{bail, Result};
+use anyhow::Result;
 use colored::*;
 use log::info;
 use semver::Prerelease;
@@ -14,7 +15,7 @@ impl CocoGitto {
     pub fn create_package_version(
         &mut self,
         (package_name, package): (&str, &MonoRepoPackage),
-        increment: VersionIncrement,
+        increment: IncrementCommand,
         pre_release: Option<&str>,
         hooks_config: Option<&str>,
         dry_run: bool,
@@ -38,19 +39,13 @@ impl CocoGitto {
 
         let pattern = self.get_revspec_for_tag(&current_tag)?;
 
-        let changelog_start = if current_tag.is_zero() {
-            None
-        } else {
-            Some(OidOf::Tag(current_tag.clone()))
-        };
-
-        let Some(changelog) = self.get_changelog_with_target_package_version(pattern, changelog_start, tag.clone(), package)? else {
-            bail!("No commit matching package {package_name} path");
-        };
+        let changelog =
+            self.get_package_changelog_with_target_version(pattern, tag.clone(), package_name)?;
 
         let path = package.changelog_path();
         let template = SETTINGS.get_changelog_template()?;
-        changelog.write_to_file(path, template)?;
+        let additional_context = ReleaseType::Package(PackageContext { package_name });
+        changelog.write_to_file(path, template, additional_context)?;
 
         let current = self
             .repository

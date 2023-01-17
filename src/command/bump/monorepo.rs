@@ -1,18 +1,36 @@
 use crate::command::bump::{ensure_tag_is_greater_than_previous, tag_or_fallback_to_zero};
-use crate::conventional::changelog::release::Release;
-use crate::conventional::version::VersionIncrement;
-use crate::git::oid::OidOf;
-use crate::git::revspec::RevspecPattern;
+
+use crate::conventional::changelog::template::{
+    MonoRepoContext, PackageBumpContext, PackageContext,
+};
+use crate::conventional::changelog::ReleaseType;
+
+use crate::conventional::version::{Increment, IncrementCommand};
+
 use crate::git::tag::Tag;
 use crate::hook::HookVersion;
 use crate::settings::HookType;
-use crate::{CocoGitto, SETTINGS};
-use anyhow::{bail, Result};
+use crate::{settings, CocoGitto, SETTINGS};
+use anyhow::Result;
 use colored::*;
+
 use log::info;
 use semver::Prerelease;
-use std::path::{Path, PathBuf};
 
+use crate::conventional::error::BumpError;
+
+struct PackageBumpData {
+    package_name: String,
+    package_path: String,
+    public_api: bool,
+    old_version: Option<HookVersion>,
+    new_version: HookVersion,
+    increment: Increment,
+}
+
+// TODO:
+//  - pretty stdout
+//  - dry run
 impl CocoGitto {
     pub fn create_monorepo_version(
         &mut self,
@@ -21,13 +39,186 @@ impl CocoGitto {
         dry_run: bool,
     ) -> Result<()> {
         self.pre_bump_checks()?;
-        let mut package_bumps = vec![];
+        // Get package bumps
+        let bumps = self.get_packages_bumps(pre_release)?;
 
-        for (package_name, package) in &SETTINGS.packages {
+        // Get the greatest package increment among public api packages
+        let increment_from_package_bumps = bumps
+            .iter()
+            .filter(|bump| bump.public_api)
+            .map(|bump| bump.increment)
+            .max();
+
+        // Get current global tag
+        let old = self.repository.get_latest_tag();
+        let old = tag_or_fallback_to_zero(old)?;
+        let mut tag = old.bump(
+            IncrementCommand::AutoMonoRepoGlobal(increment_from_package_bumps),
+            &self.repository,
+        )?;
+        ensure_tag_is_greater_than_previous(&old, &tag)?;
+
+        if let Some(pre_release) = pre_release {
+            tag.version.pre = Prerelease::new(pre_release)?;
+        }
+
+        let tag = Tag::create(tag.version, None);
+
+        if dry_run {
+            print!("{}", tag);
+            return Ok(());
+        }
+
+        let mut template_context = vec![];
+        for bump in &bumps {
+            template_context.push(PackageBumpContext {
+                package_name: &bump.package_name,
+                package_path: &bump.package_path,
+                new_version: bump.new_version.prefixed_tag.to_string(),
+                old_version: bump
+                    .old_version
+                    .as_ref()
+                    .map(|v| v.prefixed_tag.to_string()),
+            })
+        }
+
+        let pattern = self.get_revspec_for_tag(&old)?;
+        let changelog =
+            self.get_monorepo_global_changelog_with_target_version(pattern, tag.clone())?;
+        let path = settings::changelog_path();
+        let template = SETTINGS.get_monorepo_changelog_template()?;
+        changelog.write_to_file(
+            path,
+            template,
+            ReleaseType::MonoRepo(MonoRepoContext {
+                packages: template_context,
+            }),
+        )?;
+
+        let current = self.repository.get_latest_tag().map(HookVersion::new).ok();
+        let next_version = HookVersion::new(tag.clone());
+
+        let hook_result = self.run_hooks(
+            HookType::PreBump,
+            current.as_ref(),
+            &next_version,
+            hooks_config,
+            None,
+        );
+
+        self.repository.add_all()?;
+
+        if let Err(err) = hook_result {
+            self.stash_failed_version(&tag, err)?;
+        }
+
+        self.bump_packages(pre_release, hooks_config, &bumps)?;
+
+        let sign = self.repository.gpg_sign();
+        self.repository.commit(
+            &format!("chore(version): {}", next_version.prefixed_tag),
+            sign,
+        )?;
+
+        for bump in &bumps {
+            self.repository.create_tag(&bump.new_version.prefixed_tag)?;
+        }
+
+        self.repository.create_tag(&tag)?;
+
+        // Run per package post hooks
+        for bump in bumps {
+            let package = SETTINGS
+                .packages
+                .get(&bump.package_name)
+                .expect("package exists");
+            self.run_hooks(
+                HookType::PostBump,
+                bump.old_version.as_ref(),
+                &bump.new_version,
+                hooks_config,
+                Some(package),
+            )?;
+        }
+
+        // Run global post hooks
+        self.run_hooks(
+            HookType::PostBump,
+            current.as_ref(),
+            &next_version,
+            hooks_config,
+            None,
+        )?;
+
+        Ok(())
+    }
+
+    // Calculate all package bump
+    fn get_packages_bumps(&self, pre_release: Option<&str>) -> Result<Vec<PackageBumpData>> {
+        let mut package_bumps = vec![];
+        for (package_name, package) in SETTINGS.packages.iter() {
             let old = self.repository.get_latest_package_tag(package_name);
             let old = tag_or_fallback_to_zero(old)?;
-            info!("Package {}, current version {old}  ", package_name.bold());
-            let mut next_version = old.bump(VersionIncrement::Auto, &self.repository)?;
+
+            let next_version = old.bump(
+                IncrementCommand::AutoPackage(package_name.to_string()),
+                &self.repository,
+            );
+
+            if let Err(BumpError::NoCommitFound) = next_version {
+                continue;
+            }
+
+            let mut next_version = next_version.unwrap();
+
+            if let Some(pre_release) = pre_release {
+                next_version.version.pre = Prerelease::new(pre_release)?;
+            }
+
+            let tag = Tag::create(next_version.version, Some(package_name.to_string()));
+            let increment = tag.get_increment_from(&old);
+
+            if let Some(increment) = increment {
+                let old_version = if old.is_zero() {
+                    None
+                } else {
+                    Some(HookVersion::new(old))
+                };
+
+                package_bumps.push(PackageBumpData {
+                    package_name: package_name.to_string(),
+                    package_path: package.path.to_string_lossy().to_string(),
+                    public_api: package.public_api,
+                    old_version,
+                    new_version: HookVersion::new(tag),
+                    increment,
+                })
+            }
+        }
+
+        Ok(package_bumps)
+    }
+
+    // Run pre hooks and generate changelog for each package and git add the generated content
+    fn bump_packages(
+        &mut self,
+        pre_release: Option<&str>,
+        hooks_config: Option<&str>,
+        package_bumps: &Vec<PackageBumpData>,
+    ) -> Result<()> {
+        for bump in package_bumps {
+            let package_name = &bump.package_name;
+            let old = self.repository.get_latest_package_tag(package_name);
+            let old = tag_or_fallback_to_zero(old)?;
+            info!(
+                "Preparing bump for package {}, starting from version {old}",
+                package_name.bold()
+            );
+
+            let mut next_version = old.bump(
+                IncrementCommand::AutoPackage(package_name.to_string()),
+                &self.repository,
+            )?;
             ensure_tag_is_greater_than_previous(&old, &next_version)?;
 
             if let Some(pre_release) = pre_release {
@@ -35,41 +226,41 @@ impl CocoGitto {
             }
 
             let tag = Tag::create(next_version.version, Some(package_name.to_string()));
-
-            if dry_run {
-                print!("{}", tag);
-                continue;
-            }
-
             let pattern = self.get_revspec_for_tag(&old)?;
 
-            let changelog_start = if old.is_zero() {
-                None
-            } else {
-                Some(OidOf::Tag(old))
-            };
+            let package = SETTINGS
+                .packages
+                .get(package_name.as_str())
+                .expect("package exists");
 
-            let Some(changelog) = self.get_changelog_with_target_package_version(pattern, changelog_start, tag.clone(), package)? else {
-                println!("\t No commit found to bump package, skipping.");
-                continue;
-            };
+            let changelog = self.get_package_changelog_with_target_version(
+                pattern,
+                tag.clone(),
+                package_name.as_str(),
+            )?;
 
             let path = package.changelog_path();
-            let template = SETTINGS.get_changelog_template()?;
-            changelog.write_to_file(path, template)?;
+            let template = SETTINGS.get_package_changelog_template()?;
 
-            let current = self
+            let additional_context = ReleaseType::Package(PackageContext {
+                package_name: package_name.as_ref(),
+            });
+
+            changelog.write_to_file(&path, template, additional_context)?;
+            info!("\tChangelog updated {:?}", path);
+
+            let old_version = self
                 .repository
                 .get_latest_package_tag(package_name)
                 .map(HookVersion::new)
                 .ok();
 
-            let next_version = HookVersion::new(tag.clone());
+            let new_version = HookVersion::new(tag.clone());
 
             let hook_result = self.run_hooks(
                 HookType::PreBump,
-                current.as_ref(),
-                &next_version,
+                old_version.as_ref(),
+                &new_version,
                 hooks_config,
                 Some(package),
             );
@@ -81,111 +272,11 @@ impl CocoGitto {
             if let Err(err) = hook_result {
                 self.stash_failed_version(&tag, err)?;
             }
-
-            package_bumps.push((package_name, package, current, next_version, tag));
-        }
-
-        if package_bumps.is_empty() {
-            bail!("Nothing to bump");
-        }
-
-        let mut meta_bump = None;
-        for (_, _, old, _, new) in &package_bumps {
-            if let Some(old) = old.as_ref() {
-                let old = &old.prefixed_tag.version;
-                let new = &new.version;
-                if old.major > new.major {
-                    meta_bump = Some(VersionIncrement::Major)
-                } else if old.minor > new.minor {
-                    if meta_bump != Some(VersionIncrement::Major)
-                        || meta_bump != Some(VersionIncrement::Minor)
-                    {
-                        meta_bump = Some(VersionIncrement::Minor)
-                    }
-                } else if meta_bump != Some(VersionIncrement::Major)
-                    || meta_bump != Some(VersionIncrement::Minor)
-                    || meta_bump != Some(VersionIncrement::Patch)
-                {
-                    meta_bump = Some(VersionIncrement::Patch)
-                }
-            }
-        }
-
-        // Generate a meta changelog, aggregating new changelog versions
-        // and commits that does not belong to any package
-        let current_tag = self.repository.get_latest_tag();
-        let current_tag = tag_or_fallback_to_zero(current_tag)?;
-        let mut tag = current_tag.bump(meta_bump.unwrap(), &self.repository)?;
-        ensure_tag_is_greater_than_previous(&current_tag, &tag)?;
-        if let Some(pre_release) = pre_release {
-            tag.version.pre = Prerelease::new(pre_release)?;
-        }
-        let tag = Tag::create(tag.version, None);
-        let pattern = self.get_revspec_for_tag(&current_tag)?;
-
-        let changelog_start = if current_tag.is_zero() {
-            None
-        } else {
-            Some(OidOf::Tag(current_tag.clone()))
-        };
-
-        let _changelog = self.get_meta_changelog(pattern, changelog_start, tag)?;
-        let _template = SETTINGS.get_changelog_template()?;
-        // changelog.write_to_file(path, template)?;
-
-        self.repository.commit("chore(version): {tag}", false)?;
-
-        for (package_name, package, current, next_version, tag) in package_bumps {
-            self.repository.create_tag(&tag)?;
-
-            self.run_hooks(
-                HookType::PostBump,
-                current.as_ref(),
-                &next_version,
-                hooks_config,
-                Some(package),
-            )?;
-
-            let current = current
-                .map(|current| current.prefixed_tag.to_string())
-                .unwrap_or_else(|| "...".to_string());
-            let bump = format!("{} -> {}", current, next_version.prefixed_tag).green();
-            info!("Bumped package {package_name} version: {}", bump);
         }
 
         Ok(())
     }
-
-    /// Used for monorepo package bump. Get all commits that modify at least one path that does not
-    /// belong to a monorepo package.
-    /// Target version is not created yet when generating the changelog.
-    fn get_meta_changelog(
-        &self,
-        pattern: RevspecPattern,
-        starting_tag: Option<OidOf>,
-        target_tag: Tag,
-    ) -> Result<Option<Release>> {
-        let package_paths: Vec<&PathBuf> = SETTINGS
-            .packages
-            .values()
-            .map(|package| &package.path)
-            .collect();
-
-        let filter = |path: &Path| {
-            package_paths
-                .iter()
-                .any(|package_path| !path.starts_with(package_path))
-        };
-
-        let mut release = self
-            .repository
-            .get_commit_range_filtered(starting_tag, &pattern, filter)?
-            .map(Release::from);
-
-        if let Some(release) = &mut release {
-            release.version = OidOf::Tag(target_tag);
-        }
-
-        Ok(release)
-    }
 }
+
+#[cfg(test)]
+mod test {}

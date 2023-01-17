@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use cocogitto::conventional::changelog::template::{RemoteContext, Template};
 use cocogitto::conventional::commit as conv_commit;
-use cocogitto::conventional::version::VersionIncrement;
+use cocogitto::conventional::version::IncrementCommand;
 use cocogitto::git::hook::HookKind;
 use cocogitto::git::revspec::RevspecPattern;
 use cocogitto::log::filter::{CommitFilter, CommitFilters};
@@ -316,18 +316,19 @@ fn main() -> Result<()> {
             let mut cocogitto = CocoGitto::get()?;
 
             let increment = match version {
-                Some(version) => VersionIncrement::Manual(version),
-                None if auto => VersionIncrement::Auto,
-                None if major => VersionIncrement::Major,
-                None if minor => VersionIncrement::Minor,
-                None if patch => VersionIncrement::Patch,
+                Some(version) => IncrementCommand::Manual(version),
+                None if auto => IncrementCommand::Auto,
+                None if auto => IncrementCommand::Auto,
+                None if major => IncrementCommand::Major,
+                None if minor => IncrementCommand::Minor,
+                None if patch => IncrementCommand::Patch,
                 _ => unreachable!(),
             };
 
             let is_monorepo = !SETTINGS.packages.is_empty();
 
             if is_monorepo {
-                if increment == VersionIncrement::Auto && package.is_none() {
+                if increment == IncrementCommand::Auto && package.is_none() {
                     cocogitto.create_monorepo_version(
                         pre.as_deref(),
                         hook_profile.as_deref(),

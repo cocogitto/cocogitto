@@ -1,5 +1,7 @@
 use crate::command::bump::{ensure_tag_is_greater_than_previous, tag_or_fallback_to_zero};
-use crate::conventional::version::VersionIncrement;
+
+use crate::conventional::changelog::ReleaseType;
+use crate::conventional::version::IncrementCommand;
 use crate::git::tag::Tag;
 use crate::hook::HookVersion;
 use crate::settings::HookType;
@@ -12,7 +14,7 @@ use semver::Prerelease;
 impl CocoGitto {
     pub fn create_version(
         &mut self,
-        increment: VersionIncrement,
+        increment: IncrementCommand,
         pre_release: Option<&str>,
         hooks_config: Option<&str>,
         dry_run: bool,
@@ -41,7 +43,8 @@ impl CocoGitto {
 
         let path = settings::changelog_path();
         let template = SETTINGS.get_changelog_template()?;
-        changelog.write_to_file(path, template)?;
+
+        changelog.write_to_file(path, template, ReleaseType::Standard)?;
 
         let current = self.repository.get_latest_tag().map(HookVersion::new).ok();
 

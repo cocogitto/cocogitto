@@ -132,7 +132,7 @@ mod test {
     fn should_render_default_template() -> Result<()> {
         // Arrange
         let release = Release::fixture();
-        let renderer = Renderer::default();
+        let mut renderer = Renderer::default();
 
         // Act
         let changelog = renderer.render(release)?;
@@ -158,8 +158,8 @@ mod test {
     fn should_render_full_hash_template() -> Result<()> {
         // Arrange
         let release = Release::fixture();
-        let renderer = Renderer::try_new(Template {
-            context: None,
+        let mut renderer = Renderer::try_new(Template {
+            remote_context: None,
             kind: TemplateKind::FullHash,
         })?;
 
@@ -187,8 +187,8 @@ mod test {
     fn should_render_github_template() -> Result<()> {
         // Arrange
         let release = Release::fixture();
-        let renderer = Renderer::try_new(Template {
-            context: RemoteContext::try_new(
+        let mut renderer = Renderer::try_new(Template {
+            remote_context: RemoteContext::try_new(
                 Some("github.com".into()),
                 Some("cocogitto".into()),
                 Some("cocogitto".into()),

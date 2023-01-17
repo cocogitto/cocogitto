@@ -12,6 +12,7 @@ use crate::settings::error::SettingError;
 use config::{Config, File};
 use conventional_commit_parser::commit::CommitType;
 use serde::{Deserialize, Serialize};
+use std::path::Path;
 
 type CommitsMetadataSettings = HashMap<String, CommitConfig>;
 pub(crate) type AuthorSettings = Vec<AuthorSetting>;
@@ -41,6 +42,10 @@ pub struct Settings {
     #[serde(default)]
     pub post_bump_hooks: Vec<String>,
     #[serde(default)]
+    pub pre_package_bump_hooks: Vec<String>,
+    #[serde(default)]
+    pub post_package_bump_hooks: Vec<String>,
+    #[serde(default)]
     pub commit_types: CommitsMetadataSettings,
     #[serde(default)]
     pub changelog: Changelog,
@@ -50,14 +55,36 @@ pub struct Settings {
     pub packages: HashMap<String, MonoRepoPackage>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Eq, PartialEq, Default)]
+#[derive(Debug, Deserialize, Serialize, Eq, PartialEq)]
 #[serde(deny_unknown_fields, default)]
 pub struct MonoRepoPackage {
+    /// The package path, relative to the repository root dir.
+    /// Used to scan commits and set hook commands current directory
     pub path: PathBuf,
+    /// Where to write the changelog
     pub changelog_path: Option<String>,
-    pub pre_bump_hooks: Vec<String>,
-    pub post_bump_hooks: Vec<String>,
+    /// Bumping package marked as public api will increment
+    /// the global monorepo version
+    pub public_api: bool,
+    /// Overrides `pre_package_bump_hooks`
+    pub pre_bump_hooks: Option<Vec<String>>,
+    /// Overrides `post_package_bump_hooks`
+    pub post_bump_hooks: Option<Vec<String>>,
+    /// Custom profile to override `pre_bump_hooks`, `post_bump_hooks`
     pub bump_profiles: HashMap<String, BumpProfile>,
+}
+
+impl Default for MonoRepoPackage {
+    fn default() -> Self {
+        Self {
+            path: Default::default(),
+            changelog_path: None,
+            pre_bump_hooks: None,
+            post_bump_hooks: None,
+            bump_profiles: Default::default(),
+            public_api: true,
+        }
+    }
 }
 
 impl MonoRepoPackage {
@@ -197,12 +224,38 @@ impl Settings {
         Template::from_arg(template, context)
     }
 
+    pub fn get_package_changelog_template(&self) -> Result<Template, ChangelogError> {
+        let context = self.get_template_context();
+        let template = self
+            .changelog
+            .template
+            .as_deref()
+            .unwrap_or("package_default");
+
+        Template::from_arg(template, context)
+    }
+
+    pub fn get_monorepo_changelog_template(&self) -> Result<Template, ChangelogError> {
+        let context = self.get_template_context();
+        let template = self
+            .changelog
+            .template
+            .as_deref()
+            .unwrap_or("monorepo_default");
+
+        Template::from_arg(template, context)
+    }
+
     pub fn monorepo_separator(&self) -> Option<&str> {
         if self.packages.is_empty() {
             None
         } else {
             self.monorepo_version_separator.as_deref().or(Some("-"))
         }
+    }
+
+    pub fn package_paths(&self) -> impl Iterator<Item = &Path> {
+        self.packages.values().map(|package| package.path.as_path())
     }
 }
 
@@ -226,10 +279,14 @@ impl Hooks for MonoRepoPackage {
     }
 
     fn pre_bump_hooks(&self) -> &Vec<String> {
-        &self.pre_bump_hooks
+        self.pre_bump_hooks
+            .as_ref()
+            .unwrap_or(&SETTINGS.pre_package_bump_hooks)
     }
 
     fn post_bump_hooks(&self) -> &Vec<String> {
-        &self.post_bump_hooks
+        self.post_bump_hooks
+            .as_ref()
+            .unwrap_or(&SETTINGS.post_package_bump_hooks)
     }
 }

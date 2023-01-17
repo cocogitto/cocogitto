@@ -1,4 +1,5 @@
 use crate::conventional::changelog::release::Release;
+use crate::conventional::commit::Commit;
 use crate::git::error::TagError;
 use crate::git::hook::Hooks;
 use crate::git::oid::OidOf;
@@ -11,9 +12,12 @@ use crate::{CocoGitto, SETTINGS};
 use anyhow::Result;
 use anyhow::{anyhow, bail, ensure, Context, Error};
 use colored::Colorize;
+use conventional_commit_parser::commit::CommitType;
 use globset::Glob;
 use itertools::Itertools;
-use log::{error, warn};
+use log::{error, info, warn};
+use std::fmt;
+use std::fmt::Write;
 use std::process::exit;
 
 mod monorepo;
@@ -44,29 +48,6 @@ fn tag_or_fallback_to_zero(tag: Result<Tag, TagError>) -> Result<Tag> {
 }
 
 impl CocoGitto {
-    /// Used for cog bump. Get all commits that modify at least one path belonging to the given
-    /// package. Target version is not created yet when generating the changelog.
-    fn get_changelog_with_target_package_version(
-        &self,
-        pattern: RevspecPattern,
-        starting_tag: Option<OidOf>,
-        target_tag: Tag,
-        package: &MonoRepoPackage,
-    ) -> Result<Option<Release>> {
-        let mut release = self
-            .repository
-            .get_commit_range_filtered(starting_tag, &pattern, |path| {
-                path.starts_with(&package.path)
-            })?
-            .map(Release::from);
-
-        if let Some(release) = &mut release {
-            release.version = OidOf::Tag(target_tag);
-        }
-
-        Ok(release)
-    }
-
     fn stash_failed_version(&mut self, tag: &Tag, err: Error) -> Result<()> {
         self.repository.stash_failed_version(tag.clone())?;
         error!(
@@ -119,14 +100,44 @@ impl CocoGitto {
         Ok(())
     }
 
-    /// Used for cog bump. the target version
-    /// is not created yet when generating the changelog.
+    /// The target version is not created yet when generating the changelog.
     pub fn get_changelog_with_target_version(
         &self,
         pattern: RevspecPattern,
         tag: Tag,
     ) -> Result<Release> {
         let commit_range = self.repository.get_commit_range(&pattern)?;
+
+        let mut release = Release::from(commit_range);
+        release.version = OidOf::Tag(tag);
+        Ok(release)
+    }
+
+    /// The target package version is not created yet when generating the changelog.
+    pub fn get_package_changelog_with_target_version(
+        &self,
+        pattern: RevspecPattern,
+        tag: Tag,
+        package: &str,
+    ) -> Result<Release> {
+        let commit_range = self
+            .repository
+            .get_commit_range_for_package(&pattern, package)?;
+
+        let mut release = Release::from(commit_range);
+        release.version = OidOf::Tag(tag);
+        Ok(release)
+    }
+
+    /// The target global monorepo version is not created yet when generating the changelog.
+    pub fn get_monorepo_global_changelog_with_target_version(
+        &self,
+        pattern: RevspecPattern,
+        tag: Tag,
+    ) -> Result<Release> {
+        let commit_range = self
+            .repository
+            .get_commit_range_for_monorepo_global(&pattern)?;
 
         let mut release = Release::from(commit_range);
         release.version = OidOf::Tag(tag);
@@ -188,6 +199,13 @@ impl CocoGitto {
                 .try_collect()?,
         };
 
+        if hooks.is_empty() {
+            match hook_type {
+                HookType::PreBump => info!("Running pre-bump hooks"),
+                HookType::PostBump => info!("Running post-bump hooks"),
+            }
+        }
+
         for mut hook in hooks {
             hook.insert_versions(current_tag, next_version)?;
             hook.run().context(hook.to_string())?;
@@ -207,4 +225,73 @@ impl CocoGitto {
         let pattern = (origin.as_str(), target.as_str());
         Ok(RevspecPattern::from(pattern))
     }
+}
+
+//  FIXME
+fn _display_history(commits: &[&git2::Commit]) -> Result<(), fmt::Error> {
+    let conventional_commits: Vec<Result<_, _>> = commits
+        .iter()
+        .map(|commit| Commit::from_git_commit(commit))
+        .collect();
+
+    // Commits which type are neither feat, fix nor breaking changes
+    // won't affect the version number.
+    let mut non_bump_commits: Vec<&CommitType> = conventional_commits
+        .iter()
+        .filter_map(|commit| match commit {
+            Ok(commit) => match commit.message.commit_type {
+                CommitType::Feature | CommitType::BugFix => None,
+                _ => Some(&commit.message.commit_type),
+            },
+            Err(_) => None,
+        })
+        .collect();
+
+    non_bump_commits.sort();
+
+    let non_bump_commits: Vec<(usize, &CommitType)> = non_bump_commits
+        .into_iter()
+        .dedup_by_with_count(|c1, c2| c1 == c2)
+        .collect();
+
+    if !non_bump_commits.is_empty() {
+        let mut skip_message = "\tSkipping irrelevant commits:\n".to_string();
+        for (count, commit_type) in non_bump_commits {
+            writeln!(skip_message, "\t\t- {}: {}", commit_type.as_ref(), count)?;
+        }
+
+        info!("{}", skip_message);
+    }
+
+    let bump_commits = conventional_commits
+        .iter()
+        .filter_map(|commit| match commit {
+            Ok(commit) => match commit.message.commit_type {
+                CommitType::Feature | CommitType::BugFix => Some(Ok(commit)),
+                _ => None,
+            },
+            Err(err) => Some(Err(err)),
+        });
+
+    for commit in bump_commits {
+        match commit {
+            Ok(commit) if commit.message.is_breaking_change => {
+                info!(
+                    "\t Found {} commit {} with type: {}",
+                    "BREAKING CHANGE".red(),
+                    commit.shorthand().blue(),
+                    commit.message.commit_type.as_ref().yellow()
+                )
+            }
+            Ok(commit) if commit.message.commit_type == CommitType::BugFix => {
+                info!("\tFound bug fix commit {}", commit.shorthand().blue())
+            }
+            Ok(commit) if commit.message.commit_type == CommitType::Feature => {
+                info!("\tFound feature commit {}", commit.shorthand().blue())
+            }
+            _ => (),
+        }
+    }
+
+    Ok(())
 }

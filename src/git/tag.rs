@@ -1,3 +1,4 @@
+use crate::conventional::version::Increment;
 use crate::git::error::{Git2Error, TagError};
 use crate::git::repository::Repository;
 use crate::SETTINGS;
@@ -210,6 +211,18 @@ impl Tag {
 
     pub(crate) fn is_zero(&self) -> bool {
         self.version == Version::new(0, 0, 0)
+    }
+
+    pub(crate) fn get_increment_from(&self, other: &Tag) -> Option<Increment> {
+        if self.version.major > other.version.major {
+            Some(Increment::Major)
+        } else if self.version.minor > other.version.minor {
+            Some(Increment::Minor)
+        } else if self.version.patch > other.version.patch {
+            Some(Increment::Patch)
+        } else {
+            None
+        }
     }
 }
 

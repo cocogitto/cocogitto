@@ -8,7 +8,7 @@ use conventional_commit_parser::parse_footers;
 use lazy_static::lazy_static;
 
 use conventional::commit::{Commit, CommitConfig};
-use conventional::version::VersionIncrement;
+use conventional::version::IncrementCommand;
 use error::PreHookError;
 use git::repository::Repository;
 
@@ -16,7 +16,6 @@ use settings::{HookType, Settings};
 
 use crate::git::error::{Git2Error, TagError};
 
-use crate::git::oid::OidOf;
 use crate::git::revspec::RevspecPattern;
 use crate::git::tag::Tag;
 
@@ -42,7 +41,7 @@ lazy_static! {
     };
 
     // This cannot be carried by `Cocogitto` struct since we need it to be available in `Changelog`,
-    // `Commit` etc. Be ensure that `CocoGitto::new` is called before using this  in order to bypass
+    // `Commit` etc. Be sure that `CocoGitto::new` is called before using this  in order to bypass
     // unwrapping in case of error.
     pub static ref COMMITS_METADATA: CommitsMetadata = {
         SETTINGS.commit_types()
