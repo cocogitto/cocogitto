@@ -2,7 +2,7 @@ mod error;
 mod parser;
 
 use std::collections::VecDeque;
-use std::fmt;
+use std::{fmt, path};
 use std::ops::Range;
 use std::process::Command;
 use std::str::FromStr;
@@ -130,8 +130,14 @@ impl Hook {
         Ok(())
     }
 
-    pub fn run(&self) -> Result<()> {
-        let status = Command::new("sh").arg("-c").arg(&self.0).status()?;
+    pub fn run(&self, package_path: Option<&path::Path>) -> Result<()> {
+        let mut cmd = Command::new("sh");
+        let cmd = cmd.arg("-c").arg(&self.0);
+        if let Some(current_dir) = package_path {
+            cmd.current_dir(current_dir);
+
+        }
+        let status = cmd.status()?;
         ensure!(status.success(), "hook failed with status {}", status);
         Ok(())
     }
@@ -283,7 +289,7 @@ mod test {
         hook.insert_versions(None, &HookVersion::new(Tag::from_str("1.0.0", None)?))
             .unwrap();
 
-        let outcome = hook.run();
+        let outcome = hook.run(None);
 
         assert_that!(outcome).is_ok();
 

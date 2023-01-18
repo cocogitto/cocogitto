@@ -222,8 +222,18 @@ impl CocoGitto {
         }
 
         for mut hook in hooks {
+            let command = hook.to_string();
+            let chars: Vec<char> = command.chars().collect();
+            let command = if chars.len() > 78 {
+                &command[0..command.len()]
+            } else {
+                &command
+            };
+            info!("[{command}]");
             hook.insert_versions(current_tag, next_version)?;
-            hook.run().context(hook.to_string())?;
+            let package_path = package.map(|p| p.path.as_path());
+            hook.run(package_path).context(hook.to_string())?;
+            println!();
         }
 
         Ok(())
