@@ -8,8 +8,8 @@ use speculoos::assert_that;
 use speculoos::iter::ContainingIntoIterAssertions;
 use speculoos::option::OptionAssertions;
 
-use cocogitto::CONFIG_PATH;
 use cocogitto::settings::{MonoRepoPackage, Settings};
+use cocogitto::CONFIG_PATH;
 
 pub fn init_monorepo(settings: &mut Settings) -> Result<()> {
     let mut packages = HashMap::new();
@@ -36,7 +36,6 @@ pub fn init_monorepo(settings: &mut Settings) -> Result<()> {
 
     Ok(())
 }
-
 
 /// - Init a repository in the current directory
 /// - Setup a local git user named Tom <toml.bombadil@themail.org>

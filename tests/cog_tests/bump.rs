@@ -4,11 +4,11 @@ use crate::helpers::*;
 
 use anyhow::Result;
 use assert_cmd::prelude::*;
+use cocogitto::settings::Settings;
 use indoc::indoc;
 use sealed_test::prelude::*;
 use speculoos::prelude::*;
 use std::path::Path;
-use cocogitto::settings::Settings;
 
 #[sealed_test]
 fn auto_bump_from_start_ok() -> Result<()> {
@@ -294,7 +294,6 @@ fn bump_with_profile_hook() -> Result<()> {
     Ok(())
 }
 
-
 #[sealed_test]
 fn monorepo_dry_run() -> Result<()> {
     init_monorepo(&mut Settings::default())?;
@@ -327,12 +326,9 @@ fn package_dry_run() -> Result<()> {
         .arg("--dry-run")
         .assert()
         .success()
-        .stdout(indoc!(
-            "one-0.1.0"
-        ));
+        .stdout(indoc!("one-0.1.0"));
 
     assert_that!(Path::new("CHANGELOG.md")).does_not_exist();
     assert_tag_does_not_exist("1.1.0")?;
     Ok(())
 }
-

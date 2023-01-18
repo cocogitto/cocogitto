@@ -208,10 +208,7 @@ impl CocoGitto {
 
             match package_name {
                 None => {
-                    let msg = format!("[{hook_type}]")
-                        .underline()
-                        .white()
-                        .bold();
+                    let msg = format!("[{hook_type}]").underline().white().bold();
                     info!("{msg}")
                 }
                 Some(package_name) => {
