@@ -208,14 +208,14 @@ impl CocoGitto {
 
             match package_name {
                 None => {
-                    let msg = format!("Running {hook_type} hooks")
+                    let msg = format!("[{hook_type}]")
                         .underline()
                         .white()
                         .bold();
                     info!("{msg}")
                 }
                 Some(package_name) => {
-                    let msg = format!("Running {package_name} {hook_type} hooks")
+                    let msg = format!("[{hook_type}-{package_name}]")
                         .underline()
                         .white()
                         .bold();
