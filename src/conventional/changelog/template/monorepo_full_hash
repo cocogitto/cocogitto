@@ -1,6 +1,6 @@
-### Package bump
+### Package updates
 {% for package in packages -%}
-    {{ package_name }} bumped to {{ new_version }}
+    {{ package.package_name }} bumped to {{ package.new_version }}
 {% endfor -%}
 
 

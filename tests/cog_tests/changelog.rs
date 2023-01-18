@@ -66,6 +66,7 @@ fn get_changelog_range() -> Result<()> {
                 #### Refactoring
                 - change config name to cog.toml - (d4aa61b) - oknozor
 
+
                 ",
             today = today
         )
@@ -100,6 +101,7 @@ fn get_changelog_from_untagged_repo() -> Result<()> {
                     - bug fix - ({commit_three}) - Tom
                     #### Features
                     - **(taef)** feature - ({commit_two}) - Tom
+
 
                     ",
             commit_two = &commit_two[0..7],
@@ -143,6 +145,7 @@ fn get_changelog_from_tagged_repo() -> Result<()> {
                     #### Features
                     - **(taef)** feature - ({commit_one}) - Tom
 
+
                     ",
             commit_one = &commit_one[0..7],
             commit_two = &commit_two[0..7],
@@ -183,6 +186,7 @@ fn get_changelog_at_tag() -> Result<()> {
                     #### Features
                     - **(taef)** feature - ({commit_one}) - Tom
                     - feature 2 - ({commit_two}) - Tom
+
 
                     ",
             today = today,
@@ -234,6 +238,7 @@ fn get_changelog_with_tag_prefix() -> Result<()> {
                     ## v1.0.0 - {today}
                     #### Features
                     - feature 1 - ({commit_one}) - Tom
+
 
                     ",
             today = today,
@@ -290,6 +295,7 @@ fn get_changelog_at_tag_prefix() -> Result<()> {
                     #### Miscellaneous Chores
                     - **(version)** v2.0.0 - ({commit_four}) - Tom
 
+
                     ",
             today = today,
             commit_two = &commit_two[0..7],
@@ -341,6 +347,7 @@ fn get_changelog_from_tag_to_tagged_head() -> Result<()> {
                 #### Features
                 - feature 1 - ({commit_two}) - Tom
                 - start - ({commit_one}) - Tom
+
 
                 ",
             today = today,
@@ -411,6 +418,7 @@ fn get_changelog_whith_custom_template() -> Result<()> {
             #### Features
             -  feature 1 - ([{commit_two_short}](https://github.com/test/test/commit/{commit_two})) - Tom
             - **(scope1)** start - ([{commit_one_short}](https://github.com/test/test/commit/{commit_one})) - Tom
+
 
             ",
             today = today,

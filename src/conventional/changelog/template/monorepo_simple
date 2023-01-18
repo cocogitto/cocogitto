@@ -11,7 +11,7 @@
 ### Package bumps
 
 {% for package in packages -%}
-- {{ package.package_name }} bumped to {{ package.new_version }}
+- {{ package.package_name }} bumped to {{ package.version.tag }}
 {% endfor -%}
 
 ### Global changes

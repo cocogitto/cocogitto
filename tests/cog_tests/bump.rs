@@ -67,7 +67,7 @@ fn auto_bump_dry_run_from_latest_tag() -> Result<()> {
         .arg("--dry-run")
         .assert()
         .success()
-        .stdout("1.1.0");
+        .stdout("1.1.0\n");
 
     assert_that!(Path::new("CHANGELOG.md")).does_not_exist();
     assert_tag_does_not_exist("1.1.0")?;
@@ -306,7 +306,8 @@ fn monorepo_dry_run() -> Result<()> {
         .success()
         .stdout(indoc!(
             "one-0.1.0
-            0.1.0"
+            0.1.0
+            "
         ));
 
     assert_that!(Path::new("CHANGELOG.md")).does_not_exist();
@@ -326,7 +327,7 @@ fn package_dry_run() -> Result<()> {
         .arg("--dry-run")
         .assert()
         .success()
-        .stdout(indoc!("one-0.1.0"));
+        .stdout(indoc!("one-0.1.0\n"));
 
     assert_that!(Path::new("CHANGELOG.md")).does_not_exist();
     assert_tag_does_not_exist("1.1.0")?;

@@ -18,7 +18,7 @@ impl Display for ChangelogError {
                 writeln!(f, "changelog template not found in {:?}", path)
             }
             ChangelogError::TeraError(err) => {
-                writeln!(f, "failed to render changelog: \n\t{}", err)
+                writeln!(f, "failed to render changelog: \n\t{:?}", err)
             }
             ChangelogError::WriteError(err) => {
                 writeln!(f, "failed to write changelog: \n\t{}", err)

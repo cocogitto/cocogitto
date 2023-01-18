@@ -2,10 +2,10 @@ mod error;
 mod parser;
 
 use std::collections::VecDeque;
-use std::{fmt, path};
 use std::ops::Range;
 use std::process::Command;
 use std::str::FromStr;
+use std::{fmt, path};
 
 use crate::Tag;
 use parser::Token;
@@ -135,7 +135,6 @@ impl Hook {
         let cmd = cmd.arg("-c").arg(&self.0);
         if let Some(current_dir) = package_path {
             cmd.current_dir(current_dir);
-
         }
         let status = cmd.status()?;
         ensure!(status.success(), "hook failed with status {}", status);

@@ -18,6 +18,7 @@ use log::info;
 use semver::Prerelease;
 
 use crate::conventional::error::BumpError;
+use crate::git::oid::OidOf;
 
 struct PackageBumpData {
     package_name: String,
@@ -74,11 +75,18 @@ impl CocoGitto {
             template_context.push(PackageBumpContext {
                 package_name: &bump.package_name,
                 package_path: &bump.package_path,
-                new_version: bump.new_version.prefixed_tag.to_string(),
-                old_version: bump
+                version: OidOf::Tag(bump.new_version.prefixed_tag.clone()),
+                from: bump
                     .old_version
                     .as_ref()
-                    .map(|v| v.prefixed_tag.to_string()),
+                    .map(|v| OidOf::Tag(v.prefixed_tag.clone()))
+                    .unwrap_or_else(|| {
+                        let first = self
+                            .repository
+                            .get_first_commit()
+                            .expect("non empty repository");
+                        OidOf::Other(first)
+                    }),
             })
         }
 
