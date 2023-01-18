@@ -224,8 +224,7 @@ impl CocoGitto {
         for mut hook in hooks {
             hook.insert_versions(current_tag, next_version)?;
             let command = hook.to_string();
-            let chars: Vec<char> = command.chars().collect();
-            let command = if chars.len() > 78 {
+            let command = if command.chars().count() > 78 {
                 &command[0..command.len()]
             } else {
                 &command
