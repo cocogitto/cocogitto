@@ -1,9 +1,6 @@
 use anyhow::Result;
-use std::collections::HashMap;
-use std::path::PathBuf;
-
 use cmd_lib::run_cmd;
-use cocogitto::settings::{MonoRepoPackage, Settings};
+use cocogitto::settings::Settings;
 use cocogitto::{conventional::version::IncrementCommand, CocoGitto};
 use sealed_test::prelude::*;
 use speculoos::prelude::*;
@@ -97,32 +94,6 @@ fn package_bump_ok() -> Result<()> {
     assert_that!(result).is_ok();
     assert_tag_does_not_exist("0.1.0")?;
     assert_tag_exists("one-0.1.0")?;
-    Ok(())
-}
-
-fn init_monorepo(settings: &mut Settings) -> Result<()> {
-    let mut packages = HashMap::new();
-    packages.insert(
-        "one".to_string(),
-        MonoRepoPackage {
-            path: PathBuf::from("one"),
-            ..Default::default()
-        },
-    );
-    settings.packages = packages;
-    let settings = toml::to_string(&settings)?;
-
-    git_init()?;
-    run_cmd!(
-        echo $settings > cog.toml;
-        git add .;
-        git commit -m "chore: first commit";
-        mkdir one;
-        echo "changes" > one/file;
-        git add .;
-        git commit -m "feat: package one feature";
-    )?;
-
     Ok(())
 }
 

@@ -1,4 +1,5 @@
-use std::path::Path;
+use std::collections::HashMap;
+use std::path::{Path, PathBuf};
 
 use anyhow::anyhow;
 use anyhow::Result;
@@ -8,6 +9,34 @@ use speculoos::iter::ContainingIntoIterAssertions;
 use speculoos::option::OptionAssertions;
 
 use cocogitto::CONFIG_PATH;
+use cocogitto::settings::{MonoRepoPackage, Settings};
+
+pub fn init_monorepo(settings: &mut Settings) -> Result<()> {
+    let mut packages = HashMap::new();
+    packages.insert(
+        "one".to_string(),
+        MonoRepoPackage {
+            path: PathBuf::from("one"),
+            ..Default::default()
+        },
+    );
+    settings.packages = packages;
+    let settings = toml::to_string(&settings)?;
+
+    git_init()?;
+    run_cmd!(
+        echo $settings > cog.toml;
+        git add .;
+        git commit -m "chore: first commit";
+        mkdir one;
+        echo "changes" > one/file;
+        git add .;
+        git commit -m "feat: package one feature";
+    )?;
+
+    Ok(())
+}
+
 
 /// - Init a repository in the current directory
 /// - Setup a local git user named Tom <toml.bombadil@themail.org>

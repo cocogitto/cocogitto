@@ -28,8 +28,6 @@ struct PackageBumpData {
     increment: Increment,
 }
 
-// TODO:
-//  - dry run
 impl CocoGitto {
     pub fn create_monorepo_version(
         &mut self,
@@ -64,6 +62,9 @@ impl CocoGitto {
         let tag = Tag::create(tag.version, None);
 
         if dry_run {
+            for bump in bumps {
+                println!("{}", bump.new_version.prefixed_tag)
+            }
             print!("{}", tag);
             return Ok(());
         }
