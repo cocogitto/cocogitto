@@ -100,6 +100,7 @@ impl MonoRepoPackage {
 #[serde(deny_unknown_fields, default)]
 pub struct Changelog {
     pub template: Option<String>,
+    pub package_template: Option<String>,
     pub remote: Option<String>,
     pub path: PathBuf,
     pub owner: Option<String>,
@@ -111,6 +112,7 @@ impl Default for Changelog {
     fn default() -> Self {
         Changelog {
             template: None,
+            package_template: None,
             remote: None,
             path: PathBuf::from("CHANGELOG.md"),
             owner: None,
@@ -228,7 +230,7 @@ impl Settings {
         let context = self.get_template_context();
         let template = self
             .changelog
-            .template
+            .package_template
             .as_deref()
             .unwrap_or("package_default");
 
