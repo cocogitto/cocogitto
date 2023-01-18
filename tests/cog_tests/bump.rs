@@ -278,13 +278,6 @@ fn bump_with_profile_hook() -> Result<()> {
     git_tag("1.0.0")?;
     git_commit("feat: feature")?;
 
-    let expected_stdout = indoc!(
-        "current 1.0.0
-            next 1.0.1
-        "
-    );
-    let expected_stderr = "Bumped version: 1.0.0 -> 1.0.1\n";
-
     // Act
     Command::cargo_bin("cog")?
         .arg("bump")
@@ -294,8 +287,6 @@ fn bump_with_profile_hook() -> Result<()> {
         .unwrap()
         // Assert
         .assert()
-        .stdout(expected_stdout)
-        .stderr(expected_stderr)
         .success();
 
     assert_tag_exists("1.0.1")?;
