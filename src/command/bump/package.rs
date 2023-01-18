@@ -42,6 +42,8 @@ impl CocoGitto {
         let changelog =
             self.get_package_changelog_with_target_version(pattern, tag.clone(), package_name)?;
 
+        changelog.pretty_print_bump_summary()?;
+
         let path = package.changelog_path();
         let template = SETTINGS.get_changelog_template()?;
         let additional_context = ReleaseType::Package(PackageContext { package_name });

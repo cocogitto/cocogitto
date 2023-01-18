@@ -200,7 +200,7 @@ impl CocoGitto {
                 .try_collect()?,
         };
 
-        if hooks.is_empty() {
+        if !hooks.is_empty() {
             let hook_type = match hook_type {
                 HookType::PreBump => "pre-bump",
                 HookType::PostBump => "post-bump",
@@ -208,11 +208,17 @@ impl CocoGitto {
 
             match package_name {
                 None => {
-                    let msg = format!("Running {hook_type} hooks").underline();
+                    let msg = format!("Running {hook_type} hooks")
+                        .underline()
+                        .white()
+                        .bold();
                     info!("{msg}")
                 }
                 Some(package_name) => {
-                    let msg = format!("Running {package_name} {hook_type} hooks").underline();
+                    let msg = format!("Running {package_name} {hook_type} hooks")
+                        .underline()
+                        .white()
+                        .bold();
                     info!("{msg}")
                 }
             }
@@ -239,71 +245,68 @@ impl CocoGitto {
     }
 }
 
-//  FIXME
-fn _display_history(commits: &[&git2::Commit]) -> Result<(), fmt::Error> {
-    let conventional_commits: Vec<Result<_, _>> = commits
-        .iter()
-        .map(|commit| Commit::from_git_commit(commit))
-        .collect();
+impl Release<'_> {
+    fn pretty_print_bump_summary(&self) -> Result<(), fmt::Error> {
+        let conventional_commits: Vec<&Commit> = self
+            .commits
+            .iter()
+            .map(|ch_commit| &ch_commit.commit)
+            .collect();
 
-    // Commits which type are neither feat, fix nor breaking changes
-    // won't affect the version number.
-    let mut non_bump_commits: Vec<&CommitType> = conventional_commits
-        .iter()
-        .filter_map(|commit| match commit {
-            Ok(commit) => match commit.message.commit_type {
+        // Commits which type are neither feat, fix nor breaking changes
+        // won't affect the version number.
+        let mut non_bump_commits: Vec<&CommitType> = conventional_commits
+            .iter()
+            .filter_map(|commit| match &commit.message.commit_type {
                 CommitType::Feature | CommitType::BugFix => None,
+                _commit_type if commit.message.is_breaking_change => None,
                 _ => Some(&commit.message.commit_type),
-            },
-            Err(_) => None,
-        })
-        .collect();
+            })
+            .collect();
 
-    non_bump_commits.sort();
+        non_bump_commits.sort();
 
-    let non_bump_commits: Vec<(usize, &CommitType)> = non_bump_commits
-        .into_iter()
-        .dedup_by_with_count(|c1, c2| c1 == c2)
-        .collect();
+        let non_bump_commits: Vec<(usize, &CommitType)> = non_bump_commits
+            .into_iter()
+            .dedup_by_with_count(|c1, c2| c1 == c2)
+            .collect();
 
-    if !non_bump_commits.is_empty() {
-        let mut skip_message = "\tSkipping irrelevant commits:\n".to_string();
-        for (count, commit_type) in non_bump_commits {
-            writeln!(skip_message, "\t\t- {}: {}", commit_type.as_ref(), count)?;
+        if !non_bump_commits.is_empty() {
+            let mut skip_message = "  Skipping irrelevant commits:\n".to_string();
+            for (count, commit_type) in non_bump_commits {
+                writeln!(skip_message, "    - {}: {}", commit_type.as_ref(), count)?;
+            }
+
+            info!("{}", skip_message);
         }
 
-        info!("{}", skip_message);
-    }
+        let bump_commits =
+            conventional_commits
+                .iter()
+                .filter(|commit| match &commit.message.commit_type {
+                    CommitType::Feature | CommitType::BugFix => true,
+                    _commit_type if commit.message.is_breaking_change => true,
+                    _ => false,
+                });
 
-    let bump_commits = conventional_commits
-        .iter()
-        .filter_map(|commit| match commit {
-            Ok(commit) => match commit.message.commit_type {
-                CommitType::Feature | CommitType::BugFix => Some(Ok(commit)),
-                _ => None,
-            },
-            Err(err) => Some(Err(err)),
-        });
-
-    for commit in bump_commits {
-        match commit {
-            Ok(commit) if commit.message.is_breaking_change => {
-                info!(
-                    "\t Found {} commit {} with type: {}",
-                    "BREAKING CHANGE".red(),
-                    commit.shorthand().blue(),
-                    commit.message.commit_type.as_ref().yellow()
-                )
+        for commit in bump_commits {
+            match &commit.message.commit_type {
+                _commit_type if commit.message.is_breaking_change => {
+                    info!(
+                        "\t Found {} commit {} with type: {}",
+                        "BREAKING CHANGE".red(),
+                        commit.shorthand().blue(),
+                        commit.message.commit_type.as_ref().yellow()
+                    )
+                }
+                CommitType::Feature => {
+                    info!("\tFound feature commit {}", commit.shorthand().blue())
+                }
+                CommitType::BugFix => info!("\tFound bug fix commit {}", commit.shorthand().blue()),
+                _ => (),
             }
-            Ok(commit) if commit.message.commit_type == CommitType::BugFix => {
-                info!("\tFound bug fix commit {}", commit.shorthand().blue())
-            }
-            Ok(commit) if commit.message.commit_type == CommitType::Feature => {
-                info!("\tFound feature commit {}", commit.shorthand().blue())
-            }
-            _ => (),
         }
-    }
 
-    Ok(())
+        Ok(())
+    }
 }

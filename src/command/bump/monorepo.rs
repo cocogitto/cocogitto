@@ -29,7 +29,6 @@ struct PackageBumpData {
 }
 
 // TODO:
-//  - pretty stdout
 //  - dry run
 impl CocoGitto {
     pub fn create_monorepo_version(
@@ -85,8 +84,12 @@ impl CocoGitto {
         let pattern = self.get_revspec_for_tag(&old)?;
         let changelog =
             self.get_monorepo_global_changelog_with_target_version(pattern, tag.clone())?;
+
+        changelog.pretty_print_bump_summary()?;
+
         let path = settings::changelog_path();
         let template = SETTINGS.get_monorepo_changelog_template()?;
+
         changelog.write_to_file(
             path,
             template,
@@ -213,10 +216,13 @@ impl CocoGitto {
             let package_name = &bump.package_name;
             let old = self.repository.get_latest_package_tag(package_name);
             let old = tag_or_fallback_to_zero(old)?;
-            info!(
-                "Preparing bump for package {}, starting from version {old}",
+            let msg = format!(
+                "Bump for package {}, starting from version {old}",
                 package_name.bold()
-            );
+            )
+            .white();
+
+            info!("{msg}");
 
             let mut next_version = old.bump(
                 IncrementCommand::AutoPackage(package_name.to_string()),
@@ -241,6 +247,8 @@ impl CocoGitto {
                 tag.clone(),
                 package_name.as_str(),
             )?;
+
+            changelog.pretty_print_bump_summary()?;
 
             let path = package.changelog_path();
             let template = SETTINGS.get_package_changelog_template()?;
@@ -281,6 +289,3 @@ impl CocoGitto {
         Ok(())
     }
 }
-
-#[cfg(test)]
-mod test {}

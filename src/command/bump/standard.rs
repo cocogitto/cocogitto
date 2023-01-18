@@ -40,6 +40,7 @@ impl CocoGitto {
 
         let pattern = self.get_revspec_for_tag(&current_tag)?;
         let changelog = self.get_changelog_with_target_version(pattern, tag.clone())?;
+        changelog.pretty_print_bump_summary()?;
 
         let path = settings::changelog_path();
         let template = SETTINGS.get_changelog_template()?;
