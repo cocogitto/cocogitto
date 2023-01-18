@@ -77,8 +77,9 @@ impl CocoGitto {
             self.stash_failed_version(&tag, err)?;
         }
 
+        let sign = self.repository.gpg_sign();
         self.repository
-            .commit(&format!("chore(version): {}", tag), false)?;
+            .commit(&format!("chore(version): {}", tag), sign)?;
 
         self.repository.create_tag(&tag)?;
 
