@@ -150,6 +150,7 @@ impl CocoGitto {
         current_tag: Option<&HookVersion>,
         next_version: &HookVersion,
         hook_profile: Option<&str>,
+        package_name: Option<&str>,
         package: Option<&MonoRepoPackage>,
     ) -> Result<()> {
         let settings = Settings::get(&self.repository)?;
@@ -200,9 +201,20 @@ impl CocoGitto {
         };
 
         if hooks.is_empty() {
-            match hook_type {
-                HookType::PreBump => info!("Running pre-bump hooks"),
-                HookType::PostBump => info!("Running post-bump hooks"),
+            let hook_type = match hook_type {
+                HookType::PreBump => "pre-bump",
+                HookType::PostBump => "post-bump",
+            };
+
+            match package_name {
+                None => {
+                    let msg = format!("Running {hook_type} hooks").underline();
+                    info!("{msg}")
+                }
+                Some(package_name) => {
+                    let msg = format!("Running {package_name} {hook_type} hooks").underline();
+                    info!("{msg}")
+                }
             }
         }
 

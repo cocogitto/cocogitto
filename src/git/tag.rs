@@ -38,10 +38,13 @@ impl Repository {
             .map_err(Git2Error::from)
     }
 
+    /// Get the latest tag, will ignore package tag if on a monorepo
     pub(crate) fn get_latest_tag(&self) -> Result<Tag, TagError> {
         let tags: Vec<Tag> = self.all_tags()?;
-
-        tags.into_iter().max().ok_or(TagError::NoTag)
+        tags.into_iter()
+            .filter(|tag| tag.package.is_none())
+            .max()
+            .ok_or(TagError::NoTag)
     }
 
     pub(crate) fn all_tags(&self) -> Result<Vec<Tag>, TagError> {
@@ -65,33 +68,39 @@ impl Repository {
             .map(|profile| -> &str { profile })
             .collect();
 
-        let tags = if packages.is_empty() {
-            let pattern = SETTINGS
-                .tag_prefix
-                .as_ref()
-                .map(|prefix| format!("{}*", prefix));
+        let pattern = SETTINGS
+            .tag_prefix
+            .as_ref()
+            .map(|prefix| format!("{}*", prefix));
 
-            self.0
-                .tag_names(pattern.as_deref())
-                .map_err(|err| TagError::NoMatchFound { pattern, err })?
-                .iter()
-                .flatten()
-                .map(str::to_string)
-                .collect()
-        } else {
+        // Collect non packages tags
+        let mut tags: Vec<String> = self
+            .0
+            .tag_names(pattern.as_deref())
+            .map_err(|err| TagError::NoMatchFound { pattern, err })?
+            .iter()
+            .flatten()
+            .map(str::to_string)
+            .collect();
+
+        // Extends with packages tags if we are in a mono-repository context
+        if !packages.is_empty() {
             let separator = SETTINGS
                 .monorepo_separator()
                 .expect("monorepo_version_separator");
-            let tags = self.0.tag_names(None).map_err(|_| TagError::NoTag)?;
 
-            tags.into_iter()
+            let package_tags = self.0.tag_names(None).map_err(|_| TagError::NoTag)?;
+
+            let package_tags = package_tags
+                .into_iter()
                 .flatten()
                 .filter(|tag| match tag.split_once(separator) {
                     None => false,
                     Some((tag_package, _)) => packages.contains(&tag_package),
                 })
-                .map(str::to_string)
-                .collect()
+                .map(str::to_string);
+
+            tags.extend(package_tags);
         };
 
         Ok(tags)
@@ -260,6 +269,48 @@ mod test {
     use speculoos::prelude::*;
     use std::collections::HashMap;
     use std::fs;
+
+    #[test]
+    fn should_compare_tags() -> Result<()> {
+        let v1_0_0 = Tag::from_str("1.0.0", None)?;
+        let v1_1_0 = Tag::from_str("1.1.0", None)?;
+        let v2_1_0 = Tag::from_str("2.1.0", None)?;
+        let v0_1_0 = Tag::from_str("0.1.0", None)?;
+        let v0_2_0 = Tag::from_str("0.2.0", None)?;
+        let v0_0_1 = Tag::from_str("0.0.1", None)?;
+        assert_that!([v1_0_0, v1_1_0, v2_1_0, v0_1_0, v0_2_0, v0_0_1,]
+            .iter()
+            .max())
+        .is_some()
+        .is_equal_to(&Tag::from_str("2.1.0", None)?);
+
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn should_compare_tags_with_prefix() -> Result<()> {
+        Repository::init(".")?;
+        let settings = Settings {
+            tag_prefix: Some("v".to_string()),
+            ..Default::default()
+        };
+        let settings = toml::to_string(&settings)?;
+        fs::write("cog.toml", settings)?;
+
+        let v1_0_0 = Tag::from_str("v1.0.0", None)?;
+        let v1_1_0 = Tag::from_str("v1.1.0", None)?;
+        let v2_1_0 = Tag::from_str("v2.1.0", None)?;
+        let v0_1_0 = Tag::from_str("v0.1.0", None)?;
+        let v0_2_0 = Tag::from_str("v0.2.0", None)?;
+        let v0_0_1 = Tag::from_str("v0.0.1", None)?;
+        assert_that!([v1_0_0, v1_1_0, v2_1_0, v0_1_0, v0_2_0, v0_0_1,]
+            .iter()
+            .max())
+        .is_some()
+        .is_equal_to(&Tag::from_str("2.1.0", None)?);
+
+        Ok(())
+    }
 
     #[test]
     fn should_get_tag_from_str() -> Result<()> {

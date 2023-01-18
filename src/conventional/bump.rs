@@ -56,7 +56,7 @@ impl Bump for Tag {
     }
 
     fn auto_bump(&self, repository: &Repository) -> Result<Self, BumpError> {
-        self.create_version_from_commit_history(repository)
+        self.get_version_from_commit_history(repository)
     }
 
     fn auto_global_bump(
@@ -67,7 +67,7 @@ impl Bump for Tag {
     where
         Self: Sized,
     {
-        let tag_from_history = self.create_monorepo_global_version_from_commit_history(repository);
+        let tag_from_history = self.get_monorepo_global_version_from_commit_history(repository);
         match (package_increment, tag_from_history) {
             (Some(package_increment), Ok(tag_from_history)) => {
                 let tag_from_packages = self.bump(package_increment.into(), repository)?;
@@ -86,7 +86,7 @@ impl Bump for Tag {
     where
         Self: Sized,
     {
-        self.create_package_version_from_commit_history(package, repository)
+        self.get_package_version_from_commit_history(package, repository)
     }
 }
 
@@ -116,10 +116,7 @@ impl Tag {
         self
     }
 
-    fn create_version_from_commit_history(
-        &self,
-        repository: &Repository,
-    ) -> Result<Tag, BumpError> {
+    fn get_version_from_commit_history(&self, repository: &Repository) -> Result<Tag, BumpError> {
         let changelog_start_oid = repository
             .get_latest_tag_oid()
             .ok()
@@ -155,7 +152,7 @@ impl Tag {
         })
     }
 
-    fn create_package_version_from_commit_history(
+    fn get_package_version_from_commit_history(
         &self,
         package: &str,
         repository: &Repository,
@@ -196,7 +193,7 @@ impl Tag {
         })
     }
 
-    fn create_monorepo_global_version_from_commit_history(
+    fn get_monorepo_global_version_from_commit_history(
         &self,
         repository: &Repository,
     ) -> Result<Tag, BumpError> {
@@ -273,16 +270,22 @@ impl Tag {
 
 #[cfg(test)]
 mod test {
+    use crate::conventional::bump::Bump;
     use crate::conventional::commit::Commit;
+    use crate::conventional::error::BumpError;
     use crate::conventional::version::{Increment, IncrementCommand};
     use crate::git::repository::Repository;
     use crate::git::tag::Tag;
+    use crate::settings::{MonoRepoPackage, Settings};
     use anyhow::Result;
     use chrono::Utc;
+    use cmd_lib::run_cmd;
     use conventional_commit_parser::commit::{CommitType, ConventionalCommit};
     use sealed_test::prelude::*;
     use semver::Version;
     use speculoos::prelude::*;
+    use std::collections::HashMap;
+    use std::path::PathBuf;
     use std::str::FromStr;
 
     impl Commit {
@@ -485,5 +488,200 @@ suggestion: Please see https://conventionalcommits.org/en/v1.0.0/#summary for mo
         );
 
         Ok(())
+    }
+
+    #[sealed_test]
+    fn get_global_monorepo_version_from_history_should_fail_with_only_package_commit() -> Result<()>
+    {
+        // Arrange
+        let repository = init_monorepo()?;
+        run_cmd!(
+            echo "feature" > one;
+            git add .;
+            git commit -m "feat: feature package one";
+        )?;
+
+        let base_version = Tag::from_str("0.1.0", None)?;
+
+        // Act
+        let tag = base_version.get_monorepo_global_version_from_commit_history(&repository);
+
+        // Assert
+        assert_that!(tag)
+            .is_err()
+            .matches(|err| matches!(err, BumpError::NoCommitFound));
+
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn monorepo_auto_bump_should_succeed_with_only_package_commits() -> Result<()> {
+        // Arrange
+        let repository = init_monorepo()?;
+        run_cmd!(
+            echo "feature" > one;
+            git add .;
+            git commit -m "feat: feature package one";
+        )?;
+        let base_version = Tag::from_str("0.1.0", None)?;
+
+        // Act
+        let tag = base_version.auto_global_bump(&repository, Some(Increment::Minor))?;
+
+        // Assert
+        assert_that!(tag.version).is_equal_to(Version::new(0, 2, 0));
+
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn monorepo_auto_bump_should_succeed_with_only_global_commits() -> Result<()> {
+        // Arrange
+        let repository = init_monorepo()?;
+
+        run_cmd!(
+            echo "global" > global;
+            git add .;
+            git commit -m "feat: non package commit";
+        )?;
+
+        // Act
+        let tag = Tag::default().auto_global_bump(&repository, None)?;
+
+        // Assert
+        assert_that!(tag.version).is_equal_to(Version::new(0, 1, 0));
+
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn monorepo_auto_bump_should_succeed_selecting_history_bump() -> Result<()> {
+        // Arrange
+        let repository = init_monorepo()?;
+
+        // Patch increment from global commits
+        // Minor increment from package bumps
+        run_cmd!(
+            echo "global" > global;
+            git add .;
+            git commit -m "fix: global fix";
+            echo "feature" > one;
+            git add .;
+            git commit -m "feat: feature 1 package one";
+        )?;
+
+        // Act
+        let tag = Tag::default().auto_global_bump(&repository, Some(Increment::Minor))?;
+
+        // Assert
+        assert_that!(tag.version).is_equal_to(Version::new(0, 1, 0));
+
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn monorepo_auto_bump_should_succeed_selecting_package_bump() -> Result<()> {
+        // Arrange
+        let repository = init_monorepo()?;
+
+        // Minor increment from global commits
+        // Patch increment from package bumps
+        run_cmd!(
+            echo "global" > global;
+            git add .;
+            git commit -m "feat: global fix";
+            echo "feature" > one;
+            git add .;
+            git commit -m "fix: fix 1 package one";
+        )?;
+
+        // Act
+        let tag = Tag::default().auto_global_bump(&repository, Some(Increment::Patch))?;
+
+        // Assert
+        assert_that!(tag.version).is_equal_to(Version::new(0, 1, 0));
+
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn monorepo_auto_bump_should_succeed_with_equals_history_and_package() -> Result<()> {
+        // Arrange
+        let repository = init_monorepo()?;
+
+        // Minor increment from global commits
+        // Minor increment from package bumps
+        run_cmd!(
+            echo "global" > global;
+            git add .;
+            git commit -m "feat: global fix";
+            echo "feature" > one;
+            git add .;
+            git commit -m "feature: package one";
+        )?;
+
+        // Act
+        let tag = Tag::default().auto_global_bump(&repository, Some(Increment::Minor))?;
+
+        // Assert
+        assert_that!(tag.version).is_equal_to(Version::new(0, 1, 0));
+
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn monorepo_auto_bump_should_succeed_with_mixed_commit() -> Result<()> {
+        // Arrange
+        let repository = init_monorepo()?;
+
+        // Minor increment from global commits
+        // Minor increment from package bumps
+        run_cmd!(
+            echo "start" > start;
+            git add .;
+            git commit -m "chore: version";
+            git tag "0.1.0";
+            git tag "one-0.1.0";
+            echo "feature" > one;
+            echo "global" > global;
+            git add .;
+            git commit -m "feature: package one and global";
+        )?;
+
+        // Act
+        let tag =
+            Tag::from_str("0.1.0", None)?.auto_global_bump(&repository, Some(Increment::Minor))?;
+
+        // Assert
+        assert_that!(tag.version).is_equal_to(Version::new(0, 2, 0));
+
+        Ok(())
+    }
+
+    fn init_monorepo() -> Result<Repository> {
+        let repository = Repository::init(".")?;
+        let mut packages = HashMap::new();
+        packages.insert(
+            "one".to_string(),
+            MonoRepoPackage {
+                path: PathBuf::from("one"),
+                ..Default::default()
+            },
+        );
+
+        let settings = Settings {
+            packages,
+            ..Default::default()
+        };
+
+        let settings = toml::to_string(&settings)?;
+
+        run_cmd!(
+            echo $settings > cog.toml;
+            git add .;
+            git commit -m "chore: first commit";
+        )?;
+
+        Ok(repository)
     }
 }

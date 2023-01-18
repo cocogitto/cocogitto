@@ -56,6 +56,7 @@ impl CocoGitto {
             &next_version,
             hooks_config,
             None,
+            None,
         );
 
         self.repository.add_all()?;
@@ -80,6 +81,7 @@ impl CocoGitto {
             current.as_ref(),
             &next_version,
             hooks_config,
+            None,
             None,
         )?;
 

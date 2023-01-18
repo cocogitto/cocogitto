@@ -63,6 +63,7 @@ impl CocoGitto {
             current.as_ref(),
             &next_version,
             hooks_config,
+            Some(package_name),
             Some(package),
         );
 
@@ -84,6 +85,7 @@ impl CocoGitto {
             current.as_ref(),
             &next_version,
             hooks_config,
+            Some(package_name),
             Some(package),
         )?;
 

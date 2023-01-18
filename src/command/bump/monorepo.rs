@@ -104,6 +104,7 @@ impl CocoGitto {
             &next_version,
             hooks_config,
             None,
+            None,
         );
 
         self.repository.add_all()?;
@@ -137,6 +138,7 @@ impl CocoGitto {
                 bump.old_version.as_ref(),
                 &bump.new_version,
                 hooks_config,
+                Some(&bump.package_name),
                 Some(package),
             )?;
         }
@@ -147,6 +149,7 @@ impl CocoGitto {
             current.as_ref(),
             &next_version,
             hooks_config,
+            None,
             None,
         )?;
 
@@ -262,6 +265,7 @@ impl CocoGitto {
                 old_version.as_ref(),
                 &new_version,
                 hooks_config,
+                Some(package_name),
                 Some(package),
             );
 
