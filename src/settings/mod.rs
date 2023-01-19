@@ -234,6 +234,12 @@ impl Settings {
             .as_deref()
             .unwrap_or("package_default");
 
+        let template = match template {
+            "remote" => "package_remote",
+            "full_hash" => "package_full_hash",
+            template => template,
+        };
+
         Template::from_arg(template, context)
     }
 
@@ -244,6 +250,12 @@ impl Settings {
             .template
             .as_deref()
             .unwrap_or("monorepo_default");
+
+        let template = match template {
+            "remote" => "monorepo_remote",
+            "full_hash" => "monorepo_full_hash",
+            template => template,
+        };
 
         Template::from_arg(template, context)
     }
