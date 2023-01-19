@@ -39,12 +39,35 @@ fn monorepo_bump_ok() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result = cocogitto.create_monorepo_version(None, None, false);
+    let result = cocogitto.create_monorepo_version(IncrementCommand::Auto, None, None, false);
 
     // Assert
     assert_that!(result).is_ok();
     assert_tag_exists("0.1.0")?;
     assert_tag_exists("one-0.1.0")?;
+    Ok(())
+}
+
+#[sealed_test]
+fn monorepo_bump_manual_ok() -> Result<()> {
+    // Arrange
+    let mut settings = Settings {
+        ..Default::default()
+    };
+
+    init_monorepo(&mut settings)?;
+    run_cmd!(
+        git tag "one-0.1.0";
+    )?;
+
+    let mut cocogitto = CocoGitto::get()?;
+
+    // Act
+    let result = cocogitto.create_monorepo_version(IncrementCommand::Major, None, None, false);
+
+    // Assert
+    assert_that!(result).is_ok();
+    assert_tag_exists("1.0.0")?;
     Ok(())
 }
 
@@ -61,7 +84,7 @@ fn monorepo_with_tag_prefix_bump_ok() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result = cocogitto.create_monorepo_version(None, None, false);
+    let result = cocogitto.create_monorepo_version(IncrementCommand::Auto, None, None, false);
 
     // Assert
     assert_that!(result).is_ok();

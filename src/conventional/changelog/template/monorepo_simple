@@ -8,10 +8,18 @@
     ## Unreleased ({{ from_shorthand ~ ".." ~ to_shorthand }})
 {% endif -%}
 
+{% if package_lock -%}
+### Packages
+{% for package in packages -%}
+- {{ package.package_name }} locked to {{ package.version.tag }}
+{% endfor -%}
+{% else -%}
 ### Package updates
 {% for package in packages -%}
 - {{ package.package_name }} bumped to {{ package.version.tag }}
 {% endfor -%}
+{% endif -%}
+
 
 ### Global changes
 {% for type, typed_commits in commits | sort(attribute="type")| group_by(attribute="type")-%}

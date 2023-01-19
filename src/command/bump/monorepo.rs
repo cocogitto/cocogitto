@@ -29,8 +29,29 @@ struct PackageBumpData {
     increment: Increment,
 }
 
+struct PackageData {
+    package_name: String,
+    package_path: String,
+    version: Tag,
+}
+
 impl CocoGitto {
     pub fn create_monorepo_version(
+        &mut self,
+        increment: IncrementCommand,
+        pre_release: Option<&str>,
+        hooks_config: Option<&str>,
+        dry_run: bool,
+    ) -> Result<()> {
+        match increment {
+            IncrementCommand::Auto => {
+                self.create_monorepo_version_auto(pre_release, hooks_config, dry_run)
+            }
+            _ => self.create_monorepo_version_manual(increment, pre_release, hooks_config, dry_run),
+        }
+    }
+
+    fn create_monorepo_version_auto(
         &mut self,
         pre_release: Option<&str>,
         hooks_config: Option<&str>,
@@ -76,17 +97,18 @@ impl CocoGitto {
                 package_name: &bump.package_name,
                 package_path: &bump.package_path,
                 version: OidOf::Tag(bump.new_version.prefixed_tag.clone()),
-                from: bump
-                    .old_version
-                    .as_ref()
-                    .map(|v| OidOf::Tag(v.prefixed_tag.clone()))
-                    .unwrap_or_else(|| {
-                        let first = self
-                            .repository
-                            .get_first_commit()
-                            .expect("non empty repository");
-                        OidOf::Other(first)
-                    }),
+                from: Some(
+                    bump.old_version
+                        .as_ref()
+                        .map(|v| OidOf::Tag(v.prefixed_tag.clone()))
+                        .unwrap_or_else(|| {
+                            let first = self
+                                .repository
+                                .get_first_commit()
+                                .expect("non empty repository");
+                            OidOf::Other(first)
+                        }),
+                ),
             })
         }
 
@@ -103,6 +125,7 @@ impl CocoGitto {
             path,
             template,
             ReleaseType::MonoRepo(MonoRepoContext {
+                package_lock: false,
                 packages: template_context,
             }),
         )?;
@@ -166,6 +189,116 @@ impl CocoGitto {
         )?;
 
         Ok(())
+    }
+
+    fn create_monorepo_version_manual(
+        &mut self,
+        increment: IncrementCommand,
+        pre_release: Option<&str>,
+        hooks_config: Option<&str>,
+        dry_run: bool,
+    ) -> Result<()> {
+        self.pre_bump_checks()?;
+        // Get package bumps
+        let bumps = self.get_current_packages()?;
+
+        // Get current global tag
+        let old = self.repository.get_latest_tag();
+        let old = tag_or_fallback_to_zero(old)?;
+        let mut tag = old.bump(increment, &self.repository)?;
+        ensure_tag_is_greater_than_previous(&old, &tag)?;
+
+        if let Some(pre_release) = pre_release {
+            tag.version.pre = Prerelease::new(pre_release)?;
+        }
+
+        let tag = Tag::create(tag.version, None);
+
+        if dry_run {
+            print!("{}", tag);
+            return Ok(());
+        }
+
+        let mut template_context = vec![];
+        for bump in &bumps {
+            template_context.push(PackageBumpContext {
+                package_name: &bump.package_name,
+                package_path: &bump.package_path,
+                version: OidOf::Tag(bump.version.clone()),
+                from: None,
+            })
+        }
+
+        let pattern = self.get_revspec_for_tag(&old)?;
+        let changelog =
+            self.get_monorepo_global_changelog_with_target_version(pattern, tag.clone())?;
+
+        changelog.pretty_print_bump_summary()?;
+
+        let path = settings::changelog_path();
+        let template = SETTINGS.get_monorepo_changelog_template()?;
+
+        changelog.write_to_file(
+            path,
+            template,
+            ReleaseType::MonoRepo(MonoRepoContext {
+                package_lock: true,
+                packages: template_context,
+            }),
+        )?;
+
+        let current = self.repository.get_latest_tag().map(HookVersion::new).ok();
+        let next_version = HookVersion::new(tag.clone());
+
+        let hook_result = self.run_hooks(
+            HookType::PreBump,
+            current.as_ref(),
+            &next_version,
+            hooks_config,
+            None,
+            None,
+        );
+
+        self.repository.add_all()?;
+
+        if let Err(err) = hook_result {
+            self.stash_failed_version(&tag, err)?;
+        }
+
+        let sign = self.repository.gpg_sign();
+        self.repository.commit(
+            &format!("chore(version): {}", next_version.prefixed_tag),
+            sign,
+        )?;
+
+        self.repository.create_tag(&tag)?;
+
+        // Run global post hooks
+        self.run_hooks(
+            HookType::PostBump,
+            current.as_ref(),
+            &next_version,
+            hooks_config,
+            None,
+            None,
+        )?;
+
+        Ok(())
+    }
+
+    fn get_current_packages(&self) -> Result<Vec<PackageData>> {
+        let mut packages = vec![];
+        for (package_name, package) in SETTINGS.packages.iter() {
+            let tag = self.repository.get_latest_package_tag(package_name);
+            let tag = tag_or_fallback_to_zero(tag)?;
+            packages.push(PackageData {
+                package_name: package_name.to_string(),
+                package_path: package.path.to_string_lossy().to_string(),
+                version: tag,
+            })
+        }
+
+        Ok(packages)
     }
 
     // Calculate all package bump

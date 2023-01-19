@@ -12,6 +12,14 @@
     ## Unreleased ([{{ from_shorthand ~ ".." ~ to_shorthand }}]({{repository_url ~ "/compare/" ~ from_shorthand ~ ".." ~ to_shorthand}}))
 {% endif -%}
 
+{% if package_lock -%}
+### Packages
+{% for package in packages -%}
+{% if package.version.tag -%}
+- [{{ package.version.tag }}]({{ package.package_path }}) locked to [{{ package.version.tag }}]({{repository_url ~ "/tree/" ~ package.version.tag }})
+{% endif -%}
+{% endfor -%}
+{% else -%}
 ### Package updates
 {% for package in packages -%}
 {% if package.version.tag and package.from.tag -%}
@@ -19,15 +27,9 @@
 {% elif package.version.tag and package.from.id -%}
 - [{{ package.package_name }}]({{ package.package_path }}) bumped to [{{ package.version.tag }}]({{repository_url ~ "/compare/" ~ package.from.id ~ ".." ~ package.version.tag}})
 {% else -%}
-    {% set from = package.from.id -%}
-    {% set to = package.version.id -%}
-
-    {% set from_shorthand = from.id | truncate(length=7, end="") -%}
-    {% set to_shorthand = version.id | truncate(length=7, end="") -%}
-
-    ## Unreleased ([{{ from_shorthand ~ ".." ~ to_shorthand }}]({{repository_url ~ "/compare/" ~ from_shorthand ~ ".." ~ to_shorthand}}))
 {% endif -%}
 {% endfor -%}
+{% endif -%}
 
 ### Global changes
 {% for type, typed_commits in commits | sort(attribute="type")| group_by(attribute="type")-%}

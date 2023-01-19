@@ -11,7 +11,7 @@ use cocogitto::log::filter::{CommitFilter, CommitFilters};
 use cocogitto::log::output::Output;
 use cocogitto::{CocoGitto, SETTINGS};
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result};
 use clap::builder::{PossibleValue, PossibleValuesParser};
 use clap::{ArgAction, ArgGroup, Args, CommandFactory, Parser, Subcommand, ValueEnum};
 use clap_complete::{shells, Generator};
@@ -318,7 +318,6 @@ fn main() -> Result<()> {
             let increment = match version {
                 Some(version) => IncrementCommand::Manual(version),
                 None if auto => IncrementCommand::Auto,
-                None if auto => IncrementCommand::Auto,
                 None if major => IncrementCommand::Major,
                 None if minor => IncrementCommand::Minor,
                 None if patch => IncrementCommand::Patch,
@@ -328,24 +327,24 @@ fn main() -> Result<()> {
             let is_monorepo = !SETTINGS.packages.is_empty();
 
             if is_monorepo {
-                if increment == IncrementCommand::Auto && package.is_none() {
-                    cocogitto.create_monorepo_version(
-                        pre.as_deref(),
-                        hook_profile.as_deref(),
-                        dry_run,
-                    )?
-                } else if let Some(package_name) = package {
-                    // Safe unwrap here, package name is validated by clap
-                    let package = SETTINGS.packages.get(&package_name).unwrap();
-                    cocogitto.create_package_version(
-                        (&package_name, package),
+                match package {
+                    Some(package_name) => {
+                        // Safe unwrap here, package name is validated by clap
+                        let package = SETTINGS.packages.get(&package_name).unwrap();
+                        cocogitto.create_package_version(
+                            (&package_name, package),
+                            increment,
+                            pre.as_deref(),
+                            hook_profile.as_deref(),
+                            dry_run,
+                        )?
+                    }
+                    None => cocogitto.create_monorepo_version(
                         increment,
                         pre.as_deref(),
                         hook_profile.as_deref(),
                         dry_run,
-                    )?
-                } else {
-                    bail!("Cannot bump monorepo manually, use `--package` to update a specific package.")
+                    )?,
                 }
             } else {
                 cocogitto.create_version(

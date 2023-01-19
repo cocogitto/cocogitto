@@ -254,6 +254,41 @@ mod test {
     }
 
     #[test]
+    fn should_render_template_monorepo_for_manual_bump() -> Result<()> {
+        // Arrange
+        let release = Release::fixture();
+        let renderer = Renderer::try_new(Template {
+            remote_context: None,
+            kind: TemplateKind::MonorepoDefault,
+        })?;
+
+        let mut renderer = monorepo_manual_bump_rendered(renderer)?;
+
+        // Act
+        let changelog = renderer.render(release)?;
+
+        // Assert
+        assert_eq!(
+            changelog,
+            indoc! {
+                "## 1.0.0 - 2015-09-05
+                ### Packages
+                - one locked to 0.1.0
+                - two locked to 0.2.0
+                ### Global changes
+                #### Bug Fixes
+                - **(parser)** fix parser implementation - (17f7e23) - *oknozor*
+                #### Features
+                - **(parser)** implement the changelog generator - (17f7e23) - *oknozor*
+                - awesome feature - (17f7e23) - Paul Delafosse
+                "
+            }
+        );
+
+        Ok(())
+    }
+
+    #[test]
     fn should_render_full_hash_template_monorepo() -> Result<()> {
         // Arrange
         let release = Release::fixture();
@@ -274,6 +309,41 @@ mod test {
                 "### Package updates
                 - one bumped to 0.1.0
                 - two bumped to 0.2.0
+                ### Global changes
+                #### Bug Fixes
+                - 17f7e23081db15e9318aeb37529b1d473cf41cbe - **(parser)** fix parser implementation - @oknozor
+                #### Features
+                - 17f7e23081db15e9318aeb37529b1d473cf41cbe - **(parser)** implement the changelog generator - @oknozor
+                - 17f7e23081db15e9318aeb37529b1d473cf41cbe - awesome feature - Paul Delafosse
+
+                "
+            }
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn should_render_full_hash_template_manual_monorepo() -> Result<()> {
+        // Arrange
+        let release = Release::fixture();
+        let renderer = Renderer::try_new(Template {
+            remote_context: None,
+            kind: TemplateKind::MonorepoFullHash,
+        })?;
+
+        let mut renderer = monorepo_manual_bump_rendered(renderer)?;
+
+        // Act
+        let changelog = renderer.render(release)?;
+
+        // Assert
+        assert_eq!(
+            changelog,
+            indoc! {
+                "### Packages
+                - one locked to 0.1.0
+                - two locked to 0.2.0
                 ### Global changes
                 #### Bug Fixes
                 - 17f7e23081db15e9318aeb37529b1d473cf41cbe - **(parser)** fix parser implementation - @oknozor
@@ -424,6 +494,45 @@ mod test {
         Ok(())
     }
 
+    #[test]
+    fn should_render_remote_template_monorepo_for_manual_bump() -> Result<()> {
+        // Arrange
+        let release = Release::fixture();
+        let renderer = Renderer::try_new(Template {
+            remote_context: RemoteContext::try_new(
+                Some("github.com".into()),
+                Some("cocogitto".into()),
+                Some("cocogitto".into()),
+            ),
+            kind: TemplateKind::MonorepoRemote,
+        })?;
+
+        let mut renderer = monorepo_manual_bump_rendered(renderer)?;
+
+        // Act
+        let changelog = renderer.render(release)?;
+
+        // Assert
+        assert_eq!(
+            changelog,
+            indoc! {
+                "## [1.0.0](https://github.com/cocogitto/cocogitto/compare/0.1.0..1.0.0) - 2015-09-05
+                ### Packages
+                - [0.1.0](crates/one) locked to [0.1.0](https://github.com/cocogitto/cocogitto/tree/0.1.0)
+                - [0.2.0](crates/two) locked to [0.2.0](https://github.com/cocogitto/cocogitto/tree/0.2.0)
+                ### Global changes
+                #### Bug Fixes
+                - **(parser)** fix parser implementation - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
+                #### Features
+                - **(parser)** implement the changelog generator - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
+                - awesome feature - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - Paul Delafosse
+                "
+            }
+        );
+
+        Ok(())
+    }
+
     impl Release<'_> {
         pub fn fixture() -> Release<'static> {
             let date =
@@ -514,6 +623,7 @@ mod test {
 
     fn monorepo_renderer(renderer: Renderer) -> Result<Renderer> {
         let renderer = renderer.with_monorepo_context(MonoRepoContext {
+            package_lock: false,
             packages: vec![
                 PackageBumpContext {
                     package_name: "one",
@@ -522,10 +632,10 @@ mod test {
                         "0.1.0",
                         Some(Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap()),
                     )?),
-                    from: OidOf::Tag(Tag::from_str(
+                    from: Some(OidOf::Tag(Tag::from_str(
                         "0.2.0",
                         Some(Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap()),
-                    )?),
+                    )?)),
                 },
                 PackageBumpContext {
                     package_name: "two",
@@ -534,10 +644,38 @@ mod test {
                         "0.2.0",
                         Some(Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap()),
                     )?),
-                    from: OidOf::Tag(Tag::from_str(
+                    from: Some(OidOf::Tag(Tag::from_str(
                         "0.3.0",
                         Some(Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap()),
+                    )?)),
+                },
+            ],
+        });
+
+        Ok(renderer)
+    }
+
+    fn monorepo_manual_bump_rendered(renderer: Renderer) -> Result<Renderer> {
+        let renderer = renderer.with_monorepo_context(MonoRepoContext {
+            package_lock: true,
+            packages: vec![
+                PackageBumpContext {
+                    package_name: "one",
+                    package_path: "crates/one",
+                    version: OidOf::Tag(Tag::from_str(
+                        "0.1.0",
+                        Some(Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap()),
                     )?),
+                    from: None,
+                },
+                PackageBumpContext {
+                    package_name: "two",
+                    package_path: "crates/two",
+                    version: OidOf::Tag(Tag::from_str(
+                        "0.2.0",
+                        Some(Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap()),
+                    )?),
+                    from: None,
                 },
             ],
         });
