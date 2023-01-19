@@ -52,12 +52,17 @@ impl CocoGitto {
         match result {
             Ok(res) => res,
             Err(err) => {
-                self.repository.stash_failed_version(tag.clone()).expect("stash");
-                error!( "{}", BumpError {
-                    cause: err.to_string(),
-                    version: tag.to_string(),
-                    stash_number: 0,
-                });
+                self.repository
+                    .stash_failed_version(tag.clone())
+                    .expect("stash");
+                error!(
+                    "{}",
+                    BumpError {
+                        cause: err.to_string(),
+                        version: tag.to_string(),
+                        stash_number: 0,
+                    }
+                );
 
                 exit(1);
             }

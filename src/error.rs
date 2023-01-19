@@ -34,13 +34,13 @@ impl Display for CogCheckReport {
 
 // This is not meant to be unwrapped like other errors
 // just to emit a warning on hook failure
-pub(crate) struct PreHookError {
+pub(crate) struct BumpError {
     pub(crate) cause: String,
     pub(crate) version: String,
     pub(crate) stash_number: u32,
 }
 
-impl Display for PreHookError {
+impl Display for BumpError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let header = format!(
             "Error: {} `{}` {}",

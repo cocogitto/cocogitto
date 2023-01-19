@@ -201,7 +201,7 @@ pub fn verify(
 
     let msg = msg.trim();
 
-    if msg.starts_with("Merge ") && ignore_merge_commit {
+    if (msg.starts_with("Merge ") || msg.starts_with("Pull request")) && ignore_merge_commit {
         info!("{}", "Merge commit was ignored".yellow());
         return Ok(());
     }

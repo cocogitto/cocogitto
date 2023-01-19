@@ -9,7 +9,7 @@ use lazy_static::lazy_static;
 
 use conventional::commit::{Commit, CommitConfig};
 use conventional::version::IncrementCommand;
-use error::PreHookError;
+use error::BumpError;
 use git::repository::Repository;
 
 use settings::{HookType, Settings};

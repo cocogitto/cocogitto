@@ -5,7 +5,7 @@ use serde::Serialize;
 use crate::conventional::commit::Commit;
 use crate::git::oid::OidOf;
 use crate::git::revspec::CommitRange;
-use crate::settings;
+use crate::{settings, SETTINGS};
 use colored::Colorize;
 use git2::Oid;
 use log::warn;
@@ -55,10 +55,8 @@ impl<'a> From<CommitRange<'a>> for Release<'a> {
 
         for commit in commit_range.commits {
             // Ignore merge commits
-            if let Some(message) = commit.message() {
-                if message.starts_with("Merge") {
-                    continue;
-                }
+            if commit.parent_count() > 1 && SETTINGS.ignore_merge_commits {
+                continue;
             }
 
             match Commit::from_git_commit(&commit) {

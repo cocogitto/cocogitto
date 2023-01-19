@@ -1,6 +1,6 @@
 use crate::conventional::error::BumpError;
 use crate::conventional::version::Increment;
-use crate::{Commit, IncrementCommand, Repository, RevspecPattern, Tag};
+use crate::{Commit, IncrementCommand, Repository, RevspecPattern, Tag, SETTINGS};
 use conventional_commit_parser::commit::CommitType;
 use git2::Commit as Git2Commit;
 use semver::{BuildMetadata, Prerelease, Version};
@@ -134,7 +134,13 @@ impl Tag {
         let commits: Vec<&Git2Commit> = commits
             .commits
             .iter()
-            .filter(|commit| !commit.message().unwrap_or("").starts_with("Merge "))
+            .filter(|commit| {
+                if SETTINGS.ignore_merge_commits {
+                    commit.parent_count() <= 1
+                } else {
+                    true
+                }
+            })
             .collect();
 
         let conventional_commits: Vec<Commit> = commits
@@ -175,7 +181,13 @@ impl Tag {
         let commits: Vec<&Git2Commit> = commits
             .commits
             .iter()
-            .filter(|commit| !commit.message().unwrap_or("").starts_with("Merge "))
+            .filter(|commit| {
+                if SETTINGS.ignore_merge_commits {
+                    commit.parent_count() <= 1
+                } else {
+                    true
+                }
+            })
             .collect();
 
         let conventional_commits: Vec<Commit> = commits
@@ -215,7 +227,13 @@ impl Tag {
         let commits: Vec<&Git2Commit> = commits
             .commits
             .iter()
-            .filter(|commit| !commit.message().unwrap_or("").starts_with("Merge "))
+            .filter(|commit| {
+                if SETTINGS.ignore_merge_commits {
+                    commit.parent_count() <= 1
+                } else {
+                    true
+                }
+            })
             .collect();
 
         let conventional_commits: Vec<Commit> = commits

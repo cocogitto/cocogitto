@@ -1,6 +1,7 @@
 use crate::helpers::*;
 
 use anyhow::Result;
+use cmd_lib::run_cmd;
 use cocogitto::CocoGitto;
 use sealed_test::prelude::*;
 use speculoos::prelude::*;
@@ -69,7 +70,14 @@ fn check_commit_history_ok_with_merge_commit_ignored() -> Result<()> {
     // Arrange
     git_init()?;
     git_commit("feat: a valid commit")?;
-    git_commit("Merge feature one into main")?;
+    run_cmd!(git checkout -b branch;)?;
+    git_commit("feat: commit on another branch")?;
+    run_cmd!(
+        git checkout -;
+        git merge branch --no-ff;
+        git --no-pager log;
+    )?;
+
     let cocogitto = CocoGitto::get()?;
 
     // Act

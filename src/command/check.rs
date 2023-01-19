@@ -20,7 +20,7 @@ impl CocoGitto {
             commit_range
                 .commits
                 .iter()
-                .filter(|commit| !commit.message().unwrap_or("").starts_with("Merge "))
+                .filter(|commit| commit.parent_count() <= 1)
                 .map(Commit::from_git_commit)
                 .filter_map(Result::err)
                 .collect()
