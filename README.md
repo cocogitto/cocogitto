@@ -46,7 +46,7 @@
 
 **The Conventional Commits toolbox**
 
-- **Verified commits️:** create conventional compliant commits with ease.
+- **Verified commits:** create conventional compliant commits with ease.
 - **Automatic Version bump and changelog:** automatically bump versions and generate changelogs with your own custom steps
   and workflows.
 - **Release profiles:** your branching model requires different steps for releases, pre-release, hotfixes ? We got you
@@ -54,6 +54,7 @@
 - **Depends only on libgit2:** cocogitto has one standalone binary, the only system dependency is libgit2.
 - **Conventional git log:** search your commit history matching Conventional Commits items such as scope and commit type.
 - **GitHub integration:** enforce the conventional commits specification with our GitHub action and bot.
+- **Monorepo support:** Automatic versioning for mono-repositories is supported out of the box.
 
 <p align="center">
 <a href="https://docs.cocogitto.io/"><strong>Explore Cocogitto's docs&nbsp;&nbsp;▶</strong></a>
