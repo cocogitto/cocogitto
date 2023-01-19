@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use cocogitto::conventional::changelog::template::{RemoteContext, Template};
 use cocogitto::conventional::commit as conv_commit;
-use cocogitto::conventional::version::VersionIncrement;
+use cocogitto::conventional::version::IncrementCommand;
 use cocogitto::git::hook::HookKind;
 use cocogitto::git::revspec::RevspecPattern;
 use cocogitto::log::filter::{CommitFilter, CommitFilters};
@@ -22,6 +22,12 @@ fn hook_profiles() -> PossibleValuesParser {
         .bump_profiles
         .keys()
         .map(|profile| -> &str { profile });
+
+    profiles.into()
+}
+
+fn packages() -> PossibleValuesParser {
+    let profiles = SETTINGS.packages.keys().map(|profile| -> &str { profile });
 
     profiles.into()
 }
@@ -230,6 +236,10 @@ enum Command {
         #[arg(short = 'H', long, value_parser = hook_profiles())]
         hook_profile: Option<String>,
 
+        /// Specify which package to bump for monorepo
+        #[arg(long, value_parser = packages())]
+        package: Option<String>,
+
         /// Dry-run: print the target version. No action taken
         #[arg(short, long)]
         dry_run: bool,
@@ -300,20 +310,50 @@ fn main() -> Result<()> {
             patch,
             pre,
             hook_profile,
+            package,
             dry_run,
         } => {
             let mut cocogitto = CocoGitto::get()?;
 
             let increment = match version {
-                Some(version) => VersionIncrement::Manual(version),
-                None if auto => VersionIncrement::Auto,
-                None if major => VersionIncrement::Major,
-                None if minor => VersionIncrement::Minor,
-                None if patch => VersionIncrement::Patch,
+                Some(version) => IncrementCommand::Manual(version),
+                None if auto => IncrementCommand::Auto,
+                None if major => IncrementCommand::Major,
+                None if minor => IncrementCommand::Minor,
+                None if patch => IncrementCommand::Patch,
                 _ => unreachable!(),
             };
 
-            cocogitto.create_version(increment, pre.as_deref(), hook_profile.as_deref(), dry_run)?
+            let is_monorepo = !SETTINGS.packages.is_empty();
+
+            if is_monorepo {
+                match package {
+                    Some(package_name) => {
+                        // Safe unwrap here, package name is validated by clap
+                        let package = SETTINGS.packages.get(&package_name).unwrap();
+                        cocogitto.create_package_version(
+                            (&package_name, package),
+                            increment,
+                            pre.as_deref(),
+                            hook_profile.as_deref(),
+                            dry_run,
+                        )?
+                    }
+                    None => cocogitto.create_monorepo_version(
+                        increment,
+                        pre.as_deref(),
+                        hook_profile.as_deref(),
+                        dry_run,
+                    )?,
+                }
+            } else {
+                cocogitto.create_version(
+                    increment,
+                    pre.as_deref(),
+                    hook_profile.as_deref(),
+                    dry_run,
+                )?
+            }
         }
         Command::Verify {
             message,
@@ -421,7 +461,7 @@ fn main() -> Result<()> {
             println!("{}", result);
         }
         Command::Init { path } => {
-            cocogitto::init(&path)?;
+            cocogitto::command::init::init(&path)?;
         }
         Command::InstallHook { hook_type } => {
             let cocogitto = CocoGitto::get()?;
@@ -466,6 +506,7 @@ fn main() -> Result<()> {
         }
     }
 
+    println!();
     Ok(())
 }
 

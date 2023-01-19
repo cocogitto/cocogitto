@@ -1,0 +1,27 @@
+{% for type, typed_commits in commits | sort(attribute="type")| group_by(attribute="type") -%}
+#### {{ type | upper_first }}
+{% for scope, scoped_commits in typed_commits | group_by(attribute="scope") -%}
+
+{% for commit in scoped_commits | sort(attribute="scope") -%}
+    {% if commit.author -%}
+        {% set author = "@" ~ commit.author -%}
+    {% else -%}
+        {% set author = commit.signature -%}
+    {% endif -%}
+    - {{ commit.id }} - **({{ scope }})** {{ commit.summary }} - {{ author }}
+{% endfor -%}
+
+{% endfor -%}
+
+{% for commit in typed_commits | unscoped -%}
+
+    {% if commit.author -%}
+        {% set author = "@" ~ commit.author -%}
+    {% else -%}
+        {% set author = commit.signature -%}
+    {% endif -%}
+        - {{ commit.id }} - {{ commit.summary }} - {{ author }}
+
+{% endfor -%}
+
+{% endfor -%}

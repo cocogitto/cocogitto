@@ -1,4 +1,5 @@
-use std::path::Path;
+use std::collections::HashMap;
+use std::path::{Path, PathBuf};
 
 use anyhow::anyhow;
 use anyhow::Result;
@@ -7,7 +8,34 @@ use speculoos::assert_that;
 use speculoos::iter::ContainingIntoIterAssertions;
 use speculoos::option::OptionAssertions;
 
+use cocogitto::settings::{MonoRepoPackage, Settings};
 use cocogitto::CONFIG_PATH;
+
+pub fn init_monorepo(settings: &mut Settings) -> Result<()> {
+    let mut packages = HashMap::new();
+    packages.insert(
+        "one".to_string(),
+        MonoRepoPackage {
+            path: PathBuf::from("one"),
+            ..Default::default()
+        },
+    );
+    settings.packages = packages;
+    let settings = toml::to_string(&settings)?;
+
+    git_init()?;
+    run_cmd!(
+        echo $settings > cog.toml;
+        git add .;
+        git commit -m "chore: first commit";
+        mkdir one;
+        echo "changes" > one/file;
+        git add .;
+        git commit -m "feat: package one feature";
+    )?;
+
+    Ok(())
+}
 
 /// - Init a repository in the current directory
 /// - Setup a local git user named Tom <toml.bombadil@themail.org>
@@ -77,14 +105,14 @@ pub fn git_tag(tag: &str) -> Result<()> {
 pub fn assert_tag_exists(tag: &str) -> Result<()> {
     let tags = run_fun!(git --no-pager tag)?;
     let tags: Vec<&str> = tags.split('\n').collect();
-    assert_that!(tags).contains(&tag);
+    assert_that!(tags).contains(tag);
     Ok(())
 }
 
 pub fn assert_tag_does_not_exist(tag: &str) -> Result<()> {
     let tags = run_fun!(git --no-pager tag)?;
     let tags: Vec<&str> = tags.split('\n').collect();
-    assert_that!(tags).does_not_contain(&tag);
+    assert_that!(tags).does_not_contain(tag);
     Ok(())
 }
 

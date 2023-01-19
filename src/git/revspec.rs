@@ -8,6 +8,7 @@ use crate::git::error::Git2Error;
 use crate::git::oid::OidOf;
 use crate::git::repository::Repository;
 use crate::git::tag::Tag;
+use crate::SETTINGS;
 
 #[derive(Debug)]
 pub struct CommitRange<'repo> {
@@ -210,6 +211,92 @@ impl Repository {
         Ok(CommitRange { from, to, commits })
     }
 
+    pub fn get_commit_range_for_package(
+        &self,
+        pattern: &RevspecPattern,
+        package: &str,
+    ) -> Result<CommitRange, Git2Error> {
+        let mut commit_range = self.get_commit_range(pattern)?;
+        let mut commits = vec![];
+        let package = SETTINGS.packages.get(package).expect("package exists");
+        for commit in commit_range.commits {
+            let parent = commit.parent(0)?.id().to_string();
+            let t1 = self
+                .tree_to_treeish(Some(&parent))?
+                .expect("Failed to get parent tree");
+
+            let t2 = self
+                .tree_to_treeish(Some(&commit.id().to_string()))?
+                .expect("Failed to get commit tree");
+
+            let diff = self.0.diff_tree_to_tree(t1.as_tree(), t2.as_tree(), None)?;
+
+            for delta in diff.deltas() {
+                if let Some(old) = delta.old_file().path() {
+                    if old.starts_with(&package.path) {
+                        commits.push(commit);
+                        break;
+                    }
+                }
+
+                if let Some(new) = delta.new_file().path() {
+                    if new.starts_with(&package.path) {
+                        commits.push(commit);
+                        break;
+                    }
+                }
+            }
+        }
+
+        commit_range.commits = commits;
+        Ok(commit_range)
+    }
+
+    pub fn get_commit_range_for_monorepo_global(
+        &self,
+        pattern: &RevspecPattern,
+    ) -> Result<CommitRange, Git2Error> {
+        let mut commit_range = self.get_commit_range(pattern)?;
+        let mut commits = vec![];
+        let package_paths: Vec<_> = SETTINGS
+            .packages
+            .values()
+            .map(|package| &package.path)
+            .collect();
+
+        for commit in commit_range.commits {
+            let parent = commit.parent(0)?.id().to_string();
+            let t1 = self
+                .tree_to_treeish(Some(&parent))?
+                .expect("Failed to get parent tree");
+
+            let t2 = self
+                .tree_to_treeish(Some(&commit.id().to_string()))?
+                .expect("Failed to get commit tree");
+
+            let diff = self.0.diff_tree_to_tree(t1.as_tree(), t2.as_tree(), None)?;
+
+            for delta in diff.deltas() {
+                if let Some(old) = delta.old_file().path() {
+                    if package_paths.iter().all(|path| !old.starts_with(path)) {
+                        commits.push(commit);
+                        break;
+                    }
+                }
+
+                if let Some(new) = delta.new_file().path() {
+                    if package_paths.iter().all(|path| !new.starts_with(path)) {
+                        commits.push(commit);
+                        break;
+                    }
+                }
+            }
+        }
+
+        commit_range.commits = commits;
+        Ok(commit_range)
+    }
+
     fn resolve_oid_of(&self, from: &str) -> OidOf {
         // either we have a tag name
         self.resolve_tag(from)
@@ -281,7 +368,7 @@ impl Repository {
                 };
 
                 if range.contains(&oid) {
-                    if let Ok(tag) = Tag::new(name, Some(oid)) {
+                    if let Ok(tag) = Tag::from_str(name, Some(oid)) {
                         tags.push(tag);
                     };
                 };
@@ -303,11 +390,14 @@ mod test {
     use git2::Oid;
     use sealed_test::prelude::*;
     use speculoos::prelude::*;
+    use std::collections::HashMap;
+    use std::path::PathBuf;
 
     use crate::git::oid::OidOf;
     use crate::git::repository::Repository;
     use crate::git::revspec::RevspecPattern;
     use crate::git::tag::Tag;
+    use crate::settings::{MonoRepoPackage, Settings};
 
     const COCOGITTO_REPOSITORY: &str = env!("CARGO_MANIFEST_DIR");
 
@@ -432,6 +522,50 @@ mod test {
     }
 
     #[sealed_test]
+    fn get_package_commit_range() -> Result<()> {
+        // Arrange
+        let repo = Repository::init(".")?;
+        let mut packages = HashMap::new();
+        packages.insert(
+            "one".to_string(),
+            MonoRepoPackage {
+                path: PathBuf::from("one"),
+                ..Default::default()
+            },
+        );
+
+        let settings = Settings {
+            packages,
+            ..Default::default()
+        };
+
+        let settings = toml::to_string(&settings)?;
+
+        run_cmd!(
+            git init;
+            echo $settings > cog.toml;
+            git add .;
+            git commit -m "chore: First commit";
+            mkdir one;
+            echo changes > one/file;
+            git add .;
+            git commit -m "feat: package one";
+            echo changes > global;
+            git add .;
+            git commit -m "feat: global change";
+        )?;
+
+        let commit_range_package =
+            repo.get_commit_range_for_package(&RevspecPattern::from("..HEAD"), "one")?;
+        let commit_range_global =
+            repo.get_commit_range_for_monorepo_global(&RevspecPattern::from("..HEAD"))?;
+
+        assert_that!(commit_range_package.commits).has_length(1);
+        assert_that!(commit_range_global.commits).has_length(1);
+        Ok(())
+    }
+
+    #[sealed_test]
     fn get_tag_commits() -> Result<()> {
         // Arrange
         let repo = Repository::init(".")?;
@@ -465,9 +599,9 @@ mod test {
         // Arrange
         let repo = Repository::open(COCOGITTO_REPOSITORY)?;
         let v1_0_0 = Oid::from_str("549070fa99986b059cbaa9457b6b6f065bbec46b")?;
-        let v1_0_0 = OidOf::Tag(Tag::new("1.0.0", Some(v1_0_0))?);
+        let v1_0_0 = OidOf::Tag(Tag::from_str("1.0.0", Some(v1_0_0))?);
         let v3_0_0 = Oid::from_str("c6508e243e2816e2d2f58828ee0c6721502958dd")?;
-        let v3_0_0 = OidOf::Tag(Tag::new("3.0.0", Some(v3_0_0))?);
+        let v3_0_0 = OidOf::Tag(Tag::from_str("3.0.0", Some(v3_0_0))?);
 
         // Act
         let range = repo.get_commit_range(&RevspecPattern::from("1.0.0..3.0.0"))?;
@@ -495,7 +629,7 @@ mod test {
         };
 
         let v1_0_0 = Oid::from_str("549070fa99986b059cbaa9457b6b6f065bbec46b")?;
-        let v1_0_0 = OidOf::Tag(Tag::new("1.0.0", Some(v1_0_0))?);
+        let v1_0_0 = OidOf::Tag(Tag::from_str("1.0.0", Some(v1_0_0))?);
 
         // Act
         let range = repo.get_commit_range(&RevspecPattern::from("1.0.0.."))?;
@@ -538,9 +672,9 @@ mod test {
         // Arrange
         let repo = Repository::open(COCOGITTO_REPOSITORY)?;
         let v2_1_1 = Oid::from_str("9dcf728d2eef6b5986633dd52ecbe9e416234898")?;
-        let v2_1_1 = OidOf::Tag(Tag::new("2.1.1", Some(v2_1_1))?);
+        let v2_1_1 = OidOf::Tag(Tag::from_str("2.1.1", Some(v2_1_1))?);
         let v3_0_0 = Oid::from_str("c6508e243e2816e2d2f58828ee0c6721502958dd")?;
-        let v3_0_0 = OidOf::Tag(Tag::new("3.0.0", Some(v3_0_0))?);
+        let v3_0_0 = OidOf::Tag(Tag::from_str("3.0.0", Some(v3_0_0))?);
 
         // Act
         let range = repo.get_commit_range(&RevspecPattern::from("..3.0.0"))?;
@@ -671,7 +805,7 @@ mod test {
             .map(|commit| commit.commit.oid.to_string())
             .collect();
 
-        assert_that!(head_to_v1).is_equal_to(vec![three.clone()]);
+        assert_that!(head_to_v1).is_equal_to(vec![three]);
         assert_that!(commit_before_v1).is_equal_to(vec![two, one, from]);
 
         Ok(())

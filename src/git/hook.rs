@@ -1,17 +1,43 @@
+use std::collections::HashMap;
 use std::fs::{self, Permissions};
 use std::io;
 #[cfg(target_family = "unix")]
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 
-use crate::CocoGitto;
+use crate::{CocoGitto, HookType};
 
+use crate::settings::BumpProfile;
 use anyhow::{anyhow, Result};
 
 pub(crate) static PRE_PUSH_HOOK: &[u8] = include_bytes!("assets/pre-push");
 pub(crate) static PREPARE_COMMIT_HOOK: &[u8] = include_bytes!("assets/commit-msg");
 const PRE_COMMIT_HOOK_PATH: &str = ".git/hooks/commit-msg";
 const PRE_PUSH_HOOK_PATH: &str = ".git/hooks/pre-push";
+
+pub trait Hooks {
+    fn bump_profiles(&self) -> &HashMap<String, BumpProfile>;
+    fn pre_bump_hooks(&self) -> &Vec<String>;
+    fn post_bump_hooks(&self) -> &Vec<String>;
+
+    fn get_hooks(&self, hook_type: HookType) -> &Vec<String> {
+        match hook_type {
+            HookType::PreBump => self.pre_bump_hooks(),
+            HookType::PostBump => self.post_bump_hooks(),
+        }
+    }
+
+    fn get_profile_hooks(&self, profile: &str, hook_type: HookType) -> &Vec<String> {
+        let profile = self
+            .bump_profiles()
+            .get(profile)
+            .expect("Bump profile not found");
+        match hook_type {
+            HookType::PreBump => &profile.pre_bump_hooks,
+            HookType::PostBump => &profile.post_bump_hooks,
+        }
+    }
+}
 
 pub enum HookKind {
     PrepareCommit,

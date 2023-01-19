@@ -3,11 +3,14 @@ use std::collections::HashMap;
 use tera::{get_json_pointer, to_value, try_get_value, Context, Tera, Value};
 
 use crate::conventional::changelog::release::Release;
-use crate::conventional::changelog::template::{RemoteContext, Template};
+use crate::conventional::changelog::template::{
+    MonoRepoContext, PackageContext, RemoteContext, Template, ToContext,
+};
 
 #[derive(Debug)]
 pub struct Renderer {
     tera: Tera,
+    context: Context,
     template: Template,
 }
 
@@ -27,10 +30,24 @@ impl Renderer {
         tera.register_filter("upper_first", Self::upper_first_filter);
         tera.register_filter("unscoped", Self::unscoped);
 
-        Ok(Renderer { tera, template })
+        Ok(Renderer {
+            tera,
+            context: Context::new(),
+            template,
+        })
     }
 
-    pub(crate) fn render(&self, version: Release) -> Result<String, tera::Error> {
+    pub(crate) fn with_package_context(mut self, context: PackageContext) -> Self {
+        self.context.extend(context.to_context());
+        self
+    }
+
+    pub(crate) fn with_monorepo_context(mut self, context: MonoRepoContext) -> Self {
+        self.context.extend(context.to_context());
+        self
+    }
+
+    pub(crate) fn render(&mut self, version: Release) -> Result<String, tera::Error> {
         let mut release = self.render_release(&version)?;
         let mut version = version;
         while let Some(previous) = version.previous.map(|v| *v) {
@@ -41,20 +58,21 @@ impl Renderer {
 
         Ok(release)
     }
-    fn render_release(&self, version: &Release) -> Result<String, tera::Error> {
-        let mut template_context = Context::from_serialize(version)?;
+
+    fn render_release(&mut self, version: &Release) -> Result<String, tera::Error> {
+        let release_context = Context::from_serialize(version)?;
+        self.context.extend(release_context);
         let context = self
             .template
-            .context
+            .remote_context
             .as_ref()
-            .map(RemoteContext::to_tera_context);
+            .map(RemoteContext::to_context);
 
         if let Some(context) = context {
-            template_context.extend(context);
+            self.context.extend(context);
         }
 
-        self.tera
-            .render(self.template.kind.name(), &template_context)
+        self.tera.render(self.template.kind.name(), &self.context)
     }
 
     // From git-cliff: https://github.com/orhun/git-cliff/blob/main/git-cliff-core/src/template.rs

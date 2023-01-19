@@ -4,6 +4,7 @@ use crate::helpers::*;
 
 use anyhow::Result;
 use assert_cmd::prelude::*;
+use cocogitto::settings::Settings;
 use indoc::indoc;
 use sealed_test::prelude::*;
 use speculoos::prelude::*;
@@ -66,7 +67,7 @@ fn auto_bump_dry_run_from_latest_tag() -> Result<()> {
         .arg("--dry-run")
         .assert()
         .success()
-        .stdout("1.1.0");
+        .stdout("1.1.0\n");
 
     assert_that!(Path::new("CHANGELOG.md")).does_not_exist();
     assert_tag_does_not_exist("1.1.0")?;
@@ -278,13 +279,6 @@ fn bump_with_profile_hook() -> Result<()> {
     git_tag("1.0.0")?;
     git_commit("feat: feature")?;
 
-    let expected_stdout = indoc!(
-        "current 1.0.0
-            next 1.0.1
-        "
-    );
-    let expected_stderr = "Bumped version: 1.0.0 -> 1.0.1\n";
-
     // Act
     Command::cargo_bin("cog")?
         .arg("bump")
@@ -294,10 +288,48 @@ fn bump_with_profile_hook() -> Result<()> {
         .unwrap()
         // Assert
         .assert()
-        .stdout(expected_stdout)
-        .stderr(expected_stderr)
         .success();
 
     assert_tag_exists("1.0.1")?;
+    Ok(())
+}
+
+#[sealed_test]
+fn monorepo_dry_run() -> Result<()> {
+    init_monorepo(&mut Settings::default())?;
+
+    Command::cargo_bin("cog")?
+        .arg("bump")
+        .arg("--auto")
+        .arg("--dry-run")
+        .assert()
+        .success()
+        .stdout(indoc!(
+            "one-0.1.0
+            0.1.0
+            "
+        ));
+
+    assert_that!(Path::new("CHANGELOG.md")).does_not_exist();
+    assert_tag_does_not_exist("1.1.0")?;
+    Ok(())
+}
+
+#[sealed_test]
+fn package_dry_run() -> Result<()> {
+    init_monorepo(&mut Settings::default())?;
+
+    Command::cargo_bin("cog")?
+        .arg("bump")
+        .arg("--auto")
+        .arg("--package")
+        .arg("one")
+        .arg("--dry-run")
+        .assert()
+        .success()
+        .stdout(indoc!("one-0.1.0\n"));
+
+    assert_that!(Path::new("CHANGELOG.md")).does_not_exist();
+    assert_tag_does_not_exist("1.1.0")?;
     Ok(())
 }

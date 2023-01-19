@@ -62,7 +62,7 @@ impl Repository {
     }
 
     pub(crate) fn get_head(&self) -> Option<Object> {
-        Repository::tree_to_treeish(&self.0, Some(&"HEAD".to_string()))
+        self.tree_to_treeish(Some(&"HEAD".to_string()))
             .ok()
             .flatten()
     }
@@ -82,15 +82,15 @@ impl Repository {
             .ok_or(Git2Error::CommitterNotFound)
     }
 
-    fn tree_to_treeish<'a>(
-        repo: &'a Git2Repository,
+    pub(crate) fn tree_to_treeish(
+        &self,
         arg: Option<&String>,
-    ) -> Result<Option<Object<'a>>, git2::Error> {
+    ) -> Result<Option<Object>, git2::Error> {
         let arg = match arg {
             Some(s) => s,
             None => return Ok(None),
         };
-        let obj = repo.revparse_single(arg)?;
+        let obj = self.0.revparse_single(arg)?;
         let tree = obj.peel(ObjectType::Tree)?;
         Ok(Some(tree))
     }

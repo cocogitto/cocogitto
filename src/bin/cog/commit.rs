@@ -23,7 +23,7 @@ pub fn edit_message(
 ) -> Result<(Option<String>, Option<String>, bool)> {
     let template = prepare_edit_template(typ, message, scope, breaking);
 
-    let edited = edit::edit(&template)?;
+    let edited = edit::edit(template)?;
 
     if edited.lines().all(|line| {
         let trimmed = line.trim_start();
