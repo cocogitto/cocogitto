@@ -8,8 +8,7 @@
     ## Unreleased ({{ from_shorthand ~ ".." ~ to_shorthand }})
 {% endif -%}
 
-### Package bumps
-
+### Package updates
 {% for package in packages -%}
 - {{ package.package_name }} bumped to {{ package.version.tag }}
 {% endfor -%}

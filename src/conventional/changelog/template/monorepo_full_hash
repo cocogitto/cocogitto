@@ -1,10 +1,10 @@
 ### Package updates
 {% for package in packages -%}
-    {{ package.package_name }} bumped to {{ package.new_version }}
+    - {{ package.package_name }} bumped to {{ package.version.tag }}
 {% endfor -%}
 
 
-### Commits
+### Global changes
 {% for type, typed_commits in commits | sort(attribute="type")| group_by(attribute="type") -%}
 #### {{ type | upper_first }}
 {% for scope, scoped_commits in typed_commits | group_by(attribute="scope") -%}
