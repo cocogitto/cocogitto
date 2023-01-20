@@ -1,11 +1,13 @@
 use std::process::Command;
 
-use crate::helpers::*;
-
 use anyhow::Result;
 use assert_cmd::prelude::*;
 use predicates::prelude::predicate;
 use sealed_test::prelude::*;
+
+use cocogitto::settings::Settings;
+
+use crate::helpers::*;
 
 #[sealed_test]
 fn get_initial_version_ok() -> Result<()> {
@@ -132,6 +134,102 @@ fn get_version_after_bump_fallback_not_used_ok() -> Result<()> {
         .success()
         .stdout(predicate::eq(b"0.1.0\n" as &[u8]))
         .stderr(predicate::eq(b"Current version:\n" as &[u8]));
+
+    Ok(())
+}
+
+#[sealed_test]
+fn get_initial_version_of_monorepo_ok() -> Result<()> {
+    init_monorepo(&mut Settings::default())?;
+
+    Command::cargo_bin("cog")?
+        .arg("get-version")
+        .assert()
+        .success()
+        .stdout(predicate::eq(b"0.0.0\n" as &[u8]))
+        .stderr(predicate::eq(
+            b"Failed to get current version, falling back to 0.0.0\nCurrent version:\n" as &[u8],
+        ));
+
+    Ok(())
+}
+
+#[sealed_test]
+fn get_initial_version_of_monorepo_package_ok() -> Result<()> {
+    init_monorepo(&mut Settings::default())?;
+
+    Command::cargo_bin("cog")?
+        .arg("get-version")
+        .arg("--package=one")
+        .assert()
+        .success()
+        .stdout(predicate::eq(b"0.0.0\n" as &[u8]))
+        .stderr(predicate::eq(
+            b"Failed to get current version, falling back to 0.0.0\nCurrent version:\n" as &[u8],
+        ));
+
+    Ok(())
+}
+
+#[sealed_test]
+fn get_version_of_monorepo_package_having_no_own_version_ok() -> Result<()> {
+    init_monorepo(&mut Settings::default())?;
+
+    Command::cargo_bin("cog")?
+        .arg("bump")
+        .arg("--patch")
+        .assert()
+        .success();
+
+    Command::cargo_bin("cog")?
+        .arg("get-version")
+        .arg("--package=one")
+        .assert()
+        .success()
+        .stdout(predicate::eq(b"0.0.0\n" as &[u8]))
+        .stderr(predicate::eq(
+            b"Failed to get current version, falling back to 0.0.0\nCurrent version:\n" as &[u8],
+        ));
+
+    // Should differ
+    Command::cargo_bin("cog")?
+        .arg("get-version")
+        .assert()
+        .success()
+        .stdout(predicate::eq(b"0.0.1\n" as &[u8]))
+        .stderr(predicate::eq(b"Current version:\n" as &[u8]));
+
+    Ok(())
+}
+
+#[sealed_test]
+fn get_version_of_monorepo_package_having_own_version_ok() -> Result<()> {
+    init_monorepo(&mut Settings::default())?;
+
+    Command::cargo_bin("cog")?
+        .arg("bump")
+        .arg("--patch")
+        .arg("--package=one")
+        .assert()
+        .success();
+
+    Command::cargo_bin("cog")?
+        .arg("get-version")
+        .arg("--package=one")
+        .assert()
+        .success()
+        .stdout(predicate::eq(b"0.0.1\n" as &[u8]))
+        .stderr(predicate::eq(b"Current version:\n" as &[u8]));
+
+    // Should differ
+    Command::cargo_bin("cog")?
+        .arg("get-version")
+        .assert()
+        .success()
+        .stdout(predicate::eq(b"0.0.0\n" as &[u8]))
+        .stderr(predicate::eq(
+            b"Failed to get current version, falling back to 0.0.0\nCurrent version:\n" as &[u8],
+        ));
 
     Ok(())
 }

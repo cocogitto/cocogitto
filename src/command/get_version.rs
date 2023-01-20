@@ -11,6 +11,7 @@ impl CocoGitto {
         &self,
         fallback: Option<String>,
         fail_on_fallback: bool,
+        package: Option<String>,
     ) -> Result<()> {
         let fallback = match fallback {
             Some(input) => match Version::parse(input.as_ref()) {
@@ -23,7 +24,11 @@ impl CocoGitto {
             None => Version::new(0, 0, 0),
         };
 
-        let current_tag = self.repository.get_latest_tag();
+        let current_tag = match package {
+            Some(pkg) => self.repository.get_latest_package_tag(pkg.as_str()),
+            None => self.repository.get_latest_tag(),
+        };
+
         let current_version = match current_tag {
             Ok(ref tag) => &tag.version,
             Err(ref err) if err == &TagError::NoTag => {
@@ -41,7 +46,7 @@ impl CocoGitto {
         };
 
         warn!("Current version:");
-        println!("{}", *current_version);
+        print!("{}", *current_version);
         Ok(())
     }
 }

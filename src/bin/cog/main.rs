@@ -1,6 +1,10 @@
-mod commit;
-
 use std::path::PathBuf;
+
+use anyhow::{Context, Result};
+use clap::builder::{PossibleValue, PossibleValuesParser};
+use clap::{ArgAction, ArgGroup, Args, CommandFactory, Parser, Subcommand, ValueEnum};
+use clap_complete::{shells, Generator};
+use clap_complete_nushell::Nushell;
 
 use cocogitto::conventional::changelog::template::{RemoteContext, Template};
 use cocogitto::conventional::commit as conv_commit;
@@ -16,6 +20,7 @@ use clap::builder::{PossibleValue, PossibleValuesParser};
 use clap::{ArgAction, ArgGroup, Args, CommandFactory, Parser, Subcommand, ValueEnum};
 use clap_complete::{shells, Generator};
 use clap_complete_nushell::Nushell;
+mod commit;
 
 fn hook_profiles() -> PossibleValuesParser {
     let profiles = SETTINGS
@@ -214,6 +219,10 @@ enum Command {
         /// Fails if no version is specified, instead of returning a default version.
         #[arg(long, default_value = "false")]
         disable_fallback: bool,
+
+        /// Specify which package to get the version for in a monorepo.
+        #[arg(long, value_parser = packages())]
+        package: Option<String>,
     },
 
     /// Commit changelog from latest tag to HEAD and create new tag
@@ -320,9 +329,10 @@ fn main() -> Result<()> {
         Command::GetVersion {
             fallback,
             disable_fallback,
+            package,
         } => {
             let cocogitto = CocoGitto::get()?;
-            cocogitto.get_latest_version(fallback, disable_fallback)?
+            cocogitto.get_latest_version(fallback, disable_fallback, package)?
         }
         Command::Bump {
             version,
