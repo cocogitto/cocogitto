@@ -4,8 +4,7 @@ use anyhow::Result;
 
 use conventional_commit_parser::commit::{CommitType, ConventionalCommit};
 use conventional_commit_parser::parse_footers;
-
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 
 use conventional::commit::{Commit, CommitConfig};
 use conventional::version::IncrementCommand;
@@ -31,22 +30,18 @@ pub type CommitsMetadata = HashMap<CommitType, CommitConfig>;
 
 pub const CONFIG_PATH: &str = "cog.toml";
 
-lazy_static! {
-    pub static ref SETTINGS: Settings = {
-        if let Ok(repo) = Repository::open(".") {
-            Settings::get(&repo).unwrap_or_default()
-        } else {
-            Settings::default()
-        }
-    };
+pub static SETTINGS: Lazy<Settings> = Lazy::new(|| {
+    if let Ok(repo) = Repository::open(".") {
+        Settings::get(&repo).unwrap_or_default()
+    } else {
+        Settings::default()
+    }
+});
 
-    // This cannot be carried by `Cocogitto` struct since we need it to be available in `Changelog`,
-    // `Commit` etc. Be sure that `CocoGitto::new` is called before using this  in order to bypass
-    // unwrapping in case of error.
-    pub static ref COMMITS_METADATA: CommitsMetadata = {
-        SETTINGS.commit_types()
-    };
-}
+// This cannot be carried by `Cocogitto` struct since we need it to be available in `Changelog`,
+// `Commit` etc. Be sure that `CocoGitto::new` is called before using this  in order to bypass
+// unwrapping in case of error.
+pub static COMMITS_METADATA: Lazy<CommitsMetadata> = Lazy::new(|| SETTINGS.commit_types());
 
 #[derive(Debug)]
 pub struct CocoGitto {
