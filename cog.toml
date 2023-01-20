@@ -58,5 +58,8 @@ authors = [
     { signature = "Luke Hsiao", username = "lukehsiao" },
     { signature = "Caleb Maclennan", username = "alerque" },
     { signature = "Zshoham", username = "Zshoham" },
-    { signature = "darlaam", username = "darlaam" }
+    { signature = "darlaam", username = "darlaam" },
+    { signature = "Stephen Connolly", username = "stephenc" },
+    { signature = "Luca Trevisani", username = "lucatrv" },
+    { signature = "Racci", username = "DaRacci" }
 ]
