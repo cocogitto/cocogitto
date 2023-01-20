@@ -70,12 +70,7 @@ impl CocoGitto {
         );
 
         self.repository.add_all()?;
-
-        // Hook failed, we need to stop here and reset
-        // the repository to a clean state
-        if let Err(err) = hook_result {
-            self.stash_failed_version(&tag, err)?;
-        }
+        self.unwrap_or_stash_and_exit(&tag, hook_result);
 
         let sign = self.repository.gpg_sign();
         self.repository

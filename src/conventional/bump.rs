@@ -1,9 +1,20 @@
 use crate::conventional::error::BumpError;
 use crate::conventional::version::Increment;
-use crate::{Commit, IncrementCommand, Repository, RevspecPattern, Tag};
+use crate::{Commit, IncrementCommand, Repository, RevspecPattern, Tag, SETTINGS};
 use conventional_commit_parser::commit::CommitType;
 use git2::Commit as Git2Commit;
+use once_cell::sync::Lazy;
 use semver::{BuildMetadata, Prerelease, Version};
+
+static FILTER_MERGE_COMMITS: Lazy<fn(&&git2::Commit) -> bool> = Lazy::new(|| {
+    |commit| {
+        if SETTINGS.ignore_merge_commits {
+            commit.parent_count() <= 1
+        } else {
+            true
+        }
+    }
+});
 
 pub(crate) trait Bump {
     fn manual_bump(&self, version: &str) -> Result<Self, semver::Error>
@@ -134,7 +145,7 @@ impl Tag {
         let commits: Vec<&Git2Commit> = commits
             .commits
             .iter()
-            .filter(|commit| !commit.message().unwrap_or("").starts_with("Merge "))
+            .filter(&*FILTER_MERGE_COMMITS)
             .collect();
 
         let conventional_commits: Vec<Commit> = commits
@@ -175,7 +186,7 @@ impl Tag {
         let commits: Vec<&Git2Commit> = commits
             .commits
             .iter()
-            .filter(|commit| !commit.message().unwrap_or("").starts_with("Merge "))
+            .filter(&*FILTER_MERGE_COMMITS)
             .collect();
 
         let conventional_commits: Vec<Commit> = commits
@@ -215,7 +226,7 @@ impl Tag {
         let commits: Vec<&Git2Commit> = commits
             .commits
             .iter()
-            .filter(|commit| !commit.message().unwrap_or("").starts_with("Merge "))
+            .filter(&*FILTER_MERGE_COMMITS)
             .collect();
 
         let conventional_commits: Vec<Commit> = commits

@@ -7,10 +7,10 @@ use crate::git::revspec::RevspecPattern;
 use crate::git::tag::Tag;
 use crate::hook::{Hook, HookVersion};
 use crate::settings::{HookType, MonoRepoPackage, Settings};
-use crate::PreHookError;
+use crate::BumpError;
 use crate::{CocoGitto, SETTINGS};
 use anyhow::Result;
-use anyhow::{anyhow, bail, ensure, Context, Error};
+use anyhow::{anyhow, bail, ensure, Context};
 use colored::Colorize;
 use conventional_commit_parser::commit::CommitType;
 use globset::Glob;
@@ -48,18 +48,25 @@ fn tag_or_fallback_to_zero(tag: Result<Tag, TagError>) -> Result<Tag> {
 }
 
 impl CocoGitto {
-    fn stash_failed_version(&mut self, tag: &Tag, err: Error) -> Result<()> {
-        self.repository.stash_failed_version(tag.clone())?;
-        error!(
-            "{}",
-            PreHookError {
-                cause: err.to_string(),
-                version: tag.to_string(),
-                stash_number: 0,
-            }
-        );
+    pub fn unwrap_or_stash_and_exit<T>(&mut self, tag: &Tag, result: Result<T>) -> T {
+        match result {
+            Ok(res) => res,
+            Err(err) => {
+                self.repository
+                    .stash_failed_version(tag.clone())
+                    .expect("stash");
+                error!(
+                    "{}",
+                    BumpError {
+                        cause: err.to_string(),
+                        version: tag.to_string(),
+                        stash_number: 0,
+                    }
+                );
 
-        exit(1);
+                exit(1);
+            }
+        }
     }
 
     fn pre_bump_checks(&mut self) -> Result<()> {
