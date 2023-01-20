@@ -259,6 +259,7 @@ See [Github integration -> GitHub-bot](https://docs.cocogitto.io/ci_cd/#github-b
 - [koji](https://github.com/its-danny/koji)
 - [semantic-release](https://semantic-release.gitbook.io)
 - [commitlint](https://github.com/conventional-changelog/commitlint)
+- [cargo-smart-release](https://github.com/byron/gitoxide/tree/a1c68da4b0fa080a383cbbfa50fd54e8bb45330c/cargo-smart-release)
 
 ## Contributing
 
