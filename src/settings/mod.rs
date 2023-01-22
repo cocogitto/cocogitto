@@ -64,7 +64,7 @@ pub struct MonoRepoPackage {
     /// Where to write the changelog
     pub changelog_path: Option<String>,
     /// Bumping package marked as public api will increment
-    /// the global monorepo version
+    /// the global monorepo version when using `cog bump --auto`
     pub public_api: bool,
     /// Overrides `pre_package_bump_hooks`
     pub pre_bump_hooks: Option<Vec<String>>,
