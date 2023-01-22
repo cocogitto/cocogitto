@@ -10,7 +10,7 @@ use cocogitto::settings::Settings;
 use crate::helpers::*;
 
 #[sealed_test]
-fn get_initial_version_ok() -> Result<()> {
+fn get_initial_version_expected_error() -> Result<()> {
     git_init()?;
     git_commit("chore: init")?;
     git_commit("feat(taef): feature")?;
@@ -18,8 +18,8 @@ fn get_initial_version_ok() -> Result<()> {
     Command::cargo_bin("cog")?
         .arg("get-version")
         .assert()
-        .success()
-        .stdout(predicate::eq(b"0.0.0\n" as &[u8]));
+        .failure()
+        .stderr(predicate::str::starts_with("Error: No version yet\n"));
 
     Ok(())
 }
@@ -61,6 +61,31 @@ fn get_initial_version_invalid_fallback_parse_error() -> Result<()> {
 }
 
 #[sealed_test]
+fn get_version_invalid_fallback_parse_error_in_versioned_repo() -> Result<()> {
+    git_init()?;
+    git_commit("chore: init")?;
+    git_commit("feat(taef): feature")?;
+
+    Command::cargo_bin("cog")?
+        .arg("bump")
+        .arg("--auto")
+        .assert()
+        .success();
+
+    Command::cargo_bin("cog")?
+        .arg("get-version")
+        .arg("-f")
+        .arg("InvalidVersion")
+        .assert()
+        .failure()
+        .stderr(predicate::str::starts_with(
+            "Invalid fallback: InvalidVersion\n",
+        ));
+
+    Ok(())
+}
+
+#[sealed_test]
 fn get_initial_version_fails_as_expected_error() -> Result<()> {
     git_init()?;
     git_commit("chore: init")?;
@@ -68,26 +93,9 @@ fn get_initial_version_fails_as_expected_error() -> Result<()> {
 
     Command::cargo_bin("cog")?
         .arg("get-version")
-        .arg("--disable-fallback")
         .assert()
         .failure()
-        .stderr(predicate::str::starts_with("Error: No version given\n"));
-
-    Ok(())
-}
-
-#[sealed_test]
-fn get_initial_version_fallback_conflicts_error() -> Result<()> {
-    Command::cargo_bin("cog")?
-        .arg("get-version")
-        .arg("-f")
-        .arg("1.1.1")
-        .arg("--disable-fallback")
-        .assert()
-        .failure()
-        .stderr(predicate::str::contains(
-            "'--fallback <FALLBACK>' cannot be used with '--disable-fallback'",
-        ));
+        .stderr(predicate::str::starts_with("Error: No version yet\n"));
 
     Ok(())
 }
@@ -139,40 +147,34 @@ fn get_version_after_bump_fallback_not_used_ok() -> Result<()> {
 }
 
 #[sealed_test]
-fn get_initial_version_of_monorepo_ok() -> Result<()> {
+fn get_initial_version_of_monorepo_expected_error() -> Result<()> {
     init_monorepo(&mut Settings::default())?;
 
     Command::cargo_bin("cog")?
         .arg("get-version")
         .assert()
-        .success()
-        .stdout(predicate::eq(b"0.0.0\n" as &[u8]))
-        .stderr(predicate::eq(
-            b"Failed to get current version, falling back to 0.0.0\nCurrent version:\n" as &[u8],
-        ));
+        .failure()
+        .stderr(predicate::eq(b"Error: No version yet\n" as &[u8]));
 
     Ok(())
 }
 
 #[sealed_test]
-fn get_initial_version_of_monorepo_package_ok() -> Result<()> {
+fn get_initial_version_of_monorepo_package_expected_error() -> Result<()> {
     init_monorepo(&mut Settings::default())?;
 
     Command::cargo_bin("cog")?
         .arg("get-version")
         .arg("--package=one")
         .assert()
-        .success()
-        .stdout(predicate::eq(b"0.0.0\n" as &[u8]))
-        .stderr(predicate::eq(
-            b"Failed to get current version, falling back to 0.0.0\nCurrent version:\n" as &[u8],
-        ));
+        .failure()
+        .stderr(predicate::eq(b"Error: No version yet\n" as &[u8]));
 
     Ok(())
 }
 
 #[sealed_test]
-fn get_version_of_monorepo_package_having_no_own_version_ok() -> Result<()> {
+fn get_version_of_monorepo_package_having_no_own_version_expected_error() -> Result<()> {
     init_monorepo(&mut Settings::default())?;
 
     Command::cargo_bin("cog")?
@@ -185,11 +187,8 @@ fn get_version_of_monorepo_package_having_no_own_version_ok() -> Result<()> {
         .arg("get-version")
         .arg("--package=one")
         .assert()
-        .success()
-        .stdout(predicate::eq(b"0.0.0\n" as &[u8]))
-        .stderr(predicate::eq(
-            b"Failed to get current version, falling back to 0.0.0\nCurrent version:\n" as &[u8],
-        ));
+        .failure()
+        .stderr(predicate::eq(b"Error: No version yet\n" as &[u8]));
 
     // Should differ
     Command::cargo_bin("cog")?
@@ -225,11 +224,8 @@ fn get_version_of_monorepo_package_having_own_version_ok() -> Result<()> {
     Command::cargo_bin("cog")?
         .arg("get-version")
         .assert()
-        .success()
-        .stdout(predicate::eq(b"0.0.0\n" as &[u8]))
-        .stderr(predicate::eq(
-            b"Failed to get current version, falling back to 0.0.0\nCurrent version:\n" as &[u8],
-        ));
+        .failure()
+        .stderr(predicate::eq(b"Error: No version yet\n" as &[u8]));
 
     Ok(())
 }

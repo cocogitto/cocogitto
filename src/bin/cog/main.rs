@@ -213,12 +213,8 @@ enum Command {
     /// Get current version
     GetVersion {
         /// Fallback version. Has to be semver compliant.
-        #[arg(short, long, conflicts_with("disable_fallback"))]
+        #[arg(short, long)]
         fallback: Option<String>,
-
-        /// Fails if no version is specified, instead of returning a default version.
-        #[arg(long, default_value = "false")]
-        disable_fallback: bool,
 
         /// Specify which package to get the version for in a monorepo.
         #[arg(long, value_parser = packages())]
@@ -326,13 +322,9 @@ fn main() -> Result<()> {
     init_logs(cli.verbose, cli.quiet);
 
     match cli.command {
-        Command::GetVersion {
-            fallback,
-            disable_fallback,
-            package,
-        } => {
+        Command::GetVersion { fallback, package } => {
             let cocogitto = CocoGitto::get()?;
-            cocogitto.get_latest_version(fallback, disable_fallback, package)?
+            cocogitto.get_latest_version(fallback, package)?
         }
         Command::Bump {
             version,
