@@ -2,6 +2,30 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## [5.3.0](https://github.com/cocogitto/cocogitto/compare/5.2.0..5.3.0) - 2023-01-22
+#### Bug Fixes
+- ignore merge commits based on parent counts - ([f8b5da6](https://github.com/cocogitto/cocogitto/commit/f8b5da64343e60ce5851e2e25b93611bfcf4db05)) - [@oknozor](https://github.com/oknozor)
+- signing for chore commits - ([18b9643](https://github.com/cocogitto/cocogitto/commit/18b9643318cad85bae56a4217b04e3e684650d09)) - DaRacci
+#### Documentation
+- update 'pulic_api' doc - ([c9d5cbf](https://github.com/cocogitto/cocogitto/commit/c9d5cbf6207a80918c013b836a23d008fc7d8a41)) - [@oknozor](https://github.com/oknozor)
+- add cargo-smart-release to the list of similar projects - ([3a04e72](https://github.com/cocogitto/cocogitto/commit/3a04e72231626af9717d4e8476e7e5af9c58a8ce)) - [@oknozor](https://github.com/oknozor)
+- report one binary following `coco` deprecation - ([3ad6d28](https://github.com/cocogitto/cocogitto/commit/3ad6d28d2909f7a51ca384408550776a5e9b50be)) - [@lucatrv](https://github.com/lucatrv)
+#### Features
+- **(cli)** add subcommand for generating manpages - ([fe6bcfe](https://github.com/cocogitto/cocogitto/commit/fe6bcfe578c00be0ded6463c96c54e7392ee1635)) - [@tranzystorek-io](https://github.com/tranzystorek-io)
+- monorepo support (#240) - ([d8eed3d](https://github.com/cocogitto/cocogitto/commit/d8eed3dc7eac644bf56dd1c4bd4dea0bb1d4f746)) - [@oknozor](https://github.com/oknozor)
+- NuShell completions - ([3a356cc](https://github.com/cocogitto/cocogitto/commit/3a356ccb0e5838e5fe09fa56a18842fb417eddd7)) - [@DaRacci](https://github.com/DaRacci)
+- add from_latest_tag to settings - ([a154782](https://github.com/cocogitto/cocogitto/commit/a154782639c899fc585b68ea28ce00d2f4bfefb9)) - [@stephenc](https://github.com/stephenc)
+#### Miscellaneous Chores
+- bump Cargo.lock - ([a43ab28](https://github.com/cocogitto/cocogitto/commit/a43ab2885f7a8db213aca0d2542d587b9a9c49e4)) - [@oknozor](https://github.com/oknozor)
+- add new contributors to cog.toml - ([fb05641](https://github.com/cocogitto/cocogitto/commit/fb05641aeba90e948ba5078895fdd18c5fd556a8)) - [@oknozor](https://github.com/oknozor)
+- bump dependencies and fix rustc-serialize cve - ([fc0e129](https://github.com/cocogitto/cocogitto/commit/fc0e129606911fde53b7256c2fda3b408b3484af)) - [@oknozor](https://github.com/oknozor)
+- bump clap version to 4.0 - ([dbef47b](https://github.com/cocogitto/cocogitto/commit/dbef47b3fe69c9518dbc5757965c844c37f512fd)) - [@tranzystorek-io](https://github.com/tranzystorek-io)
+#### Refactoring
+- simplify project structure for binaries - ([941fb10](https://github.com/cocogitto/cocogitto/commit/941fb103453e311fe7a51f5cf9573e73e6ff1e80)) - [@tranzystorek-io](https://github.com/tranzystorek-io)
+#### Tests
+- hard code init branch to 'master' to avoid conflict with user config - ([d22482e](https://github.com/cocogitto/cocogitto/commit/d22482e4e2406a4db00d76c25cfcc7ea5e1579c2)) - [@oknozor](https://github.com/oknozor)
+- - -
+
 ## [5.2.0](https://github.com/cocogitto/cocogitto/compare/5.1.0..5.2.0) - 2022-09-09
 #### Bug Fixes
 - fix stackover flow on 'oid..' resvpec - ([d4c3def](https://github.com/cocogitto/cocogitto/commit/d4c3defc6c6fbc4141edb3d1dda18be6b1f195c3)) - [@oknozor](https://github.com/oknozor)
