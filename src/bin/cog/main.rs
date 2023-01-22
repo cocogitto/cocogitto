@@ -476,7 +476,8 @@ fn main() -> Result<()> {
             clap_complete::generate(shell, &mut Cli::command(), "cog", &mut std::io::stdout());
         }
         Command::GenerateManpage { cmd } => {
-            let cog_cmd = Cli::command();
+            let mut cog_cmd = Cli::command();
+            cog_cmd = cog_cmd.disable_help_subcommand(true);
             let cmd = match cmd.as_str() {
                 "cog" => cog_cmd,
                 cmd => cog_cmd
