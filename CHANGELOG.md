@@ -2,6 +2,18 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## [5.3.1](https://github.com/cocogitto/cocogitto/compare/5.3.0..5.3.1) - 2023-01-23
+#### Bug Fixes
+- **(monorepo)** fix package tag parsing - ([cdff4a1](https://github.com/cocogitto/cocogitto/commit/cdff4a10332fb4caf4299f5f368e5a794f862228)) - [@oknozor](https://github.com/oknozor)
+- **(monorepo)** allow diffing orphan commits - ([02a1c5a](https://github.com/cocogitto/cocogitto/commit/02a1c5af617795f7da6a087d4373840f7bbba190)) - [@oknozor](https://github.com/oknozor)
+- disable help subcommand for `cog(1)` - ([64df65b](https://github.com/cocogitto/cocogitto/commit/64df65b3399a890f2e598c046ccc729b37da301b)) - Orhun Parmaksız
+#### Miscellaneous Chores
+- clippy + fmt - ([6c7a2e7](https://github.com/cocogitto/cocogitto/commit/6c7a2e7b7ebe1fc051e5f16e73f87144a22dba8c)) - [@oknozor](https://github.com/oknozor)
+- bump dev dependencies - ([e89c097](https://github.com/cocogitto/cocogitto/commit/e89c097b7bf4d2218a3cf817e522642976a74b47)) - [@oknozor](https://github.com/oknozor)
+#### Tests
+- remove deprecated chrono api usage - ([a43cc51](https://github.com/cocogitto/cocogitto/commit/a43cc51459fca240e6861d0fa8258c8a82ef7820)) - [@oknozor](https://github.com/oknozor)
+- - -
+
 ## [5.3.0](https://github.com/cocogitto/cocogitto/compare/5.2.0..5.3.0) - 2023-01-22
 #### Bug Fixes
 - ignore merge commits based on parent counts - ([f8b5da6](https://github.com/cocogitto/cocogitto/commit/f8b5da64343e60ce5851e2e25b93611bfcf4db05)) - [@oknozor](https://github.com/oknozor)
