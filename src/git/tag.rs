@@ -85,19 +85,11 @@ impl Repository {
 
         // Extends with packages tags if we are in a mono-repository context
         if !packages.is_empty() {
-            let separator = SETTINGS
-                .monorepo_separator()
-                .expect("monorepo_version_separator");
-
             let package_tags = self.0.tag_names(None).map_err(|_| TagError::NoTag)?;
-
             let package_tags = package_tags
                 .into_iter()
                 .flatten()
-                .filter(|tag| match tag.split_once(separator) {
-                    None => false,
-                    Some((tag_package, _)) => packages.contains(&tag_package),
-                })
+                .filter(|tag| packages.iter().any(|package| tag.starts_with(package)))
                 .map(str::to_string);
 
             tags.extend(package_tags);
@@ -174,33 +166,21 @@ impl Tag {
     pub(crate) fn from_str(raw: &str, oid: Option<Oid>) -> Result<Tag, TagError> {
         let prefix = SETTINGS.tag_prefix.as_ref();
 
-        let tag = SETTINGS
-            .monorepo_separator()
-            .as_ref()
-            .and_then(|separator| raw.split_once(separator))
-            .map(|(package, remains)| {
-                let version = prefix
-                    .and_then(|prefix| remains.strip_prefix(prefix))
-                    .unwrap_or(remains);
+        let package_tag: Option<Tag> =  SETTINGS.packages.keys().filter_map(|package_name| raw.strip_prefix(package_name)
+            .zip(SETTINGS.monorepo_separator())
+            .and_then(|(remains, prefix)| remains.strip_prefix(prefix))
+            .map(|remains| SETTINGS.tag_prefix.as_ref().and_then(|prefix|remains.strip_prefix(prefix))
+                .unwrap_or(remains))
+            .and_then(|version| Version::parse(version).ok())
+            .map(|version| Tag {
+                package: Some(package_name.to_string()),
+                prefix: SETTINGS.tag_prefix.clone(),
+                version,
+                oid,
+            })).next();
 
-                if SETTINGS.packages.keys().any(|name| name == package) {
-                    Version::parse(version)
-                        .map(|version| Tag {
-                            package: Some(package.to_string()),
-                            prefix: prefix.cloned(),
-                            version,
-                            oid,
-                        })
-                        .map_err(|err| TagError::semver(raw, err))
-                } else {
-                    Err(TagError::InvalidPrefixError {
-                        prefix: package.to_string(),
-                        tag: raw.to_string(),
-                    })
-                }
-            });
 
-        if let Some(Ok(tag)) = tag {
+        if let Some(tag) = package_tag {
             Ok(tag)
         } else {
             let version = prefix
@@ -261,7 +241,7 @@ impl fmt::Display for Tag {
 mod test {
     use crate::git::repository::Repository;
     use crate::git::tag::Tag;
-    use crate::settings::Settings;
+    use crate::settings::{MonoRepoPackage, Settings};
     use anyhow::Result;
     use cmd_lib::run_cmd;
     use sealed_test::prelude::*;
@@ -269,6 +249,7 @@ mod test {
     use speculoos::prelude::*;
     use std::collections::HashMap;
     use std::fs;
+    use std::path::PathBuf;
 
     #[test]
     fn should_compare_tags() -> Result<()> {
@@ -527,6 +508,44 @@ mod test {
 
         // Assert
         assert_that!(tag).is_err();
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn get_latest_package_tag() -> Result<()> {
+        // Arrange
+        let  mut packages = HashMap::new();
+        packages.insert("lunatic-timer-api".to_string(), MonoRepoPackage {
+            path: PathBuf::from("lunatic-timer-api"),
+            ..Default::default()
+        });
+
+        let settings = Settings {
+            from_latest_tag: true,
+            ignore_merge_commits: true,
+            tag_prefix: Some("v".to_string()),
+            packages,
+            ..Default::default()
+        };
+
+        let repo = Repository::init(".")?;
+        let settings = toml::to_string(&settings)?;
+
+        run_cmd!(
+            echo $settings > cog.toml;
+            git add .;
+            git commit -m "first commit";
+            git commit --allow-empty -m "feature one";
+            git tag lunatic-timer-api-v0.12.0;
+        )?;
+
+        run_cmd!(git tag)?;
+
+        // Act
+        let tag = repo.get_latest_package_tag("lunatic-timer-api")?;
+
+        // Assert
+        assert_that!(tag.to_string()).is_equal_to(&"lunatic-timer-api-v0.12.0".to_string());
         Ok(())
     }
 }
