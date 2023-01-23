@@ -27,7 +27,7 @@ fn get_changelog_range() -> Result<()> {
     let changelog = changelog.get_output();
     let changelog = &changelog.stdout;
     let changelog = String::from_utf8_lossy(changelog.as_slice());
-    let today = Utc::today().naive_utc().to_string();
+    let today = Utc::now().date_naive().to_string();
 
     assert_eq!(
         changelog.as_ref(),
@@ -130,7 +130,7 @@ fn get_changelog_from_tagged_repo() -> Result<()> {
     let changelog = changelog.get_output();
     let changelog = &changelog.stdout;
     let changelog = String::from_utf8_lossy(changelog.as_slice());
-    let today = Utc::today().naive_utc().to_string();
+    let today = Utc::now().date_naive().to_string();
 
     assert_eq!(
         changelog.as_ref(),
@@ -177,7 +177,7 @@ fn get_changelog_at_tag() -> Result<()> {
     let changelog = changelog.get_output();
     let changelog = &changelog.stdout;
     let changelog = String::from_utf8_lossy(changelog.as_slice());
-    let today = Utc::today().naive_utc();
+    let today = Utc::now().date_naive();
 
     assert_eq!(
         changelog.as_ref(),
@@ -224,7 +224,7 @@ fn get_changelog_with_tag_prefix() -> Result<()> {
     let changelog = changelog.get_output();
     let changelog = &changelog.stdout;
     let changelog = String::from_utf8_lossy(changelog.as_slice());
-    let today = Utc::today().naive_utc();
+    let today = Utc::now().date_naive();
 
     assert_eq!(
         changelog.as_ref(),
@@ -282,7 +282,7 @@ fn get_changelog_at_tag_prefix() -> Result<()> {
 
     let changelog = changelog.get_output();
     let changelog = String::from_utf8_lossy(&changelog.stdout);
-    let today = Utc::today().naive_utc();
+    let today = Utc::now().date_naive();
 
     assert_eq!(
         changelog.as_ref(),
@@ -328,7 +328,7 @@ fn get_changelog_from_tag_to_tagged_head() -> Result<()> {
 
     let changelog = changelog.get_output();
     let changelog = String::from_utf8_lossy(&changelog.stdout);
-    let today = Utc::today().naive_utc();
+    let today = Utc::now().date_naive();
 
     assert_eq!(
         changelog.as_ref(),
@@ -399,7 +399,7 @@ fn get_changelog_whith_custom_template() -> Result<()> {
 
     let changelog = changelog.get_output();
     let changelog = String::from_utf8_lossy(&changelog.stdout);
-    let today = Utc::today().naive_utc();
+    let today = Utc::now().date_naive();
 
     assert_eq!(
         changelog.as_ref(),
