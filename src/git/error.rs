@@ -1,6 +1,6 @@
 use crate::git::status::Statuses;
 use colored::Colorize;
-use git2::{Error};
+use git2::Error;
 use serde::de::StdError;
 use std::fmt::{Display, Formatter};
 use std::{fmt, io};
