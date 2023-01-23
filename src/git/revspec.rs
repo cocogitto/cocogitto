@@ -220,19 +220,22 @@ impl Repository {
         let mut commits = vec![];
         let package = SETTINGS.packages.get(package).expect("package exists");
         for commit in commit_range.commits {
-            let parent = commit.parent(0).ok()
-                .map(|commit| commit.id().to_string());
+            let parent = commit.parent(0).ok().map(|commit| commit.id().to_string());
 
             let parent_tree = self.tree_to_treeish(parent.as_ref())?;
-
 
             let current_tree = self
                 .tree_to_treeish(Some(&commit.id().to_string()))?
                 .expect("Failed to get commit tree");
 
             let diff = match parent_tree {
-                None => self.0.diff_tree_to_tree(None, current_tree.as_tree(), None)?,
-                Some(tree) => self.0.diff_tree_to_tree(tree.as_tree(), current_tree.as_tree(), None)?,
+                None => self
+                    .0
+                    .diff_tree_to_tree(None, current_tree.as_tree(), None)?,
+                Some(tree) => {
+                    self.0
+                        .diff_tree_to_tree(tree.as_tree(), current_tree.as_tree(), None)?
+                }
             };
 
             for delta in diff.deltas() {
@@ -727,7 +730,7 @@ mod test {
                 git commit --allow-empty -q -m $message;
                 git log --format=%H -n 1;
             )
-                .map_err(|e| anyhow!(e))
+            .map_err(|e| anyhow!(e))
         };
 
         run_cmd!(
@@ -771,7 +774,7 @@ mod test {
                 git commit --allow-empty -q -m $message;
                 git log --format=%H -n 1;
             )
-                .map_err(|e| anyhow!(e))
+            .map_err(|e| anyhow!(e))
         };
 
         run_cmd!(

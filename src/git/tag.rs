@@ -166,19 +166,29 @@ impl Tag {
     pub(crate) fn from_str(raw: &str, oid: Option<Oid>) -> Result<Tag, TagError> {
         let prefix = SETTINGS.tag_prefix.as_ref();
 
-        let package_tag: Option<Tag> =  SETTINGS.packages.keys().filter_map(|package_name| raw.strip_prefix(package_name)
-            .zip(SETTINGS.monorepo_separator())
-            .and_then(|(remains, prefix)| remains.strip_prefix(prefix))
-            .map(|remains| SETTINGS.tag_prefix.as_ref().and_then(|prefix|remains.strip_prefix(prefix))
-                .unwrap_or(remains))
-            .and_then(|version| Version::parse(version).ok())
-            .map(|version| Tag {
-                package: Some(package_name.to_string()),
-                prefix: SETTINGS.tag_prefix.clone(),
-                version,
-                oid,
-            })).next();
-
+        let package_tag: Option<Tag> = SETTINGS
+            .packages
+            .keys()
+            .filter_map(|package_name| {
+                raw.strip_prefix(package_name)
+                    .zip(SETTINGS.monorepo_separator())
+                    .and_then(|(remains, prefix)| remains.strip_prefix(prefix))
+                    .map(|remains| {
+                        SETTINGS
+                            .tag_prefix
+                            .as_ref()
+                            .and_then(|prefix| remains.strip_prefix(prefix))
+                            .unwrap_or(remains)
+                    })
+                    .and_then(|version| Version::parse(version).ok())
+                    .map(|version| Tag {
+                        package: Some(package_name.to_string()),
+                        prefix: SETTINGS.tag_prefix.clone(),
+                        version,
+                        oid,
+                    })
+            })
+            .next();
 
         if let Some(tag) = package_tag {
             Ok(tag)
@@ -514,11 +524,14 @@ mod test {
     #[sealed_test]
     fn get_latest_package_tag() -> Result<()> {
         // Arrange
-        let  mut packages = HashMap::new();
-        packages.insert("lunatic-timer-api".to_string(), MonoRepoPackage {
-            path: PathBuf::from("lunatic-timer-api"),
-            ..Default::default()
-        });
+        let mut packages = HashMap::new();
+        packages.insert(
+            "lunatic-timer-api".to_string(),
+            MonoRepoPackage {
+                path: PathBuf::from("lunatic-timer-api"),
+                ..Default::default()
+            },
+        );
 
         let settings = Settings {
             from_latest_tag: true,

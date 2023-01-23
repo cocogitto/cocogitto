@@ -8,10 +8,12 @@ impl Repository {
         let tags: Vec<Tag> = self.all_tags()?;
 
         tags.into_iter()
-            .filter(|tag| tag.package
-                .as_ref()
-                .map(|package| package == package_prefix)
-                .unwrap_or_default())
+            .filter(|tag| {
+                tag.package
+                    .as_ref()
+                    .map(|package| package == package_prefix)
+                    .unwrap_or_default()
+            })
             .max()
             .ok_or(TagError::NoTag)
     }
