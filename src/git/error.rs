@@ -46,6 +46,7 @@ pub enum TagError {
         err: git2::Error,
         pattern: Option<String>,
     },
+    GetNextTag(String),
     NoTag,
 }
 
@@ -154,6 +155,7 @@ impl Display for TagError {
                 writeln!(f, "\tcause: {}", err)
             }
             TagError::NoTag => writeln!(f, "unable to get any tag"),
+            TagError::GetNextTag(tag) => writeln!(f, "Failed to get tag after {}", tag),
             TagError::NoMatchFound { pattern, err } => {
                 match pattern {
                     None => writeln!(f, "no tag found")?,

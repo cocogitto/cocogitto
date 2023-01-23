@@ -240,6 +240,10 @@ enum Command {
         #[arg(long, value_parser = packages())]
         package: Option<String>,
 
+        /// Attempt to bump from a previous version
+        #[arg(short = 'F', long)]
+        force_origin: Option<String>,
+
         /// Dry-run: print the target version. No action taken
         #[arg(short, long)]
         dry_run: bool,
@@ -312,6 +316,7 @@ fn main() -> Result<()> {
             hook_profile,
             package,
             dry_run,
+            ..
         } => {
             let mut cocogitto = CocoGitto::get()?;
 

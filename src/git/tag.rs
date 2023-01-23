@@ -56,6 +56,32 @@ impl Repository {
             .collect())
     }
 
+    /// Attempt to get the first tag made after the given one.
+    pub(crate) fn get_tag_after(&self, current: &Tag) -> Result<Option<Tag>, TagError> {
+        let mut all_tags = self.all_tags()?;
+        all_tags.sort();
+
+        let next = all_tags.iter().enumerate().find(|(_, tag)| tag == &current);
+
+        match next {
+            None => return Ok(None),
+            Some((idx, _)) => {
+                let mut idx = idx + 1;
+                // Scan next tag until a tag with a matching package is found
+                while let Some(next) = all_tags.get(idx) {
+                    if next.package == current.package {
+                        return Ok(Some(next.clone()));
+                    }
+
+                    idx += 1;
+                    continue;
+                }
+            }
+        }
+
+        Err(TagError::GetNextTag(current.to_string()))
+    }
+
     pub(crate) fn get_latest_tag_oid(&self) -> Result<Oid, TagError> {
         self.get_latest_tag()
             .map(|tag| tag.oid_unchecked().to_owned())
@@ -552,13 +578,84 @@ mod test {
             git tag lunatic-timer-api-v0.12.0;
         )?;
 
-        run_cmd!(git tag)?;
-
         // Act
         let tag = repo.get_latest_package_tag("lunatic-timer-api")?;
 
         // Assert
         assert_that!(tag.to_string()).is_equal_to(&"lunatic-timer-api-v0.12.0".to_string());
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn get_tag_after() -> Result<()> {
+        // Arrange
+        let repo = Repository::init(".")?;
+
+        run_cmd!(
+            git commit --allow-empty -m "first commit";
+            git tag 0.1.0;
+            git tag 1.12.0;
+            git tag package-v1.3.0;
+            git tag 0.4.0;
+            git tag 2.0.0;
+            git tag 3.2.1;
+            git tag 0.1.1;
+        )?;
+
+        // Act
+        let current = Tag::from_str("1.12.0", None)?;
+        let next = repo.get_tag_after(&current)?.map(|t| t.to_string());
+
+        // Assert
+        assert_that!(next)
+            .is_some()
+            .is_equal_to(&"2.0.0".to_string());
+
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn get_package_tag_after() -> Result<()> {
+        // Arrange
+        let mut packages = HashMap::new();
+        packages.insert(
+            "lunatic-timer-api".to_string(),
+            MonoRepoPackage {
+                path: PathBuf::from("lunatic-timer-api"),
+                ..Default::default()
+            },
+        );
+
+        let settings = Settings {
+            tag_prefix: Some("v".to_string()),
+            packages,
+            ..Default::default()
+        };
+
+        let repo = Repository::init(".")?;
+        let settings = toml::to_string(&settings)?;
+
+        run_cmd!(
+            echo $settings > cog.toml;
+            git add .;
+            git commit -m "first commit";
+            git tag lunatic-timer-api-v0.1.0;
+            git tag lunatic-timer-api-v1.12.0;
+            git tag lunatic-timer-api-v0.4.0;
+            git tag lunatic-timer-api-v2.0.0;
+            git tag v1.2.0;
+            git tag lunatic-timer-api-v3.2.1;
+            git tag lunatic-timer-api-v0.1.1;
+        )?;
+
+        // Act
+        let current = Tag::from_str("lunatic-timer-api-v1.12.0", None)?;
+        let next = repo.get_tag_after(&current)?.map(|t| t.to_string());
+
+        // Assert
+        assert_that!(next)
+            .is_some()
+            .is_equal_to(&"lunatic-timer-api-v2.0.0".to_string());
         Ok(())
     }
 }
