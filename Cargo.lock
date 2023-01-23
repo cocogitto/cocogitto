@@ -42,9 +42,9 @@ dependencies = [
 
 [[package]]
 name = "async-trait"
-version = "0.1.62"
+version = "0.1.63"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "689894c2db1ea643a50834b999abf1c110887402542955ff5451dab8f861f9ed"
+checksum = "eff18d764974428cf3a9328e23fc5c986f5fbed46e6cd4cdf42544df5d297ec1"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -537,6 +537,12 @@ checksum = "a9c384f161156f5260c24a097c56119f9be8c798586aecc13afbcbe7b7e26bf8"
 dependencies = [
  "percent-encoding",
 ]
+
+[[package]]
+name = "fs_extra"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2022715d62ab30faffd124d40b76f4134a550a87792276512b18d63272333394"
 
 [[package]]
 name = "generic-array"
@@ -1336,10 +1342,11 @@ checksum = "ddccb15bcce173023b3fedd9436f882a0739b8dfb45e4f6b6002bee5929f61b2"
 
 [[package]]
 name = "sealed_test"
-version = "0.2.0"
+version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "58ca545976ef76ffde6109fd23b302704c1074456b16d6c72daa6a6517faac21"
+checksum = "1a608d94641cc17fe203b102db2ae86d47a236630192f0244ddbbbb0044c0272"
 dependencies = [
+ "fs_extra",
  "rusty-forkfork",
  "sealed_test_derive",
  "tempfile",
@@ -1347,9 +1354,9 @@ dependencies = [
 
 [[package]]
 name = "sealed_test_derive"
-version = "0.1.0"
+version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "637d1ba3f4957fdec75e2ac48ef45c21ab5dfe099e0903159ff687d5d443b43b"
+checksum = "7b672e005ae58fef5da619d90b9f1c5b44b061890f4a371b3c96257a8a15e697"
 dependencies = [
  "quote",
  "syn",
@@ -1426,9 +1433,9 @@ dependencies = [
 
 [[package]]
 name = "speculoos"
-version = "0.10.0"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e8f81684bbc3005f83b5c0a9e03eb52c8257b15370d62dcedf548964d5bfae2d"
+checksum = "65881c9270d6157f30a09233305da51bed97eef9192d0ea21e57b1c8f05c3620"
 dependencies = [
  "num",
 ]
