@@ -405,7 +405,7 @@ mod test {
             },
 
             author: "".to_string(),
-            date: NaiveDateTime::from_timestamp(0, 0),
+            date: NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
         };
 
         // Act
@@ -430,7 +430,7 @@ mod test {
             },
 
             author: "".to_string(),
-            date: NaiveDateTime::from_timestamp(0, 0),
+            date: NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
         };
 
         // Act
