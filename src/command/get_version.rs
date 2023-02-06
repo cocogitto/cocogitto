@@ -30,7 +30,7 @@ impl CocoGitto {
 
         let current_version = match current_tag {
             Ok(tag) => tag.version,
-            Err(err) if err == TagError::NoTag => match fallback {
+            Err(TagError::NoTag) => match fallback {
                 Some(input) => input,
                 None => bail!("No version yet"),
             },
