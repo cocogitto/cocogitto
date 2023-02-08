@@ -96,7 +96,7 @@ impl CocoGitto {
             for bump in bumps {
                 println!("{}", bump.new_version.prefixed_tag)
             }
-            print!("{}", tag);
+            print!("{tag}");
             return Ok(());
         }
 
@@ -231,7 +231,7 @@ impl CocoGitto {
         let tag = Tag::create(tag.version, None);
 
         if dry_run {
-            print!("{}", tag);
+            print!("{tag}");
             return Ok(());
         }
 

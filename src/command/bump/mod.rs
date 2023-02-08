@@ -26,12 +26,9 @@ mod standard;
 
 fn ensure_tag_is_greater_than_previous(current: &Tag, next: &Tag) -> Result<()> {
     if next <= current {
-        let comparison = format!("{} <= {}", current, next).red();
+        let comparison = format!("{current} <= {next}").red();
         let cause_key = "cause:".red();
-        let cause = format!(
-            "{} version MUST be greater than current one: {}",
-            cause_key, comparison
-        );
+        let cause = format!("{cause_key} version MUST be greater than current one: {comparison}");
 
         bail!("{}:\n\t{}\n", "SemVer Error".red().to_string(), cause);
     };
@@ -170,8 +167,7 @@ impl CocoGitto {
                 .enumerate()
                 .map(|(idx, result)| {
                     result.context(format!(
-                        "Cannot parse bump profile {} hook at index {}",
-                        profile, idx
+                        "Cannot parse bump profile {profile} hook at index {idx}"
                     ))
                 })
                 .try_collect()?,
@@ -185,8 +181,7 @@ impl CocoGitto {
                     .enumerate()
                     .map(|(idx, result)| {
                         result.context(format!(
-                            "Cannot parse bump profile {} hook at index {}",
-                            profile, idx
+                            "Cannot parse bump profile {profile} hook at index {idx}"
                         ))
                     })
                     .try_collect()?
@@ -196,14 +191,14 @@ impl CocoGitto {
                 .iter()
                 .map(|s| s.parse())
                 .enumerate()
-                .map(|(idx, result)| result.context(format!("Cannot parse hook at index {}", idx)))
+                .map(|(idx, result)| result.context(format!("Cannot parse hook at index {idx}")))
                 .try_collect()?,
             (None, None) => settings
                 .get_hooks(hook_type)
                 .iter()
                 .map(|s| s.parse())
                 .enumerate()
-                .map(|(idx, result)| result.context(format!("Cannot parse hook at index {}", idx)))
+                .map(|(idx, result)| result.context(format!("Cannot parse hook at index {idx}")))
                 .try_collect()?,
         };
 

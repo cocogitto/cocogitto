@@ -26,7 +26,7 @@ impl CocoGitto {
     }
 
     pub fn get_changelog_at_tag(&self, tag: &str, template: Template) -> Result<String> {
-        let pattern = format!("..{}", tag);
+        let pattern = format!("..{tag}");
         let pattern = RevspecPattern::from(pattern.as_str());
         let changelog = self.get_changelog(pattern, false)?;
 

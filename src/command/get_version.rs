@@ -38,7 +38,7 @@ impl CocoGitto {
         };
 
         warn!("Current version:");
-        print!("{}", current_version);
+        print!("{current_version}");
         Ok(())
     }
 }

@@ -136,7 +136,7 @@ impl Tag {
         let changelog_start_oid = Some(changelog_start_oid.as_str());
 
         let pattern = changelog_start_oid
-            .map(|oid| format!("{}..", oid))
+            .map(|oid| format!("{oid}.."))
             .unwrap_or_else(|| "..".to_string());
         let pattern = pattern.as_str();
         let pattern = RevspecPattern::from(pattern);
@@ -178,7 +178,7 @@ impl Tag {
         let changelog_start_oid = Some(changelog_start_oid.as_str());
 
         let pattern = changelog_start_oid
-            .map(|oid| format!("{}..", oid))
+            .map(|oid| format!("{oid}.."))
             .unwrap_or_else(|| "..".to_string());
         let pattern = pattern.as_str();
         let pattern = RevspecPattern::from(pattern);
@@ -217,7 +217,7 @@ impl Tag {
         let changelog_start_oid = Some(changelog_start_oid.as_str());
 
         let pattern = changelog_start_oid
-            .map(|oid| format!("{}..", oid))
+            .map(|oid| format!("{oid}.."))
             .unwrap_or_else(|| "..".to_string());
         let pattern = pattern.as_str();
         let pattern = RevspecPattern::from(pattern);

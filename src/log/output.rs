@@ -140,7 +140,7 @@ impl OutputBuilder {
             let pager = if AsRef::<Path>::as_ref(&pager).exists() {
                 PathBuf::from(pager)
             } else {
-                which::which(&pager).context(format!("Cannot find pager `{}`", pager))?
+                which::which(&pager).context(format!("Cannot find pager `{pager}`"))?
             };
 
             let args = words.collect();

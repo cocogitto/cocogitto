@@ -27,14 +27,14 @@ impl fmt::Display for RevspecPattern {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let from = self.from.as_deref().unwrap_or("");
         let to = self.to.as_deref().unwrap_or("");
-        write!(f, "{}..{}", from, to)
+        write!(f, "{from}..{to}")
     }
 }
 
 impl From<&str> for RevspecPattern {
     fn from(value: &str) -> Self {
         if !value.contains("..") {
-            panic!("Invalid commit range pattern: '{}'", value);
+            panic!("Invalid commit range pattern: '{value}'");
         }
 
         let split = value.split("..").collect::<Vec<&str>>();
@@ -200,7 +200,7 @@ impl Repository {
         };
 
         // Resolve shorthands and tags
-        let spec = format!("{}..{}", from, to);
+        let spec = format!("{from}..{to}");
         // Attempt to resolve tag names, fallback to oid
         let to = maybe_to_tag
             .map(OidOf::Tag)

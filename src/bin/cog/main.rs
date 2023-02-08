@@ -494,7 +494,7 @@ fn main() -> Result<()> {
                     changelog.into_markdown(template)?
                 }
             };
-            println!("{}", result);
+            println!("{result}");
         }
         Command::Init { path } => {
             cocogitto::command::init::init(&path)?;

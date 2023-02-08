@@ -35,7 +35,7 @@ impl CocoGitto {
         let tag = Tag::create(next_version.version.clone(), Some(package_name.to_string()));
 
         if dry_run {
-            print!("{}", tag);
+            print!("{tag}");
             return Ok(());
         }
 
@@ -76,7 +76,7 @@ impl CocoGitto {
 
         let sign = self.repository.gpg_sign();
         self.repository
-            .commit(&format!("chore(version): {}", tag), sign)?;
+            .commit(&format!("chore(version): {tag}"), sign)?;
 
         if let Some(msg_tmpl) = annotated {
             let mut context = tera::Context::new();
