@@ -240,6 +240,10 @@ enum Command {
         #[arg(long, value_parser = packages())]
         package: Option<String>,
 
+        /// Annotate tag with given message
+        #[arg(short = 'A', long)]
+        annotated: Option<String>,
+
         /// Dry-run: print the target version. No action taken
         #[arg(short, long)]
         dry_run: bool,
@@ -311,6 +315,7 @@ fn main() -> Result<()> {
             pre,
             hook_profile,
             package,
+            annotated,
             dry_run,
         } => {
             let mut cocogitto = CocoGitto::get()?;
@@ -336,6 +341,7 @@ fn main() -> Result<()> {
                             increment,
                             pre.as_deref(),
                             hook_profile.as_deref(),
+                            annotated,
                             dry_run,
                         )?
                     }
@@ -343,6 +349,7 @@ fn main() -> Result<()> {
                         increment,
                         pre.as_deref(),
                         hook_profile.as_deref(),
+                        annotated,
                         dry_run,
                     )?,
                 }
@@ -351,6 +358,7 @@ fn main() -> Result<()> {
                     increment,
                     pre.as_deref(),
                     hook_profile.as_deref(),
+                    annotated,
                     dry_run,
                 )?
             }
