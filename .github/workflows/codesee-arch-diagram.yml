@@ -17,4 +17,4 @@ jobs:
     steps:
       - uses: Codesee-io/codesee-action@v2
         with:
-          codesee-token: ${{ secrets.CODESEE_ARCH_DIAG_API_TOKEN }}
+          codesee-token: ${{ secrets.CODESEE_API_TOKEN }}
