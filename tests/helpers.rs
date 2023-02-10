@@ -123,6 +123,13 @@ pub fn assert_latest_tag(tag: &str) -> Result<()> {
     Ok(())
 }
 
+pub fn assert_tag_is_annotated(tag: &str) -> Result<()> {
+    let objtype = run_fun!(git for-each-ref --format="%(objecttype)" refs/tags/$tag)?;
+    let objtype: Vec<&str> = objtype.split('\n').collect();
+    assert_that!(objtype.first()).is_some().is_equal_to(&"tag");
+    Ok(())
+}
+
 /// Git log showing only the HEAD commit, this can be used to make assertion on the last commit
 pub fn git_log_head() -> Result<String> {
     run_fun!(git log -1 --pretty=%B).map_err(|e| anyhow!(e))

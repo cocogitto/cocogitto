@@ -38,6 +38,20 @@ impl Repository {
             .map_err(Git2Error::from)
     }
 
+    pub(crate) fn create_annotated_tag(&self, tag: &Tag, msg: &str) -> Result<(), Git2Error> {
+        if self.get_diff(true).is_some() {
+            let statuses = self.get_statuses()?;
+            return Err(Git2Error::ChangesNeedToBeCommitted(statuses));
+        }
+
+        let head = self.get_head_commit().unwrap();
+        let sig = self.0.signature()?;
+        self.0
+            .tag(&tag.to_string(), &head.into_object(), &sig, msg, false)
+            .map(|_| ())
+            .map_err(Git2Error::from)
+    }
+
     /// Get the latest tag, will ignore package tag if on a monorepo
     pub(crate) fn get_latest_tag(&self) -> Result<Tag, TagError> {
         let tags: Vec<Tag> = self.all_tags()?;

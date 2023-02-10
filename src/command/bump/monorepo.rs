@@ -16,6 +16,7 @@ use colored::*;
 
 use log::info;
 use semver::Prerelease;
+use tera::Tera;
 
 use crate::conventional::error::BumpError;
 use crate::git::oid::OidOf;
@@ -41,13 +42,20 @@ impl CocoGitto {
         increment: IncrementCommand,
         pre_release: Option<&str>,
         hooks_config: Option<&str>,
+        annotated: Option<String>,
         dry_run: bool,
     ) -> Result<()> {
         match increment {
             IncrementCommand::Auto => {
-                self.create_monorepo_version_auto(pre_release, hooks_config, dry_run)
+                self.create_monorepo_version_auto(pre_release, hooks_config, annotated, dry_run)
             }
-            _ => self.create_monorepo_version_manual(increment, pre_release, hooks_config, dry_run),
+            _ => self.create_monorepo_version_manual(
+                increment,
+                pre_release,
+                hooks_config,
+                annotated,
+                dry_run,
+            ),
         }
     }
 
@@ -55,6 +63,7 @@ impl CocoGitto {
         &mut self,
         pre_release: Option<&str>,
         hooks_config: Option<&str>,
+        annotated: Option<String>,
         dry_run: bool,
     ) -> Result<()> {
         self.pre_bump_checks()?;
@@ -158,7 +167,15 @@ impl CocoGitto {
             self.repository.create_tag(&bump.new_version.prefixed_tag)?;
         }
 
-        self.repository.create_tag(&tag)?;
+        if let Some(msg_tmpl) = annotated {
+            let mut context = tera::Context::new();
+            context.insert("latest", &old.version.to_string());
+            context.insert("version", &tag.version.to_string());
+            let msg = Tera::one_off(&msg_tmpl, &context, false)?;
+            self.repository.create_annotated_tag(&tag, &msg)?;
+        } else {
+            self.repository.create_tag(&tag)?;
+        }
 
         // Run per package post hooks
         for bump in bumps {
@@ -194,6 +211,7 @@ impl CocoGitto {
         increment: IncrementCommand,
         pre_release: Option<&str>,
         hooks_config: Option<&str>,
+        annotated: Option<String>,
         dry_run: bool,
     ) -> Result<()> {
         self.pre_bump_checks()?;
@@ -266,7 +284,15 @@ impl CocoGitto {
             sign,
         )?;
 
-        self.repository.create_tag(&tag)?;
+        if let Some(msg_tmpl) = annotated {
+            let mut context = tera::Context::new();
+            context.insert("latest", &old.version.to_string());
+            context.insert("version", &tag.version.to_string());
+            let msg = Tera::one_off(&msg_tmpl, &context, false)?;
+            self.repository.create_annotated_tag(&tag, &msg)?;
+        } else {
+            self.repository.create_tag(&tag)?;
+        }
 
         // Run global post hooks
         self.run_hooks(

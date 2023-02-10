@@ -19,11 +19,38 @@ fn bump_ok() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result = cocogitto.create_version(IncrementCommand::Auto, None, None, false);
+    let result = cocogitto.create_version(IncrementCommand::Auto, None, None, None, false);
 
     // Assert
     assert_that!(result).is_ok();
     assert_latest_tag("1.1.0")?;
+    Ok(())
+}
+
+#[sealed_test]
+fn annotated_bump_ok() -> Result<()> {
+    // Arrange
+    git_init()?;
+    git_commit("chore: first commit")?;
+    git_commit("feat: add a feature commit")?;
+    git_tag("1.0.0")?;
+    git_commit("feat: add another feature commit")?;
+
+    let mut cocogitto = CocoGitto::get()?;
+
+    // Act
+    let result = cocogitto.create_version(
+        IncrementCommand::Auto,
+        None,
+        None,
+        Some(String::from("Release version {{version}}")),
+        false,
+    );
+
+    // Assert
+    assert_that!(result).is_ok();
+    assert_latest_tag("1.1.0")?;
+    assert_tag_is_annotated("1.1.0")?;
     Ok(())
 }
 
@@ -39,7 +66,7 @@ fn monorepo_bump_ok() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result = cocogitto.create_monorepo_version(IncrementCommand::Auto, None, None, false);
+    let result = cocogitto.create_monorepo_version(IncrementCommand::Auto, None, None, None, false);
 
     // Assert
     assert_that!(result).is_ok();
@@ -63,7 +90,8 @@ fn monorepo_bump_manual_ok() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result = cocogitto.create_monorepo_version(IncrementCommand::Major, None, None, false);
+    let result =
+        cocogitto.create_monorepo_version(IncrementCommand::Major, None, None, None, false);
 
     // Assert
     assert_that!(result).is_ok();
@@ -84,7 +112,7 @@ fn monorepo_with_tag_prefix_bump_ok() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result = cocogitto.create_monorepo_version(IncrementCommand::Auto, None, None, false);
+    let result = cocogitto.create_monorepo_version(IncrementCommand::Auto, None, None, None, false);
 
     // Assert
     assert_that!(result).is_ok();
@@ -110,6 +138,7 @@ fn package_bump_ok() -> Result<()> {
         IncrementCommand::AutoPackage("one".to_string()),
         None,
         None,
+        None,
         false,
     );
 
@@ -130,7 +159,7 @@ fn should_fallback_to_0_0_0_when_there_is_no_tag() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result = cocogitto.create_version(IncrementCommand::Auto, None, None, false);
+    let result = cocogitto.create_version(IncrementCommand::Auto, None, None, None, false);
 
     // Assert
     assert_that!(result).is_ok();
@@ -183,7 +212,7 @@ fn bump_with_whitelisted_branch_ok() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result = cocogitto.create_version(IncrementCommand::Auto, None, None, false);
+    let result = cocogitto.create_version(IncrementCommand::Auto, None, None, None, false);
 
     // Assert
     assert_that!(result).is_ok();
@@ -208,7 +237,7 @@ fn bump_with_whitelisted_branch_fails() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result = cocogitto.create_version(IncrementCommand::Auto, None, None, false);
+    let result = cocogitto.create_version(IncrementCommand::Auto, None, None, None, false);
 
     // Assert
     assert_that!(result.unwrap_err().to_string()).is_equal_to(
@@ -237,7 +266,7 @@ fn bump_with_whitelisted_branch_pattern_ok() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result = cocogitto.create_version(IncrementCommand::Auto, None, None, false);
+    let result = cocogitto.create_version(IncrementCommand::Auto, None, None, None, false);
 
     // Assert
     assert_that!(result).is_ok();
@@ -262,7 +291,7 @@ fn bump_with_whitelisted_branch_pattern_err() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result = cocogitto.create_version(IncrementCommand::Auto, None, None, false);
+    let result = cocogitto.create_version(IncrementCommand::Auto, None, None, None, false);
 
     // Assert
     assert_that!(result).is_err();

@@ -10,6 +10,7 @@ use anyhow::Result;
 use colored::*;
 use log::info;
 use semver::Prerelease;
+use tera::Tera;
 
 impl CocoGitto {
     pub fn create_package_version(
@@ -18,6 +19,7 @@ impl CocoGitto {
         increment: IncrementCommand,
         pre_release: Option<&str>,
         hooks_config: Option<&str>,
+        annotated: Option<String>,
         dry_run: bool,
     ) -> Result<()> {
         self.pre_bump_checks()?;
@@ -76,7 +78,15 @@ impl CocoGitto {
         self.repository
             .commit(&format!("chore(version): {}", tag), sign)?;
 
-        self.repository.create_tag(&tag)?;
+        if let Some(msg_tmpl) = annotated {
+            let mut context = tera::Context::new();
+            context.insert("latest", &current_tag.version.to_string());
+            context.insert("version", &tag.version.to_string());
+            let msg = Tera::one_off(&msg_tmpl, &context, false)?;
+            self.repository.create_annotated_tag(&tag, &msg)?;
+        } else {
+            self.repository.create_tag(&tag)?;
+        }
 
         self.run_hooks(
             HookType::PostBump,
