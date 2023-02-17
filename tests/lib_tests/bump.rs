@@ -1,9 +1,11 @@
 use anyhow::Result;
 use cmd_lib::run_cmd;
-use cocogitto::settings::Settings;
+use cocogitto::settings::{MonoRepoPackage, Settings};
 use cocogitto::{conventional::version::IncrementCommand, CocoGitto};
 use sealed_test::prelude::*;
 use speculoos::prelude::*;
+use std::collections::HashMap;
+use std::path::PathBuf;
 
 use crate::helpers::*;
 
@@ -72,6 +74,101 @@ fn monorepo_bump_ok() -> Result<()> {
     assert_that!(result).is_ok();
     assert_tag_exists("0.1.0")?;
     assert_tag_exists("one-0.1.0")?;
+    Ok(())
+}
+
+#[sealed_test]
+fn monorepo_bump_issue_262_ok() -> Result<()> {
+    // Arrange
+    let mut packages = HashMap::new();
+    let jenkins = || MonoRepoPackage {
+        path: PathBuf::from("jenkins"),
+        public_api: false,
+        changelog_path: Some("jenkins/CHANGELOG.md".to_owned()),
+        ..Default::default()
+    };
+
+    packages.insert("jenkins".to_owned(), jenkins());
+
+    let thumbor = || MonoRepoPackage {
+        path: PathBuf::from("thumbor"),
+        public_api: false,
+        changelog_path: Some("thumbor/CHANGELOG.md".to_owned()),
+        ..Default::default()
+    };
+
+    packages.insert("thumbor".to_owned(), thumbor());
+
+    let settings = Settings {
+        packages,
+        ignore_merge_commits: true,
+        ..Default::default()
+    };
+
+    let settings = toml::to_string(&settings)?;
+
+    git_init()?;
+    run_cmd!(
+        echo Hello > README.md;
+        git add .;
+        git commit -m "first commit";
+        mkdir jenkins;
+        echo "some jenkins stuff" > jenkins/file;
+        git add .;
+        git commit -m "feat(jenkins): add jenkins stuffs";
+        mkdir thumbor;
+        echo "some thumbor stuff" > thumbor/file;
+        git add .;
+        git commit -m "feat(thumbor): add thumbor stuffs";
+        echo $settings > cog.toml;
+        git add .;
+        git commit -m "chore: add cog.toml";
+    )?;
+
+    let mut cocogitto = CocoGitto::get()?;
+
+    // Act
+    cocogitto.create_package_version(
+        ("thumbor", &thumbor()),
+        IncrementCommand::AutoPackage("thumbor".to_owned()),
+        None,
+        None,
+        None,
+        false,
+    )?;
+
+    cocogitto.create_package_version(
+        ("jenkins", &jenkins()),
+        IncrementCommand::AutoPackage("jenkins".to_owned()),
+        None,
+        None,
+        None,
+        false,
+    )?;
+
+    run_cmd!(
+        echo "fix jenkins bug" > jenkins/fix;
+        git add .;
+        git commit -m "fix(jenkins): bug fix on jenkins package";
+    )?;
+
+    cocogitto.create_package_version(
+        ("jenkins", &jenkins()),
+        IncrementCommand::AutoPackage("jenkins".to_owned()),
+        None,
+        None,
+        None,
+        false,
+    )?;
+
+    run_cmd!(git --no-pager log;)?;
+
+    // Assert
+    assert_tag_exists("jenkins-0.1.0")?;
+    assert_tag_exists("thumbor-0.1.0")?;
+    assert_tag_exists("jenkins-0.1.1")?;
+    assert_tag_does_not_exist("jenkins-0.2.0")?;
+    assert_tag_does_not_exist("0.1.0")?;
     Ok(())
 }
 

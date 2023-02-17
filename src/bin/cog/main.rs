@@ -11,7 +11,7 @@ use cocogitto::log::filter::{CommitFilter, CommitFilters};
 use cocogitto::log::output::Output;
 use cocogitto::{CocoGitto, SETTINGS};
 
-use anyhow::{Context, Result};
+use anyhow::{bail, Context, Result};
 use clap::builder::{PossibleValue, PossibleValuesParser};
 use clap::{ArgAction, ArgGroup, Args, CommandFactory, Parser, Subcommand, ValueEnum};
 use clap_complete::{shells, Generator};
@@ -319,17 +319,25 @@ fn main() -> Result<()> {
             dry_run,
         } => {
             let mut cocogitto = CocoGitto::get()?;
+            let is_monorepo = !SETTINGS.packages.is_empty();
 
             let increment = match version {
                 Some(version) => IncrementCommand::Manual(version),
-                None if auto => IncrementCommand::Auto,
+                None if auto => match package.as_ref() {
+                    Some(package) => {
+                        if !is_monorepo {
+                            bail!("Cannot create package version on non mono-repository config")
+                        };
+
+                        IncrementCommand::AutoPackage(package.to_owned())
+                    }
+                    None => IncrementCommand::Auto,
+                },
                 None if major => IncrementCommand::Major,
                 None if minor => IncrementCommand::Minor,
                 None if patch => IncrementCommand::Patch,
                 _ => unreachable!(),
             };
-
-            let is_monorepo = !SETTINGS.packages.is_empty();
 
             if is_monorepo {
                 match package {
