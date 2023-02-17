@@ -152,7 +152,7 @@ impl CocoGitto {
         &self,
         hook_type: HookType,
         current_tag: Option<&HookVersion>,
-        next_version: &HookVersion,
+        next_version: Option<&HookVersion>,
         hook_profile: Option<&str>,
         package_name: Option<&str>,
         package: Option<&MonoRepoPackage>,

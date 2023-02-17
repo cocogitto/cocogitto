@@ -14,7 +14,7 @@ use crate::{settings, CocoGitto, SETTINGS};
 use anyhow::Result;
 use colored::*;
 
-use log::info;
+use log::{info, warn};
 use semver::Prerelease;
 use tera::Tera;
 
@@ -47,7 +47,14 @@ impl CocoGitto {
     ) -> Result<()> {
         match increment {
             IncrementCommand::Auto => {
-                self.create_monorepo_version_auto(pre_release, hooks_config, annotated, dry_run)
+                if SETTINGS.generate_mono_repository_global_tag {
+                    self.create_monorepo_version_auto(pre_release, hooks_config, annotated, dry_run)
+                } else {
+                    if annotated.is_some() {
+                        warn!("--annotated flag is not supported for package bumps without a global tag");
+                    }
+                    self.create_all_package_version_auto(pre_release, hooks_config, dry_run)
+                }
             }
             _ => self.create_monorepo_version_manual(
                 increment,
@@ -57,6 +64,59 @@ impl CocoGitto {
                 dry_run,
             ),
         }
+    }
+
+    fn create_all_package_version_auto(
+        &mut self,
+        pre_release: Option<&str>,
+        hooks_config: Option<&str>,
+        dry_run: bool,
+    ) -> Result<()> {
+        self.pre_bump_checks()?;
+        // Get package bumps
+        let bumps = self.get_packages_bumps(pre_release)?;
+
+        if dry_run {
+            for bump in bumps {
+                println!("{}", bump.new_version.prefixed_tag)
+            }
+            return Ok(());
+        }
+
+        let hook_result = self.run_hooks(HookType::PreBump, None, None, hooks_config, None, None);
+
+        self.repository.add_all()?;
+        self.unwrap_or_stash_and_exit(&Tag::default(), hook_result);
+        self.bump_packages(pre_release, hooks_config, &bumps)?;
+
+        let sign = self.repository.gpg_sign();
+        self.repository
+            .commit("chore(version): bump packages", sign)?;
+
+        for bump in &bumps {
+            self.repository.create_tag(&bump.new_version.prefixed_tag)?;
+        }
+
+        // Run per package post hooks
+        for bump in bumps {
+            let package = SETTINGS
+                .packages
+                .get(&bump.package_name)
+                .expect("package exists");
+            self.run_hooks(
+                HookType::PostBump,
+                bump.old_version.as_ref(),
+                Some(&bump.new_version),
+                hooks_config,
+                Some(&bump.package_name),
+                Some(package),
+            )?;
+        }
+
+        // Run global post hooks
+        self.run_hooks(HookType::PostBump, None, None, hooks_config, None, None)?;
+
+        Ok(())
     }
 
     fn create_monorepo_version_auto(
@@ -145,7 +205,7 @@ impl CocoGitto {
         let hook_result = self.run_hooks(
             HookType::PreBump,
             current.as_ref(),
-            &next_version,
+            Some(&next_version),
             hooks_config,
             None,
             None,
@@ -186,7 +246,7 @@ impl CocoGitto {
             self.run_hooks(
                 HookType::PostBump,
                 bump.old_version.as_ref(),
-                &bump.new_version,
+                Some(&bump.new_version),
                 hooks_config,
                 Some(&bump.package_name),
                 Some(package),
@@ -197,7 +257,7 @@ impl CocoGitto {
         self.run_hooks(
             HookType::PostBump,
             current.as_ref(),
-            &next_version,
+            Some(&next_version),
             hooks_config,
             None,
             None,
@@ -269,7 +329,7 @@ impl CocoGitto {
         let hook_result = self.run_hooks(
             HookType::PreBump,
             current.as_ref(),
-            &next_version,
+            Some(&next_version),
             hooks_config,
             None,
             None,
@@ -298,7 +358,7 @@ impl CocoGitto {
         self.run_hooks(
             HookType::PostBump,
             current.as_ref(),
-            &next_version,
+            Some(&next_version),
             hooks_config,
             None,
             None,
@@ -434,7 +494,7 @@ impl CocoGitto {
             let hook_result = self.run_hooks(
                 HookType::PreBump,
                 old_version.as_ref(),
-                &new_version,
+                Some(&new_version),
                 hooks_config,
                 Some(package_name),
                 Some(package),

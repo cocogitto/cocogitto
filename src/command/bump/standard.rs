@@ -56,7 +56,7 @@ impl CocoGitto {
         let hook_result = self.run_hooks(
             HookType::PreBump,
             current.as_ref(),
-            &next_version,
+            Some(&next_version),
             hooks_config,
             None,
             None,
@@ -85,7 +85,7 @@ impl CocoGitto {
         self.run_hooks(
             HookType::PostBump,
             current.as_ref(),
-            &next_version,
+            Some(&next_version),
             hooks_config,
             None,
             None,
