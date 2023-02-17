@@ -1,10 +1,6 @@
-use std::path::PathBuf;
+mod commit;
 
-use anyhow::{Context, Result};
-use clap::builder::{PossibleValue, PossibleValuesParser};
-use clap::{ArgAction, ArgGroup, Args, CommandFactory, Parser, Subcommand, ValueEnum};
-use clap_complete::{shells, Generator};
-use clap_complete_nushell::Nushell;
+use std::path::PathBuf;
 
 use cocogitto::conventional::changelog::template::{RemoteContext, Template};
 use cocogitto::conventional::commit as conv_commit;
@@ -20,7 +16,6 @@ use clap::builder::{PossibleValue, PossibleValuesParser};
 use clap::{ArgAction, ArgGroup, Args, CommandFactory, Parser, Subcommand, ValueEnum};
 use clap_complete::{shells, Generator};
 use clap_complete_nushell::Nushell;
-mod commit;
 
 fn hook_profiles() -> PossibleValuesParser {
     let profiles = SETTINGS
