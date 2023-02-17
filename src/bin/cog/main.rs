@@ -331,14 +331,13 @@ fn main() -> Result<()> {
 
                         IncrementCommand::AutoPackage(package.to_owned())
                     }
-                    None => IncrementCommand::Auto
+                    None => IncrementCommand::Auto,
                 },
                 None if major => IncrementCommand::Major,
                 None if minor => IncrementCommand::Minor,
                 None if patch => IncrementCommand::Patch,
                 _ => unreachable!(),
             };
-
 
             if is_monorepo {
                 match package {

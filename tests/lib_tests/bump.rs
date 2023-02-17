@@ -1,11 +1,11 @@
-use std::collections::HashMap;
-use std::path::PathBuf;
 use anyhow::Result;
 use cmd_lib::run_cmd;
 use cocogitto::settings::{MonoRepoPackage, Settings};
 use cocogitto::{conventional::version::IncrementCommand, CocoGitto};
 use sealed_test::prelude::*;
 use speculoos::prelude::*;
+use std::collections::HashMap;
+use std::path::PathBuf;
 
 use crate::helpers::*;
 
@@ -134,7 +134,7 @@ fn monorepo_bump_issue_262_ok() -> Result<()> {
         None,
         None,
         None,
-        false
+        false,
     )?;
 
     cocogitto.create_package_version(
@@ -143,7 +143,7 @@ fn monorepo_bump_issue_262_ok() -> Result<()> {
         None,
         None,
         None,
-        false
+        false,
     )?;
 
     run_cmd!(
@@ -158,7 +158,7 @@ fn monorepo_bump_issue_262_ok() -> Result<()> {
         None,
         None,
         None,
-        false
+        false,
     )?;
 
     run_cmd!(git --no-pager log;)?;
@@ -171,7 +171,6 @@ fn monorepo_bump_issue_262_ok() -> Result<()> {
     assert_tag_does_not_exist("0.1.0")?;
     Ok(())
 }
-
 
 #[sealed_test]
 fn monorepo_bump_manual_ok() -> Result<()> {
