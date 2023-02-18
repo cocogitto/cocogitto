@@ -156,6 +156,13 @@ impl Default for Tag {
 }
 
 impl Tag {
+    pub(crate) fn strip_metadata(&self) -> Self {
+        let mut copy_without_prefix = self.clone();
+        copy_without_prefix.package = None;
+        copy_without_prefix.prefix = None;
+        copy_without_prefix
+    }
+
     // Tag always contains an oid unless it was created before the tag exist.
     // The only case where we do that is while creating the changelog during `cog bump`.
     // In this situation we need a tag to generate the changelog but this tag does not exist in the
@@ -244,12 +251,12 @@ impl fmt::Display for Tag {
         let version = self.version.to_string();
         if let Some((package, prefix)) = self.package.as_ref().zip(self.prefix.as_ref()) {
             let separator = SETTINGS.monorepo_separator().unwrap_or_else(||
-                panic!("Found a tag with monorepo package prefix but 'monorepo_version_separator' is not defined")
+                panic!("Found a tag with monorepo package prefix but there are no packages in cog.toml")
             );
             write!(f, "{package}{separator}{prefix}{version}")
         } else if let Some(package) = self.package.as_ref() {
             let separator = SETTINGS.monorepo_separator().unwrap_or_else(||
-                panic!("Found a tag with monorepo package prefix but 'monorepo_version_separator' is not defined")
+                panic!("Found a tag with monorepo package prefix but there are no packages in cog.toml")
             );
 
             write!(f, "{package}{separator}{version}")

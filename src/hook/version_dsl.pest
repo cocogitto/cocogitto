@@ -8,6 +8,8 @@ delimiter_start = _{ "{{" }
 delimiter_end = _{ "}}" }
 current_version = { "version" }
 latest_version = { "latest" }
+current_tag = { "version_tag" }
+latest_tag = { "latest_tag" }
 
 add = { "+" }
 
@@ -29,5 +31,5 @@ pre_release = { pre_release_separator ~ identifiers }
 build_metadata = { build_metadata_separator ~ identifiers }
 
 
-version = { delimiter_start ~ (current_version | latest_version) ~ ops* ~ pre_release? ~ build_metadata? ~ delimiter_end}
+version = { delimiter_start ~ (current_tag | current_version | latest_tag | latest_version) ~ ops* ~ pre_release? ~ build_metadata? ~ delimiter_end}
 version_dsl = { SOI ~ (version | (!delimiter_start ~ ANY) )* ~ EOI }
