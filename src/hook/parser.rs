@@ -16,14 +16,16 @@ struct HookDslParser;
 #[derive(Debug, Eq, PartialEq)]
 pub enum Token {
     Version,
+    VersionTag,
     LatestVersion,
+    LatestVersionTag,
     Amount(u64),
     Add,
     Major,
     Minor,
     Patch,
-    PreRelease(semver::Prerelease),
-    BuildMetadata(semver::BuildMetadata),
+    PreRelease(Prerelease),
+    BuildMetadata(BuildMetadata),
 }
 
 pub fn parse(hook: &str) -> Result<HookSpan, HookParseError> {
@@ -55,7 +57,9 @@ fn parse_version(pair: Pair<Rule>) -> Result<VersionSpan, HookParseError> {
     for pair in pair.into_inner() {
         match pair.as_rule() {
             Rule::current_version => tokens.push_back(Token::Version),
+            Rule::current_tag => tokens.push_back(Token::VersionTag),
             Rule::latest_version => tokens.push_back(Token::LatestVersion),
+            Rule::latest_tag => tokens.push_back(Token::LatestVersionTag),
             Rule::ops => parse_operator(&mut tokens, pair.into_inner())?,
             Rule::pre_release => {
                 let identifiers = pair.into_inner().next().unwrap();
@@ -120,6 +124,29 @@ mod test {
                     Token::Minor,
                 ]),
             });
+    }
+
+    #[test]
+    fn parse_version_tag() -> anyhow::Result<()> {
+        let span =
+            parser::parse("the latest {{latest_tag+1minor}}, the greatest {{version_tag+patch}}")?;
+
+        assert_that!(&span.version_spans).contains(&VersionSpan {
+            range: 11..32,
+            tokens: VecDeque::from(vec![
+                Token::LatestVersionTag,
+                Token::Add,
+                Token::Amount(1),
+                Token::Minor,
+            ]),
+        });
+
+        assert_that!(&span.version_spans).contains(&VersionSpan {
+            range: 47..68,
+            tokens: VecDeque::from(vec![Token::VersionTag, Token::Add, Token::Patch]),
+        });
+
+        Ok(())
     }
 
     #[test]

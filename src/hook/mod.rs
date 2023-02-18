@@ -34,16 +34,20 @@ impl VersionSpan {
         version: Option<&HookVersion>,
         latest: Option<&HookVersion>,
     ) -> Result<String> {
-        let version = version.map(|version| version.prefixed_tag.version.clone());
-        let latest = latest.map(|version| version.prefixed_tag.version.clone());
-
         // According to the pest grammar, a `version` or `latest_version` token is expected first
-        let mut version = match self.tokens.pop_front() {
+        let mut tag = match self.tokens.pop_front() {
             Some(Token::Version) => version
-                .ok_or_else(|| anyhow!("No previous tag found to replace {{version}} version")),
-            Some(Token::LatestVersion) => {
-                latest.ok_or_else(|| anyhow!("No previous tag found to replace {{latest}} version"))
-            }
+                .map(|version| version.prefixed_tag.strip_metadata())
+                .ok_or_else(|| anyhow!("No previous tag found to replace {{{{version}}}} version")),
+            Some(Token::LatestVersion) => latest
+                .map(|version| version.prefixed_tag.strip_metadata())
+                .ok_or_else(|| anyhow!("No previous tag found to replace {{{{latest}}}} version")),
+            Some(Token::LatestVersionTag) => latest
+                .map(|version| version.prefixed_tag.clone())
+                .ok_or_else(|| anyhow!("No previous tag found to replace {{{{latest_tag}}}} version")),
+            Some(Token::VersionTag) => version
+                .map(|version| version.prefixed_tag.clone())
+                .ok_or_else(|| anyhow!("No previous tag found to replace {{{{version_tag}}}} version")),
             _ => unreachable!("Unexpected parsing error"),
         }?;
 
@@ -57,23 +61,23 @@ impl VersionSpan {
                 Token::Amount(amt) => amount = amt,
                 // increments ...
                 Token::Major => {
-                    version.major += amount;
-                    version.minor = 0;
-                    version.patch = 0;
+                    tag.version.major += amount;
+                    tag.version.minor = 0;
+                    tag.version.patch = 0;
                 }
                 Token::Minor => {
-                    version.minor += amount;
-                    version.patch = 0;
+                    tag.version.minor += amount;
+                    tag.version.patch = 0;
                 }
-                Token::Patch => version.patch += amount,
+                Token::Patch => tag.version.patch += amount,
                 // set  build metadata and prerelease
-                Token::PreRelease(pre_release) => version.pre = pre_release,
-                Token::BuildMetadata(build) => version.build = build,
+                Token::PreRelease(pre_release) => tag.version.pre = pre_release,
+                Token::BuildMetadata(build) => tag.version.build = build,
                 _ => unreachable!("Unexpected parsing error"),
             }
         }
 
-        Ok(version.to_string())
+        Ok(tag.to_string())
     }
 }
 
@@ -145,13 +149,17 @@ impl Hook {
 
 #[cfg(test)]
 mod test {
+    use cmd_lib::run_cmd;
     use git2::Repository;
+    use std::collections::HashMap;
     use std::str::FromStr;
 
     use crate::{Result, Tag};
 
     use crate::hook::{Hook, HookVersion};
+    use crate::settings::{MonoRepoPackage, Settings};
     use sealed_test::prelude::*;
+    use semver::Version;
     use speculoos::prelude::*;
 
     #[test]
@@ -168,12 +176,94 @@ mod test {
     }
 
     #[test]
+    fn parse_current_version() -> Result<()> {
+        let hook = Hook::from_str("cargo bump {{version_tag}}")?;
+        assert_that!(hook.0.as_str()).is_equal_to("cargo bump {{version_tag}}");
+        Ok(())
+    }
+
+    #[test]
+    fn parse_latest_tag() -> Result<()> {
+        let hook = Hook::from_str("cargo bump {{latest_tag}}")?;
+        assert_that!(hook.0.as_str()).is_equal_to("cargo bump {{latest_tag}}");
+        Ok(())
+    }
+
+    #[test]
     fn replace_version_cargo() -> Result<()> {
         let mut hook = Hook::from_str("cargo bump {{version}}")?;
         hook.insert_versions(None, Some(&HookVersion::new(Tag::from_str("1.0.0", None)?)))
             .unwrap();
 
         assert_that!(hook.0.as_str()).is_equal_to("cargo bump 1.0.0");
+        Ok(())
+    }
+
+    #[test]
+    fn replace_version_tag_cargo() -> Result<()> {
+        let mut hook = Hook::from_str("cargo bump {{version_tag}}")?;
+        let tag = Tag {
+            package: None,
+            prefix: Some("v".to_string()),
+            version: Version::new(1, 0, 0),
+            oid: None,
+        };
+
+        hook.insert_versions(None, Some(&HookVersion::new(tag)))
+            .unwrap();
+
+        assert_that!(hook.0.as_str()).is_equal_to("cargo bump v1.0.0");
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn replace_version_tag_with_package() -> Result<()> {
+        let mut packages = HashMap::new();
+        packages.insert("cog".to_string(), MonoRepoPackage::default());
+        let settings = Settings {
+            packages,
+            ..Default::default()
+        };
+
+        let settings = toml::to_string(&settings)?;
+
+        run_cmd!(
+            git init;
+            echo $settings > cog.toml;
+            git add .;
+            git commit -m "first commit";
+        )?;
+
+        let mut hook = Hook::from_str("echo {{version_tag}}")?;
+
+        let tag = Tag {
+            package: Some("cog".to_string()),
+            prefix: Some("v".to_string()),
+            version: Version::new(1, 0, 0),
+            oid: None,
+        };
+
+        hook.insert_versions(None, Some(&HookVersion::new(tag)))
+            .unwrap();
+
+        assert_that!(hook.0.as_str()).is_equal_to("echo cog-v1.0.0");
+        Ok(())
+    }
+
+    #[test]
+    fn replace_latest_tag() -> Result<()> {
+        let mut hook = Hook::from_str("echo {{latest_tag}}")?;
+        let tag = Tag {
+            package: None,
+            prefix: Some("v".to_string()),
+            version: Version::new(1, 0, 0),
+            oid: None,
+        };
+
+        hook.insert_versions(Some(&HookVersion::new(tag)), None)
+            .unwrap();
+
+        assert_that!(hook.0.as_str()).is_equal_to("echo v1.0.0");
         Ok(())
     }
 
@@ -194,6 +284,60 @@ mod test {
             .unwrap();
 
         assert_that!(hook.0.as_str()).is_equal_to("mvn versions:set -DnewVersion=1.1.0-SNAPSHOT");
+        Ok(())
+    }
+
+    #[test]
+    fn replace_version_tag_with_expression() -> Result<()> {
+        let mut hook =
+            Hook::from_str("mvn versions:set -DnewVersion={{version_tag+1minor-SNAPSHOT}}")?;
+        let tag = Tag {
+            package: None,
+            prefix: Some("v".to_string()),
+            version: Version::new(1, 0, 0),
+            oid: None,
+        };
+
+        hook.insert_versions(None, Some(&HookVersion::new(tag)))
+            .unwrap();
+
+        assert_that!(hook.0.as_str()).is_equal_to("mvn versions:set -DnewVersion=v1.1.0-SNAPSHOT");
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn replace_package_version_tag_with_expression() -> Result<()> {
+        let mut packages = HashMap::new();
+        packages.insert("cog".to_string(), MonoRepoPackage::default());
+        let settings = Settings {
+            packages,
+            ..Default::default()
+        };
+
+        let settings = toml::to_string(&settings)?;
+
+        run_cmd!(
+            git init;
+            echo $settings > cog.toml;
+            git add .;
+            git commit -m "first commit";
+        )?;
+
+        let mut hook =
+            Hook::from_str("mvn versions:set -DnewVersion={{version_tag+1minor-SNAPSHOT}}")?;
+
+        let tag = Tag {
+            package: Some("cog".to_string()),
+            prefix: Some("v".to_string()),
+            version: Version::new(1, 0, 0),
+            oid: None,
+        };
+
+        hook.insert_versions(None, Some(&HookVersion::new(tag)))
+            .unwrap();
+
+        assert_that!(hook.0.as_str())
+            .is_equal_to("mvn versions:set -DnewVersion=cog-v1.1.0-SNAPSHOT");
         Ok(())
     }
 
@@ -277,6 +421,27 @@ mod test {
 
         assert_that!(hook.0.as_str())
             .is_equal_to("echo \"the latest 2.0.0-pre.alpha-bravo+build.42\"");
+        Ok(())
+    }
+
+    #[test]
+    fn replace_version_tag_with_pre_and_build_metadata() -> Result<()> {
+        let mut hook =
+            Hook::from_str("echo \"the latest {{version_tag+1major-pre.alpha-bravo+build.42}}\"")?;
+
+        let tag = Tag {
+            package: None,
+            prefix: Some("v".to_string()),
+            version: Version::new(1, 0, 0),
+            oid: None,
+        };
+
+        hook.insert_versions(None, Some(&HookVersion::new(tag)))
+            .unwrap();
+
+        assert_that!(hook.0.as_str())
+            .is_equal_to("echo \"the latest v2.0.0-pre.alpha-bravo+build.42\"");
+
         Ok(())
     }
 
