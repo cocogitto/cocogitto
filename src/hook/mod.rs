@@ -44,10 +44,20 @@ impl VersionSpan {
                 .ok_or_else(|| anyhow!("No previous tag found to replace {{{{latest}}}} version")),
             Some(Token::LatestVersionTag) => latest
                 .map(|version| version.prefixed_tag.clone())
-                .ok_or_else(|| anyhow!("No previous tag found to replace {{{{latest_tag}}}} version")),
+                .ok_or_else(|| {
+                    anyhow!("No previous tag found to replace {{{{latest_tag}}}} version")
+                }),
             Some(Token::VersionTag) => version
                 .map(|version| version.prefixed_tag.clone())
-                .ok_or_else(|| anyhow!("No previous tag found to replace {{{{version_tag}}}} version")),
+                .ok_or_else(|| {
+                    anyhow!("No previous tag found to replace {{{{version_tag}}}} version")
+                }),
+            Some(Token::Package) => {
+                return version
+                    .and_then(|version| version.prefixed_tag.package.clone())
+                    .ok_or_else(|| anyhow!("Current tag as no {{{{package}}}} info"))
+            }
+
             _ => unreachable!("Unexpected parsing error"),
         }?;
 
@@ -458,6 +468,53 @@ mod test {
 
         assert_that!(outcome).is_ok();
 
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn replace_package_name_and_version_tag_with_expression() -> Result<()> {
+        let mut packages = HashMap::new();
+        packages.insert("cog".to_string(), MonoRepoPackage::default());
+        let settings = Settings {
+            packages,
+            ..Default::default()
+        };
+
+        let settings = toml::to_string(&settings)?;
+
+        run_cmd!(
+            git init;
+            echo $settings > cog.toml;
+            git add .;
+            git commit -m "first commit";
+        )?;
+
+        let mut hook = Hook::from_str(
+            r#"echo "{{package}}, version: {{version}}, tag: {{version_tag}}, current: {{latest}}, current_tag: {{latest_tag}}""#,
+        )?;
+
+        let current = Tag {
+            package: Some("cog".to_string()),
+            prefix: Some("v".to_string()),
+            version: Version::new(1, 0, 0),
+            oid: None,
+        };
+
+        let tag = Tag {
+            package: Some("cog".to_string()),
+            prefix: Some("v".to_string()),
+            version: Version::new(1, 1, 0),
+            oid: None,
+        };
+
+        hook.insert_versions(
+            Some(&HookVersion::new(current)),
+            Some(&HookVersion::new(tag)),
+        )
+        .unwrap();
+
+        assert_that!(hook.0.as_str())
+            .is_equal_to(r#"echo "cog, version: 1.1.0, tag: cog-v1.1.0, current: 1.0.0, current_tag: cog-v1.0.0""#);
         Ok(())
     }
 }
