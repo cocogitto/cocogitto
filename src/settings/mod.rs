@@ -25,34 +25,44 @@ pub enum HookType {
     PostBump,
 }
 
-#[derive(Debug, Deserialize, Serialize, Eq, PartialEq, Default)]
-#[serde(deny_unknown_fields)]
+#[derive(Debug, Deserialize, Serialize, Eq, PartialEq)]
+#[serde(deny_unknown_fields, default)]
 pub struct Settings {
-    #[serde(default)]
     pub from_latest_tag: bool,
-    #[serde(default)]
     pub ignore_merge_commits: bool,
-    #[serde(default)]
+    pub generate_mono_repository_global_tag: bool,
     pub monorepo_version_separator: Option<String>,
-    #[serde(default)]
     pub branch_whitelist: Vec<String>,
     pub tag_prefix: Option<String>,
-    #[serde(default)]
     pub pre_bump_hooks: Vec<String>,
-    #[serde(default)]
     pub post_bump_hooks: Vec<String>,
-    #[serde(default)]
     pub pre_package_bump_hooks: Vec<String>,
-    #[serde(default)]
     pub post_package_bump_hooks: Vec<String>,
-    #[serde(default)]
     pub commit_types: CommitsMetadataSettings,
-    #[serde(default)]
     pub changelog: Changelog,
-    #[serde(default)]
     pub bump_profiles: HashMap<String, BumpProfile>,
-    #[serde(default)]
     pub packages: HashMap<String, MonoRepoPackage>,
+}
+
+impl Default for Settings {
+    fn default() -> Self {
+        Self {
+            from_latest_tag: false,
+            ignore_merge_commits: false,
+            generate_mono_repository_global_tag: true,
+            monorepo_version_separator: None,
+            branch_whitelist: vec![],
+            tag_prefix: None,
+            pre_bump_hooks: vec![],
+            post_bump_hooks: vec![],
+            pre_package_bump_hooks: vec![],
+            post_package_bump_hooks: vec![],
+            commit_types: Default::default(),
+            changelog: Default::default(),
+            bump_profiles: Default::default(),
+            packages: Default::default(),
+        }
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize, Eq, PartialEq)]

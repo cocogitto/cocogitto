@@ -62,5 +62,6 @@ authors = [
     { signature = "Stephen Connolly", username = "stephenc" },
     { signature = "Luca Trevisani", username = "lucatrv" },
     { signature = "Racci", username = "DaRacci" },
-    { signature = "Conrad Hoffmann", username = "bitfehler" }
+    { signature = "Conrad Hoffmann", username = "bitfehler" },
+    { signature = "andre161292", username = "andre161292" }
 ]

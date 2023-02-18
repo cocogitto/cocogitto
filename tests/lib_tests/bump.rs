@@ -78,7 +78,81 @@ fn monorepo_bump_ok() -> Result<()> {
 }
 
 #[sealed_test]
-fn monorepo_bump_issue_262_ok() -> Result<()> {
+fn monorepo_bump_manual_ok() -> Result<()> {
+    // Arrange
+    let mut settings = Settings {
+        ..Default::default()
+    };
+
+    init_monorepo(&mut settings)?;
+    run_cmd!(
+        git tag "one-0.1.0";
+    )?;
+
+    let mut cocogitto = CocoGitto::get()?;
+
+    // Act
+    let result =
+        cocogitto.create_monorepo_version(IncrementCommand::Major, None, None, None, false);
+
+    // Assert
+    assert_that!(result).is_ok();
+    assert_tag_exists("1.0.0")?;
+    Ok(())
+}
+
+#[sealed_test]
+fn monorepo_with_tag_prefix_bump_ok() -> Result<()> {
+    // Arrange
+    let mut settings = Settings {
+        tag_prefix: Some("v".to_string()),
+        ..Default::default()
+    };
+
+    init_monorepo(&mut settings)?;
+
+    let mut cocogitto = CocoGitto::get()?;
+
+    // Act
+    let result = cocogitto.create_monorepo_version(IncrementCommand::Auto, None, None, None, false);
+
+    // Assert
+    assert_that!(result).is_ok();
+    assert_tag_exists("v0.1.0")?;
+    assert_tag_exists("one-v0.1.0")?;
+    Ok(())
+}
+
+#[sealed_test]
+fn package_bump_ok() -> Result<()> {
+    // Arrange
+    let mut settings = Settings {
+        ..Default::default()
+    };
+
+    init_monorepo(&mut settings)?;
+    let package = settings.packages.get("one").unwrap();
+    let mut cocogitto = CocoGitto::get()?;
+
+    // Act
+    let result = cocogitto.create_package_version(
+        ("one", package),
+        IncrementCommand::AutoPackage("one".to_string()),
+        None,
+        None,
+        None,
+        false,
+    );
+
+    // Assert
+    assert_that!(result).is_ok();
+    assert_tag_does_not_exist("0.1.0")?;
+    assert_tag_exists("one-0.1.0")?;
+    Ok(())
+}
+
+#[sealed_test]
+fn consecutive_package_bump_ok() -> Result<()> {
     // Arrange
     let mut packages = HashMap::new();
     let jenkins = || MonoRepoPackage {
@@ -161,88 +235,12 @@ fn monorepo_bump_issue_262_ok() -> Result<()> {
         false,
     )?;
 
-    run_cmd!(git --no-pager log;)?;
-
     // Assert
     assert_tag_exists("jenkins-0.1.0")?;
     assert_tag_exists("thumbor-0.1.0")?;
     assert_tag_exists("jenkins-0.1.1")?;
     assert_tag_does_not_exist("jenkins-0.2.0")?;
     assert_tag_does_not_exist("0.1.0")?;
-    Ok(())
-}
-
-#[sealed_test]
-fn monorepo_bump_manual_ok() -> Result<()> {
-    // Arrange
-    let mut settings = Settings {
-        ..Default::default()
-    };
-
-    init_monorepo(&mut settings)?;
-    run_cmd!(
-        git tag "one-0.1.0";
-    )?;
-
-    let mut cocogitto = CocoGitto::get()?;
-
-    // Act
-    let result =
-        cocogitto.create_monorepo_version(IncrementCommand::Major, None, None, None, false);
-
-    // Assert
-    assert_that!(result).is_ok();
-    assert_tag_exists("1.0.0")?;
-    Ok(())
-}
-
-#[sealed_test]
-fn monorepo_with_tag_prefix_bump_ok() -> Result<()> {
-    // Arrange
-    let mut settings = Settings {
-        tag_prefix: Some("v".to_string()),
-        ..Default::default()
-    };
-
-    init_monorepo(&mut settings)?;
-
-    let mut cocogitto = CocoGitto::get()?;
-
-    // Act
-    let result = cocogitto.create_monorepo_version(IncrementCommand::Auto, None, None, None, false);
-
-    // Assert
-    assert_that!(result).is_ok();
-    assert_tag_exists("v0.1.0")?;
-    assert_tag_exists("one-v0.1.0")?;
-    Ok(())
-}
-
-#[sealed_test]
-fn package_bump_ok() -> Result<()> {
-    // Arrange
-    let mut settings = Settings {
-        ..Default::default()
-    };
-
-    init_monorepo(&mut settings)?;
-    let package = settings.packages.get("one").unwrap();
-    let mut cocogitto = CocoGitto::get()?;
-
-    // Act
-    let result = cocogitto.create_package_version(
-        ("one", package),
-        IncrementCommand::AutoPackage("one".to_string()),
-        None,
-        None,
-        None,
-        false,
-    );
-
-    // Assert
-    assert_that!(result).is_ok();
-    assert_tag_does_not_exist("0.1.0")?;
-    assert_tag_exists("one-0.1.0")?;
     Ok(())
 }
 
@@ -261,6 +259,76 @@ fn should_fallback_to_0_0_0_when_there_is_no_tag() -> Result<()> {
     // Assert
     assert_that!(result).is_ok();
     assert_latest_tag("0.1.0")?;
+    Ok(())
+}
+
+#[sealed_test]
+fn auto_bump_package_only_ok() -> Result<()> {
+    // Arrange
+    let mut packages = HashMap::new();
+    let jenkins = || MonoRepoPackage {
+        path: PathBuf::from("jenkins"),
+        public_api: false,
+        changelog_path: Some("jenkins/CHANGELOG.md".to_owned()),
+        ..Default::default()
+    };
+
+    packages.insert("jenkins".to_owned(), jenkins());
+
+    let thumbor = || MonoRepoPackage {
+        path: PathBuf::from("thumbor"),
+        public_api: false,
+        changelog_path: Some("thumbor/CHANGELOG.md".to_owned()),
+        ..Default::default()
+    };
+
+    packages.insert("thumbor".to_owned(), thumbor());
+
+    let settings = Settings {
+        packages,
+        generate_mono_repository_global_tag: false,
+        ..Default::default()
+    };
+
+    let settings = toml::to_string(&settings)?;
+
+    git_init()?;
+    run_cmd!(
+        echo Hello > README.md;
+        git add .;
+        git commit -m "first commit";
+        mkdir jenkins;
+        echo "some jenkins stuff" > jenkins/file;
+        git add .;
+        git commit -m "feat(jenkins): add jenkins stuffs";
+        mkdir thumbor;
+        echo "some thumbor stuff" > thumbor/file;
+        git add .;
+        git commit -m "feat(thumbor): add thumbor stuffs";
+        echo $settings > cog.toml;
+        git add .;
+        git commit -m "chore: add cog.toml";
+    )?;
+
+    let mut cocogitto = CocoGitto::get()?;
+
+    // Act
+    cocogitto.create_all_package_version_auto(None, None, false)?;
+
+    assert_tag_exists("jenkins-0.1.0")?;
+    assert_tag_exists("thumbor-0.1.0")?;
+    assert_tag_does_not_exist("0.1.0")?;
+
+    run_cmd!(
+        echo "fix jenkins bug" > jenkins/fix;
+        git add .;
+        git commit -m "fix(jenkins): bug fix on jenkins package";
+    )?;
+
+    cocogitto.create_all_package_version_auto(None, None, false)?;
+
+    // Assert
+    assert_tag_exists("jenkins-0.1.1")?;
     Ok(())
 }
 

@@ -24,6 +24,72 @@ mod monorepo;
 mod package;
 mod standard;
 
+struct HookRunOptions<'a> {
+    hook_type: HookType,
+    current_tag: Option<&'a HookVersion>,
+    next_version: Option<&'a HookVersion>,
+    hook_profile: Option<&'a str>,
+    package_name: Option<&'a str>,
+    package: Option<&'a MonoRepoPackage>,
+}
+
+impl<'a> HookRunOptions<'a> {
+    pub fn post_bump() -> Self {
+        Self {
+            hook_type: HookType::PostBump,
+            current_tag: None,
+            next_version: None,
+            hook_profile: None,
+            package_name: None,
+            package: None,
+        }
+    }
+
+    pub fn pre_bump() -> Self {
+        Self {
+            hook_type: HookType::PreBump,
+            current_tag: None,
+            next_version: None,
+            hook_profile: None,
+            package_name: None,
+            package: None,
+        }
+    }
+
+    pub fn current_tag<'b>(mut self, version: Option<&'b HookVersion>) -> Self
+    where
+        'b: 'a,
+    {
+        self.current_tag = version;
+        self
+    }
+
+    pub fn next_version<'b>(mut self, version: &'b HookVersion) -> Self
+    where
+        'b: 'a,
+    {
+        self.next_version = Some(version);
+        self
+    }
+
+    pub fn hook_profile<'b>(mut self, profile: Option<&'b str>) -> Self
+    where
+        'b: 'a,
+    {
+        self.hook_profile = profile;
+        self
+    }
+
+    pub fn package<'b>(mut self, name: &'b str, package: &'b MonoRepoPackage) -> Self
+    where
+        'b: 'a,
+    {
+        self.package_name = Some(name);
+        self.package = Some(package);
+        self
+    }
+}
+
 fn ensure_tag_is_greater_than_previous(current: &Tag, next: &Tag) -> Result<()> {
     if next <= current {
         let comparison = format!("{current} <= {next}").red();
@@ -148,20 +214,12 @@ impl CocoGitto {
         Ok(release)
     }
 
-    fn run_hooks(
-        &self,
-        hook_type: HookType,
-        current_tag: Option<&HookVersion>,
-        next_version: &HookVersion,
-        hook_profile: Option<&str>,
-        package_name: Option<&str>,
-        package: Option<&MonoRepoPackage>,
-    ) -> Result<()> {
+    fn run_hooks(&self, options: HookRunOptions) -> Result<()> {
         let settings = Settings::get(&self.repository)?;
 
-        let hooks: Vec<Hook> = match (package, hook_profile) {
+        let hooks: Vec<Hook> = match (options.package, options.hook_profile) {
             (None, Some(profile)) => settings
-                .get_profile_hooks(profile, hook_type)
+                .get_profile_hooks(profile, options.hook_type)
                 .iter()
                 .map(|s| s.parse())
                 .enumerate()
@@ -173,7 +231,7 @@ impl CocoGitto {
                 .try_collect()?,
 
             (Some(package), Some(profile)) => {
-                let hooks = package.get_profile_hooks(profile, hook_type);
+                let hooks = package.get_profile_hooks(profile, options.hook_type);
 
                 hooks
                     .iter()
@@ -187,14 +245,14 @@ impl CocoGitto {
                     .try_collect()?
             }
             (Some(package), None) => package
-                .get_hooks(hook_type)
+                .get_hooks(options.hook_type)
                 .iter()
                 .map(|s| s.parse())
                 .enumerate()
                 .map(|(idx, result)| result.context(format!("Cannot parse hook at index {idx}")))
                 .try_collect()?,
             (None, None) => settings
-                .get_hooks(hook_type)
+                .get_hooks(options.hook_type)
                 .iter()
                 .map(|s| s.parse())
                 .enumerate()
@@ -203,12 +261,12 @@ impl CocoGitto {
         };
 
         if !hooks.is_empty() {
-            let hook_type = match hook_type {
+            let hook_type = match options.hook_type {
                 HookType::PreBump => "pre-bump",
                 HookType::PostBump => "post-bump",
             };
 
-            match package_name {
+            match options.package_name {
                 None => {
                     let msg = format!("[{hook_type}]").underline().white().bold();
                     info!("{msg}")
@@ -224,7 +282,7 @@ impl CocoGitto {
         }
 
         for mut hook in hooks {
-            hook.insert_versions(current_tag, next_version)?;
+            hook.insert_versions(options.current_tag, options.next_version)?;
             let command = hook.to_string();
             let command = if command.chars().count() > 78 {
                 &command[0..command.len()]
@@ -232,7 +290,7 @@ impl CocoGitto {
                 &command
             };
             info!("[{command}]");
-            let package_path = package.map(|p| p.path.as_path());
+            let package_path = options.package.map(|p| p.path.as_path());
             hook.run(package_path).context(hook.to_string())?;
             println!();
         }

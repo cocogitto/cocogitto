@@ -1,10 +1,12 @@
-use crate::command::bump::{ensure_tag_is_greater_than_previous, tag_or_fallback_to_zero};
+use crate::command::bump::{
+    ensure_tag_is_greater_than_previous, tag_or_fallback_to_zero, HookRunOptions,
+};
 use crate::conventional::changelog::template::PackageContext;
 use crate::conventional::changelog::ReleaseType;
 use crate::conventional::version::IncrementCommand;
 use crate::git::tag::Tag;
 use crate::hook::HookVersion;
-use crate::settings::{HookType, MonoRepoPackage};
+use crate::settings::MonoRepoPackage;
 use crate::{CocoGitto, SETTINGS};
 use anyhow::Result;
 use colored::*;
@@ -63,12 +65,11 @@ impl CocoGitto {
         ));
 
         let hook_result = self.run_hooks(
-            HookType::PreBump,
-            current.as_ref(),
-            &next_version,
-            hooks_config,
-            Some(package_name),
-            Some(package),
+            HookRunOptions::pre_bump()
+                .current_tag(current.as_ref())
+                .next_version(&next_version)
+                .hook_profile(hooks_config)
+                .package(package_name, package),
         );
 
         self.repository.add_all()?;
@@ -89,12 +90,11 @@ impl CocoGitto {
         }
 
         self.run_hooks(
-            HookType::PostBump,
-            current.as_ref(),
-            &next_version,
-            hooks_config,
-            Some(package_name),
-            Some(package),
+            HookRunOptions::post_bump()
+                .current_tag(current.as_ref())
+                .next_version(&next_version)
+                .hook_profile(hooks_config)
+                .package(package_name, package),
         )?;
 
         let current = current
