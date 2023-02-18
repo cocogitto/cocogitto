@@ -19,6 +19,7 @@ pub enum Token {
     VersionTag,
     LatestVersion,
     LatestVersionTag,
+    Package,
     Amount(u64),
     Add,
     Major,
@@ -60,6 +61,7 @@ fn parse_version(pair: Pair<Rule>) -> Result<VersionSpan, HookParseError> {
             Rule::current_tag => tokens.push_back(Token::VersionTag),
             Rule::latest_version => tokens.push_back(Token::LatestVersion),
             Rule::latest_tag => tokens.push_back(Token::LatestVersionTag),
+            Rule::package => tokens.push_back(Token::Package),
             Rule::ops => parse_operator(&mut tokens, pair.into_inner())?,
             Rule::pre_release => {
                 let identifiers = pair.into_inner().next().unwrap();
@@ -163,6 +165,18 @@ mod test {
                     Token::Patch,
                     Token::PreRelease(Prerelease::new("pre.alpha0").unwrap()),
                 ]),
+            });
+    }
+
+    #[test]
+    fn parse_package() {
+        let result = parser::parse("version package: {{package}}");
+        assert_that!(result)
+            .is_ok()
+            .map(|span| &span.version_spans)
+            .contains(&VersionSpan {
+                range: 17..28,
+                tokens: VecDeque::from(vec![Token::Package]),
             });
     }
 
