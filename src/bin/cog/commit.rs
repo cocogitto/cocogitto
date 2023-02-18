@@ -75,10 +75,10 @@ fn prepare_header(typ: &str, message: &str, scope: Option<&str>) -> String {
     let mut header = typ.to_string();
 
     if let Some(scope) = scope {
-        write!(&mut header, "({})", scope).unwrap();
+        write!(&mut header, "({scope})").unwrap();
     }
 
-    write!(&mut header, ": {}", message).unwrap();
+    write!(&mut header, ": {message}").unwrap();
 
     header
 }
@@ -93,8 +93,7 @@ fn prepare_edit_template(typ: &str, message: &str, scope: Option<&str>, breaking
 
     write!(
         &mut template,
-        "{}\n\n# Message body\n\n\n# Message footer\n# For example, foo: bar\n\n\n",
-        header
+        "{header}\n\n# Message body\n\n\n# Message footer\n# For example, foo: bar\n\n\n"
     )
     .unwrap();
 

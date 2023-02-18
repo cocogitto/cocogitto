@@ -35,11 +35,11 @@ impl CocoGitto {
         let mut repo_tag_name = repo_path.to_str()?.to_string();
 
         if let Some(branch_shorthand) = self.repository.get_branch_shorthand() {
-            write!(&mut repo_tag_name, " on {}", branch_shorthand).unwrap();
+            write!(&mut repo_tag_name, " on {branch_shorthand}").unwrap();
         }
 
         if let Ok(latest_tag) = self.repository.get_latest_tag() {
-            write!(&mut repo_tag_name, " {}", latest_tag).unwrap();
+            write!(&mut repo_tag_name, " {latest_tag}").unwrap();
         };
 
         Some(repo_tag_name)

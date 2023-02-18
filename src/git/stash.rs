@@ -5,7 +5,7 @@ use crate::Tag;
 impl Repository {
     pub(crate) fn stash_failed_version(&mut self, tag: Tag) -> Result<(), Git2Error> {
         let sig = self.0.signature()?;
-        let message = &format!("cog_bump_{}", tag);
+        let message = &format!("cog_bump_{tag}");
         self.0
             .stash_save(&sig, message, None)
             .map(|_| ())

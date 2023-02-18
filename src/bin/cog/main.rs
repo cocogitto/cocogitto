@@ -205,6 +205,17 @@ enum Command {
         repository: Option<String>,
     },
 
+    /// Get current version
+    GetVersion {
+        /// Fallback version. Has to be semver compliant.
+        #[arg(short, long)]
+        fallback: Option<String>,
+
+        /// Specify which package to get the version for in a monorepo.
+        #[arg(long, value_parser = packages())]
+        package: Option<String>,
+    },
+
     /// Commit changelog from latest tag to HEAD and create new tag
     #[command(group = ArgGroup::new("bump-spec").required(true))]
     Bump {
@@ -306,6 +317,10 @@ fn main() -> Result<()> {
     init_logs(cli.verbose, cli.quiet);
 
     match cli.command {
+        Command::GetVersion { fallback, package } => {
+            let cocogitto = CocoGitto::get()?;
+            cocogitto.get_latest_version(fallback, package)?
+        }
         Command::Bump {
             version,
             auto,
@@ -474,7 +489,7 @@ fn main() -> Result<()> {
                     changelog.into_markdown(template)?
                 }
             };
-            println!("{}", result);
+            println!("{result}");
         }
         Command::Init { path } => {
             cocogitto::command::init::init(&path)?;

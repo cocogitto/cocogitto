@@ -85,7 +85,7 @@ impl Repository {
         let pattern = SETTINGS
             .tag_prefix
             .as_ref()
-            .map(|prefix| format!("{}*", prefix));
+            .map(|prefix| format!("{prefix}*"));
 
         // Collect non packages tags
         let mut tags: Vec<String> = self

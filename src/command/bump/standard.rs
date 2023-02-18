@@ -36,7 +36,7 @@ impl CocoGitto {
         let tag = Tag::create(tag.version, None);
 
         if dry_run {
-            print!("{}", tag);
+            print!("{tag}");
             return Ok(());
         }
 

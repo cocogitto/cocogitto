@@ -21,12 +21,12 @@ impl Display for CogCheckReport {
         .red()
         .bold();
 
-        writeln!(f, "{}", header)?;
+        writeln!(f, "{header}")?;
 
         for err in &self.errors {
             let underline = format!("{:>57}", " ").underline();
-            writeln!(f, "{:>5}\n", underline)?;
-            write!(f, "{}", err)?;
+            writeln!(f, "{underline:>5}\n")?;
+            write!(f, "{err}")?;
         }
         Ok(())
     }
@@ -54,6 +54,6 @@ impl Display for BumpError {
         \tyou can run `git stash apply stash@{}` to restore these changes.",
             stash_ref, self.stash_number
         );
-        write!(f, "{}\n{}", header, suggestion)
+        write!(f, "{header}\n{suggestion}")
     }
 }

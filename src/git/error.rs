@@ -78,11 +78,11 @@ impl Display for Git2Error {
         match self {
             Git2Error::NothingToCommit { branch, statuses } => {
                 if let Some(branch) = branch {
-                    writeln!(f, "On branch {}\n", branch)?;
+                    writeln!(f, "On branch {branch}\n")?;
                 }
 
                 match statuses {
-                    Some(statuses) if !statuses.0.is_empty() => write!(f, "{}", statuses),
+                    Some(statuses) if !statuses.0.is_empty() => write!(f, "{statuses}"),
                     _ => writeln!(
                         f,
                         "nothing to commit (create/copy files and use \"git add\" to track)"
@@ -130,10 +130,10 @@ impl Display for Git2Error {
             | Git2Error::StashError(err)
             | Git2Error::StatusError(err)
             | Git2Error::Other(err)
-            | Git2Error::CommitNotFound(err) => writeln!(f, "\ncause: {}", err),
-            Git2Error::GpgError(err) => writeln!(f, "\ncause: {}", err),
-            Git2Error::TagError(err) => writeln!(f, "\ncause: {}", err),
-            Git2Error::IOError(err) => writeln!(f, "\ncause: {}", err),
+            | Git2Error::CommitNotFound(err) => writeln!(f, "\ncause: {err}"),
+            Git2Error::GpgError(err) => writeln!(f, "\ncause: {err}"),
+            Git2Error::TagError(err) => writeln!(f, "\ncause: {err}"),
+            Git2Error::IOError(err) => writeln!(f, "\ncause: {err}"),
             _ => fmt::Result::Ok(()),
         }
     }
@@ -143,23 +143,23 @@ impl Display for TagError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             TagError::SemVerError { tag, err } => {
-                writeln!(f, "tag `{}` is not SemVer compliant", tag)?;
-                writeln!(f, "\tcause: {}", err)
+                writeln!(f, "tag `{tag}` is not SemVer compliant")?;
+                writeln!(f, "\tcause: {err}")
             }
             TagError::InvalidPrefixError { prefix, tag } => {
-                writeln!(f, "Expected a tag with prefix {}, got {}", prefix, tag)
+                writeln!(f, "Expected a tag with prefix {prefix}, got {tag}")
             }
             TagError::NotFound { tag, err } => {
-                writeln!(f, "tag {} not found", tag)?;
-                writeln!(f, "\tcause: {}", err)
+                writeln!(f, "tag {tag} not found")?;
+                writeln!(f, "\tcause: {err}")
             }
             TagError::NoTag => writeln!(f, "unable to get any tag"),
             TagError::NoMatchFound { pattern, err } => {
                 match pattern {
                     None => writeln!(f, "no tag found")?,
-                    Some(pattern) => writeln!(f, "no tag matching pattern {}", pattern)?,
+                    Some(pattern) => writeln!(f, "no tag matching pattern {pattern}")?,
                 }
-                writeln!(f, "\tcause: {}", err)
+                writeln!(f, "\tcause: {err}")
             }
         }
     }
