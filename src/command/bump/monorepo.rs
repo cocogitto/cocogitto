@@ -1,4 +1,6 @@
-use crate::command::bump::{ensure_tag_is_greater_than_previous, tag_or_fallback_to_zero};
+use crate::command::bump::{
+    ensure_tag_is_greater_than_previous, tag_or_fallback_to_zero, HookRunOptions,
+};
 
 use crate::conventional::changelog::template::{
     MonoRepoContext, PackageBumpContext, PackageContext,
@@ -9,7 +11,6 @@ use crate::conventional::version::{Increment, IncrementCommand};
 
 use crate::git::tag::Tag;
 use crate::hook::HookVersion;
-use crate::settings::HookType;
 use crate::{settings, CocoGitto, SETTINGS};
 use anyhow::Result;
 use colored::*;
@@ -66,7 +67,7 @@ impl CocoGitto {
         }
     }
 
-    fn create_all_package_version_auto(
+    pub fn create_all_package_version_auto(
         &mut self,
         pre_release: Option<&str>,
         hooks_config: Option<&str>,
@@ -83,7 +84,7 @@ impl CocoGitto {
             return Ok(());
         }
 
-        let hook_result = self.run_hooks(HookType::PreBump, None, None, hooks_config, None, None);
+        let hook_result = self.run_hooks(HookRunOptions::pre_bump().hook_profile(hooks_config));
 
         self.repository.add_all()?;
         self.unwrap_or_stash_and_exit(&Tag::default(), hook_result);
@@ -103,18 +104,18 @@ impl CocoGitto {
                 .packages
                 .get(&bump.package_name)
                 .expect("package exists");
+
             self.run_hooks(
-                HookType::PostBump,
-                bump.old_version.as_ref(),
-                Some(&bump.new_version),
-                hooks_config,
-                Some(&bump.package_name),
-                Some(package),
+                HookRunOptions::post_bump()
+                    .current_tag(bump.old_version.as_ref())
+                    .next_version(&bump.new_version)
+                    .hook_profile(hooks_config)
+                    .package(&bump.package_name, package),
             )?;
         }
 
         // Run global post hooks
-        self.run_hooks(HookType::PostBump, None, None, hooks_config, None, None)?;
+        self.run_hooks(HookRunOptions::post_bump().hook_profile(hooks_config))?;
 
         Ok(())
     }
@@ -203,12 +204,10 @@ impl CocoGitto {
         let next_version = HookVersion::new(tag.clone());
 
         let hook_result = self.run_hooks(
-            HookType::PreBump,
-            current.as_ref(),
-            Some(&next_version),
-            hooks_config,
-            None,
-            None,
+            HookRunOptions::pre_bump()
+                .current_tag(current.as_ref())
+                .next_version(&next_version)
+                .hook_profile(hooks_config),
         );
 
         self.repository.add_all()?;
@@ -244,23 +243,20 @@ impl CocoGitto {
                 .get(&bump.package_name)
                 .expect("package exists");
             self.run_hooks(
-                HookType::PostBump,
-                bump.old_version.as_ref(),
-                Some(&bump.new_version),
-                hooks_config,
-                Some(&bump.package_name),
-                Some(package),
+                HookRunOptions::post_bump()
+                    .current_tag(bump.old_version.as_ref())
+                    .next_version(&bump.new_version)
+                    .hook_profile(hooks_config)
+                    .package(&bump.package_name, package),
             )?;
         }
 
         // Run global post hooks
         self.run_hooks(
-            HookType::PostBump,
-            current.as_ref(),
-            Some(&next_version),
-            hooks_config,
-            None,
-            None,
+            HookRunOptions::post_bump()
+                .current_tag(current.as_ref())
+                .next_version(&next_version)
+                .hook_profile(hooks_config),
         )?;
 
         Ok(())
@@ -327,12 +323,10 @@ impl CocoGitto {
         let next_version = HookVersion::new(tag.clone());
 
         let hook_result = self.run_hooks(
-            HookType::PreBump,
-            current.as_ref(),
-            Some(&next_version),
-            hooks_config,
-            None,
-            None,
+            HookRunOptions::pre_bump()
+                .current_tag(current.as_ref())
+                .next_version(&next_version)
+                .hook_profile(hooks_config),
         );
 
         self.repository.add_all()?;
@@ -356,12 +350,10 @@ impl CocoGitto {
 
         // Run global post hooks
         self.run_hooks(
-            HookType::PostBump,
-            current.as_ref(),
-            Some(&next_version),
-            hooks_config,
-            None,
-            None,
+            HookRunOptions::post_bump()
+                .current_tag(current.as_ref())
+                .next_version(&next_version)
+                .hook_profile(hooks_config),
         )?;
 
         Ok(())
@@ -492,12 +484,11 @@ impl CocoGitto {
             let new_version = HookVersion::new(tag.clone());
 
             let hook_result = self.run_hooks(
-                HookType::PreBump,
-                old_version.as_ref(),
-                Some(&new_version),
-                hooks_config,
-                Some(package_name),
-                Some(package),
+                HookRunOptions::pre_bump()
+                    .current_tag(old_version.as_ref())
+                    .next_version(&new_version)
+                    .hook_profile(hooks_config)
+                    .package(package_name, package),
             );
 
             self.repository.add_all()?;
