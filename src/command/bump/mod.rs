@@ -91,11 +91,10 @@ impl<'a> HookRunOptions<'a> {
 }
 
 fn ensure_tag_is_greater_than_previous(current: &Tag, next: &Tag) -> Result<()> {
-    if next <= current {
+    if next < current {
         let comparison = format!("{current} <= {next}").red();
         let cause_key = "cause:".red();
         let cause = format!("{cause_key} version MUST be greater than current one: {comparison}");
-
         bail!("{}:\n\t{}\n", "SemVer Error".red().to_string(), cause);
     };
 

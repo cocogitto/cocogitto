@@ -23,6 +23,7 @@ pub(crate) trait Bump {
     fn major_bump(&self) -> Self;
     fn minor_bump(&self) -> Self;
     fn patch_bump(&self) -> Self;
+    fn no_bump(&self) -> Self;
     fn auto_bump(&self, repository: &Repository) -> Result<Self, BumpError>
     where
         Self: Sized;
@@ -63,6 +64,11 @@ impl Bump for Tag {
     fn patch_bump(&self) -> Self {
         let mut next = self.clone();
         next.version.patch += 1;
+        next.reset_metadata()
+    }
+
+    fn no_bump(&self) -> Self {
+        let next = self.clone();
         next.reset_metadata()
     }
 
@@ -111,6 +117,7 @@ impl Tag {
             IncrementCommand::Major => Ok(self.major_bump()),
             IncrementCommand::Minor => Ok(self.minor_bump()),
             IncrementCommand::Patch => Ok(self.patch_bump()),
+            IncrementCommand::NoBump => Ok(self.no_bump()),
             IncrementCommand::Auto => self.auto_bump(repository),
             IncrementCommand::AutoPackage(package) => self.auto_package_bump(repository, &package),
             IncrementCommand::AutoMonoRepoGlobal(package_increment) => {
@@ -160,6 +167,7 @@ impl Tag {
             Increment::Major => self.major_bump(),
             Increment::Minor => self.minor_bump(),
             Increment::Patch => self.patch_bump(),
+            Increment::NoBump => self.no_bump(),
         })
     }
 
@@ -201,6 +209,7 @@ impl Tag {
             Increment::Major => self.major_bump(),
             Increment::Minor => self.minor_bump(),
             Increment::Patch => self.patch_bump(),
+            Increment::NoBump => self.no_bump(),
         })
     }
 
@@ -241,6 +250,7 @@ impl Tag {
             Increment::Major => self.major_bump(),
             Increment::Minor => self.minor_bump(),
             Increment::Patch => self.patch_bump(),
+            Increment::NoBump => self.no_bump(),
         })
     }
 
@@ -267,12 +277,18 @@ impl Tag {
                 .any(|commit| commit.message.commit_type == CommitType::BugFix)
         };
 
+        // At this point, it is not a major, minor or patch bump but we might have found conventional commits
+        // -> Must be only chore, docs, refactor ... which means commits that don't require bump but shouldn't throw error
+        let no_bump_required = !commits.is_empty();
+
         if is_major_bump() {
             Ok(Increment::Major)
         } else if is_minor_bump() {
             Ok(Increment::Minor)
         } else if is_patch_bump() {
             Ok(Increment::Patch)
+        } else if no_bump_required {
+            Ok(Increment::NoBump)
         } else {
             Err(BumpError::NoCommitFound)
         }
@@ -359,6 +375,20 @@ mod test {
         Ok(())
     }
 
+    #[sealed_test]
+    fn no_bump() -> Result<()> {
+        // Arrange
+        let repository = Repository::init(".")?;
+        let base_version = Tag::from_str("1.0.0", None)?;
+
+        // Act
+        let tag = base_version.bump(IncrementCommand::NoBump, &repository)?;
+
+        // Assert
+        assert_that!(tag.version).is_equal_to(Version::new(1, 0, 0));
+        Ok(())
+    }
+
     #[test]
     fn should_get_next_auto_version_patch() -> Result<()> {
         // Arrange
@@ -372,6 +402,42 @@ mod test {
         assert_that!(increment)
             .is_ok()
             .is_equal_to(Increment::Patch);
+
+        Ok(())
+    }
+
+    #[test]
+    fn should_not_bump_versions_due_to_non_bump_commits() -> Result<()> {
+        // Arrange
+        let revert = Commit::commit_fixture(CommitType::Revert, false);
+        let perf = Commit::commit_fixture(CommitType::Performances, false);
+        let documentation = Commit::commit_fixture(CommitType::Documentation, false);
+        let chore = Commit::commit_fixture(CommitType::Chore, false);
+        let style = Commit::commit_fixture(CommitType::Style, false);
+        let refactor = Commit::commit_fixture(CommitType::Refactor, false);
+        let test = Commit::commit_fixture(CommitType::Test, false);
+        let build = Commit::commit_fixture(CommitType::Build, false);
+        let ci = Commit::commit_fixture(CommitType::Ci, false);
+
+        let base_version = Tag::from_str("1.0.0", None)?;
+
+        // Act
+        let increment = base_version.version_increment_from_commit_history(&[
+            revert,
+            perf,
+            documentation,
+            chore,
+            style,
+            refactor,
+            test,
+            build,
+            ci,
+        ]);
+
+        // Assert
+        assert_that!(increment)
+            .is_ok()
+            .is_equal_to(Increment::NoBump);
 
         Ok(())
     }
@@ -472,7 +538,7 @@ mod test {
     }
 
     #[test]
-    fn should_fail_without_feature_bug_fix_or_breaking_change_commit() -> Result<()> {
+    fn should_not_fail_without_feature_bug_fix_or_breaking_change_commit() -> Result<()> {
         // Arrange
         let chore = Commit::commit_fixture(CommitType::Chore, false);
         let docs = Commit::commit_fixture(CommitType::Documentation, false);
@@ -482,21 +548,7 @@ mod test {
         let version = base_version.version_increment_from_commit_history(&[chore, docs]);
 
         // Assert
-        let result = version.unwrap_err().to_string();
-        let result = result.as_str();
-
-        assert_eq!(
-            result,
-            r#"failed to bump version
-
-cause: No conventional commit found to bump current version.
-    Only feature, bug fix and breaking change commits will trigger an automatic bump.
-
-suggestion: Please see https://conventionalcommits.org/en/v1.0.0/#summary for more information.
-    Alternatively consider using `cog bump <--version <VERSION>|--auto|--major|--minor>`
-
-"#
-        );
+        assert_that!(version).is_ok().is_equal_to(Increment::NoBump);
 
         Ok(())
     }
