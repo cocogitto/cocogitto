@@ -77,6 +77,11 @@ impl CocoGitto {
         // Get package bumps
         let bumps = self.get_packages_bumps(pre_release)?;
 
+        if bumps.is_empty() {
+            print!("No conventional commits found for your packages that required a bump. Changelogs will be updated on the next bump.\nPre-Hooks and Post-Hooks have been skiped.\n");
+            return Ok(());
+        }
+
         if dry_run {
             for bump in bumps {
                 println!("{}", bump.new_version.prefixed_tag)
@@ -130,6 +135,11 @@ impl CocoGitto {
         self.pre_bump_checks()?;
         // Get package bumps
         let bumps = self.get_packages_bumps(pre_release)?;
+
+        if bumps.is_empty() {
+            print!("No conventional commits found for your packages that required a bump. Changelogs will be updated on the next bump.\nPre-Hooks and Post-Hooks have been skiped.\n");
+            return Ok(());
+        }
 
         // Get the greatest package increment among public api packages
         let increment_from_package_bumps = bumps
@@ -391,6 +401,10 @@ impl CocoGitto {
             }
 
             let mut next_version = next_version.unwrap();
+
+            if next_version == old {
+                continue;
+            }
 
             if let Some(pre_release) = pre_release {
                 next_version.version.pre = Prerelease::new(pre_release)?;

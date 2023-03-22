@@ -29,7 +29,13 @@ impl CocoGitto {
         let current_tag = self.repository.get_latest_package_tag(package_name);
         let current_tag = tag_or_fallback_to_zero(current_tag)?;
         let mut next_version = current_tag.bump(increment, &self.repository)?;
+        if current_tag == next_version {
+            print!("No conventional commits found for {package_name} that required a bump. Changelog will be updated on the next bump.\nPre-Hooks and Post-Hooks have been skiped.\n");
+            return Ok(());
+        }
+
         ensure_tag_is_greater_than_previous(&current_tag, &next_version)?;
+
         if let Some(pre_release) = pre_release {
             next_version.version.pre = Prerelease::new(pre_release)?;
         }

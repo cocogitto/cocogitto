@@ -463,3 +463,272 @@ fn bump_with_whitelisted_branch_pattern_err() -> Result<()> {
 
     Ok(())
 }
+
+#[sealed_test]
+fn bump_no_error_should_be_thrown_on_only_chore_docs_commit() -> Result<()> {
+    // Arrange
+    let mut packages = HashMap::new();
+    let jenkins = || MonoRepoPackage {
+        path: PathBuf::from("jenkins"),
+        changelog_path: Some("jenkins/CHANGELOG.md".to_owned()),
+        ..Default::default()
+    };
+
+    packages.insert("jenkins".to_owned(), jenkins());
+
+    let thumbor = || MonoRepoPackage {
+        path: PathBuf::from("thumbor"),
+        changelog_path: Some("thumbor/CHANGELOG.md".to_owned()),
+        ..Default::default()
+    };
+
+    packages.insert("thumbor".to_owned(), thumbor());
+
+    let settings = Settings {
+        packages,
+        ignore_merge_commits: true,
+        ..Default::default()
+    };
+
+    let settings = toml::to_string(&settings)?;
+
+    git_init()?;
+    run_cmd!(
+        echo Hello > README.md;
+        git add .;
+        git commit -m "first commit";
+        mkdir jenkins;
+        echo "some jenkins stuff" > jenkins/file;
+        git add .;
+        git commit -m "feat(jenkins): add jenkins stuffs";
+        mkdir thumbor;
+        echo "some thumbor stuff" > thumbor/file;
+        git add .;
+        git commit -m "feat(thumbor): add thumbor stuffs";
+        echo $settings > cog.toml;
+        git add .;
+        git commit -m "chore: add cog.toml";
+    )?;
+
+    let mut cocogitto = CocoGitto::get()?;
+
+    // Act
+    cocogitto.create_monorepo_version(IncrementCommand::Auto, None, None, None, false)?;
+
+    run_cmd!(
+        echo "chore on jenkins" > jenkins/fix;
+        git add .;
+        git commit -m "chore(jenkins): jenkins chore";
+        echo "docs on jenkins" > jenkins/fix;
+        git add .;
+        git commit -m "docs(jenkins): jenkins docs";
+    )?;
+
+    cocogitto.create_monorepo_version(IncrementCommand::Auto, None, None, None, false)?;
+
+    cocogitto.create_package_version(
+        ("jenkins", &jenkins()),
+        IncrementCommand::AutoPackage("jenkins".to_owned()),
+        None,
+        None,
+        None,
+        false,
+    )?;
+
+    run_cmd!(
+        echo "more feat on thumbor" > thumbor/feat;
+        git add .;
+        git commit -m "feat(thumbor): more feat on thumbor";
+    )?;
+
+    cocogitto.create_monorepo_version(IncrementCommand::Auto, None, None, None, false)?;
+
+    // Assert
+    assert_tag_exists("jenkins-0.1.0")?;
+    assert_tag_exists("thumbor-0.1.0")?;
+    assert_tag_exists("thumbor-0.2.0")?;
+    assert_tag_exists("0.1.0")?;
+    assert_tag_exists("0.2.0")?;
+
+    assert_tag_does_not_exist("jenkins-0.1.1")?;
+    assert_tag_does_not_exist("jenkins-0.2.0")?;
+    assert_tag_does_not_exist("jenkins-1.0.0")?;
+    Ok(())
+}
+
+#[sealed_test]
+fn error_on_no_conventionnal_commits_found_for_monorepo() -> Result<()> {
+    let settings = Settings {
+        ..Default::default()
+    };
+
+    let settings = toml::to_string(&settings)?;
+
+    git_init()?;
+
+    run_cmd!(
+        echo Hello > README.md;
+        git add .;
+        git commit -m "chore: first commit";
+
+        echo $settings > cog.toml;
+        git add .;
+
+        echo "first feature" > file;
+        git add .;
+        git commit -m "feat: feature commit";
+    )?;
+
+    let mut cocogitto = CocoGitto::get()?;
+
+    // Act
+    let first_result = cocogitto.create_version(IncrementCommand::Auto, None, None, None, false);
+
+    // Assert
+    assert_that!(first_result).is_ok();
+
+    run_cmd!(
+        echo "second feature" >> file;
+        git add .;
+    )?;
+
+    git_commit("second unconventional feature commit")?;
+
+    // Act
+    let second_result = cocogitto.create_version(IncrementCommand::Auto, None, None, None, false);
+
+    // Assert
+    assert_that!(second_result).is_err();
+
+    Ok(())
+}
+
+#[sealed_test]
+fn error_on_no_conventionnal_commits_found_for_package() -> Result<()> {
+    // Arrange
+    let mut packages = HashMap::new();
+    let jenkins = || MonoRepoPackage {
+        path: PathBuf::from("jenkins"),
+        changelog_path: Some("jenkins/CHANGELOG.md".to_owned()),
+        ..Default::default()
+    };
+
+    packages.insert("jenkins".to_owned(), jenkins());
+
+    let settings = Settings {
+        packages,
+        ignore_merge_commits: true,
+        ..Default::default()
+    };
+
+    let settings = toml::to_string(&settings)?;
+
+    git_init()?;
+    run_cmd!(
+        echo Hello > README.md;
+        git add .;
+        git commit -m "first commit";
+
+        echo $settings > cog.toml;
+        git add .;
+        git commit -m "chore: cog config";
+
+        mkdir jenkins;
+        echo "some jenkins stuff" > jenkins/file;
+        git add .;
+        git commit -m "feat(jenkins): some jenkins stuff";
+    )?;
+
+    let mut cocogitto = CocoGitto::get()?;
+
+    let first_result = cocogitto.create_package_version(
+        ("jenkins", &jenkins()),
+        IncrementCommand::AutoPackage("jenkins".to_owned()),
+        None,
+        None,
+        None,
+        false,
+    );
+
+    assert_that!(first_result).is_ok();
+
+    run_cmd!(
+        echo "some other jenkins stuff" >> jenkins/file;
+        git add .;
+        git commit -m "some other jenkins stuff";
+    )?;
+
+    let second_result = cocogitto.create_package_version(
+        ("jenkins", &jenkins()),
+        IncrementCommand::AutoPackage("jenkins".to_owned()),
+        None,
+        None,
+        None,
+        false,
+    );
+
+    assert_that!(second_result).is_err();
+
+    Ok(())
+}
+
+#[sealed_test]
+fn bump_with_unconventionnal_and_conventional_commits_found_for_packages() -> Result<()> {
+    // Arrange
+    let mut packages = HashMap::new();
+    let jenkins = || MonoRepoPackage {
+        path: PathBuf::from("jenkins"),
+        changelog_path: Some("jenkins/CHANGELOG.md".to_owned()),
+        ..Default::default()
+    };
+
+    packages.insert("jenkins".to_owned(), jenkins());
+
+    let thumbor = || MonoRepoPackage {
+        path: PathBuf::from("thumbor"),
+        changelog_path: Some("thumbor/CHANGELOG.md".to_owned()),
+        ..Default::default()
+    };
+
+    packages.insert("thumbor".to_owned(), thumbor());
+
+    let settings = Settings {
+        packages,
+        ignore_merge_commits: true,
+        ..Default::default()
+    };
+
+    let settings = toml::to_string(&settings)?;
+
+    git_init()?;
+    run_cmd!(
+        echo Hello > README.md;
+        git add .;
+        git commit -m "first commit";
+        mkdir jenkins;
+        echo "unconventional jenkins stuff" > jenkins/file;
+        git add .;
+        git commit -m "unconventional jenkins stuff";
+        mkdir thumbor;
+        echo "conventional thumbor stuff" > thumbor/file;
+        git add .;
+        git commit -m "feat(thumbor): conventional thumbor stuff";
+        echo $settings > cog.toml;
+        git add .;
+        git commit -m "chore: add cog.toml";
+    )?;
+
+    let mut cocogitto = CocoGitto::get()?;
+
+    // Act
+    let result = cocogitto.create_monorepo_version(IncrementCommand::Auto, None, None, None, false);
+
+    // Assert
+    assert_that!(result).is_ok();
+    assert_tag_exists("thumbor-0.1.0")?;
+    assert_tag_exists("0.1.0")?;
+
+    assert_tag_does_not_exist("jenkins-0.1.0")?;
+
+    Ok(())
+}

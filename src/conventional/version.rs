@@ -6,6 +6,7 @@ pub enum IncrementCommand {
     Minor,
     Patch,
     Auto,
+    NoBump,
     AutoPackage(String),
     AutoMonoRepoGlobal(Option<Increment>),
     Manual(String),
@@ -16,6 +17,7 @@ pub enum Increment {
     Major,
     Minor,
     Patch,
+    NoBump,
 }
 
 impl From<Increment> for IncrementCommand {
@@ -24,6 +26,7 @@ impl From<Increment> for IncrementCommand {
             Increment::Major => IncrementCommand::Major,
             Increment::Minor => IncrementCommand::Minor,
             Increment::Patch => IncrementCommand::Patch,
+            Increment::NoBump => IncrementCommand::NoBump,
         }
     }
 }
@@ -43,6 +46,9 @@ impl PartialOrd for Increment {
             (Increment::Minor, _) => Some(Ordering::Greater),
             (_, Increment::Minor) => Some(Ordering::Less),
             (Increment::Patch, Increment::Patch) => Some(Ordering::Equal),
+            (Increment::NoBump, Increment::NoBump) => Some(Ordering::Equal),
+            (Increment::Patch, Increment::NoBump) => Some(Ordering::Greater),
+            (Increment::NoBump, Increment::Patch) => Some(Ordering::Less),
         }
     }
 }
