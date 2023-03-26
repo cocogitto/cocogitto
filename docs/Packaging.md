@@ -2,15 +2,11 @@
 
 ## Generating manpages
 
-`cog` has a hidden subcommand to print generated manpage to STDOUT. To generate the main manpage, run:
+`cog` has a hidden subcommand to create manpages in a specified directory:
 
-```
-cog generate-manpage cog > cog.1
+```console
+cog generate-manpages "${PWD}/gen"
 ```
 
-You can also generate manpages for subcommands by specifying the subcommand name as argument, e.g.:
-
-```
-cog generate-manpage commit > cog-commit.1
-cog generate-manpage install-hook > cog-install-hook.1
-```
+This creates the directory if it doesn't exist already (like `mkdir -p` on Linux),
+then outputs generated manpages for `cog` as well as its subcommands into files in that directory.
