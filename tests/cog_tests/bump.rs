@@ -4,6 +4,7 @@ use crate::helpers::*;
 
 use anyhow::Result;
 use assert_cmd::prelude::*;
+use cmd_lib::run_cmd;
 use cocogitto::settings::Settings;
 use indoc::indoc;
 use sealed_test::prelude::*;
@@ -328,6 +329,51 @@ fn package_dry_run() -> Result<()> {
         .assert()
         .success()
         .stdout(indoc!("one-0.1.0\n"));
+
+    assert_that!(Path::new("CHANGELOG.md")).does_not_exist();
+    assert_tag_does_not_exist("1.1.0")?;
+    Ok(())
+}
+
+#[sealed_test]
+fn uncommited_changes_should_throw_error_by_default() -> Result<()> {
+    init_monorepo(&mut Settings::default())?;
+
+    run_cmd!(
+        echo two > two;
+    )?;
+
+    Command::cargo_bin("cog")?
+        .arg("bump")
+        .arg("--auto")
+        .arg("--dry-run")
+        .assert()
+        .failure();
+
+    Ok(())
+}
+
+#[sealed_test]
+fn uncommited_changes_should_not_throw_error_with_option() -> Result<()> {
+    let mut settings = Settings {
+        skip_untracked: true,
+        ..Default::default()
+    };
+
+    init_monorepo(&mut settings)?;
+
+    run_cmd!(
+        echo two > two;
+        echo "other changes" > one/file;
+    )?;
+
+    Command::cargo_bin("cog")?
+        .arg("bump")
+        .arg("--auto")
+        .arg("--dry-run")
+        .assert()
+        .success()
+        .stdout(indoc!("Untracked files :\n\tmodified: one/file\n\tnew: two\n\nnothing added to commit but untracked files present (use \"git add\" to track)\n\none-0.1.0\n0.1.0\n"));
 
     assert_that!(Path::new("CHANGELOG.md")).does_not_exist();
     assert_tag_does_not_exist("1.1.0")?;
