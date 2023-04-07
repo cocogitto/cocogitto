@@ -143,8 +143,12 @@ impl CocoGitto {
         }
         let statuses = self.repository.get_statuses()?;
 
-        // Fail if repo contains un-staged or un-committed changes
-        ensure!(statuses.0.is_empty(), "{}", self.repository.get_statuses()?);
+        // Warning if repository contains untracked or uncomitted changes
+        if SETTINGS.skip_untracked {
+            println!("{}", self.repository.get_statuses()?);
+        } else {
+            ensure!(statuses.0.is_empty(), "{}", self.repository.get_statuses()?);
+        }
 
         if !SETTINGS.branch_whitelist.is_empty() {
             if let Some(branch) = self.repository.get_branch_shorthand() {
