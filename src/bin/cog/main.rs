@@ -1,5 +1,6 @@
 mod commit;
 
+use std::fs;
 use std::path::PathBuf;
 
 use cocogitto::conventional::changelog::template::{RemoteContext, Template};
@@ -168,7 +169,12 @@ enum Command {
     /// Verify a single commit message
     Verify {
         /// The commit message
-        message: String,
+
+        #[arg(conflicts_with = "file", required_unless_present = "file")]
+        message: Option<String>,
+
+        #[arg(long, short)]
+        file: Option<PathBuf>,
 
         /// Ignore merge commit messages
         #[arg(short, long)]
@@ -187,7 +193,7 @@ enum Command {
 
         /// Generate the changelog with the given template.
         ///
-        /// Possible values are 'remote', 'full_hash', 'default' or the path to your template.  
+        /// Possible values are 'remote', 'full_hash', 'default' or the path to your template.
         /// If not specified cog will use cog.toml template config or fallback to 'default'.
         #[arg(long, short)]
         template: Option<String>,
@@ -388,6 +394,7 @@ fn main() -> Result<()> {
         }
         Command::Verify {
             message,
+            file,
             ignore_merge_commits,
         } => {
             let ignore_merge_commits = ignore_merge_commits || SETTINGS.ignore_merge_commits;
@@ -395,7 +402,23 @@ fn main() -> Result<()> {
                 .map(|cogito| cogito.get_committer().unwrap())
                 .ok();
 
-            conv_commit::verify(author, &message, ignore_merge_commits)?;
+            let commit_message = match (message, file) {
+                (Some(message), None) => message,
+                (None, Some(file_path)) => {
+                    if !file_path.exists() {
+                        bail!("File {file_path:#?} does not exist");
+                    }
+
+                    match fs::read_to_string(file_path) {
+                        Err(e) => bail!("Could not read the file ({e})"),
+                        Ok(msg) => msg,
+                    }
+                }
+                (None, None) => unreachable!(),
+                (Some(_), Some(_)) => unreachable!(),
+            };
+
+            conv_commit::verify(author, &commit_message, ignore_merge_commits)?;
         }
         Command::Check {
             from_latest_tag,

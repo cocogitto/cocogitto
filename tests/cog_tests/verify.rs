@@ -1,3 +1,5 @@
+use std::fs;
+use std::os::unix::fs::PermissionsExt;
 use std::process::Command;
 
 use crate::helpers::*;
@@ -145,6 +147,68 @@ fn should_ignore_merge_commit_via_config() -> Result<()> {
         // Assert
         .assert()
         .success();
+
+    Ok(())
+}
+
+#[sealed_test(files = ["tests/assets/commit_message.txt"])]
+fn verify_file_ok() -> Result<()> {
+    // Arrange
+    git_init()?;
+    let expected = indoc!(
+        "a commit message (not committed) - now
+            \tAuthor: Tom
+            \tType: chore
+            \tScope: none
+
+            ",
+    );
+
+    // Act
+    Command::cargo_bin("cog")?
+        .arg("verify")
+        .arg("--file")
+        .arg("commit_message.txt")
+        // Assert
+        .assert()
+        .success()
+        .stderr(expected);
+
+    Ok(())
+}
+
+#[test]
+fn verify_with_not_existing_file_fails() -> Result<()> {
+    // Act
+    Command::cargo_bin("cog")?
+        .arg("verify")
+        .arg("--file")
+        .arg("not_existing_file.txt")
+        // Assert
+        .assert()
+        .failure();
+
+    Ok(())
+}
+
+#[cfg(target_family = "unix")]
+#[sealed_test(files = ["tests/assets/commit_message.txt"])]
+fn verify_with_unreadable_file_fails() -> Result<()> {
+    let file_name = "commit_message.txt";
+
+    // Arrange
+    let mut perms = fs::metadata(file_name)?.permissions();
+    perms.set_mode(0o333); // write-only
+    fs::set_permissions(file_name, perms)?;
+
+    // Act
+    Command::cargo_bin("cog")?
+        .arg("verify")
+        .arg("--file")
+        .arg(file_name)
+        // Assert
+        .assert()
+        .failure();
 
     Ok(())
 }
