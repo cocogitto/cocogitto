@@ -116,20 +116,20 @@ impl HookSpan {
 }
 
 #[derive(Debug)]
-pub struct Hook(String);
+pub struct Hook(Vec<String>);
 
 impl FromStr for Hook {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         ensure!(!s.is_empty(), "hook must not be an empty string");
-        Ok(Hook(s.to_string()))
+        Ok(Hook(shlex::split(s).unwrap()))
     }
 }
 
 impl fmt::Display for Hook {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_str(&self.0)
+        f.write_str(&self.0.join(" "))
     }
 }
 
@@ -139,15 +139,19 @@ impl Hook {
         current_version: Option<&HookVersion>,
         next_version: Option<&HookVersion>,
     ) -> Result<()> {
-        let mut parts = parser::parse(&self.0)?;
-        self.0 = parts.replace_versions(next_version, current_version)?;
+        for el in &mut self.0.iter_mut() {
+            let mut parts = parser::parse(&el)?;
+            *el = parts.replace_versions(next_version, current_version)?;
+        }
 
         Ok(())
     }
 
     pub fn run(&self, package_path: Option<&path::Path>) -> Result<()> {
-        let mut cmd = Command::new("sh");
-        let cmd = cmd.arg("-c").arg(&self.0);
+        let exe = &self.0.first().unwrap();
+        let args: Vec<String> = self.0.clone().into_iter().skip(1).collect();
+        let mut cmd = Command::new(&exe);
+        cmd.args(&args);
         if let Some(current_dir) = package_path {
             cmd.current_dir(current_dir);
         }
