@@ -129,7 +129,8 @@ impl FromStr for Hook {
 
 impl fmt::Display for Hook {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_str(&self.0.join(" "))
+        let parts = self.0.iter().map(|s| s.as_str());
+        f.write_str(shlex::join(parts).as_str())
     }
 }
 
