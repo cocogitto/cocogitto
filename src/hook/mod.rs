@@ -185,21 +185,21 @@ mod test {
     #[test]
     fn parse_valid_string() -> Result<()> {
         let hook = Hook::from_str("cargo bump {{version}}")?;
-        assert_that!(hook.0.as_str()).is_equal_to("cargo bump {{version}}");
+        assert_that!(hook.to_string().as_str()).is_equal_to("cargo bump {{version}}");
         Ok(())
     }
 
     #[test]
     fn parse_current_version() -> Result<()> {
         let hook = Hook::from_str("cargo bump {{version_tag}}")?;
-        assert_that!(hook.0.as_str()).is_equal_to("cargo bump {{version_tag}}");
+        assert_that!(hook.to_string().as_str()).is_equal_to("cargo bump {{version_tag}}");
         Ok(())
     }
 
     #[test]
     fn parse_latest_tag() -> Result<()> {
         let hook = Hook::from_str("cargo bump {{latest_tag}}")?;
-        assert_that!(hook.0.as_str()).is_equal_to("cargo bump {{latest_tag}}");
+        assert_that!(hook.to_string().as_str()).is_equal_to("cargo bump {{latest_tag}}");
         Ok(())
     }
 
@@ -209,7 +209,7 @@ mod test {
         hook.insert_versions(None, Some(&HookVersion::new(Tag::from_str("1.0.0", None)?)))
             .unwrap();
 
-        assert_that!(hook.0.as_str()).is_equal_to("cargo bump 1.0.0");
+        assert_that!(hook.to_string().as_str()).is_equal_to("cargo bump 1.0.0");
         Ok(())
     }
 
@@ -226,7 +226,7 @@ mod test {
         hook.insert_versions(None, Some(&HookVersion::new(tag)))
             .unwrap();
 
-        assert_that!(hook.0.as_str()).is_equal_to("cargo bump v1.0.0");
+        assert_that!(hook.to_string().as_str()).is_equal_to("cargo bump v1.0.0");
         Ok(())
     }
 
@@ -260,7 +260,7 @@ mod test {
         hook.insert_versions(None, Some(&HookVersion::new(tag)))
             .unwrap();
 
-        assert_that!(hook.0.as_str()).is_equal_to("echo cog-v1.0.0");
+        assert_that!(hook.to_string().as_str()).is_equal_to("echo cog-v1.0.0");
         Ok(())
     }
 
@@ -277,7 +277,7 @@ mod test {
         hook.insert_versions(Some(&HookVersion::new(tag)), None)
             .unwrap();
 
-        assert_that!(hook.0.as_str()).is_equal_to("echo v1.0.0");
+        assert_that!(hook.to_string().as_str()).is_equal_to("echo v1.0.0");
         Ok(())
     }
 
@@ -287,7 +287,7 @@ mod test {
         hook.insert_versions(None, Some(&HookVersion::new(Tag::from_str("1.0.0", None)?)))
             .unwrap();
 
-        assert_that!(hook.0.as_str()).is_equal_to("mvn versions:set -DnewVersion=1.0.0");
+        assert_that!(hook.to_string().as_str()).is_equal_to("mvn versions:set -DnewVersion=1.0.0");
         Ok(())
     }
 
@@ -297,7 +297,8 @@ mod test {
         hook.insert_versions(None, Some(&HookVersion::new(Tag::from_str("1.0.0", None)?)))
             .unwrap();
 
-        assert_that!(hook.0.as_str()).is_equal_to("mvn versions:set -DnewVersion=1.1.0-SNAPSHOT");
+        assert_that!(hook.to_string().as_str())
+            .is_equal_to("mvn versions:set -DnewVersion=1.1.0-SNAPSHOT");
         Ok(())
     }
 
@@ -315,7 +316,8 @@ mod test {
         hook.insert_versions(None, Some(&HookVersion::new(tag)))
             .unwrap();
 
-        assert_that!(hook.0.as_str()).is_equal_to("mvn versions:set -DnewVersion=v1.1.0-SNAPSHOT");
+        assert_that!(hook.to_string().as_str())
+            .is_equal_to("mvn versions:set -DnewVersion=v1.1.0-SNAPSHOT");
         Ok(())
     }
 
@@ -350,7 +352,7 @@ mod test {
         hook.insert_versions(None, Some(&HookVersion::new(tag)))
             .unwrap();
 
-        assert_that!(hook.0.as_str())
+        assert_that!(hook.to_string().as_str())
             .is_equal_to("mvn versions:set -DnewVersion=cog-v1.1.0-SNAPSHOT");
         Ok(())
     }
@@ -361,7 +363,7 @@ mod test {
         hook.insert_versions(None, Some(&HookVersion::new(Tag::from_str("1.0.0", None)?)))
             .unwrap();
 
-        assert_that!(hook.0.as_str()).is_equal_to("echo \"Hello World\"");
+        assert_that!(hook.to_string().as_str()).is_equal_to("echo \"Hello World\"");
         Ok(())
     }
 
@@ -371,7 +373,7 @@ mod test {
         hook.insert_versions(None, Some(&HookVersion::new(Tag::from_str("1.0.0", None)?)))
             .unwrap();
 
-        assert_that!(hook.0.as_str()).is_equal_to("echo \"1.0.0\"");
+        assert_that!(hook.to_string().as_str()).is_equal_to("echo \"1.0.0\"");
         Ok(())
     }
 
@@ -382,7 +384,8 @@ mod test {
         hook.insert_versions(None, Some(&HookVersion::new(Tag::from_str("1.0.0", None)?)))
             .unwrap();
 
-        assert_that!(hook.0.as_str()).is_equal_to("cog commit chore 'bump snapshot to 1.1.0-pre'");
+        assert_that!(hook.to_string().as_str())
+            .is_equal_to("cog commit chore 'bump snapshot to 1.1.0-pre'");
         Ok(())
     }
 
@@ -393,7 +396,7 @@ mod test {
         hook.insert_versions(None, Some(&HookVersion::new(Tag::from_str("1.0.0", None)?)))
             .unwrap();
 
-        assert_that!(hook.0.as_str())
+        assert_that!(hook.to_string().as_str())
             .is_equal_to("cog commit chore \"bump snapshot to 1.1.0-pre\"");
         Ok(())
     }
@@ -407,7 +410,8 @@ mod test {
         )
         .unwrap();
 
-        assert_that!(hook.0.as_str()).is_equal_to("echo \"the latest 0.5.9, the greatest 1.0.0\"");
+        assert_that!(hook.to_string().as_str())
+            .is_equal_to("echo \"the latest 0.5.9, the greatest 1.0.0\"");
         Ok(())
     }
 
@@ -422,7 +426,8 @@ mod test {
         )
         .unwrap();
 
-        assert_that!(hook.0.as_str()).is_equal_to("echo \"the latest 3.1.0, the greatest 1.0.2\"");
+        assert_that!(hook.to_string().as_str())
+            .is_equal_to("echo \"the latest 3.1.0, the greatest 1.0.2\"");
         Ok(())
     }
 
@@ -433,7 +438,7 @@ mod test {
         hook.insert_versions(None, Some(&HookVersion::new(Tag::from_str("1.0.0", None)?)))
             .unwrap();
 
-        assert_that!(hook.0.as_str())
+        assert_that!(hook.to_string().as_str())
             .is_equal_to("echo \"the latest 2.0.0-pre.alpha-bravo+build.42\"");
         Ok(())
     }
@@ -453,7 +458,7 @@ mod test {
         hook.insert_versions(None, Some(&HookVersion::new(tag)))
             .unwrap();
 
-        assert_that!(hook.0.as_str())
+        assert_that!(hook.to_string().as_str())
             .is_equal_to("echo \"the latest v2.0.0-pre.alpha-bravo+build.42\"");
 
         Ok(())
@@ -517,7 +522,7 @@ mod test {
         )
         .unwrap();
 
-        assert_that!(hook.0.as_str())
+        assert_that!(hook.to_string().as_str())
             .is_equal_to(r#"echo "cog, version: 1.1.0, tag: cog-v1.1.0, current: 1.0.0, current_tag: cog-v1.0.0""#);
         Ok(())
     }
