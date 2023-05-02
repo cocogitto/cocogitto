@@ -261,7 +261,7 @@ mod test {
         hook.insert_versions(None, Some(&HookVersion::new(tag)))
             .unwrap();
 
-        assert_that!(hook.to_string().as_str()).is_equal_to("echo cog-v1.0.0");
+        assert_that!(hook.to_string().as_str()).is_equal_to("sh -c 'echo cog-v1.0.0'");
         Ok(())
     }
 
@@ -354,7 +354,7 @@ mod test {
             .unwrap();
 
         assert_that!(hook.to_string().as_str())
-            .is_equal_to("mvn versions:set -DnewVersion=cog-v1.1.0-SNAPSHOT");
+            .is_equal_to("mvn versions:set \"-DnewVersion=cog-v1.1.0-SNAPSHOT\"");
         Ok(())
     }
 
@@ -527,7 +527,7 @@ mod test {
         .unwrap();
 
         assert_that!(hook.to_string().as_str())
-            .is_equal_to(r#"echo "cog, version: 1.1.0, tag: cog-v1.1.0, current: 1.0.0, current_tag: cog-v1.0.0""#);
+            .is_equal_to(r#"sh -c 'echo "cog, version: 1.1.0, tag: cog-v1.1.0, current: 1.0.0, current_tag: cog-v1.0.0"'"#);
         Ok(())
     }
 }
