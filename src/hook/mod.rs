@@ -249,7 +249,7 @@ mod test {
             git commit -m "first commit";
         )?;
 
-        let mut hook = Hook::from_str("echo {{version_tag}}")?;
+        let mut hook = Hook::from_str("sh -c 'echo {{version_tag}}'")?;
 
         let tag = Tag {
             package: Some("cog".to_string()),
@@ -267,7 +267,7 @@ mod test {
 
     #[test]
     fn replace_latest_tag() -> Result<()> {
-        let mut hook = Hook::from_str("echo {{latest_tag}}")?;
+        let mut hook = Hook::from_str("sh -c 'echo {{latest_tag}}'")?;
         let tag = Tag {
             package: None,
             prefix: Some("v".to_string()),
@@ -360,21 +360,21 @@ mod test {
 
     #[test]
     fn leave_hook_untouched_when_no_version() -> Result<()> {
-        let mut hook = Hook::from_str("echo \"Hello World\"")?;
+        let mut hook = Hook::from_str("sh -c 'echo \"Hello World\"'")?;
         hook.insert_versions(None, Some(&HookVersion::new(Tag::from_str("1.0.0", None)?)))
             .unwrap();
 
-        assert_that!(hook.to_string().as_str()).is_equal_to("echo \"Hello World\"");
+        assert_that!(hook.to_string().as_str()).is_equal_to("sh -c 'echo \"Hello World\"'");
         Ok(())
     }
 
     #[test]
     fn replace_quoted_version() -> Result<()> {
-        let mut hook = Hook::from_str("echo \"{{version}}\"")?;
+        let mut hook = Hook::from_str("sh -c 'echo \"{{version}}\"'")?;
         hook.insert_versions(None, Some(&HookVersion::new(Tag::from_str("1.0.0", None)?)))
             .unwrap();
 
-        assert_that!(hook.to_string().as_str()).is_equal_to("echo \"1.0.0\"");
+        assert_that!(hook.to_string().as_str()).is_equal_to("sh -c 'echo \"1.0.0\"'");
         Ok(())
     }
 
@@ -404,7 +404,8 @@ mod test {
 
     #[test]
     fn replace_version_with_multiple_placeholders() -> Result<()> {
-        let mut hook = Hook::from_str("echo \"the latest {{latest}}, the greatest {{version}}\"")?;
+        let mut hook =
+            Hook::from_str("sh -c 'echo \"the latest {{latest}}, the greatest {{version}}\"'")?;
         hook.insert_versions(
             Some(&HookVersion::new(Tag::from_str("0.5.9", None)?)),
             Some(&HookVersion::new(Tag::from_str("1.0.0", None)?)),
@@ -419,7 +420,7 @@ mod test {
     #[test]
     fn replace_version_with_multiple_placeholders_and_increments() -> Result<()> {
         let mut hook = Hook::from_str(
-            "echo \"the latest {{latest+3major+1minor}}, the greatest {{version+2patch}}\"",
+            "sh -c 'echo \"the latest {{latest+3major+1minor}}, the greatest {{version+2patch}}\"'",
         )?;
         hook.insert_versions(
             Some(&HookVersion::new(Tag::from_str("0.5.9", None)?)),
@@ -434,20 +435,22 @@ mod test {
 
     #[test]
     fn replace_version_with_pre_and_build_metadata() -> Result<()> {
-        let mut hook =
-            Hook::from_str("echo \"the latest {{version+1major-pre.alpha-bravo+build.42}}\"")?;
+        let mut hook = Hook::from_str(
+            "sh -c 'echo \"the latest {{version+1major-pre.alpha-bravo+build.42}}\"'",
+        )?;
         hook.insert_versions(None, Some(&HookVersion::new(Tag::from_str("1.0.0", None)?)))
             .unwrap();
 
         assert_that!(hook.to_string().as_str())
-            .is_equal_to("echo \"the latest 2.0.0-pre.alpha-bravo+build.42\"");
+            .is_equal_to("sh -c 'echo \"the latest 2.0.0-pre.alpha-bravo+build.42\"'");
         Ok(())
     }
 
     #[test]
     fn replace_version_tag_with_pre_and_build_metadata() -> Result<()> {
-        let mut hook =
-            Hook::from_str("echo \"the latest {{version_tag+1major-pre.alpha-bravo+build.42}}\"")?;
+        let mut hook = Hook::from_str(
+            "sh -c 'echo \"the latest {{version_tag+1major-pre.alpha-bravo+build.42}}\"'",
+        )?;
 
         let tag = Tag {
             package: None,
@@ -500,7 +503,7 @@ mod test {
         )?;
 
         let mut hook = Hook::from_str(
-            r#"echo "{{package}}, version: {{version}}, tag: {{version_tag}}, current: {{latest}}, current_tag: {{latest_tag}}""#,
+            r#"sh -c 'echo "{{package}}, version: {{version}}, tag: {{version_tag}}, current: {{latest}}, current_tag: {{latest_tag}}"'"#,
         )?;
 
         let current = Tag {
