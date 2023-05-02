@@ -45,8 +45,9 @@ impl Template {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub enum TemplateKind {
+    #[default]
     Default,
     FullHash,
     Remote,
@@ -57,12 +58,6 @@ pub enum TemplateKind {
     MonorepoFullHash,
     MonorepoRemote,
     Custom(PathBuf),
-}
-
-impl Default for TemplateKind {
-    fn default() -> Self {
-        TemplateKind::Default
-    }
 }
 
 impl TemplateKind {
