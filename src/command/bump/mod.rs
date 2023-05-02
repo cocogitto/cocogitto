@@ -1,11 +1,10 @@
 use crate::conventional::changelog::release::Release;
 use crate::conventional::commit::Commit;
 use crate::git::error::TagError;
-use crate::git::hook::Hooks;
 use crate::git::oid::OidOf;
 use crate::git::revspec::RevspecPattern;
 use crate::git::tag::Tag;
-use crate::hook::{Hook, HookVersion};
+use crate::hook::{Hook, HookVersion, Hooks};
 use crate::settings::{HookType, MonoRepoPackage, Settings};
 use crate::BumpError;
 use crate::{CocoGitto, SETTINGS};

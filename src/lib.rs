@@ -11,7 +11,7 @@ use conventional::version::IncrementCommand;
 use error::BumpError;
 use git::repository::Repository;
 
-use settings::{HookType, Settings};
+use settings::Settings;
 
 use crate::git::error::{Git2Error, TagError};
 

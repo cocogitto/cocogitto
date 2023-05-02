@@ -7,7 +7,6 @@ use std::path::PathBuf;
 use cocogitto::conventional::changelog::template::{RemoteContext, Template};
 use cocogitto::conventional::commit as conv_commit;
 use cocogitto::conventional::version::IncrementCommand;
-use cocogitto::git::hook::HookKind;
 use cocogitto::git::revspec::RevspecPattern;
 use cocogitto::log::filter::{CommitFilter, CommitFilters};
 use cocogitto::log::output::Output;
@@ -18,6 +17,7 @@ use clap::builder::{PossibleValue, PossibleValuesParser};
 use clap::{ArgAction, ArgGroup, Args, CommandFactory, Parser, Subcommand, ValueEnum};
 use clap_complete::{shells, Generator};
 use clap_complete_nushell::Nushell;
+use cocogitto::settings::GitHookType;
 
 fn hook_profiles() -> PossibleValuesParser {
     let profiles = SETTINGS
@@ -26,6 +26,15 @@ fn hook_profiles() -> PossibleValuesParser {
         .map(|profile| -> &str { profile });
 
     profiles.into()
+}
+
+fn git_hook_types() -> PossibleValuesParser {
+    let hooks = SETTINGS
+        .git_hooks
+        .keys()
+        .map(|hook_type| hook_type.to_string());
+
+    hooks.into()
 }
 
 fn packages() -> PossibleValuesParser {
@@ -282,8 +291,11 @@ enum Command {
     /// Add git hooks to the repository
     InstallHook {
         /// Type of hook to install
-        #[arg(value_parser = ["commit-msg", "pre-push", "all"])]
-        hook_type: String,
+        #[arg(value_parser = git_hook_types(),  group = "git-hooks")]
+        hook_type: Vec<String>,
+        /// Install all git-hooks
+        #[arg(short, long, group = "git-hooks")]
+        all: bool,
     },
 
     /// Generate shell completions
@@ -524,14 +536,19 @@ fn main() -> Result<()> {
         Command::Init { path } => {
             cocogitto::command::init::init(&path)?;
         }
-        Command::InstallHook { hook_type } => {
+        Command::InstallHook {
+            hook_type: hook_types,
+            all,
+        } => {
             let cocogitto = CocoGitto::get()?;
-            match hook_type.as_str() {
-                "commit-msg" => cocogitto.install_hook(HookKind::PrepareCommit)?,
-                "pre-push" => cocogitto.install_hook(HookKind::PrePush)?,
-                "all" => cocogitto.install_hook(HookKind::All)?,
-                _ => unreachable!(),
-            }
+            if all {
+                cocogitto.install_all_hooks()?;
+                return Ok(());
+            };
+
+            let hook_types = hook_types.into_iter().map(GitHookType::from).collect();
+
+            cocogitto.install_git_hooks(hook_types)?;
         }
         Command::GenerateCompletions { shell } => {
             clap_complete::generate(shell, &mut Cli::command(), "cog", &mut std::io::stdout());

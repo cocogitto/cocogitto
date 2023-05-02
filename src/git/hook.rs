@@ -1,84 +1,41 @@
-use std::collections::HashMap;
 use std::fs::{self, Permissions};
 use std::io;
 #[cfg(target_family = "unix")]
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 
-use crate::{CocoGitto, HookType};
+use crate::settings::{GitHook, GitHookType};
+use anyhow::Result;
 
-use crate::settings::BumpProfile;
-use anyhow::{anyhow, Result};
+pub fn install_git_hook(repodir: &Path, hook_type: &GitHookType, hook: &GitHook) -> Result<()> {
+    let hook_path = repodir.join(".git/hooks");
+    let hook_path = hook_path.join::<&str>((*hook_type).into());
 
-pub(crate) static PRE_PUSH_HOOK: &[u8] = include_bytes!("assets/pre-push");
-pub(crate) static PREPARE_COMMIT_HOOK: &[u8] = include_bytes!("assets/commit-msg");
-const PRE_COMMIT_HOOK_PATH: &str = ".git/hooks/commit-msg";
-const PRE_PUSH_HOOK_PATH: &str = ".git/hooks/pre-push";
+    if hook_path.exists() {
+        let mut answer = String::new();
+        println!(
+            "Git hook `{}` exists. (Overwrite Y/n)",
+            hook_path.to_string_lossy()
+        );
+        io::stdin().read_line(&mut answer)?;
 
-pub trait Hooks {
-    fn bump_profiles(&self) -> &HashMap<String, BumpProfile>;
-    fn pre_bump_hooks(&self) -> &Vec<String>;
-    fn post_bump_hooks(&self) -> &Vec<String>;
-
-    fn get_hooks(&self, hook_type: HookType) -> &Vec<String> {
-        match hook_type {
-            HookType::PreBump => self.pre_bump_hooks(),
-            HookType::PostBump => self.post_bump_hooks(),
+        if !answer.trim().eq_ignore_ascii_case("y") {
+            println!("Aborting");
+            return Ok(());
         }
     }
 
-    fn get_profile_hooks(&self, profile: &str, hook_type: HookType) -> &Vec<String> {
-        let profile = self
-            .bump_profiles()
-            .get(profile)
-            .expect("Bump profile not found");
-        match hook_type {
-            HookType::PreBump => &profile.pre_bump_hooks,
-            HookType::PostBump => &profile.post_bump_hooks,
+    match hook {
+        GitHook::Script { script } => fs::write(&hook_path, script)?,
+        GitHook::File { path } => {
+            fs::copy(path, &hook_path)?;
         }
-    }
-}
-
-pub enum HookKind {
-    PrepareCommit,
-    PrePush,
-    All,
-}
-
-impl CocoGitto {
-    pub fn install_hook(&self, kind: HookKind) -> Result<()> {
-        let repodir = &self
-            .repository
-            .get_repo_dir()
-            .ok_or_else(|| anyhow!("Repository root directory not found"))?
-            .to_path_buf();
-
-        match kind {
-            HookKind::PrepareCommit => create_hook(repodir, HookKind::PrepareCommit)?,
-            HookKind::PrePush => create_hook(repodir, HookKind::PrePush)?,
-            HookKind::All => {
-                create_hook(repodir, HookKind::PrepareCommit)?;
-                create_hook(repodir, HookKind::PrePush)?
-            }
-        };
-
-        Ok(())
-    }
-}
-
-fn create_hook(path: &Path, kind: HookKind) -> io::Result<()> {
-    let (hook_path, hook_content) = match kind {
-        HookKind::PrepareCommit => (path.join(PRE_COMMIT_HOOK_PATH), PREPARE_COMMIT_HOOK),
-        HookKind::PrePush => (path.join(PRE_PUSH_HOOK_PATH), PRE_PUSH_HOOK),
-        HookKind::All => unreachable!(),
     };
-
-    fs::write(&hook_path, hook_content)?;
 
     #[cfg(target_family = "unix")]
     {
         let permissions = Permissions::from_mode(0o755);
-        fs::set_permissions(&hook_path, permissions)?;
+        fs::set_permissions(hook_path, permissions)?;
     }
 
     Ok(())
@@ -86,11 +43,12 @@ fn create_hook(path: &Path, kind: HookKind) -> io::Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use std::fs::File;
+    use std::collections::HashMap;
+    use std::fs;
 
-    use crate::git::hook::HookKind;
     use crate::CocoGitto;
 
+    use crate::settings::{GitHook, GitHookType, Settings};
     use anyhow::Result;
     use cmd_lib::run_cmd;
     use sealed_test::prelude::*;
@@ -101,31 +59,41 @@ mod tests {
     fn add_pre_commit_hook() -> Result<()> {
         // Arrange
         run_cmd!(git init)?;
+        let mut git_hooks = HashMap::new();
+        let hooks_script = r#"
+if cog check; then
+    exit 0
+fi
+
+echo "Invalid commits were found, force push with '--no-verify'"
+exit 1"#
+            .to_string();
+
+        git_hooks.insert(
+            GitHookType::CommitMsg,
+            GitHook::Script {
+                script: hooks_script.clone(),
+            },
+        );
+
+        let settings = Settings {
+            git_hooks,
+            ..Default::default()
+        };
+
+        let settings = toml::to_string(&settings)?;
+        fs::write("cog.toml", settings)?;
 
         let cog = CocoGitto::get()?;
 
         // Act
-        cog.install_hook(HookKind::PrepareCommit)?;
+        cog.install_git_hooks(vec![GitHookType::CommitMsg])?;
 
         // Assert
         assert_that!(Path::new(".git/hooks/commit-msg")).exists();
+        let hooks = fs::read_to_string(".git/hooks/commit-msg")?;
+        assert_that!(hooks).is_equal_to(&hooks_script);
         assert_that!(Path::new(".git/hooks/pre-push")).does_not_exist();
-        Ok(())
-    }
-
-    #[sealed_test]
-    fn add_pre_push_hook() -> Result<()> {
-        // Arrange
-        run_cmd!(git init)?;
-
-        let cog = CocoGitto::get()?;
-
-        // Act
-        cog.install_hook(HookKind::PrePush)?;
-
-        // Assert
-        assert_that!(Path::new(".git/hooks/pre-push")).exists();
-        assert_that!(Path::new(".git/hooks/pre-commit")).does_not_exist();
         Ok(())
     }
 
@@ -133,35 +101,53 @@ mod tests {
     fn add_all() -> Result<()> {
         // Arrange
         run_cmd!(git init)?;
+        run_cmd!(echo "echo toto" > pre-push;)?;
+
+        let mut git_hooks = HashMap::new();
+        let hooks_script = r#"
+if cog check; then
+    exit 0
+fi
+
+echo "Invalid commits were found, force push with '--no-verify'"
+exit 1"#
+            .to_string();
+
+        git_hooks.insert(
+            GitHookType::CommitMsg,
+            GitHook::Script {
+                script: hooks_script.clone(),
+            },
+        );
+
+        git_hooks.insert(
+            GitHookType::PrePush,
+            GitHook::File {
+                path: "pre-push".into(),
+            },
+        );
+
+        let settings = Settings {
+            git_hooks,
+            ..Default::default()
+        };
+
+        let settings = toml::to_string(&settings)?;
+        fs::write("cog.toml", settings)?;
 
         let cog = CocoGitto::get()?;
 
         // Act
-        cog.install_hook(HookKind::All)?;
+        cog.install_all_hooks()?;
 
         // Assert
-        assert_that!(Path::new(".git/hooks/pre-push")).exists();
         assert_that!(Path::new(".git/hooks/commit-msg")).exists();
-        Ok(())
-    }
+        let hook = fs::read_to_string(".git/hooks/commit-msg")?;
+        assert_that!(hook).is_equal_to(&hooks_script);
 
-    #[sealed_test]
-    #[cfg(target_family = "unix")]
-    fn should_have_perm_755_on_unix() -> Result<()> {
-        // Arrange
-        use std::os::unix::fs::PermissionsExt;
-        run_cmd!(git init)?;
-
-        let cog = CocoGitto::get()?;
-
-        // Act
-        cog.install_hook(HookKind::PrePush)?;
-
-        // Assert
-        let prepush = File::open(".git/hooks/pre-push")?;
-        let metadata = prepush.metadata()?;
         assert_that!(Path::new(".git/hooks/pre-push")).exists();
-        assert_that!(metadata.permissions().mode() & 0o777).is_equal_to(0o755);
+        let hook = fs::read_to_string(".git/hooks/pre-push")?;
+        assert_that!(hook).is_equal_to("echo toto\n".to_string());
         Ok(())
     }
 }

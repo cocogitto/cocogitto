@@ -1,4 +1,6 @@
 use std::collections::HashMap;
+use std::fmt;
+use std::fmt::Formatter;
 use std::path::PathBuf;
 
 use crate::conventional::commit::CommitConfig;
@@ -7,7 +9,7 @@ use crate::{CommitsMetadata, CONFIG_PATH, SETTINGS};
 
 use crate::conventional::changelog::error::ChangelogError;
 use crate::conventional::changelog::template::{RemoteContext, Template};
-use crate::git::hook::Hooks;
+use crate::hook::Hooks;
 use crate::settings::error::SettingError;
 use config::{Config, File};
 use conventional_commit_parser::commit::CommitType;
@@ -38,6 +40,7 @@ pub struct Settings {
     pub post_bump_hooks: Vec<String>,
     pub pre_package_bump_hooks: Vec<String>,
     pub post_package_bump_hooks: Vec<String>,
+    pub git_hooks: HashMap<GitHookType, GitHook>,
     pub commit_types: CommitsMetadataSettings,
     pub changelog: Changelog,
     pub bump_profiles: HashMap<String, BumpProfile>,
@@ -57,12 +60,110 @@ impl Default for Settings {
             post_bump_hooks: vec![],
             pre_package_bump_hooks: vec![],
             post_package_bump_hooks: vec![],
+            git_hooks: HashMap::new(),
             commit_types: Default::default(),
             changelog: Default::default(),
             bump_profiles: Default::default(),
             packages: Default::default(),
         }
     }
+}
+
+#[derive(Debug, Deserialize, Serialize, Eq, PartialEq, Hash, Copy, Clone)]
+#[serde(deny_unknown_fields, rename_all = "kebab-case", into = "&str")]
+pub enum GitHookType {
+    ApplypatchMsg,
+    PreApplypatch,
+    PostApplypatch,
+    PreCommit,
+    PreMergeCommit,
+    PrePrepareCommitMsg,
+    CommitMsg,
+    PostCommit,
+    PreRebase,
+    PostCheckout,
+    PostMerge,
+    PrePush,
+    PreAutoGc,
+    PostRewrite,
+    SendemailValidate,
+    FsmonitorWatchman,
+    P4Changelist,
+    P4PrepareChangelist,
+    P4Postchangelist,
+    P4PreSubmit,
+    PostIndexChange,
+}
+
+impl From<String> for GitHookType {
+    fn from(value: String) -> Self {
+        match value.as_str() {
+            "applypatch-msg" => Self::ApplypatchMsg,
+            "pre-applypatch" => Self::PreApplypatch,
+            "post-applypatch" => Self::PostApplypatch,
+            "pre-commit" => Self::PreCommit,
+            "pre-merge-commit" => Self::PreMergeCommit,
+            "pre-commit-msg" => Self::PrePrepareCommitMsg,
+            "commit-msg" => Self::CommitMsg,
+            "post-commit" => Self::PostCommit,
+            "pre-rebase" => Self::PreRebase,
+            "post-checkout" => Self::PostCheckout,
+            "post-merge" => Self::PostMerge,
+            "pre-push" => Self::PrePush,
+            "pre-auto-gc" => Self::PreAutoGc,
+            "post-rewrite" => Self::PostRewrite,
+            "sendemail-validate" => Self::SendemailValidate,
+            "fsmonitor-watchman" => Self::FsmonitorWatchman,
+            "p4-changelist" => Self::P4Changelist,
+            "p4-prepare-changelist" => Self::P4PrepareChangelist,
+            "p4-postchangelist" => Self::P4Postchangelist,
+            "p4-pre-submit" => Self::P4PreSubmit,
+            "post-index-change" => Self::PostIndexChange,
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl From<GitHookType> for &str {
+    fn from(val: GitHookType) -> Self {
+        match val {
+            GitHookType::ApplypatchMsg => "applypatch-msg",
+            GitHookType::PreApplypatch => "pre-applypatch",
+            GitHookType::PostApplypatch => "post-applypatch",
+            GitHookType::PreCommit => "pre-commit",
+            GitHookType::PreMergeCommit => "pre-merge-commit",
+            GitHookType::PrePrepareCommitMsg => "pre-commit-msg",
+            GitHookType::CommitMsg => "commit-msg",
+            GitHookType::PostCommit => "post-commit",
+            GitHookType::PreRebase => "pre-rebase",
+            GitHookType::PostCheckout => "post-checkout",
+            GitHookType::PostMerge => "post-merge",
+            GitHookType::PrePush => "pre-push",
+            GitHookType::PreAutoGc => "pre-auto-gc",
+            GitHookType::PostRewrite => "post-rewrite",
+            GitHookType::SendemailValidate => "sendemail-validate",
+            GitHookType::FsmonitorWatchman => "fsmonitor-watchman",
+            GitHookType::P4Changelist => "p4-changelist",
+            GitHookType::P4PrepareChangelist => "p4-prepare-changelist",
+            GitHookType::P4Postchangelist => "p4-postchangelist",
+            GitHookType::P4PreSubmit => "p4-pre-submit",
+            GitHookType::PostIndexChange => "post-index-change",
+        }
+    }
+}
+
+impl fmt::Display for GitHookType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let value: &str = (*self).into();
+        write!(f, "{}", value)
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize, Eq, PartialEq)]
+#[serde(deny_unknown_fields, untagged)]
+pub enum GitHook {
+    Script { script: String },
+    File { path: PathBuf },
 }
 
 #[derive(Debug, Deserialize, Serialize, Eq, PartialEq)]

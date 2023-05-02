@@ -1,7 +1,7 @@
 mod error;
 mod parser;
 
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 use std::ops::Range;
 use std::process::Command;
 use std::str::FromStr;
@@ -10,7 +10,32 @@ use std::{fmt, path};
 use crate::Tag;
 use parser::Token;
 
+use crate::settings::{BumpProfile, HookType};
 use anyhow::{anyhow, ensure, Result};
+
+pub trait Hooks {
+    fn bump_profiles(&self) -> &HashMap<String, BumpProfile>;
+    fn pre_bump_hooks(&self) -> &Vec<String>;
+    fn post_bump_hooks(&self) -> &Vec<String>;
+
+    fn get_hooks(&self, hook_type: HookType) -> &Vec<String> {
+        match hook_type {
+            HookType::PreBump => self.pre_bump_hooks(),
+            HookType::PostBump => self.post_bump_hooks(),
+        }
+    }
+
+    fn get_profile_hooks(&self, profile: &str, hook_type: HookType) -> &Vec<String> {
+        let profile = self
+            .bump_profiles()
+            .get(profile)
+            .expect("Bump profile not found");
+        match hook_type {
+            HookType::PreBump => &profile.pre_bump_hooks,
+            HookType::PostBump => &profile.post_bump_hooks,
+        }
+    }
+}
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct VersionSpan {
