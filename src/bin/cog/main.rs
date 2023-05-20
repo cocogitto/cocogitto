@@ -125,12 +125,16 @@ enum Command {
     /// Verify all commit messages against the conventional commit specification
     Check {
         /// Check commit history, starting from the latest tag to HEAD
-        #[arg(short = 'l', long)]
+        #[arg(short = 'l', long, group = "commit_range")]
         from_latest_tag: bool,
 
         /// Ignore merge commits messages
         #[arg(short, long)]
         ignore_merge_commits: bool,
+
+        /// Check commits in the specified range
+        #[arg(group = "commit_range")]
+        range: Option<String>,
     },
 
     /// Create a new conventional commit
@@ -423,11 +427,12 @@ fn main() -> Result<()> {
         Command::Check {
             from_latest_tag,
             ignore_merge_commits,
+            range,
         } => {
             let cocogitto = CocoGitto::get()?;
             let from_latest_tag = from_latest_tag || SETTINGS.from_latest_tag;
             let ignore_merge_commits = ignore_merge_commits || SETTINGS.ignore_merge_commits;
-            cocogitto.check(from_latest_tag, ignore_merge_commits)?;
+            cocogitto.check(from_latest_tag, ignore_merge_commits, range)?;
         }
         Command::Edit { from_latest_tag } => {
             let cocogitto = CocoGitto::get()?;

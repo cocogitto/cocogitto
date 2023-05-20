@@ -8,8 +8,16 @@ use colored::*;
 use log::info;
 
 impl CocoGitto {
-    pub fn check(&self, check_from_latest_tag: bool, ignore_merge_commits: bool) -> Result<()> {
-        let commit_range = if check_from_latest_tag {
+    pub fn check(
+        &self,
+        check_from_latest_tag: bool,
+        ignore_merge_commits: bool,
+        range: Option<String>,
+    ) -> Result<()> {
+        let commit_range = if let Some(range) = range {
+            self.repository
+                .get_commit_range(&RevspecPattern::from(range.as_str()))?
+        } else if check_from_latest_tag {
             self.repository
                 .get_commit_range(&RevspecPattern::default())?
         } else {
