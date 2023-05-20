@@ -42,7 +42,7 @@ fn check_commit_history_ok() -> Result<()> {
     let cocogitto = CocoGitto::get()?;
 
     // Act
-    let check = cocogitto.check(false, false);
+    let check = cocogitto.check(false, false, None);
 
     // Assert
     assert_that!(check).is_ok();
@@ -58,7 +58,7 @@ fn check_commit_history_err_with_merge_commit() -> Result<()> {
     let cocogitto = CocoGitto::get()?;
 
     // Act
-    let check = cocogitto.check(false, false);
+    let check = cocogitto.check(false, false, None);
 
     // Assert
     assert_that!(check).is_err();
@@ -81,7 +81,7 @@ fn check_commit_history_ok_with_merge_commit_ignored() -> Result<()> {
     let cocogitto = CocoGitto::get()?;
 
     // Act
-    let check = cocogitto.check(false, true);
+    let check = cocogitto.check(false, true, None);
 
     // Assert
     assert_that!(check).is_ok();
@@ -98,7 +98,7 @@ fn check_commit_history_err() -> Result<()> {
     let cocogitto = CocoGitto::get()?;
 
     // Act
-    let check = cocogitto.check(false, false);
+    let check = cocogitto.check(false, false, None);
 
     // Assert
     assert_that!(check).is_err();
@@ -117,7 +117,7 @@ fn check_commit_ok_from_latest_tag() -> Result<()> {
     let cocogitto = CocoGitto::get()?;
 
     // Act
-    let check = cocogitto.check(true, false);
+    let check = cocogitto.check(true, false, None);
 
     // Assert
     assert_that!(check).is_ok();
@@ -135,7 +135,7 @@ fn check_commit_err_from_latest_tag() -> Result<()> {
     let cocogitto = CocoGitto::get()?;
 
     // Act
-    let check = cocogitto.check(true, false);
+    let check = cocogitto.check(true, false, None);
 
     // Assert
     assert_that!(check).is_err();
@@ -152,7 +152,7 @@ fn long_commit_summary_does_not_panic() -> Result<()> {
     git_add("Hello", "file")?;
     cocogitto.conventional_commit("feat", None, message, None, None, false, false)?;
 
-    let check = cocogitto.check(false, false);
+    let check = cocogitto.check(false, false, None);
 
     assert_that!(check.is_ok());
     Ok(())
