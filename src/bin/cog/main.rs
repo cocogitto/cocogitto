@@ -171,13 +171,14 @@ enum Command {
     },
 
     /// Verify a single commit message
+    #[command(group = ArgGroup::new("verify_input").required(true))]
     Verify {
         /// The commit message
-
-        #[arg(conflicts_with = "file", required_unless_present = "file")]
+        #[arg(group = "verify_input")]
         message: Option<String>,
 
-        #[arg(long, short)]
+        /// Read message from the specified file
+        #[arg(short, long, group = "verify_input")]
         file: Option<PathBuf>,
 
         /// Ignore merge commit messages
