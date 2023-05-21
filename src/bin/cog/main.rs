@@ -1,4 +1,5 @@
 mod commit;
+mod mangen;
 
 use std::fs;
 use std::path::PathBuf;
@@ -294,7 +295,7 @@ enum Command {
 
     /// Generate manpage
     #[command(hide = true)]
-    GenerateManpage { cmd: String },
+    GenerateManpages { output_dir: PathBuf },
 }
 
 #[derive(Args)]
@@ -535,18 +536,8 @@ fn main() -> Result<()> {
         Command::GenerateCompletions { shell } => {
             clap_complete::generate(shell, &mut Cli::command(), "cog", &mut std::io::stdout());
         }
-        Command::GenerateManpage { cmd } => {
-            let mut cog_cmd = Cli::command();
-            cog_cmd = cog_cmd.disable_help_subcommand(true);
-            let cmd = match cmd.as_str() {
-                "cog" => cog_cmd,
-                cmd => cog_cmd
-                    .find_subcommand(cmd)
-                    .expect("Requested non-existent subcommand")
-                    .clone(),
-            };
-            let man = clap_mangen::Man::new(cmd);
-            man.render(&mut std::io::stdout())?;
+        Command::GenerateManpages { output_dir } => {
+            mangen::generate_manpages(&output_dir)?;
         }
         Command::Commit(CommitArgs {
             typ,
