@@ -10,8 +10,9 @@ use cocogitto::conventional::version::IncrementCommand;
 use cocogitto::git::revspec::RevspecPattern;
 use cocogitto::log::filter::{CommitFilter, CommitFilters};
 use cocogitto::log::output::Output;
-use cocogitto::{CocoGitto, SETTINGS};
+use cocogitto::{CocoGitto, CommitHook, SETTINGS};
 
+use crate::commit::prepare_edit_message;
 use anyhow::{bail, Context, Result};
 use clap::builder::{PossibleValue, PossibleValuesParser};
 use clap::{ArgAction, ArgGroup, Args, CommandFactory, Parser, Subcommand, ValueEnum};
@@ -565,13 +566,24 @@ fn main() -> Result<()> {
             sign,
         }) => {
             let cocogitto = CocoGitto::get()?;
+            cocogitto.run_commit_hook(CommitHook::PreCommit)?;
+            let commit_message_path = cocogitto.prepare_edit_message_path();
+            let template = prepare_edit_message(
+                &typ,
+                &message,
+                scope.as_deref(),
+                breaking_change,
+                &commit_message_path,
+            )?;
+            cocogitto.run_commit_hook(CommitHook::PrepareCommitMessage(template))?;
+
             let (body, footer, breaking) = if edit {
-                commit::edit_message(&typ, &message, scope.as_deref(), breaking_change)?
+                commit::edit_message(&commit_message_path, breaking_change)?
             } else {
                 (None, None, breaking_change)
             };
-
             cocogitto.conventional_commit(&typ, scope, message, body, footer, breaking, sign)?;
+            cocogitto.run_commit_hook(CommitHook::PostCommit)?;
         }
     }
 
