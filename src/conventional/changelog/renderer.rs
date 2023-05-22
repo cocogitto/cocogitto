@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use tera::{get_json_pointer, to_value, try_get_value, Context, Tera, Value};
+use tera::{dotted_pointer, to_value, try_get_value, Context, Tera, Value};
 
 use crate::conventional::changelog::release::Release;
 use crate::conventional::changelog::template::{
@@ -95,12 +95,10 @@ impl Renderer {
 
         let value = args.get("value").unwrap_or(&Value::Null);
 
-        let json_pointer = get_json_pointer("scope");
-
         arr = arr
             .into_iter()
             .filter(|v| {
-                let val = v.pointer(&json_pointer).unwrap_or(&Value::Null);
+                let val = dotted_pointer(v, "scope").unwrap_or(&Value::Null);
                 if value.is_null() {
                     val == value
                 } else {
