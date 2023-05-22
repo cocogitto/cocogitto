@@ -41,7 +41,7 @@ clap_complete_nushell = { version = "0.1.8", optional = true }
 conventional_commit_parser = "0.9.4"
 pest = "2.1.3"
 pest_derive = "2.1.0"
-tera = "1.15.0"
+tera = "1.18.1"
 globset = "0.4.8"
 log = "0.4.16"
 stderrlog = "0.5.1"
