@@ -1,4 +1,6 @@
 use std::collections::HashMap;
+use std::path::PathBuf;
+use std::process::{Command, Stdio};
 
 use anyhow::Result;
 
@@ -48,6 +50,13 @@ pub struct CocoGitto {
     repository: Repository,
 }
 
+pub enum CommitHook {
+    PreCommit,
+    PrepareCommitMessage(String),
+    CommitMessage,
+    PostCommit,
+}
+
 impl CocoGitto {
     pub fn get() -> Result<Self> {
         let repository = Repository::open(&std::env::current_dir()?)?;
@@ -94,5 +103,47 @@ impl CocoGitto {
         conventional_commit_parser::parse(&conventional_message)?;
 
         Ok(conventional_message)
+    }
+
+    pub fn run_commit_hook(&self, hook: CommitHook) -> Result<(), Git2Error> {
+        let repo_dir = self.repository.get_repo_dir().expect("git repository");
+        let hooks_dir = repo_dir.join(".git/hooks");
+        let edit_message = repo_dir.join(".git/COMMIT_EDITMSG");
+        let edit_message = edit_message.to_string_lossy();
+
+        let (hook_path, args) = match hook {
+            CommitHook::PreCommit => (hooks_dir.join("pre-commit"), vec![]),
+            CommitHook::PrepareCommitMessage(template) => (
+                hooks_dir.join("prepare-commit-msg"),
+                vec![edit_message.to_string(), template],
+            ),
+            CommitHook::CommitMessage => {
+                (hooks_dir.join("commit-msg"), vec![edit_message.to_string()])
+            }
+            CommitHook::PostCommit => (hooks_dir.join("post-commit"), vec![]),
+        };
+
+        if hook_path.exists() {
+            let status = Command::new(hook_path)
+                .args(args)
+                .stdout(Stdio::inherit())
+                .stdin(Stdio::inherit())
+                .stderr(Stdio::inherit())
+                .output()?
+                .status;
+
+            if !status.success() {
+                return Err(Git2Error::GitHookNonZeroExit(status.code().unwrap_or(1)));
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn prepare_edit_message_path(&self) -> PathBuf {
+        self.repository
+            .get_repo_dir()
+            .map(|path| path.join(".git/COMMIT_EDITMSG"))
+            .expect("git repository")
     }
 }

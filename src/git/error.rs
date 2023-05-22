@@ -1,6 +1,5 @@
 use crate::git::status::Statuses;
 use colored::Colorize;
-use git2::Error;
 use serde::de::StdError;
 use std::fmt::{Display, Formatter};
 use std::{fmt, io};
@@ -26,6 +25,7 @@ pub enum Git2Error {
     NoTagFound,
     CommitterNotFound,
     TagError(TagError),
+    GitHookNonZeroExit(i32),
 }
 
 #[derive(Debug)]
@@ -119,6 +119,9 @@ impl Display for Git2Error {
             Git2Error::TagError(_) => writeln!(f, "Tag error"),
             Git2Error::IOError(_) => writeln!(f, "IO Error"),
             Git2Error::GpgError(_) => writeln!(f, "failed to sign commit"),
+            Git2Error::GitHookNonZeroExit(status) => {
+                writeln!(f, "commit hook failed with exit code {status}")
+            }
         }?;
 
         match self {
@@ -166,7 +169,7 @@ impl Display for TagError {
 }
 
 impl From<git2::Error> for Git2Error {
-    fn from(err: Error) -> Self {
+    fn from(err: git2::Error) -> Self {
         Git2Error::Other(err)
     }
 }

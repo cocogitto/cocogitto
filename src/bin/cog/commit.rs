@@ -1,4 +1,6 @@
 use std::fmt::Write;
+use std::path::Path;
+use std::{fs, io};
 
 use cocogitto::COMMITS_METADATA;
 
@@ -15,14 +17,23 @@ pub fn commit_types() -> PossibleValuesParser {
     types.into()
 }
 
-pub fn edit_message(
+pub fn prepare_edit_message<P: AsRef<Path>>(
     typ: &str,
     message: &str,
     scope: Option<&str>,
     breaking: bool,
-) -> Result<(Option<String>, Option<String>, bool)> {
+    path: P,
+) -> io::Result<String> {
     let template = prepare_edit_template(typ, message, scope, breaking);
+    fs::write(path, &template)?;
+    Ok(template)
+}
 
+pub fn edit_message<P: AsRef<Path>>(
+    path: P,
+    breaking: bool,
+) -> Result<(Option<String>, Option<String>, bool)> {
+    let template = fs::read_to_string(path.as_ref())?;
     let edited = edit::edit(template)?;
 
     if edited.lines().all(|line| {
