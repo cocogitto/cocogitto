@@ -21,13 +21,26 @@ pub struct Commit {
 #[derive(Debug, Deserialize, Serialize, Clone, Eq, PartialEq)]
 pub struct CommitConfig {
     pub changelog_title: String,
+    #[serde(default)]
+    pub omit_from_changelog: bool,
 }
 
 impl CommitConfig {
     pub(crate) fn new(changelog_title: &str) -> Self {
         CommitConfig {
             changelog_title: changelog_title.to_string(),
+            omit_from_changelog: false,
         }
+    }
+
+    #[allow(dead_code)]
+    pub(crate) fn omit(&mut self) {
+        self.omit_from_changelog = true;
+    }
+
+    #[allow(dead_code)]
+    pub(crate) fn include(&mut self) {
+        self.omit_from_changelog = false;
     }
 }
 
@@ -85,6 +98,10 @@ impl Commit {
         } else {
             &self.oid
         }
+    }
+
+    pub(crate) fn should_omit(&self) -> bool {
+        SETTINGS.commit_types().get(&self.message.commit_type).map_or(false, |config| config.omit_from_changelog)
     }
 
     pub fn get_log(&self) -> String {

@@ -60,7 +60,11 @@ impl<'a> From<CommitRange<'a>> for Release<'a> {
             }
 
             match Commit::from_git_commit(&commit) {
-                Ok(commit) => commits.push(ChangelogCommit::from(commit)),
+                Ok(commit) => {
+                    if !commit.should_omit() {
+                        commits.push(ChangelogCommit::from(commit))
+                    }
+                },
                 Err(err) => {
                     let err = err.to_string().red();
                     warn!("{}", err);
