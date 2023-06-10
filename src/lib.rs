@@ -1,3 +1,5 @@
+#![cfg_attr(coverage_nightly, feature(no_coverage))]
+
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
