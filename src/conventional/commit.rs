@@ -101,7 +101,10 @@ impl Commit {
     }
 
     pub(crate) fn should_omit(&self) -> bool {
-        SETTINGS.commit_types().get(&self.message.commit_type).map_or(false, |config| config.omit_from_changelog)
+        SETTINGS
+            .commit_types()
+            .get(&self.message.commit_type)
+            .map_or(false, |config| config.omit_from_changelog)
     }
 
     pub fn get_log(&self) -> String {
