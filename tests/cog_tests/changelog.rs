@@ -362,7 +362,7 @@ fn get_changelog_from_tag_to_tagged_head() -> Result<()> {
 }
 
 #[sealed_test]
-fn get_changelog_whith_custom_template() -> Result<()> {
+fn get_changelog_with_custom_template() -> Result<()> {
     // Arrange
     let crate_dir = env!("CARGO_MANIFEST_DIR");
     let template = PathBuf::from(crate_dir).join("tests/cog_tests/template.md");
@@ -435,5 +435,68 @@ fn get_changelog_whith_custom_template() -> Result<()> {
             commit_five_short = &commit_five[0..7],
         )
     );
+    Ok(())
+}
+
+#[sealed_test]
+/// Test that the `omit_from_changelog` configuration
+/// directive is honored if/when it is specified for
+/// a given commit type.
+fn ensure_omit_from_changelog_is_honored() -> Result<()> {
+    // Arrange
+    git_init()?;
+
+    let cog_toml = indoc!(
+        "[changelog]
+        remote = \"github.com\"
+        repository = \"test\"
+        owner = \"test\"
+
+        [commit_types]
+        wip = { changelog_title = \"Work In Progress\", omit_from_changelog = false }"
+    );
+
+    let _setup = (
+        run_cmd!(echo $cog_toml > cog.toml;)?,
+        fs::read_to_string("cog.toml")?,
+        git_commit("chore: init")?,
+        git_commit("wip(some-scope): getting there")?,
+        git_tag("1.0.0")?,
+    );
+
+    let changelog = Command::cargo_bin("cog")?
+        .arg("changelog")
+        // Assert
+        .assert()
+        .success();
+
+    let changelog = changelog.get_output();
+    let changelog = String::from_utf8_lossy(&changelog.stdout);
+
+    assert!(
+        changelog.as_ref().contains("#### Work In Progress"),
+        "Expected changelog to contain a \"Work In Progress\" entry but got:\n\n{}",
+        changelog.as_ref()
+    );
+
+    let cog_toml = cog_toml.replace("omit_from_changelog = false", "omit_from_changelog = true");
+
+    run_cmd!(echo $cog_toml > cog.toml;)?;
+
+    let changelog = Command::cargo_bin("cog")?
+        .arg("changelog")
+        // Assert
+        .assert()
+        .success();
+
+    let changelog = changelog.get_output();
+    let changelog = String::from_utf8_lossy(&changelog.stdout);
+
+    assert!(
+        !changelog.as_ref().contains("#### Work In Progress"),
+        "Expected \"Work In Progress\" entry to be omitted from changelog but got:\n\n{}",
+        changelog.as_ref()
+    );
+
     Ok(())
 }
