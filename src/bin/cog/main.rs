@@ -281,6 +281,10 @@ enum Command {
         /// Dry-run: print the target version. No action taken
         #[arg(short, long)]
         dry_run: bool,
+
+        /// Specify a "Skip CI" string to append to the end of the commit
+        #[arg(long = "skip-ci")]
+        skip_ci: Option<String>,
     },
 
     /// Install cog config files
@@ -358,6 +362,7 @@ fn main() -> Result<()> {
             package,
             annotated,
             dry_run,
+            skip_ci,
         } => {
             let mut cocogitto = CocoGitto::get()?;
             let is_monorepo = !SETTINGS.packages.is_empty();
@@ -392,6 +397,7 @@ fn main() -> Result<()> {
                             hook_profile.as_deref(),
                             annotated,
                             dry_run,
+                            skip_ci,
                         )?
                     }
                     None => cocogitto.create_monorepo_version(
@@ -400,6 +406,7 @@ fn main() -> Result<()> {
                         hook_profile.as_deref(),
                         annotated,
                         dry_run,
+                        skip_ci,
                     )?,
                 }
             } else {
@@ -409,6 +416,7 @@ fn main() -> Result<()> {
                     hook_profile.as_deref(),
                     annotated,
                     dry_run,
+                    skip_ci,
                 )?
             }
         }

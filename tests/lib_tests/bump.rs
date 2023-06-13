@@ -21,7 +21,7 @@ fn bump_ok() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result = cocogitto.create_version(IncrementCommand::Auto, None, None, None, false);
+    let result = cocogitto.create_version(IncrementCommand::Auto, None, None, None, false, None);
 
     // Assert
     assert_that!(result).is_ok();
@@ -47,6 +47,7 @@ fn annotated_bump_ok() -> Result<()> {
         None,
         Some(String::from("Release version {{version}}")),
         false,
+        None,
     );
 
     // Assert
@@ -68,7 +69,8 @@ fn monorepo_bump_ok() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result = cocogitto.create_monorepo_version(IncrementCommand::Auto, None, None, None, false);
+    let result =
+        cocogitto.create_monorepo_version(IncrementCommand::Auto, None, None, None, false, None);
 
     // Assert
     assert_that!(result).is_ok();
@@ -93,7 +95,7 @@ fn monorepo_bump_manual_ok() -> Result<()> {
 
     // Act
     let result =
-        cocogitto.create_monorepo_version(IncrementCommand::Major, None, None, None, false);
+        cocogitto.create_monorepo_version(IncrementCommand::Major, None, None, None, false, None);
 
     // Assert
     assert_that!(result).is_ok();
@@ -114,7 +116,8 @@ fn monorepo_with_tag_prefix_bump_ok() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result = cocogitto.create_monorepo_version(IncrementCommand::Auto, None, None, None, false);
+    let result =
+        cocogitto.create_monorepo_version(IncrementCommand::Auto, None, None, None, false, None);
 
     // Assert
     assert_that!(result).is_ok();
@@ -142,6 +145,7 @@ fn package_bump_ok() -> Result<()> {
         None,
         None,
         false,
+        None,
     );
 
     // Assert
@@ -209,6 +213,7 @@ fn consecutive_package_bump_ok() -> Result<()> {
         None,
         None,
         false,
+        None,
     )?;
 
     cocogitto.create_package_version(
@@ -218,6 +223,7 @@ fn consecutive_package_bump_ok() -> Result<()> {
         None,
         None,
         false,
+        None,
     )?;
 
     run_cmd!(
@@ -233,6 +239,7 @@ fn consecutive_package_bump_ok() -> Result<()> {
         None,
         None,
         false,
+        None,
     )?;
 
     // Assert
@@ -254,7 +261,7 @@ fn should_fallback_to_0_0_0_when_there_is_no_tag() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result = cocogitto.create_version(IncrementCommand::Auto, None, None, None, false);
+    let result = cocogitto.create_version(IncrementCommand::Auto, None, None, None, false, None);
 
     // Assert
     assert_that!(result).is_ok();
@@ -313,7 +320,7 @@ fn auto_bump_package_only_ok() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    cocogitto.create_all_package_version_auto(None, None, false)?;
+    cocogitto.create_all_package_version_auto(None, None, false, None)?;
 
     assert_tag_exists("jenkins-0.1.0")?;
     assert_tag_exists("thumbor-0.1.0")?;
@@ -325,7 +332,7 @@ fn auto_bump_package_only_ok() -> Result<()> {
         git commit -m "fix(jenkins): bug fix on jenkins package";
     )?;
 
-    cocogitto.create_all_package_version_auto(None, None, false)?;
+    cocogitto.create_all_package_version_auto(None, None, false, None)?;
 
     // Assert
     assert_tag_exists("jenkins-0.1.1")?;
@@ -377,7 +384,7 @@ fn bump_with_whitelisted_branch_ok() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result = cocogitto.create_version(IncrementCommand::Auto, None, None, None, false);
+    let result = cocogitto.create_version(IncrementCommand::Auto, None, None, None, false, None);
 
     // Assert
     assert_that!(result).is_ok();
@@ -402,7 +409,7 @@ fn bump_with_whitelisted_branch_fails() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result = cocogitto.create_version(IncrementCommand::Auto, None, None, None, false);
+    let result = cocogitto.create_version(IncrementCommand::Auto, None, None, None, false, None);
 
     // Assert
     assert_that!(result.unwrap_err().to_string()).is_equal_to(
@@ -431,7 +438,7 @@ fn bump_with_whitelisted_branch_pattern_ok() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result = cocogitto.create_version(IncrementCommand::Auto, None, None, None, false);
+    let result = cocogitto.create_version(IncrementCommand::Auto, None, None, None, false, None);
 
     // Assert
     assert_that!(result).is_ok();
@@ -456,7 +463,7 @@ fn bump_with_whitelisted_branch_pattern_err() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result = cocogitto.create_version(IncrementCommand::Auto, None, None, None, false);
+    let result = cocogitto.create_version(IncrementCommand::Auto, None, None, None, false, None);
 
     // Assert
     assert_that!(result).is_err();
@@ -513,7 +520,7 @@ fn bump_no_error_should_be_thrown_on_only_chore_docs_commit() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    cocogitto.create_monorepo_version(IncrementCommand::Auto, None, None, None, false)?;
+    cocogitto.create_monorepo_version(IncrementCommand::Auto, None, None, None, false, None)?;
 
     run_cmd!(
         echo "chore on jenkins" > jenkins/fix;
@@ -524,7 +531,7 @@ fn bump_no_error_should_be_thrown_on_only_chore_docs_commit() -> Result<()> {
         git commit -m "docs(jenkins): jenkins docs";
     )?;
 
-    cocogitto.create_monorepo_version(IncrementCommand::Auto, None, None, None, false)?;
+    cocogitto.create_monorepo_version(IncrementCommand::Auto, None, None, None, false, None)?;
 
     cocogitto.create_package_version(
         ("jenkins", &jenkins()),
@@ -533,6 +540,7 @@ fn bump_no_error_should_be_thrown_on_only_chore_docs_commit() -> Result<()> {
         None,
         None,
         false,
+        None,
     )?;
 
     run_cmd!(
@@ -541,7 +549,7 @@ fn bump_no_error_should_be_thrown_on_only_chore_docs_commit() -> Result<()> {
         git commit -m "feat(thumbor): more feat on thumbor";
     )?;
 
-    cocogitto.create_monorepo_version(IncrementCommand::Auto, None, None, None, false)?;
+    cocogitto.create_monorepo_version(IncrementCommand::Auto, None, None, None, false, None)?;
 
     // Assert
     assert_tag_exists("jenkins-0.1.0")?;
@@ -582,7 +590,8 @@ fn error_on_no_conventionnal_commits_found_for_monorepo() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let first_result = cocogitto.create_version(IncrementCommand::Auto, None, None, None, false);
+    let first_result =
+        cocogitto.create_version(IncrementCommand::Auto, None, None, None, false, None);
 
     // Assert
     assert_that!(first_result).is_ok();
@@ -595,7 +604,8 @@ fn error_on_no_conventionnal_commits_found_for_monorepo() -> Result<()> {
     git_commit("second unconventional feature commit")?;
 
     // Act
-    let second_result = cocogitto.create_version(IncrementCommand::Auto, None, None, None, false);
+    let second_result =
+        cocogitto.create_version(IncrementCommand::Auto, None, None, None, false, None);
 
     // Assert
     assert_that!(second_result).is_err();
@@ -648,6 +658,7 @@ fn error_on_no_conventionnal_commits_found_for_package() -> Result<()> {
         None,
         None,
         false,
+        None,
     );
 
     assert_that!(first_result).is_ok();
@@ -665,6 +676,7 @@ fn error_on_no_conventionnal_commits_found_for_package() -> Result<()> {
         None,
         None,
         false,
+        None,
     );
 
     assert_that!(second_result).is_err();
@@ -721,7 +733,8 @@ fn bump_with_unconventionnal_and_conventional_commits_found_for_packages() -> Re
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result = cocogitto.create_monorepo_version(IncrementCommand::Auto, None, None, None, false);
+    let result =
+        cocogitto.create_monorepo_version(IncrementCommand::Auto, None, None, None, false, None);
 
     // Assert
     assert_that!(result).is_ok();
