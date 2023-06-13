@@ -15,6 +15,7 @@ use semver::Prerelease;
 use tera::Tera;
 
 impl CocoGitto {
+    #[allow(clippy::too_many_arguments)]
     pub fn create_package_version(
         &mut self,
         (package_name, package): (&str, &MonoRepoPackage),
@@ -23,6 +24,7 @@ impl CocoGitto {
         hooks_config: Option<&str>,
         annotated: Option<String>,
         dry_run: bool,
+        skip_ci: Option<String>,
     ) -> Result<()> {
         self.pre_bump_checks()?;
 
@@ -82,8 +84,11 @@ impl CocoGitto {
         self.unwrap_or_stash_and_exit(&tag, hook_result);
 
         let sign = self.repository.gpg_sign();
+
+        let skip_ci_pattern = skip_ci.unwrap_or(SETTINGS.skip_ci.clone().unwrap_or_default());
+
         self.repository
-            .commit(&format!("chore(version): {tag}"), sign)?;
+            .commit(&format!("chore(version): {tag} {}", skip_ci_pattern), sign)?;
 
         if let Some(msg_tmpl) = annotated {
             let mut context = tera::Context::new();
