@@ -34,13 +34,11 @@ impl CommitConfig {
     }
 
     #[allow(dead_code)]
-    #[cfg_attr(coverage_nightly, no_coverage)]
     pub(crate) fn omit(&mut self) {
         self.omit_from_changelog = true;
     }
 
     #[allow(dead_code)]
-    #[cfg_attr(coverage_nightly, no_coverage)]
     pub(crate) fn include(&mut self) {
         self.omit_from_changelog = false;
     }
