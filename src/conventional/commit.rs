@@ -266,7 +266,7 @@ pub(crate) fn format_summary(commit: &ConventionalCommit) -> String {
 
 #[cfg(test)]
 mod test {
-    use crate::conventional::commit::{format_summary, verify, Commit};
+    use crate::conventional::commit::{format_summary, verify, Commit, CommitConfig};
 
     use chrono::NaiveDateTime;
     use cmd_lib::run_fun;
@@ -460,6 +460,36 @@ mod test {
 
         // Assert
         assert_that!(summary).is_equal_to("fix: this is the message".to_string());
+    }
+
+    #[test]
+    fn should_toggle_changelog_omission() {
+        // Arrange
+        let mut config = CommitConfig::new("Omittable Changes");
+
+        // Assert
+        assert!(
+            !&config.omit_from_changelog,
+            "expected CommitConfig::omit_from_changelog to be falsy unless explicitly set"
+        );
+
+        // Act
+        config.omit();
+
+        // Assert
+        assert!(
+            &config.omit_from_changelog,
+            "CommitConfig::omit_from_changelog should be truthy after calling CommitConfig::omit"
+        );
+
+        // Act
+        config.include();
+
+        // Assert
+        assert!(
+            !&config.omit_from_changelog,
+            "CommitConfig::omit_from_changelog should be falsy after calling CommitConfig::include"
+        );
     }
 
     #[sealed_test]
