@@ -1,9 +1,11 @@
 use crate::conventional::commit::Commit;
 use crate::CocoGitto;
+use crate::CommitHook::CommitMessage;
 use anyhow::Result;
 use conventional_commit_parser::commit::{CommitType, ConventionalCommit};
 use conventional_commit_parser::parse_footers;
 use log::info;
+use std::fs;
 
 impl CocoGitto {
     #[allow(clippy::too_many_arguments)]
@@ -41,6 +43,8 @@ impl CocoGitto {
 
         // Git commit
         let sign = sign || self.repository.gpg_sign();
+        fs::write(self.prepare_edit_message_path(), &conventional_message)?;
+        self.run_commit_hook(CommitMessage)?;
         let oid = self.repository.commit(&conventional_message, sign)?;
 
         // Pretty print a conventional commit summary

@@ -1,4 +1,4 @@
-branch_whitelist = [ "main" ]
+branch_whitelist = ["main"]
 ignore_merge_commits = true
 
 # A list of command to run BEFORE creating a version.
