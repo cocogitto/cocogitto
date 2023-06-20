@@ -32,16 +32,6 @@ impl CommitConfig {
             omit_from_changelog: false,
         }
     }
-
-    #[allow(dead_code)]
-    pub(crate) fn omit(&mut self) {
-        self.omit_from_changelog = true;
-    }
-
-    #[allow(dead_code)]
-    pub(crate) fn include(&mut self) {
-        self.omit_from_changelog = false;
-    }
 }
 
 impl Commit {
@@ -472,7 +462,7 @@ mod test {
         );
 
         // Act
-        config.omit();
+        config.omit_from_changelog = true;
 
         // Assert
         assert!(
@@ -481,7 +471,7 @@ mod test {
         );
 
         // Act
-        config.include();
+        config.omit_from_changelog = false;
 
         // Assert
         assert!(
