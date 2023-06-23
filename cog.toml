@@ -31,6 +31,23 @@ post_bump_hooks = [
     "echo 'we are done'"
 ]
 
+[git_hooks.commit-msg]
+script = """#!/bin/sh
+set -e
+
+echo "[Check current commit message]"
+cog verify --file $1
+
+echo "[Conventional commit check]"
+cog check
+
+echo "[Format code]"
+cargo fmt -v --all --check
+
+echo "[Lints]"
+cargo clippy
+"""
+
 # An optional list of additional allowed commit type
 # `cog commit {commit_type}` commit command will be generated at runtime
 [commit_types]
