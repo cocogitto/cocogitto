@@ -37,6 +37,10 @@ In addition, our CI pipeline uses the following formatter and linter:
 
   Use `cargo clippy` instead of `cargo build` to spot lints before committing your changes.
 
+- **git-hooks**
+  Cocogitto provides sharable git-hooks, if you want to save the hassle of manually running lints and formatters before
+  each commit you can simply run `cog install-hook --all`.
+
 ### Error handling
 * `unwrap()` usage should be avoided, if needed use `expect("why")` instead.
 * For convenience, errors in the [cog](src/bin/cog.rs) CLI and the public API are wrapped with the 
