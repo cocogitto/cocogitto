@@ -1,4 +1,7 @@
+# A list of glob patterns describing branches on which semver bump are allowed
 branch_whitelist = ["main"]
+
+# Ignore merge commits from conventional commit checks
 ignore_merge_commits = true
 
 # A list of command to run BEFORE creating a version.
@@ -31,6 +34,8 @@ post_bump_hooks = [
     "echo 'we are done'"
 ]
 
+# Shareable git-hooks, can be isntalled using `cog install-hook --all`
+# or alternatively `cog install-hooks {commit_hook_type}
 [git_hooks.commit-msg]
 script = """#!/bin/sh
 set -e
@@ -59,6 +64,7 @@ template = "remote"
 remote = "github.com"
 repository = "cocogitto"
 owner = "cocogitto"
+
 # Optional contributor list
 # intended to map git signature to remote username
 # and generate changelog links to their remote profiles
