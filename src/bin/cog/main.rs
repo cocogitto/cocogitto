@@ -115,7 +115,7 @@ impl ValueEnum for Shell {
 #[derive(Parser)]
 #[command(
     version,
-    name = "Cog",
+    name = "cog",
     author = "Paul D. <paul.delafosse@protonmail.com>"
 )]
 struct Cli {
