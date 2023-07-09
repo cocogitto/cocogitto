@@ -27,6 +27,7 @@ mod test {
     use indoc::formatdoc;
     use sealed_test::prelude::*;
     use speculoos::prelude::*;
+    use std::str::FromStr;
 
     #[sealed_test]
     fn get_repo_packages() -> Result<()> {
@@ -67,7 +68,8 @@ mod test {
         )?;
 
         // Act
-        let range = repo.get_commit_range_for_package(&RevspecPattern::from("..HEAD"), "two")?;
+        let range =
+            repo.get_commit_range_for_package(&RevspecPattern::from_str("..HEAD")?, "two")?;
 
         // Assert
         assert_that!(range)

@@ -3,6 +3,7 @@ mod mangen;
 
 use std::fs;
 use std::path::PathBuf;
+use std::str::FromStr;
 
 use cocogitto::conventional::changelog::template::{RemoteContext, Template};
 use cocogitto::conventional::commit as conv_commit;
@@ -523,7 +524,10 @@ fn main() -> Result<()> {
                 Template::default()
             };
 
-            let pattern = pattern.as_deref().map(RevspecPattern::from);
+            let pattern = pattern
+                .as_deref()
+                .map(RevspecPattern::from_str)
+                .transpose()?;
 
             let result = match at {
                 Some(at) => cocogitto.get_changelog_at_tag(&at, template)?,
