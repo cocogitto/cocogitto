@@ -26,6 +26,7 @@ pub enum Git2Error {
     CommitterNotFound,
     TagError(TagError),
     GitHookNonZeroExit(i32),
+    InvalidCommitRangePattern(String),
 }
 
 #[derive(Debug)]
@@ -121,6 +122,9 @@ impl Display for Git2Error {
             Git2Error::GpgError(_) => writeln!(f, "failed to sign commit"),
             Git2Error::GitHookNonZeroExit(status) => {
                 writeln!(f, "commit hook failed with exit code {status}")
+            }
+            Git2Error::InvalidCommitRangePattern(pattern) => {
+                writeln!(f, "invalid commit range pattern: `{pattern}`")
             }
         }?;
 

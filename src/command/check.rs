@@ -6,6 +6,7 @@ use anyhow::anyhow;
 use anyhow::Result;
 use colored::*;
 use log::info;
+use std::str::FromStr;
 
 impl CocoGitto {
     pub fn check(
@@ -16,7 +17,7 @@ impl CocoGitto {
     ) -> Result<()> {
         let commit_range = if let Some(range) = range {
             self.repository
-                .get_commit_range(&RevspecPattern::from(range.as_str()))?
+                .get_commit_range(&RevspecPattern::from_str(range.as_str())?)?
         } else if check_from_latest_tag {
             self.repository
                 .get_commit_range(&RevspecPattern::default())?

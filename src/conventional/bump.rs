@@ -5,6 +5,7 @@ use conventional_commit_parser::commit::CommitType;
 use git2::Commit as Git2Commit;
 use once_cell::sync::Lazy;
 use semver::{BuildMetadata, Prerelease, Version};
+use std::str::FromStr;
 
 static FILTER_MERGE_COMMITS: Lazy<fn(&&git2::Commit) -> bool> = Lazy::new(|| {
     |commit| {
@@ -146,7 +147,7 @@ impl Tag {
             .map(|oid| format!("{oid}.."))
             .unwrap_or_else(|| "..".to_string());
         let pattern = pattern.as_str();
-        let pattern = RevspecPattern::from(pattern);
+        let pattern = RevspecPattern::from_str(pattern)?;
         let commits = repository.get_commit_range(&pattern)?;
 
         let commits: Vec<&Git2Commit> = commits
@@ -189,7 +190,7 @@ impl Tag {
             .map(|oid| format!("{oid}.."))
             .unwrap_or_else(|| "..".to_string());
         let pattern = pattern.as_str();
-        let pattern = RevspecPattern::from(pattern);
+        let pattern = RevspecPattern::from_str(pattern)?;
         let commits = repository.get_commit_range_for_package(&pattern, package)?;
         let commits: Vec<&Git2Commit> = commits
             .commits
@@ -229,7 +230,7 @@ impl Tag {
             .map(|oid| format!("{oid}.."))
             .unwrap_or_else(|| "..".to_string());
         let pattern = pattern.as_str();
-        let pattern = RevspecPattern::from(pattern);
+        let pattern = RevspecPattern::from_str(pattern)?;
         let commits = repository.get_commit_range_for_monorepo_global(&pattern)?;
 
         let commits: Vec<&Git2Commit> = commits
