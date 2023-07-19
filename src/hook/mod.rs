@@ -149,7 +149,7 @@ impl Hook {
     }
 
     pub fn run(&self, package_path: Option<&path::Path>) -> Result<()> {
-        let exe = &self.0.first().unwrap();
+        let exe = which::which(self.0.first().unwrap()).unwrap();
         let args: Vec<String> = self.0.clone().into_iter().skip(1).collect();
         let mut cmd = Command::new(&exe);
         cmd.args(&args);
