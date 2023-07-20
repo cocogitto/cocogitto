@@ -292,7 +292,8 @@ impl CocoGitto {
             };
             info!("[{command}]");
             let package_path = options.package.map(|p| p.path.as_path());
-            hook.run(package_path).context(hook.to_string())?;
+            hook.run(settings.get_shell(), package_path)
+                .context(hook.to_string())?;
             println!();
         }
 

@@ -1,4 +1,5 @@
 use std::fs;
+#[cfg(target_family = "unix")]
 use std::os::unix::fs::PermissionsExt;
 use std::process::Command;
 

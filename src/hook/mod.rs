@@ -3,17 +3,18 @@ mod parser;
 
 use std::collections::{HashMap, VecDeque};
 use std::ops::Range;
-use std::process::Command;
+use std::process::{Command, Output};
 use std::str::FromStr;
 use std::{fmt, path};
 
 use crate::Tag;
 use parser::Token;
 
-use crate::settings::{BumpProfile, HookType};
+use crate::settings::{BumpProfile, HookShell, HookType};
 use anyhow::{anyhow, ensure, Result};
 
 pub trait Hooks {
+    fn get_shell(&self) -> Option<&HookShell>;
     fn bump_profiles(&self) -> &HashMap<String, BumpProfile>;
     fn pre_bump_hooks(&self) -> &Vec<String>;
     fn post_bump_hooks(&self) -> &Vec<String>;
@@ -170,15 +171,39 @@ impl Hook {
         Ok(())
     }
 
-    pub fn run(&self, package_path: Option<&path::Path>) -> Result<()> {
-        let mut cmd = Command::new("sh");
-        let cmd = cmd.arg("-c").arg(&self.0);
+    pub fn run(
+        &self,
+        shell: Option<&HookShell>,
+        package_path: Option<&path::Path>,
+    ) -> Result<Output> {
+        let executable: String;
+        let args: Vec<String>;
+        if let Some(shell) = &shell {
+            executable = shell.executable.clone();
+            let mut shell_args = shell.args.clone();
+            shell_args.push(self.0.clone());
+            args = shell_args;
+        } else {
+            let parsed_args = shlex::split(&self.0).unwrap();
+            executable = which::which(parsed_args.first().unwrap())
+                .unwrap()
+                .to_string_lossy()
+                .to_string();
+            args = parsed_args.into_iter().skip(1).collect();
+        };
+
+        let mut cmd = Command::new(&executable);
+        cmd.args(&args);
+
         if let Some(current_dir) = package_path {
             cmd.current_dir(current_dir);
         }
-        let status = cmd.status()?;
+
+        let output = cmd.output()?;
+        let status = output.status;
+
         ensure!(status.success(), "hook failed with status {}", status);
-        Ok(())
+        Ok(output)
     }
 }
 
@@ -489,7 +514,7 @@ mod test {
         hook.insert_versions(None, Some(&HookVersion::new(Tag::from_str("1.0.0", None)?)))
             .unwrap();
 
-        let outcome = hook.run(None);
+        let outcome = hook.run(None, None);
 
         assert_that!(outcome).is_ok();
 
@@ -540,6 +565,34 @@ mod test {
 
         assert_that!(hook.0.as_str())
             .is_equal_to(r#"echo "cog, version: 1.1.0, tag: cog-v1.1.0, current: 1.0.0, current_tag: cog-v1.0.0""#);
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn shell_environment_variables() -> Result<()> {
+        std::env::set_var("TEST_ENV_VAR", "example");
+        let hook: Hook;
+        let shell: crate::settings::HookShell;
+
+        if cfg!(windows) {
+            hook = Hook::from_str("echo TEST_ENV_VAR=%TEST_ENV_VAR%")?;
+            shell = crate::settings::HookShell {
+                executable: "cmd.exe".to_string(),
+                args: vec!["/C".to_string()],
+            };
+        } else {
+            hook = Hook::from_str("echo TEST_ENV_VAR=$TEST_ENV_VAR")?;
+            shell = crate::settings::HookShell {
+                executable: "sh".to_string(),
+                args: vec!["-c".to_string()],
+            };
+        }
+
+        let hook_output = hook.run(Some(&shell), None)?;
+
+        let hook_stdout = String::from_utf8(hook_output.stdout)?;
+        assert_that!(hook_stdout.trim()).is_equal_to("TEST_ENV_VAR=example");
+
         Ok(())
     }
 }
