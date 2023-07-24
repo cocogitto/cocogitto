@@ -2,7 +2,7 @@ use std::fmt;
 use std::fmt::Formatter;
 use std::str::FromStr;
 
-use git2::{Commit, ErrorCode, Oid};
+use git2::{Commit, DescribeFormatOptions, DescribeOptions, ErrorCode, Oid};
 
 use crate::conventional::changelog::release::Release;
 use crate::git::error::Git2Error;
@@ -347,46 +347,12 @@ impl Repository {
     fn get_latest_tag_starting_from(&self, starting_point: Oid) -> Result<Tag, Git2Error> {
         let starting_point = self.0.find_commit(starting_point)?;
         let starting_point = starting_point.parent(0)?;
-        let first_commit = self.get_first_commit()?;
-        let mut revwalk = self.0.revwalk()?;
-        let range = format!("{}..{}", first_commit, starting_point.id());
-
-        revwalk.push_range(&range)?;
-        let mut range = vec![];
-        for oid in revwalk {
-            range.push(oid?);
-        }
-
-        let mut tags = vec![];
-        self.0
-            .tag_foreach(|mut oid, name| {
-                let name = String::from_utf8_lossy(name);
-                let name = name.as_ref().strip_prefix("refs/tags/").unwrap();
-
-                // If this is an annotated tag, find the first parent commit
-                if self.0.revparse_single(name).unwrap().as_commit().is_none() {
-                    if let Some(commit) = self
-                        .0
-                        .revparse_single([name, "^{}"].concat().as_str())
-                        .unwrap()
-                        .as_commit()
-                    {
-                        oid = commit.id();
-                    }
-                };
-
-                if range.contains(&oid) {
-                    if let Ok(tag) = Tag::from_str(name, Some(oid)) {
-                        tags.push(tag);
-                    };
-                };
-                true
-            })
-            .expect("Unable to walk tags");
-
-        let latest_tag: Option<Tag> = tags.into_iter().max();
-
-        latest_tag.ok_or(Git2Error::NoTagFound)
+        let describe = starting_point
+            .as_object()
+            .describe(DescribeOptions::new().describe_tags())?;
+        let tag_name = describe.format(Some(DescribeFormatOptions::new().abbreviated_size(0)))?;
+        let tag_oid = self.0.refname_to_id(&format!("refs/tags/{tag_name}")).ok();
+        Tag::from_str(&tag_name, tag_oid).map_err(|_| Git2Error::NoTagFound)
     }
 }
 
