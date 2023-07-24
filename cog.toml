@@ -34,7 +34,7 @@ post_bump_hooks = [
     "echo 'we are done'"
 ]
 
-# Shareable git-hooks, can be isntalled using `cog install-hook --all`
+# Shareable git-hooks, can be installed using `cog install-hook --all`
 # or alternatively `cog install-hooks {commit_hook_type}
 [git_hooks.commit-msg]
 script = """#!/bin/sh
