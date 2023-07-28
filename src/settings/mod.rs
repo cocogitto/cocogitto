@@ -11,7 +11,7 @@ use crate::conventional::changelog::error::ChangelogError;
 use crate::conventional::changelog::template::{RemoteContext, Template};
 use crate::hook::Hooks;
 use crate::settings::error::SettingError;
-use config::{Config, File};
+use config::{Config, File, FileFormat};
 use conventional_commit_parser::commit::CommitType;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
@@ -266,23 +266,10 @@ pub struct BumpProfile {
 
 impl Settings {
     // Fails only if config exists and is malformed
-    pub(crate) fn get(repository: &Repository) -> Result<Self, SettingError> {
-        match repository.get_repo_dir() {
-            Some(repo_path) => {
-                let settings_path = repo_path.join(CONFIG_PATH);
-                if settings_path.exists() {
-                    Config::builder()
-                        .add_source(File::from(settings_path))
-                        .build()
-                        .map_err(SettingError::from)?
-                        .try_deserialize()
-                        .map_err(SettingError::from)
-                } else {
-                    Ok(Settings::default())
-                }
-            }
-            None => Ok(Settings::default()),
-        }
+    pub(crate) fn get<T: TryInto<Settings, Error = SettingError>>(
+        repository: T,
+    ) -> Result<Self, SettingError> {
+        repository.try_into()
     }
 
     pub fn commit_types(&self) -> CommitsMetadata {
@@ -415,5 +402,45 @@ impl Hooks for MonoRepoPackage {
         self.post_bump_hooks
             .as_ref()
             .unwrap_or(&SETTINGS.post_package_bump_hooks)
+    }
+}
+
+impl TryFrom<String> for Settings {
+    type Error = SettingError;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        if value.is_empty() {
+            Ok(Settings::default())
+        } else {
+            Config::builder()
+                .add_source(File::from_str(&value, FileFormat::Toml))
+                .build()
+                .map_err(SettingError::from)?
+                .try_deserialize()
+                .map_err(SettingError::from)
+        }
+    }
+}
+
+impl TryFrom<&Repository> for Settings {
+    type Error = SettingError;
+
+    fn try_from(repo: &Repository) -> Result<Self, Self::Error> {
+        match repo.get_repo_dir() {
+            Some(repo_path) => {
+                let settings_path = repo_path.join(CONFIG_PATH);
+                if settings_path.exists() {
+                    Config::builder()
+                        .add_source(File::from(settings_path))
+                        .build()
+                        .map_err(SettingError::from)?
+                        .try_deserialize()
+                        .map_err(SettingError::from)
+                } else {
+                    Ok(Settings::default())
+                }
+            }
+            None => Ok(Settings::default()),
+        }
     }
 }
