@@ -6,7 +6,7 @@ use serde::de::StdError;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ConventionalCommitError {
     CommitFormat {
         oid: String,
