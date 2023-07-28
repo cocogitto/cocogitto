@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 use std::fmt::{self, Formatter};
 
-use crate::conventional::error::ConventionalCommitError;
+pub use crate::conventional::error::ConventionalCommitError;
 use crate::SETTINGS;
 use chrono::{NaiveDateTime, Utc};
 use colored::*;
