@@ -3,7 +3,7 @@ use serde::de::StdError;
 use std::fmt::{Debug, Display, Formatter};
 
 #[derive(Debug)]
-pub(crate) struct SettingError(config::ConfigError);
+pub struct SettingError(config::ConfigError);
 
 impl Display for SettingError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
