@@ -2,6 +2,29 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## [5.5.0](https://github.com/cocogitto/cocogitto/compare/5.4.0..5.5.0) - 2023-08-17
+#### Documentation
+- **(README)** fix links to cocogitto docs - ([d62a83c](https://github.com/cocogitto/cocogitto/commit/d62a83c5613dc51a5b8201a0d2747493f148a758)) - [@lukehsiao](https://github.com/lukehsiao)
+- update cog.toml example and contributing guidelines - ([ee09f87](https://github.com/cocogitto/cocogitto/commit/ee09f87c8b76b616279894d75c88b3400cf87762)) - [@oknozor](https://github.com/oknozor)
+#### Features
+- **(bump)** option to specify skip-ci pattern for bump commit - ([92736aa](https://github.com/cocogitto/cocogitto/commit/92736aaea536916b0650c6a26176bb1e23b7fa18)) - Wassim Ahmed-Belkacem
+- implement `TryFrom` support for `Settings` for `String` and `&Repository` - ([b2d36aa](https://github.com/cocogitto/cocogitto/commit/b2d36aa39d37bf6491fe3074ada401480d7832a6)) - Mark S
+#### Miscellaneous Chores
+- **(compat)** make `SettingError` public - ([3e86732](https://github.com/cocogitto/cocogitto/commit/3e8673257dd7510cfe42dbe731e9cab05c958cc8)) - Mark S
+- **(compat)** derive `Debug` for `ConventionalCommitError` - ([a666bca](https://github.com/cocogitto/cocogitto/commit/a666bca040381f6a5994649d38848e822c625c26)) - Mark S
+- **(compat)** re-export `ConventionalCommitError` - ([2fe4d2c](https://github.com/cocogitto/cocogitto/commit/2fe4d2c55735d1281c6d16627766de3869118685)) - Mark S
+- add SanchithHegde to contributors list - ([36d1ea5](https://github.com/cocogitto/cocogitto/commit/36d1ea5d94d2785d5019702c3d51c734436ce3b9)) - [@SanchithHegde](https://github.com/SanchithHegde)
+- fix typo in comment - ([c981eb7](https://github.com/cocogitto/cocogitto/commit/c981eb7fb22e3c6d0a3726803c079a18cfe3750e)) - [@lukehsiao](https://github.com/lukehsiao)
+- update cocogitto-action - ([dc6cfa2](https://github.com/cocogitto/cocogitto/commit/dc6cfa21d1b0b63e91b9c7cf66e4725136e4bf05)) - [@oknozor](https://github.com/oknozor)
+- add commit-msg git-hook - ([64ddcf6](https://github.com/cocogitto/cocogitto/commit/64ddcf686aa553b35be08b99a1acae828befe6d6)) - [@oknozor](https://github.com/oknozor)
+#### Refactoring
+- **(revspec)** use git describe for finding latest tag - ([9a49999](https://github.com/cocogitto/cocogitto/commit/9a499990c66b4472d14a4a1e2f1ba9b6131d36ef)) - [@lukehsiao](https://github.com/lukehsiao)
+- **(revspec)** raise error instead of panicking when parsing `RevspecPattern` - ([71ee6c6](https://github.com/cocogitto/cocogitto/commit/71ee6c67fb170ec535ee18aefd51cf142fc19911)) - [@SanchithHegde](https://github.com/SanchithHegde)
+#### Style
+- rename 'Cog' to 'cog' internally - ([9b0830e](https://github.com/cocogitto/cocogitto/commit/9b0830ef456a2713e31934a304339d36231b1df0)) - [@tranzystorek-io](https://github.com/tranzystorek-io)
+
+- - -
+
 ## [5.4.0](https://github.com/cocogitto/cocogitto/compare/5.3.1..5.4.0) - 2023-06-23
 #### Bug Fixes
 - **(bump)** bump don't throw error on no bump types commits - ([4a6a8b3](https://github.com/cocogitto/cocogitto/commit/4a6a8b30aa4e9eddfe1b0a3fe0c7fd822e767447)) - Wassim Ahmed-Belkacem
