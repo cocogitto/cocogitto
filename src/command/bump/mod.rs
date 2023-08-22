@@ -130,7 +130,7 @@ impl CocoGitto {
         }
     }
 
-    fn pre_bump_checks(&mut self) -> Result<()> {
+    fn pre_bump_checks(&mut self, skip_untracked: bool) -> Result<()> {
         if *SETTINGS == Settings::default() {
             let part1 = "Warning: using".yellow();
             let part2 = "with the default configuration. \n".yellow();
@@ -143,9 +143,8 @@ impl CocoGitto {
         }
         let statuses = self.repository.get_statuses()?;
 
-        // Warning if repository contains untracked or uncomitted changes
-        if SETTINGS.skip_untracked {
-            println!("{}", self.repository.get_statuses()?);
+        if skip_untracked || SETTINGS.skip_untracked {
+            eprintln!("{}", self.repository.get_statuses()?);
         } else {
             ensure!(statuses.0.is_empty(), "{}", self.repository.get_statuses()?);
         }

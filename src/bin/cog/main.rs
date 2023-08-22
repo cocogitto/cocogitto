@@ -285,6 +285,10 @@ enum Command {
         /// Specify a "Skip CI" string to append to the end of the commit
         #[arg(long = "skip-ci")]
         skip_ci: Option<String>,
+
+        /// Don't fail if there are untracked or uncommited files
+        #[arg(long = "skip-untracked")]
+        skip_untracked: bool,
     },
 
     /// Install cog config files
@@ -363,6 +367,7 @@ fn main() -> Result<()> {
             annotated,
             dry_run,
             skip_ci,
+            skip_untracked,
         } => {
             let mut cocogitto = CocoGitto::get()?;
             let is_monorepo = !SETTINGS.packages.is_empty();
@@ -398,6 +403,7 @@ fn main() -> Result<()> {
                             annotated,
                             dry_run,
                             skip_ci,
+                            skip_untracked,
                         )?
                     }
                     None => cocogitto.create_monorepo_version(
@@ -407,6 +413,7 @@ fn main() -> Result<()> {
                         annotated,
                         dry_run,
                         skip_ci,
+                        skip_untracked,
                     )?,
                 }
             } else {
@@ -417,6 +424,7 @@ fn main() -> Result<()> {
                     annotated,
                     dry_run,
                     skip_ci,
+                    skip_untracked,
                 )?
             }
         }
