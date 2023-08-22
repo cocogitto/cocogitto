@@ -38,6 +38,7 @@ struct PackageData {
 }
 
 impl CocoGitto {
+    #[allow(clippy::too_many_arguments)]
     pub fn create_monorepo_version(
         &mut self,
         increment: IncrementCommand,
@@ -46,6 +47,7 @@ impl CocoGitto {
         annotated: Option<String>,
         dry_run: bool,
         skip_ci: Option<String>,
+        skip_untracked: bool,
     ) -> Result<()> {
         match increment {
             IncrementCommand::Auto => {
@@ -56,6 +58,7 @@ impl CocoGitto {
                         annotated,
                         dry_run,
                         skip_ci,
+                        skip_untracked,
                     )
                 } else {
                     if annotated.is_some() {
@@ -66,6 +69,7 @@ impl CocoGitto {
                         hooks_config,
                         dry_run,
                         skip_ci,
+                        skip_untracked,
                     )
                 }
             }
@@ -76,6 +80,7 @@ impl CocoGitto {
                 annotated,
                 dry_run,
                 skip_ci,
+                skip_untracked,
             ),
         }
     }
@@ -86,8 +91,9 @@ impl CocoGitto {
         hooks_config: Option<&str>,
         dry_run: bool,
         skip_ci: Option<String>,
+        skip_untracked: bool,
     ) -> Result<()> {
-        self.pre_bump_checks()?;
+        self.pre_bump_checks(skip_untracked)?;
         // Get package bumps
         let bumps = self.get_packages_bumps(pre_release)?;
 
@@ -151,8 +157,9 @@ impl CocoGitto {
         annotated: Option<String>,
         dry_run: bool,
         skip_ci: Option<String>,
+        skip_untracked: bool,
     ) -> Result<()> {
-        self.pre_bump_checks()?;
+        self.pre_bump_checks(skip_untracked)?;
         // Get package bumps
         let bumps = self.get_packages_bumps(pre_release)?;
 
@@ -298,6 +305,7 @@ impl CocoGitto {
         Ok(())
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn create_monorepo_version_manual(
         &mut self,
         increment: IncrementCommand,
@@ -306,8 +314,9 @@ impl CocoGitto {
         annotated: Option<String>,
         dry_run: bool,
         skip_ci: Option<String>,
+        skip_untracked: bool,
     ) -> Result<()> {
-        self.pre_bump_checks()?;
+        self.pre_bump_checks(skip_untracked)?;
         // Get package bumps
         let bumps = self.get_current_packages()?;
 

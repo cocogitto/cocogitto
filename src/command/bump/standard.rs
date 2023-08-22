@@ -14,6 +14,7 @@ use semver::Prerelease;
 use tera::Tera;
 
 impl CocoGitto {
+    #[allow(clippy::too_many_arguments)]
     pub fn create_version(
         &mut self,
         increment: IncrementCommand,
@@ -22,8 +23,9 @@ impl CocoGitto {
         annotated: Option<String>,
         dry_run: bool,
         skip_ci: Option<String>,
+        skip_untracked: bool,
     ) -> Result<()> {
-        self.pre_bump_checks()?;
+        self.pre_bump_checks(skip_untracked)?;
 
         let current_tag = self.repository.get_latest_tag();
         let current_tag = tag_or_fallback_to_zero(current_tag)?;

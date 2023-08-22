@@ -373,7 +373,8 @@ fn uncommited_changes_should_not_throw_error_with_option() -> Result<()> {
         .arg("--dry-run")
         .assert()
         .success()
-        .stdout(indoc!("Untracked files :\n\tmodified: one/file\n\tnew: two\n\nnothing added to commit but untracked files present (use \"git add\" to track)\n\none-0.1.0\n0.1.0\n"));
+        .stderr(indoc!("Untracked files :\n\tmodified: one/file\n\tnew: two\n\nnothing added to commit but untracked files present (use \"git add\" to track)\n\n"))
+        .stdout(indoc!("one-0.1.0\n0.1.0\n"));
 
     assert_that!(Path::new("CHANGELOG.md")).does_not_exist();
     assert_tag_does_not_exist("1.1.0")?;
