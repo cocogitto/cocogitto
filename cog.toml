@@ -87,5 +87,6 @@ authors = [
     { signature = "Racci", username = "DaRacci" },
     { signature = "Conrad Hoffmann", username = "bitfehler" },
     { signature = "andre161292", username = "andre161292" },
-    { signature = "Sanchith Hegde", username = "SanchithHegde" }
+    { signature = "Sanchith Hegde", username = "SanchithHegde" },
+    { signature = "Wassim Ahmed-Belkacem", username = "Wassim-AB" },
 ]
