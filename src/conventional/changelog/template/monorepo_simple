@@ -17,6 +17,8 @@
 ### Package updates
 {% for package in packages -%}
 - {{ package.package_name }} bumped to {{ package.version.tag }}
+{% else %}
+No packages updated as part of this release.
 {% endfor -%}
 {% endif -%}
 
