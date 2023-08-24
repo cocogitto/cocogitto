@@ -156,7 +156,7 @@ impl CocoGitto {
         // Get package bumps
         let bumps = self.get_packages_bumps(pre_release)?;
 
-        if bumps.is_empty() {
+        if bumps.is_empty() && !SETTINGS.monorepo_bump_without_packages {
             print!("No conventional commits found for your packages that required a bump. Changelogs will be updated on the next bump.\nPre-Hooks and Post-Hooks have been skiped.\n");
             return Ok(());
         }
