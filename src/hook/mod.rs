@@ -7,6 +7,7 @@ use std::process::Command;
 use std::str::FromStr;
 use std::{fmt, path};
 
+use crate::hook::parser::VersionAccessToken;
 use crate::Tag;
 use parser::Token;
 
@@ -87,6 +88,7 @@ impl VersionSpan {
         }?;
 
         let mut amount = 1;
+        let mut version_access_token: Option<VersionAccessToken> = None;
 
         while let Some(token) = self.tokens.pop_front() {
             match token {
@@ -108,11 +110,22 @@ impl VersionSpan {
                 // set  build metadata and prerelease
                 Token::PreRelease(pre_release) => tag.version.pre = pre_release,
                 Token::BuildMetadata(build) => tag.version.build = build,
+                Token::VersionAccess(version_access) => {
+                    version_access_token = Some(version_access);
+                }
                 _ => unreachable!("Unexpected parsing error"),
             }
         }
 
-        Ok(tag.to_string())
+        if let Some(version_access) = version_access_token {
+            Ok(match version_access {
+                VersionAccessToken::Major => tag.version.major.to_string(),
+                VersionAccessToken::Minor => tag.version.minor.to_string(),
+                VersionAccessToken::Patch => tag.version.patch.to_string(),
+            })
+        } else {
+            Ok(tag.to_string())
+        }
     }
 }
 
@@ -540,6 +553,52 @@ mod test {
 
         assert_that!(hook.0.as_str())
             .is_equal_to(r#"echo "cog, version: 1.1.0, tag: cog-v1.1.0, current: 1.0.0, current_tag: cog-v1.0.0""#);
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn replace_major_minor_patch() -> Result<()> {
+        let mut packages = HashMap::new();
+        packages.insert("cog".to_string(), MonoRepoPackage::default());
+        let settings = Settings {
+            packages,
+            ..Default::default()
+        };
+
+        let settings = toml::to_string(&settings)?;
+
+        run_cmd!(
+            git init;
+            echo $settings > cog.toml;
+            git add .;
+            git commit -m "first commit";
+        )?;
+
+        let mut hook = Hook::from_str(
+            r#"major={{version.major}} minor={{version.minor}} patch={{version.patch}}"#,
+        )?;
+
+        let current = Tag {
+            package: Some("cog".to_string()),
+            prefix: Some("v".to_string()),
+            version: Version::new(1, 0, 0),
+            oid: None,
+        };
+
+        let tag = Tag {
+            package: Some("cog".to_string()),
+            prefix: Some("v".to_string()),
+            version: Version::new(1, 2, 3),
+            oid: None,
+        };
+
+        hook.insert_versions(
+            Some(&HookVersion::new(current)),
+            Some(&HookVersion::new(tag)),
+        )
+        .unwrap();
+
+        assert_that!(hook.0.as_str()).is_equal_to(r#"major=1 minor=2 patch=3"#);
         Ok(())
     }
 }

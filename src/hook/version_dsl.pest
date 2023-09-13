@@ -17,6 +17,10 @@ major = { "major" }
 minor = { "minor" }
 patch = { "patch" }
 
+version_access_major = { dot ~ "major" }
+version_access_minor = { dot ~ "minor" }
+version_access_patch = { dot ~ "patch" }
+
 amt = { NUMBER }
 ops = { add ~ amt? ~ ( major | minor | patch ) }
 ASCII_ALPHA_OR_HYPHEN = { ASCII_ALPHA | NUMBER | "-" }
@@ -35,5 +39,5 @@ package = { "package" }
 version = { delimiter_start ~ (
         ((current_tag | current_version | latest_tag | latest_version) ~ ops* ~ pre_release? ~ build_metadata?)
         | package
-    ) ~ delimiter_end}
+    ) ~ ( version_access_major | version_access_minor | version_access_patch )? ~ delimiter_end}
 version_dsl = { SOI ~ ( version | (!delimiter_start ~ ANY) )* ~ EOI }
