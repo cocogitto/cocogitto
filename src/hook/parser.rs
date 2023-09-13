@@ -14,6 +14,13 @@ use semver::{BuildMetadata, Prerelease};
 struct HookDslParser;
 
 #[derive(Debug, Eq, PartialEq)]
+pub enum VersionAccessToken {
+    Major,
+    Minor,
+    Patch,
+}
+
+#[derive(Debug, Eq, PartialEq)]
 pub enum Token {
     Version,
     VersionTag,
@@ -27,6 +34,7 @@ pub enum Token {
     Patch,
     PreRelease(Prerelease),
     BuildMetadata(BuildMetadata),
+    VersionAccess(VersionAccessToken),
 }
 
 pub fn parse(hook: &str) -> Result<HookSpan, HookParseError> {
@@ -72,6 +80,15 @@ fn parse_version(pair: Pair<Rule>) -> Result<VersionSpan, HookParseError> {
                 let identifiers = pair.into_inner().next().unwrap();
                 let semver_build_meta = BuildMetadata::new(identifiers.as_str())?;
                 tokens.push_back(Token::BuildMetadata(semver_build_meta));
+            }
+            Rule::version_access_major => {
+                tokens.push_back(Token::VersionAccess(VersionAccessToken::Major))
+            }
+            Rule::version_access_minor => {
+                tokens.push_back(Token::VersionAccess(VersionAccessToken::Minor))
+            }
+            Rule::version_access_patch => {
+                tokens.push_back(Token::VersionAccess(VersionAccessToken::Patch))
             }
             _ => (),
         }
