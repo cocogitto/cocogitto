@@ -2,6 +2,19 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## [5.6.0](https://github.com/cocogitto/cocogitto/compare/5.5.0..5.6.0) - 2023-09-27
+#### Bug Fixes
+- **(bump)** option to disable untracked changes error - ([da459de](https://github.com/cocogitto/cocogitto/commit/da459decff9a84bb5bde471f5d64f577df28df11)) - [@Wassim-AB](https://github.com/Wassim-AB)
+#### Documentation
+- fix discord invite link - ([5d11d5a](https://github.com/cocogitto/cocogitto/commit/5d11d5aec58b4d88b2606c3f8b2ca4e7688590c2)) - [@oknozor](https://github.com/oknozor)
+#### Features
+- **(bump)** added skip untracked as cli argument - ([fb6a7e6](https://github.com/cocogitto/cocogitto/commit/fb6a7e667cdcddc185e02894b03b3b623610ca77)) - [@Wassim-AB](https://github.com/Wassim-AB)
+#### Miscellaneous Chores
+- edited contributors list - ([eca20b8](https://github.com/cocogitto/cocogitto/commit/eca20b8a4cd602225e5a386a06e1f22c39e4fddd)) - [@Wassim-AB](https://github.com/Wassim-AB)
+- bump yanked crates - ([89149ad](https://github.com/cocogitto/cocogitto/commit/89149adfb9e45fc3b236fb2bf44d92843be30047)) - [@tranzystorek-io](https://github.com/tranzystorek-io)
+
+- - -
+
 ## [5.5.0](https://github.com/cocogitto/cocogitto/compare/5.4.0..5.5.0) - 2023-08-17
 #### Documentation
 - **(README)** fix links to cocogitto docs - ([d62a83c](https://github.com/cocogitto/cocogitto/commit/d62a83c5613dc51a5b8201a0d2747493f148a758)) - [@lukehsiao](https://github.com/lukehsiao)
