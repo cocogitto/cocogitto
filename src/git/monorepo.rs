@@ -51,7 +51,7 @@ mod test {
         )?;
 
         let repo = Repository::open(".")?;
-        repo.commit("chore: init", false)?;
+        repo.commit("chore: init", false, false)?;
 
         run_cmd!(
             mkdir one;

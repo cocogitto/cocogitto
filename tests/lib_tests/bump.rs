@@ -1,3 +1,4 @@
+use crate::helpers::*;
 use anyhow::Result;
 use cmd_lib::run_cmd;
 use cocogitto::settings::{MonoRepoPackage, Settings};
@@ -5,6 +6,7 @@ use cocogitto::{conventional::version::IncrementCommand, CocoGitto};
 use sealed_test::prelude::*;
 use speculoos::prelude::*;
 use std::collections::HashMap;
+use std::path::Path;
 use std::path::PathBuf;
 
 use crate::helpers::*;
@@ -116,6 +118,38 @@ fn monorepo_bump_manual_ok() -> Result<()> {
     // Assert
     assert_that!(result).is_ok();
     assert_tag_exists("1.0.0")?;
+    Ok(())
+}
+#[sealed_test]
+fn monorepo_bump_manual_disable_changelog_ok() -> Result<()> {
+    // Arrange
+    let mut settings = Settings {
+        disable_changelog: true,
+        ..Default::default()
+    };
+
+    init_monorepo(&mut settings)?;
+    run_cmd!(
+        git tag "one-0.1.0";
+    )?;
+
+    let mut cocogitto = CocoGitto::get()?;
+
+    // Act
+    let result = cocogitto.create_monorepo_version(
+        IncrementCommand::Major,
+        None,
+        None,
+        None,
+        false,
+        None,
+        false,
+    );
+
+    // Assert
+    assert_that!(result).is_ok();
+    assert_tag_exists("1.0.0")?;
+    assert_that!(Path::new("CHANGELOG.md")).does_not_exist();
     Ok(())
 }
 

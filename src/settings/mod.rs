@@ -32,6 +32,7 @@ pub enum HookType {
 pub struct Settings {
     pub from_latest_tag: bool,
     pub ignore_merge_commits: bool,
+    pub disable_changelog: bool,
     pub generate_mono_repository_global_tag: bool,
     pub monorepo_version_separator: Option<String>,
     pub branch_whitelist: Vec<String>,
@@ -54,6 +55,7 @@ impl Default for Settings {
         Self {
             from_latest_tag: false,
             ignore_merge_commits: false,
+            disable_changelog: false,
             generate_mono_repository_global_tag: true,
             monorepo_version_separator: None,
             branch_whitelist: vec![],

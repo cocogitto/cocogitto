@@ -50,17 +50,18 @@ impl CocoGitto {
             return Ok(());
         }
 
-        let pattern = self.get_revspec_for_tag(&current_tag)?;
+        if !SETTINGS.disable_changelog {
+            let pattern = self.get_revspec_for_tag(&current_tag)?;
+            let changelog =
+                self.get_package_changelog_with_target_version(pattern, tag.clone(), package_name)?;
 
-        let changelog =
-            self.get_package_changelog_with_target_version(pattern, tag.clone(), package_name)?;
+            changelog.pretty_print_bump_summary()?;
 
-        changelog.pretty_print_bump_summary()?;
-
-        let path = package.changelog_path();
-        let template = SETTINGS.get_package_changelog_template()?;
-        let additional_context = ReleaseType::Package(PackageContext { package_name });
-        changelog.write_to_file(path, template, additional_context)?;
+            let path = package.changelog_path();
+            let template = SETTINGS.get_package_changelog_template()?;
+            let additional_context = ReleaseType::Package(PackageContext { package_name });
+            changelog.write_to_file(path, template, additional_context)?;
+        }
 
         let current = self
             .repository
@@ -88,8 +89,11 @@ impl CocoGitto {
 
         let skip_ci_pattern = skip_ci.unwrap_or(SETTINGS.skip_ci.clone().unwrap_or_default());
 
-        self.repository
-            .commit(&format!("chore(version): {tag} {}", skip_ci_pattern), sign)?;
+        self.repository.commit(
+            &format!("chore(version): {tag} {}", skip_ci_pattern),
+            sign,
+            true,
+        )?;
 
         if let Some(msg_tmpl) = annotated {
             let mut context = tera::Context::new();

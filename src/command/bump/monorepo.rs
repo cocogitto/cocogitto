@@ -122,6 +122,7 @@ impl CocoGitto {
         self.repository.commit(
             &format!("chore(version): bump packages {}", skip_ci_pattern),
             sign,
+            true,
         )?;
 
         for bump in &bumps {
@@ -219,23 +220,25 @@ impl CocoGitto {
             })
         }
 
-        let pattern = self.get_revspec_for_tag(&old)?;
-        let changelog =
-            self.get_monorepo_global_changelog_with_target_version(pattern, tag.clone())?;
+        if !SETTINGS.disable_changelog {
+            let pattern = self.get_revspec_for_tag(&old)?;
+            let changelog =
+                self.get_monorepo_global_changelog_with_target_version(pattern, tag.clone())?;
 
-        changelog.pretty_print_bump_summary()?;
+            changelog.pretty_print_bump_summary()?;
 
-        let path = settings::changelog_path();
-        let template = SETTINGS.get_monorepo_changelog_template()?;
+            let path = settings::changelog_path();
+            let template = SETTINGS.get_monorepo_changelog_template()?;
 
-        changelog.write_to_file(
-            path,
-            template,
-            ReleaseType::MonoRepo(MonoRepoContext {
-                package_lock: false,
-                packages: template_context,
-            }),
-        )?;
+            changelog.write_to_file(
+                path,
+                template,
+                ReleaseType::MonoRepo(MonoRepoContext {
+                    package_lock: false,
+                    packages: template_context,
+                }),
+            )?;
+        }
 
         let current = self.repository.get_latest_tag().map(HookVersion::new).ok();
         let next_version = HookVersion::new(tag.clone());
@@ -263,6 +266,7 @@ impl CocoGitto {
                 next_version.prefixed_tag, skip_ci_pattern
             ),
             sign,
+            true,
         )?;
 
         for bump in &bumps {
@@ -347,23 +351,25 @@ impl CocoGitto {
             })
         }
 
-        let pattern = self.get_revspec_for_tag(&old)?;
-        let changelog =
-            self.get_monorepo_global_changelog_with_target_version(pattern, tag.clone())?;
+        if !SETTINGS.disable_changelog {
+            let pattern = self.get_revspec_for_tag(&old)?;
+            let changelog =
+                self.get_monorepo_global_changelog_with_target_version(pattern, tag.clone())?;
 
-        changelog.pretty_print_bump_summary()?;
+            changelog.pretty_print_bump_summary()?;
 
-        let path = settings::changelog_path();
-        let template = SETTINGS.get_monorepo_changelog_template()?;
+            let path = settings::changelog_path();
+            let template = SETTINGS.get_monorepo_changelog_template()?;
 
-        changelog.write_to_file(
-            path,
-            template,
-            ReleaseType::MonoRepo(MonoRepoContext {
-                package_lock: true,
-                packages: template_context,
-            }),
-        )?;
+            changelog.write_to_file(
+                path,
+                template,
+                ReleaseType::MonoRepo(MonoRepoContext {
+                    package_lock: true,
+                    packages: template_context,
+                }),
+            )?;
+        }
 
         let current = self.repository.get_latest_tag().map(HookVersion::new).ok();
         let next_version = HookVersion::new(tag.clone());
@@ -387,6 +393,7 @@ impl CocoGitto {
                 next_version.prefixed_tag, skip_ci_pattern
             ),
             sign,
+            true,
         )?;
 
         if let Some(msg_tmpl) = annotated {

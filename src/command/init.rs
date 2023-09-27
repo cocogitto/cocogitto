@@ -57,7 +57,7 @@ pub fn init<S: AsRef<Path> + ?Sized>(path: &S) -> anyhow::Result<()> {
 
     if is_init_commit {
         let sign = repository.gpg_sign();
-        repository.commit("chore: initial commit", sign)?;
+        repository.commit("chore: initial commit", sign, false)?;
     }
 
     Ok(())

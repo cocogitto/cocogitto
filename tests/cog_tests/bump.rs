@@ -121,6 +121,66 @@ fn auto_bump_with_prefix() -> Result<()> {
 }
 
 #[sealed_test]
+fn disable_changelog_disables_changelog_generation() -> Result<()> {
+    git_init()?;
+    git_add("disable_changelog = true", "cog.toml")?;
+    git_commit("chore: first commit")?;
+    git_commit("feat: add a feature commit")?;
+    git_tag("1.0.0")?;
+    git_commit("feat: add another feature commit")?;
+    Command::cargo_bin("cog")?
+        .arg("bump")
+        .arg("--auto")
+        .assert()
+        .success();
+
+    assert_that!(Path::new("CHANGELOG.md")).does_not_exist();
+    assert_tag_exists("1.0.0")?;
+    assert_tag_exists("1.1.0")?;
+    Ok(())
+}
+
+#[sealed_test]
+fn disable_changelog_disables_changelog_generation_for_monorepos() -> Result<()> {
+    let mut settings = Settings {
+        disable_changelog: true,
+        ..Default::default()
+    };
+    init_monorepo(&mut settings)?;
+    Command::cargo_bin("cog")?
+        .arg("bump")
+        .arg("--auto")
+        .assert()
+        .success();
+
+    assert_that!(Path::new("CHANGELOG.md")).does_not_exist();
+    assert_tag_exists("0.1.0")?;
+    assert_tag_exists("one-0.1.0")?;
+    Ok(())
+}
+
+#[sealed_test]
+fn disable_changelog_disables_changelog_generation_for_packages() -> Result<()> {
+    let mut settings = Settings {
+        disable_changelog: true,
+        ..Default::default()
+    };
+    init_monorepo(&mut settings)?;
+
+    Command::cargo_bin("cog")?
+        .arg("bump")
+        .arg("--auto")
+        .arg("--package")
+        .arg("one")
+        .assert()
+        .success();
+
+    assert_that!(Path::new("CHANGELOG.md")).does_not_exist();
+    assert_tag_exists("one-0.1.0")?;
+    Ok(())
+}
+
+#[sealed_test]
 fn auto_bump_patch_from_latest_tag() -> Result<()> {
     git_init()?;
     git_commit("chore: init")?;
