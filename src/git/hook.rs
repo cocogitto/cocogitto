@@ -7,11 +7,16 @@ use std::path::Path;
 use crate::settings::{GitHook, GitHookType};
 use anyhow::Result;
 
-pub fn install_git_hook(repodir: &Path, hook_type: &GitHookType, hook: &GitHook) -> Result<()> {
+pub fn install_git_hook(
+    repodir: &Path,
+    overwrite_existing_hooks: bool,
+    hook_type: &GitHookType,
+    hook: &GitHook,
+) -> Result<()> {
     let hook_path = repodir.join(".git/hooks");
     let hook_path = hook_path.join::<&str>((*hook_type).into());
 
-    if hook_path.exists() {
+    if !overwrite_existing_hooks && hook_path.exists() {
         let mut answer = String::new();
         println!(
             "Git hook `{}` exists. (Overwrite Y/n)",
@@ -87,7 +92,7 @@ exit 1"#
         let cog = CocoGitto::get()?;
 
         // Act
-        cog.install_git_hooks(vec![GitHookType::CommitMsg])?;
+        cog.install_git_hooks(true, vec![GitHookType::CommitMsg])?;
 
         // Assert
         assert_that!(Path::new(".git/hooks/commit-msg")).exists();
@@ -138,7 +143,7 @@ exit 1"#
         let cog = CocoGitto::get()?;
 
         // Act
-        cog.install_all_hooks()?;
+        cog.install_all_hooks(true)?;
 
         // Assert
         assert_that!(Path::new(".git/hooks/commit-msg")).exists();

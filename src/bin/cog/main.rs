@@ -306,6 +306,9 @@ enum Command {
         /// Install all git-hooks
         #[arg(short, long, group = "git-hooks")]
         all: bool,
+        /// Overwrite existing git-hooks
+        #[arg(short, long)]
+        overwrite: bool,
     },
 
     /// Generate shell completions
@@ -560,16 +563,17 @@ fn main() -> Result<()> {
         Command::InstallHook {
             hook_type: hook_types,
             all,
+            overwrite,
         } => {
             let cocogitto = CocoGitto::get()?;
             if all {
-                cocogitto.install_all_hooks()?;
+                cocogitto.install_all_hooks(overwrite)?;
                 return Ok(());
             };
 
             let hook_types = hook_types.into_iter().map(GitHookType::from).collect();
 
-            cocogitto.install_git_hooks(hook_types)?;
+            cocogitto.install_git_hooks(overwrite, hook_types)?;
         }
         Command::GenerateCompletions { shell } => {
             clap_complete::generate(shell, &mut Cli::command(), "cog", &mut std::io::stdout());
