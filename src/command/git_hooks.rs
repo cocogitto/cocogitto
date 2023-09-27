@@ -4,7 +4,7 @@ use crate::{CocoGitto, SETTINGS};
 use anyhow::{anyhow, Result};
 
 impl CocoGitto {
-    pub fn install_all_hooks(&self) -> Result<()> {
+    pub fn install_all_hooks(&self, overwrite_existing_hooks: bool) -> Result<()> {
         let repodir = &self
             .repository
             .get_repo_dir()
@@ -12,13 +12,17 @@ impl CocoGitto {
             .to_path_buf();
 
         for (hook_type, hook) in SETTINGS.git_hooks.iter() {
-            install_git_hook(repodir, hook_type, hook)?;
+            install_git_hook(repodir, overwrite_existing_hooks, hook_type, hook)?;
         }
 
         Ok(())
     }
 
-    pub fn install_git_hooks(&self, hook_types: Vec<GitHookType>) -> Result<()> {
+    pub fn install_git_hooks(
+        &self,
+        overwrite_existing_hooks: bool,
+        hook_types: Vec<GitHookType>,
+    ) -> Result<()> {
         let repodir = &self
             .repository
             .get_repo_dir()
@@ -30,7 +34,7 @@ impl CocoGitto {
                 .git_hooks
                 .get(&hook_type)
                 .ok_or(anyhow!("git-hook {hook_type} was not found in cog.toml"))?;
-            install_git_hook(repodir, &hook_type, hook)?
+            install_git_hook(repodir, overwrite_existing_hooks, &hook_type, hook)?
         }
 
         Ok(())
