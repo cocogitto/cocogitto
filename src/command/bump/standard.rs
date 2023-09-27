@@ -49,13 +49,16 @@ impl CocoGitto {
         }
 
         let pattern = self.get_revspec_for_tag(&current_tag)?;
-        let changelog = self.get_changelog_with_target_version(pattern, tag.clone())?;
-        changelog.pretty_print_bump_summary()?;
 
-        let path = settings::changelog_path();
-        let template = SETTINGS.get_changelog_template()?;
+        if !SETTINGS.disable_changelog {
+            let changelog = self.get_changelog_with_target_version(pattern, tag.clone())?;
+            changelog.pretty_print_bump_summary()?;
 
-        changelog.write_to_file(path, template, ReleaseType::Standard)?;
+            let path = settings::changelog_path();
+            let template = SETTINGS.get_changelog_template()?;
+
+            changelog.write_to_file(path, template, ReleaseType::Standard)?;
+        }
 
         let current = self.repository.get_latest_tag().map(HookVersion::new).ok();
 
@@ -81,6 +84,7 @@ impl CocoGitto {
                 next_version.prefixed_tag, skip_ci_pattern
             ),
             sign,
+            true,
         )?;
 
         if let Some(msg_tmpl) = annotated {

@@ -362,6 +362,48 @@ fn get_changelog_from_tag_to_tagged_head() -> Result<()> {
 }
 
 #[sealed_test]
+fn get_changelog_is_unaffected_by_disable_changelog() -> Result<()> {
+    // Arrange
+    git_init()?;
+
+    let cog_toml = indoc!("disable_changelog = true");
+
+    run_cmd!(echo $cog_toml > cog.toml;)?;
+    git_commit("chore: init")?;
+    let commit_one = git_commit("feat: start")?;
+    let commit_two = git_commit("feat: feature 1")?;
+    git_tag("1.0.0")?;
+
+    // Act
+    let changelog = Command::cargo_bin("cog")?
+        .arg("changelog")
+        // Assert
+        .assert()
+        .success();
+
+    let changelog = changelog.get_output();
+    let changelog = String::from_utf8_lossy(&changelog.stdout);
+    let today = Utc::now().date_naive();
+
+    assert_eq!(
+        changelog.as_ref(),
+        formatdoc!(
+            "## 1.0.0 - {today}
+                #### Features
+                - feature 1 - ({commit_two}) - Tom
+                - start - ({commit_one}) - Tom
+
+
+                ",
+            today = today,
+            commit_one = &commit_one[0..7],
+            commit_two = &commit_two[0..7],
+        )
+    );
+    Ok(())
+}
+
+#[sealed_test]
 fn get_changelog_with_custom_template() -> Result<()> {
     // Arrange
     let crate_dir = env!("CARGO_MANIFEST_DIR");

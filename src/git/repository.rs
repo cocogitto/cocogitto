@@ -148,7 +148,7 @@ mod test {
             git add .;
         )?;
         let repo = Repository::open(".")?;
-        let commit_oid = repo.commit("first commit", false)?;
+        let commit_oid = repo.commit("first commit", false, false)?;
 
         // Act
         let oid = repo.get_head_commit_oid();
@@ -180,7 +180,7 @@ mod test {
             git add .;
         )?;
         let repo = Repository::open(".")?;
-        let commit_oid = repo.commit("first commit", false)?;
+        let commit_oid = repo.commit("first commit", false, false)?;
 
         // Act
         let head = repo.get_head_commit().map(|head| head.id());
@@ -218,7 +218,7 @@ mod test {
         )?;
         let repo = Repository::open(".")?;
 
-        repo.commit("first commit", false)?;
+        repo.commit("first commit", false, false)?;
 
         // Act
         let head = repo.get_head();
@@ -256,7 +256,7 @@ mod test {
             git add .;
         )?;
         let repo = Repository::open(".")?;
-        repo.commit("hello one", false)?;
+        repo.commit("hello one", false, false)?;
 
         // Act
         let shorthand = repo.get_branch_shorthand();

@@ -5,21 +5,27 @@ use std::io::Write;
 use std::process::{Command, Stdio};
 
 impl Repository {
-    pub(crate) fn commit(&self, message: &str, sign: bool) -> Result<Oid, Git2Error> {
+    pub(crate) fn commit(
+        &self,
+        message: &str,
+        sign: bool,
+        allow_empty_delta: bool,
+    ) -> Result<Oid, Git2Error> {
         let sig = self.0.signature()?;
         let tree_id = self.0.index()?.write_tree()?;
         let tree = self.0.find_tree(tree_id)?;
         let is_empty = self.0.head().is_err();
         let has_delta = self.get_diff(false).is_some();
+        let has_delta_or_allowed_empty = has_delta || allow_empty_delta;
 
-        if !is_empty && has_delta {
+        if !is_empty && has_delta_or_allowed_empty {
             let head = &self.0.head()?;
             let head_target = head.target().expect("Cannot get HEAD target");
             let tip = &self.0.find_commit(head_target)?;
 
             self.commit_or_signed_commit(&sig, message, &tree, &[tip], sign)
                 .map_err(Git2Error::from)
-        } else if is_empty && has_delta {
+        } else if is_empty && has_delta_or_allowed_empty {
             // First repo commit
             self.commit_or_signed_commit(&sig, message, &tree, &[], sign)
                 .map_err(Git2Error::from)
@@ -121,7 +127,7 @@ mod test {
         let repo = Repository::open(".")?;
 
         // Act
-        let oid = repo.commit("feat: a test commit", false);
+        let oid = repo.commit("feat: a test commit", false, false);
 
         // Assert
         assert_that!(oid).is_ok();
@@ -148,7 +154,26 @@ mod test {
         let repo = Repository::open(".")?;
 
         // Act
-        let oid = repo.commit("feat: a test commit", true);
+        let oid = repo.commit("feat: a test commit", true, false);
+
+        // Assert
+        assert_that!(oid).is_ok();
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn create_empty_commit() -> Result<()> {
+        init_builtin_logger();
+
+        // Arrange
+        run_cmd!(
+            git init;
+        )?;
+
+        let repo = Repository::open(".")?;
+
+        // Act
+        let oid = repo.commit("feat: a test commit", false, true);
 
         // Assert
         assert_that!(oid).is_ok();
@@ -168,7 +193,7 @@ mod test {
         let repo = Repository::open(".").expect("could not open git repository");
 
         // Act
-        let oid = repo.commit("feat: a test commit", false);
+        let oid = repo.commit("feat: a test commit", false, false);
 
         // Assert
         assert_that!(oid).is_ok();
@@ -180,7 +205,7 @@ mod test {
         let repo = Repository::init(".")?;
 
         // Act
-        let oid = repo.commit("feat: a test commit", false);
+        let oid = repo.commit("feat: a test commit", false, false);
 
         // Assert
         assert_that!(oid).is_err();
@@ -198,7 +223,7 @@ mod test {
         let repo = Repository::open(".")?;
 
         // Act
-        let oid = repo.commit("feat: a test commit", false);
+        let oid = repo.commit("feat: a test commit", false, false);
 
         // Assert
         assert_that!(oid).is_err();
