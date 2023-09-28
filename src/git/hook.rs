@@ -155,4 +155,71 @@ exit 1"#
         assert_that!(hook).is_equal_to("echo toto\n".to_string());
         Ok(())
     }
+
+    #[sealed_test]
+    fn overwrite_pre_commit_hook() -> Result<()> {
+        // Arrange
+        run_cmd!(git init)?;
+        let mut git_hooks = HashMap::new();
+        let hooks_script = r#"
+if cog check; then
+    exit 0
+fi
+
+echo "Invalid commits were found, force push with '--no-verify'"
+exit 1"#
+            .to_string();
+
+        git_hooks.insert(
+            GitHookType::CommitMsg,
+            GitHook::Script {
+                script: hooks_script.clone(),
+            },
+        );
+
+        let settings = Settings {
+            git_hooks,
+            ..Default::default()
+        };
+
+        let settings = toml::to_string(&settings)?;
+        fs::write("cog.toml", settings)?;
+
+        let cog = CocoGitto::get()?;
+
+        // Act
+        cog.install_git_hooks(false, vec![GitHookType::CommitMsg])?;
+
+        // Assert
+        assert_that!(Path::new(".git/hooks/commit-msg")).exists();
+        let hooks = fs::read_to_string(".git/hooks/commit-msg")?;
+        assert_that!(hooks).is_equal_to(&hooks_script);
+        assert_that!(Path::new(".git/hooks/pre-push")).does_not_exist();
+
+        // Prepare: create empty file
+        fs::write(".git/hooks/commit-msg", "")?;
+
+        // Act 2: reinstall hooks with overwrite true
+        cog.install_git_hooks(true, vec![GitHookType::CommitMsg])?;
+
+        // Assert
+        assert_that!(Path::new(".git/hooks/commit-msg")).exists();
+        let hooks = fs::read_to_string(".git/hooks/commit-msg")?;
+        assert_that!(hooks).is_equal_to(&hooks_script);
+        assert_that!(Path::new(".git/hooks/pre-push")).does_not_exist();
+
+        // Prepare: create empty file
+        fs::write(".git/hooks/commit-msg", "")?;
+
+        // Act 3: reinstall hooks without overwrite true
+        cog.install_git_hooks(false, vec![GitHookType::CommitMsg])?;
+
+        // Assert: file must still be empty
+        assert_that!(Path::new(".git/hooks/commit-msg")).exists();
+        let hooks = fs::read_to_string(".git/hooks/commit-msg")?;
+        assert_that!(hooks).is_empty();
+        assert_that!(Path::new(".git/hooks/pre-push")).does_not_exist();
+
+        Ok(())
+    }
 }
