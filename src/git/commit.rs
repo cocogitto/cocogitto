@@ -65,10 +65,18 @@ impl Repository {
             .to_string();
 
         let key = self.signin_key().ok();
-        let gpg_signature = gpg_sign_string(key, &commit_as_str)?;
+
+        let (signature, sig) = if self.ssh_sign() {
+            let program = self.ssh_program();
+            (ssh_sign_string(program, key, &commit_as_str)?, "sshsig")
+        } else {
+            let program = self.gpg_program();
+            (gpg_sign_string(program, key, &commit_as_str)?, "gigsig")
+        };
+
         let oid = self
             .0
-            .commit_signed(&commit_as_str, &gpg_signature, Some("gpgsig"))?;
+            .commit_signed(&commit_as_str, &signature, Some(sig))?;
 
         // This is needed because git2 does not update HEAD after creating a signed commit
         let commit = self.0.find_object(oid, Some(ObjectType::Commit))?;
@@ -77,8 +85,12 @@ impl Repository {
     }
 }
 
-fn gpg_sign_string(key: Option<String>, content: &str) -> Result<String, Git2Error> {
-    let mut child = Command::new("gpg");
+fn gpg_sign_string(
+    program: String,
+    key: Option<String>,
+    content: &str,
+) -> Result<String, Git2Error> {
+    let mut child = Command::new(program);
     child.args(["--armor", "--detach-sig"]);
 
     if let Some(key) = &key {
@@ -101,6 +113,35 @@ fn gpg_sign_string(key: Option<String>, content: &str) -> Result<String, Git2Err
             Ok(String::from_utf8_lossy(&output.stdout).to_string())
         } else {
             Err(Git2Error::GpgError(
+                String::from_utf8_lossy(&output.stderr).to_string(),
+            ))
+        }
+    })?
+}
+
+fn ssh_sign_string(
+    program: String,
+    key: Option<String>,
+    content: &str,
+) -> Result<String, Git2Error> {
+    let Some(key) = key else {
+        return Err(Git2Error::SshError("No ssh key found".to_string()));
+    };
+
+    let mut child = Command::new(program);
+    child.args(["-Y", "sign", "-n", "git"]);
+
+    let mut signing_key = tempfile::NamedTempFile::new()?;
+    let mut buffer = tempfile::NamedTempFile::new()?;
+    signing_key.write_all(key.as_bytes())?;
+    buffer.write_all(content.as_bytes())?;
+    child.args(["-f", signing_key.into_temp_path().to_str().unwrap(), "-U", buffer.into_temp_path().to_str().unwrap()]); // TODO: Is there a way to avoid unwrap here ?
+
+    child.spawn().map_err(Git2Error::IOError)?.wait_with_output().map(|output| {
+        if output.status.success() {
+            Ok(String::from_utf8_lossy(&output.stdout).to_string())
+        } else {
+            Err(Git2Error::SshError(
                 String::from_utf8_lossy(&output.stderr).to_string(),
             ))
         }
@@ -175,6 +216,33 @@ mod test {
     }
 
     #[sealed_test]
+    fn crate_signed_ssh_commit_ok() -> Result<()> {
+        init_builtin_logger();
+
+        // Arrange
+        let crate_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
+        // ssh-add $crate_dir/tests/assets/sshkey;
+
+        run_cmd!(
+            ssh-keygen -t ed25519 -f $crate_dir/tests/assets/sshkey -N "" -C "test@cocogitto.org";
+            git init;
+            git config --local user.signingkey;
+            git config --local gpg.format ssh;
+            echo changes > file;
+            git add .;
+        )?;
+
+        let repo = Repository::open(".")?;
+
+        // Act
+        let oid = repo.commit("feat: a test commit", true);
+
+        // Assert
+        assert_that!(oid).is_ok();
+        Ok(())
+    }
+
+    #[sealed_test]
     fn first_commit_custom_branch() {
         // Arrange
         run_cmd!(
@@ -183,7 +251,7 @@ mod test {
             echo changes > file;
             git add .;
         )
-        .expect("could not initialize git repository");
+            .expect("could not initialize git repository");
 
         let repo = Repository::open(".").expect("could not open git repository");
 

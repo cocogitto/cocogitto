@@ -19,6 +19,31 @@ impl Repository {
         config.get_bool("commit.gpgSign").unwrap_or(false)
     }
 
+    pub(crate) fn gpg_program(&self) -> String {
+        let config = self.0.config().expect("failed to retrieve gitconfig");
+        config
+            .get_string("gpg.program")
+            .unwrap_or("gpg".to_string())
+    }
+
+    pub(crate) fn ssh_sign(&self) -> bool {
+        let config = self.0.config().expect("failed to retrieve gitconfig");
+        if config.get_bool("commit.gpgSign").is_err() {
+            return false;
+        }
+
+        config
+            .get_string("gpg.format")
+            .is_ok_and(|s| s.to_lowercase() == "ssh")
+    }
+
+    pub(crate) fn ssh_program(&self) -> String {
+        let config = self.0.config().expect("failed to retrieve gitconfig");
+        config
+            .get_string("gpg.ssh.program")
+            .unwrap_or("ssh-keygen".to_string())
+    }
+
     pub(crate) fn init<S: AsRef<Path> + ?Sized>(path: &S) -> Result<Repository, Git2Error> {
         let repository =
             Git2Repository::init(path).map_err(Git2Error::FailedToInitializeRepository)?;
