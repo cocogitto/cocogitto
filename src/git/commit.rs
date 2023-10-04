@@ -1,7 +1,7 @@
-use std::fs;
 use crate::git::error::Git2Error;
 use crate::git::repository::Repository;
 use git2::{Commit, ObjectType, Oid, ResetType, Signature, Tree};
+use std::fs;
 use std::io::{Read, Write};
 use std::process::{Command, Stdio};
 
@@ -153,7 +153,9 @@ fn ssh_sign_string(
 
     let mut signature = String::new();
     let sig_file = buffer_ref.to_str().unwrap().to_string() + ".sig";
-    fs::File::open(sig_file)?.read_to_string(&mut signature).map_err(Git2Error::IOError)?;
+    fs::File::open(sig_file)?
+        .read_to_string(&mut signature)
+        .map_err(Git2Error::IOError)?;
 
     Ok(signature)
 }
@@ -278,7 +280,7 @@ mod test {
             echo changes > file;
             git add .;
         )
-            .expect("could not initialize git repository");
+        .expect("could not initialize git repository");
 
         let repo = Repository::open(".").expect("could not open git repository");
 
