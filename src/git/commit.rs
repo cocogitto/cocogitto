@@ -1,7 +1,8 @@
+use std::fs;
 use crate::git::error::Git2Error;
 use crate::git::repository::Repository;
 use git2::{Commit, ObjectType, Oid, ResetType, Signature, Tree};
-use std::io::Write;
+use std::io::{Read, Write};
 use std::process::{Command, Stdio};
 
 impl Repository {
@@ -66,17 +67,17 @@ impl Repository {
 
         let key = self.signin_key().ok();
 
-        let (signature, sig) = if self.ssh_sign() {
+        let signature = if self.ssh_sign() {
             let program = self.ssh_program();
-            (ssh_sign_string(program, key, &commit_as_str)?, "sshsig")
+            ssh_sign_string(program, key, &commit_as_str)?
         } else {
             let program = self.gpg_program();
-            (gpg_sign_string(program, key, &commit_as_str)?, "gigsig")
+            gpg_sign_string(program, key, &commit_as_str)?
         };
 
         let oid = self
             .0
-            .commit_signed(&commit_as_str, &signature, Some(sig))?;
+            .commit_signed(&commit_as_str, &signature, Some("gpgsig"))?;
 
         // This is needed because git2 does not update HEAD after creating a signed commit
         let commit = self.0.find_object(oid, Some(ObjectType::Commit))?;
@@ -135,26 +136,26 @@ fn ssh_sign_string(
     let mut buffer = tempfile::NamedTempFile::new()?;
     signing_key.write_all(key.as_bytes())?;
     buffer.write_all(content.as_bytes())?;
+    let signing_key_ref = signing_key.into_temp_path();
+    let buffer_ref = buffer.into_temp_path();
     child.args([
         "-f",
-        signing_key.into_temp_path().to_str().unwrap(),
-        "-U",
-        buffer.into_temp_path().to_str().unwrap(),
+        signing_key_ref.to_str().unwrap(),
+        buffer_ref.to_str().unwrap(),
     ]); // TODO: Is there a way to avoid unwrap here ?
 
     child
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
         .spawn()
         .map_err(Git2Error::IOError)?
-        .wait_with_output()
-        .map(|output| {
-            if output.status.success() {
-                Ok(String::from_utf8_lossy(&output.stdout).to_string())
-            } else {
-                Err(Git2Error::SshError(
-                    String::from_utf8_lossy(&output.stderr).to_string(),
-                ))
-            }
-        })?
+        .wait()?;
+
+    let mut signature = String::new();
+    let sig_file = buffer_ref.to_str().unwrap().to_string() + ".sig";
+    fs::File::open(sig_file)?.read_to_string(&mut signature).map_err(Git2Error::IOError)?;
+
+    Ok(signature)
 }
 
 #[cfg(test)]
@@ -162,7 +163,7 @@ mod test {
     use crate::git::repository::Repository;
     use crate::test_helpers::git_init_no_gpg;
     use anyhow::Result;
-    use cmd_lib::run_cmd;
+    use cmd_lib::run_cmd, run_fun;
     use sealed_test::prelude::*;
     use speculoos::prelude::*;
 
@@ -229,14 +230,25 @@ mod test {
         init_builtin_logger();
 
         // Arrange
-        let crate_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
-        // ssh-add $crate_dir/tests/assets/sshkey;
+        let crate_dir = std::env::var("CARGO_MANIFEST_DIR")?;
+
+        // Source a ssh-agent and set env variables
+        let output = run_fun!(
+            ssh-agent;
+        )?;
+
+        let variables = output.split(';').map(|s| s.trim()).collect::<Vec<&str>>();
+        let ssh_auth_sock = variables[0].split('=').collect::<Vec<&str>>()[1];
+        let ssh_agent_pid = variables[2].split('=').collect::<Vec<&str>>()[1];
+        std::env::set_var("SSH_AUTH_SOCK", ssh_auth_sock);
+        std::env::set_var("SSH_AGENT_PID", ssh_agent_pid);
 
         run_cmd!(
-            ssh-keygen -t ed25519 -f $crate_dir/tests/assets/sshkey -N "" -C "test@cocogitto.org";
             git init;
-            git config --local user.signingkey;
+            git config --local user.signingkey "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHsnHukmf4SX31jdbf+aZjH2pvmHwuz7ysxdjErMK+i2";
             git config --local gpg.format ssh;
+            git config --local gpg.ssh.program ssh-keygen;
+            ssh-add $crate_dir/tests/assets/sshkey;
             echo changes > file;
             git add .;
         )?;
@@ -245,6 +257,12 @@ mod test {
 
         // Act
         let oid = repo.commit("feat: a test commit", true);
+
+        // Clean up
+        run_cmd!(
+            ssh-add -d $crate_dir/tests/assets/sshkey;
+            kill $ssh_agent_pid;
+        )?;
 
         // Assert
         assert_that!(oid).is_ok();
@@ -260,7 +278,7 @@ mod test {
             echo changes > file;
             git add .;
         )
-        .expect("could not initialize git repository");
+            .expect("could not initialize git repository");
 
         let repo = Repository::open(".").expect("could not open git repository");
 
