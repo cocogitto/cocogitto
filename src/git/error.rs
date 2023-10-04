@@ -107,7 +107,7 @@ impl Display for Git2Error {
                 writeln!(f, "failed to get repository HEAD")
             }
             Git2Error::PeelToCommitError(_) => {
-                writeln!(f, "failed to peel git object to commit", )
+                writeln!(f, "failed to peel git object to commit")
             }
             Git2Error::CommitNotFound(_) => writeln!(f, "commit not found"),
             Git2Error::CommitterNotFound => writeln!(f, "unable to get committer"),

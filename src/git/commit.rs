@@ -135,17 +135,26 @@ fn ssh_sign_string(
     let mut buffer = tempfile::NamedTempFile::new()?;
     signing_key.write_all(key.as_bytes())?;
     buffer.write_all(content.as_bytes())?;
-    child.args(["-f", signing_key.into_temp_path().to_str().unwrap(), "-U", buffer.into_temp_path().to_str().unwrap()]); // TODO: Is there a way to avoid unwrap here ?
+    child.args([
+        "-f",
+        signing_key.into_temp_path().to_str().unwrap(),
+        "-U",
+        buffer.into_temp_path().to_str().unwrap(),
+    ]); // TODO: Is there a way to avoid unwrap here ?
 
-    child.spawn().map_err(Git2Error::IOError)?.wait_with_output().map(|output| {
-        if output.status.success() {
-            Ok(String::from_utf8_lossy(&output.stdout).to_string())
-        } else {
-            Err(Git2Error::SshError(
-                String::from_utf8_lossy(&output.stderr).to_string(),
-            ))
-        }
-    })?
+    child
+        .spawn()
+        .map_err(Git2Error::IOError)?
+        .wait_with_output()
+        .map(|output| {
+            if output.status.success() {
+                Ok(String::from_utf8_lossy(&output.stdout).to_string())
+            } else {
+                Err(Git2Error::SshError(
+                    String::from_utf8_lossy(&output.stderr).to_string(),
+                ))
+            }
+        })?
 }
 
 #[cfg(test)]
@@ -251,7 +260,7 @@ mod test {
             echo changes > file;
             git add .;
         )
-            .expect("could not initialize git repository");
+        .expect("could not initialize git repository");
 
         let repo = Repository::open(".").expect("could not open git repository");
 
