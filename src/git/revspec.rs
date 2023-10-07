@@ -70,6 +70,9 @@ impl Repository {
     pub fn all_commits(&self) -> Result<CommitRange, Git2Error> {
         let mut revwalk = self.0.revwalk()?;
         revwalk.push_head()?;
+        if SETTINGS.only_first_parent {
+            revwalk.simplify_first_parent()?;
+        }
         let mut commits = vec![];
 
         for oid in revwalk {
@@ -331,6 +334,9 @@ impl Repository {
         let mut revwalk = self.0.revwalk()?;
 
         revwalk.push_range(spec)?;
+        if SETTINGS.only_first_parent {
+            revwalk.simplify_first_parent()?;
+        }
 
         let mut commits: Vec<Commit> = vec![];
 
