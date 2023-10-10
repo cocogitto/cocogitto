@@ -9,8 +9,6 @@ use std::collections::HashMap;
 use std::path::Path;
 use std::path::PathBuf;
 
-use crate::helpers::*;
-
 #[sealed_test]
 fn bump_ok() -> Result<()> {
     // Arrange

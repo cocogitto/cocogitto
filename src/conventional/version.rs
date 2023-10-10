@@ -33,23 +33,23 @@ impl From<Increment> for IncrementCommand {
 
 impl Ord for Increment {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.partial_cmp(other).unwrap()
+        match (self, other) {
+            (increment, other) if increment == other => Ordering::Equal,
+            (Increment::Major, _) => Ordering::Greater,
+            (_, Increment::Major) => Ordering::Less,
+            (Increment::Minor, _) => Ordering::Greater,
+            (_, Increment::Minor) => Ordering::Less,
+            (Increment::Patch, Increment::Patch) => Ordering::Equal,
+            (Increment::NoBump, Increment::NoBump) => Ordering::Equal,
+            (Increment::Patch, Increment::NoBump) => Ordering::Greater,
+            (Increment::NoBump, Increment::Patch) => Ordering::Less,
+        }
     }
 }
 
 impl PartialOrd for Increment {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        match (self, other) {
-            (increment, other) if increment == other => Some(Ordering::Equal),
-            (Increment::Major, _) => Some(Ordering::Greater),
-            (_, Increment::Major) => Some(Ordering::Less),
-            (Increment::Minor, _) => Some(Ordering::Greater),
-            (_, Increment::Minor) => Some(Ordering::Less),
-            (Increment::Patch, Increment::Patch) => Some(Ordering::Equal),
-            (Increment::NoBump, Increment::NoBump) => Some(Ordering::Equal),
-            (Increment::Patch, Increment::NoBump) => Some(Ordering::Greater),
-            (Increment::NoBump, Increment::Patch) => Some(Ordering::Less),
-        }
+        Some(self.cmp(other))
     }
 }
 

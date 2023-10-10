@@ -187,7 +187,7 @@ impl fmt::Display for Commit {
 
 impl PartialOrd for Commit {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.message.scope.partial_cmp(&other.message.scope)
+        Some(self.message.scope.cmp(&other.message.scope))
     }
 }
 

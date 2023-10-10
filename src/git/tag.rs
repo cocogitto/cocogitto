@@ -123,7 +123,7 @@ pub struct Tag {
 
 impl Ord for Tag {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.partial_cmp(other).unwrap_or(Ordering::Less)
+        self.version.cmp(&other.version)
     }
 }
 
@@ -137,15 +137,7 @@ impl PartialEq for Tag {
 
 impl PartialOrd<Tag> for Tag {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        if self.package != other.package {
-            return None;
-        }
-
-        if self.prefix != other.prefix {
-            return None;
-        }
-
-        self.version.partial_cmp(&other.version)
+        Some(self.cmp(other))
     }
 }
 
