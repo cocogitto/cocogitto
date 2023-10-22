@@ -125,6 +125,12 @@ nix-env -iA cocogitto
 xbps-install cocogitto
 ```
 
+#### MacOS
+
+```shell
+brew install cocogitto
+```
+
 ## Conventional commits
 
 **Note: `coco` has been deprecated in favor of the `cog commit` command.**
