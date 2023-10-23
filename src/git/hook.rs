@@ -53,7 +53,7 @@ mod tests {
 
     use crate::CocoGitto;
 
-    use crate::settings::{GitHook, GitHookType, Settings};
+    use crate::settings::{GitHook, GitHookType, HookShell, Settings};
     use anyhow::Result;
     use cmd_lib::run_cmd;
     use sealed_test::prelude::*;

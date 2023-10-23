@@ -28,10 +28,10 @@ post_bump_hooks = [
 # instead of the main ones when running `cog bump --hook-profile example --auto`
 [bump_profiles.example]
 pre_bump_hooks = [
-    "echo 'bumping from {{latest}} to {{version}} using a named profile'"
+    "sh -c \"echo 'bumping from {{latest}} to {{version}} using a named profile'\""
 ]
 post_bump_hooks = [
-    "echo 'we are done'"
+    "sh -c \"echo 'we are done'\""
 ]
 
 # Shareable git-hooks, can be installed using `cog install-hook --all`
