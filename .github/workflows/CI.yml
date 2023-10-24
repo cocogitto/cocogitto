@@ -8,14 +8,42 @@ on:
   pull_request:
     branches:
       - main
+
+env:
+  CARGO_TERM_COLOR: always
+
 jobs:
   test:
-    name: Tests
-    runs-on: ubuntu-latest
+    name: Tests for platform  ${{ matrix.os }}/${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: macos-latest
+            target: x86_64-osx
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            coverage: true
+            conventional_commit_check: true
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            force_lf: true
+          - os: ubuntu-latest
+            target: armv7-unknown-linux-musleabihf
     steps:
-      - uses: actions/checkout@v2
+      - if: ${{ matrix.force_lf }}
+        run: |
+          git config --global core.eol lf;
+          git config --global core.autocrlf input;
+
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-all-crates: "true"
+          key: "${{ matrix.os }}-${{ matrix.target }}"
 
       - run: |
           git config user.name github-actions
@@ -24,6 +52,7 @@ jobs:
           git config --global user.name github-actions
 
       - name: Conventional commit check
+        if: ${{matrix.conventional_commit_check }}
         uses: cocogitto/cocogitto-action@v3.5
         with:
           git-user: 'github-actions'
@@ -34,31 +63,43 @@ jobs:
         with:
           profile: minimal
           toolchain: stable
-          override: true
-          components: llvm-tools-preview
 
       - name: Install cargo-llvm-cov
+        if: ${{matrix.coverage}}
         uses: taiki-e/install-action@cargo-llvm-cov
 
-      - uses: actions-rs/cargo@v1
-        with:
-          command: llvm-cov
-          args: --all-features --workspace --lcov --output-path lcov.info
+      - name: Install nextest
+        uses: taiki-e/install-action@nextest
+
+      - name: Collect coverage data
+        if: ${{matrix.coverage}}
+        run: cargo llvm-cov nextest --lcov --output-path lcov.info
 
       - name: Upload coverage to Codecov
+        if: ${{matrix.coverage}}
         uses: codecov/codecov-action@v3
         with:
           files: lcov.info
           fail_ci_if_error: true
 
-      - uses: Swatinem/rust-cache@v1
+      - name: Test with latest nextest release
+        if: ${{ ! matrix.coverage }}
+        uses: actions-rs/cargo@v1
+        with:
+          command: nextest
+          args: run
+
 
   lints:
     name: Lints & Format
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-all-crates: "true"
 
       - name: Install stable toolchain
         uses: actions-rs/toolchain@v1
@@ -81,5 +122,3 @@ jobs:
         with:
           command: clippy
           args: -- -D warnings
-
-      - uses: Swatinem/rust-cache@v1

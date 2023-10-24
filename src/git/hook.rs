@@ -1,8 +1,5 @@
-use std::fs::{self, Permissions};
-use std::io;
-#[cfg(target_family = "unix")]
-use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
+use std::{fs, io};
 
 use crate::settings::{GitHook, GitHookType};
 use anyhow::Result;
@@ -37,8 +34,10 @@ pub fn install_git_hook(
         }
     };
 
-    #[cfg(target_family = "unix")]
+    #[cfg(not(target_os = "windows"))]
     {
+        use std::fs::Permissions;
+        use std::os::unix::fs::PermissionsExt;
         let permissions = Permissions::from_mode(0o755);
         fs::set_permissions(hook_path, permissions)?;
     }

@@ -134,6 +134,7 @@ mod test {
         Ok(())
     }
 
+    #[cfg(not(target_os = "windows"))]
     #[sealed_test]
     fn create_signed_commit_ok() -> Result<()> {
         init_builtin_logger();

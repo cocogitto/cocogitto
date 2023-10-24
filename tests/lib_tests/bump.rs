@@ -1,13 +1,16 @@
-use crate::helpers::*;
-use anyhow::Result;
-use cmd_lib::run_cmd;
-use cocogitto::settings::{MonoRepoPackage, Settings};
-use cocogitto::{conventional::version::IncrementCommand, CocoGitto};
-use sealed_test::prelude::*;
-use speculoos::prelude::*;
 use std::collections::HashMap;
 use std::path::Path;
 use std::path::PathBuf;
+
+use anyhow::Result;
+use cmd_lib::run_cmd;
+use sealed_test::prelude::*;
+use speculoos::prelude::*;
+
+use cocogitto::settings::{MonoRepoPackage, Settings};
+use cocogitto::{conventional::version::IncrementCommand, CocoGitto};
+
+use crate::helpers::*;
 
 #[sealed_test]
 fn bump_ok() -> Result<()> {
@@ -686,7 +689,7 @@ fn error_on_no_conventionnal_commits_found_for_monorepo() -> Result<()> {
     assert_that!(first_result).is_ok();
 
     run_cmd!(
-        echo "second feature" >> file;
+        echo "second feature" > file;
         git add .;
     )?;
 
@@ -754,7 +757,7 @@ fn error_on_no_conventionnal_commits_found_for_package() -> Result<()> {
     assert_that!(first_result).is_ok();
 
     run_cmd!(
-        echo "some other jenkins stuff" >> jenkins/file;
+        echo "some other jenkins stuff" > jenkins/file;
         git add .;
         git commit -m "some other jenkins stuff";
     )?;
