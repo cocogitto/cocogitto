@@ -46,7 +46,8 @@ impl CocoGitto {
         hooks_config: Option<&str>,
         annotated: Option<String>,
         dry_run: bool,
-        skip_ci: Option<String>,
+        skip_ci: bool,
+        skip_ci_override: Option<String>,
         skip_untracked: bool,
     ) -> Result<()> {
         match increment {
@@ -58,6 +59,7 @@ impl CocoGitto {
                         annotated,
                         dry_run,
                         skip_ci,
+                        skip_ci_override,
                         skip_untracked,
                     )
                 } else {
@@ -69,6 +71,7 @@ impl CocoGitto {
                         hooks_config,
                         dry_run,
                         skip_ci,
+                        skip_ci_override,
                         skip_untracked,
                     )
                 }
@@ -80,6 +83,7 @@ impl CocoGitto {
                 annotated,
                 dry_run,
                 skip_ci,
+                skip_ci_override,
                 skip_untracked,
             ),
         }
@@ -90,7 +94,8 @@ impl CocoGitto {
         pre_release: Option<&str>,
         hooks_config: Option<&str>,
         dry_run: bool,
-        skip_ci: Option<String>,
+        skip_ci: bool,
+        skip_ci_override: Option<String>,
         skip_untracked: bool,
     ) -> Result<()> {
         self.pre_bump_checks(skip_untracked)?;
@@ -117,7 +122,11 @@ impl CocoGitto {
 
         let sign = self.repository.gpg_sign();
 
-        let skip_ci_pattern = skip_ci.unwrap_or(SETTINGS.skip_ci.clone().unwrap_or_default());
+        let mut skip_ci_pattern = String::new();
+
+        if skip_ci || skip_ci_override.is_some() {
+            skip_ci_pattern = skip_ci_override.unwrap_or(SETTINGS.skip_ci.clone());
+        }
 
         self.repository.commit(
             &format!("chore(version): bump packages {}", skip_ci_pattern),
@@ -151,13 +160,15 @@ impl CocoGitto {
         Ok(())
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn create_monorepo_version_auto(
         &mut self,
         pre_release: Option<&str>,
         hooks_config: Option<&str>,
         annotated: Option<String>,
         dry_run: bool,
-        skip_ci: Option<String>,
+        skip_ci: bool,
+        skip_ci_override: Option<String>,
         skip_untracked: bool,
     ) -> Result<()> {
         self.pre_bump_checks(skip_untracked)?;
@@ -258,7 +269,11 @@ impl CocoGitto {
 
         let sign = self.repository.gpg_sign();
 
-        let skip_ci_pattern = skip_ci.unwrap_or(SETTINGS.skip_ci.clone().unwrap_or_default());
+        let mut skip_ci_pattern = String::new();
+
+        if skip_ci || skip_ci_override.is_some() {
+            skip_ci_pattern = skip_ci_override.unwrap_or(SETTINGS.skip_ci.clone());
+        }
 
         self.repository.commit(
             &format!(
@@ -317,7 +332,8 @@ impl CocoGitto {
         hooks_config: Option<&str>,
         annotated: Option<String>,
         dry_run: bool,
-        skip_ci: Option<String>,
+        skip_ci: bool,
+        skip_ci_override: Option<String>,
         skip_untracked: bool,
     ) -> Result<()> {
         self.pre_bump_checks(skip_untracked)?;
@@ -385,7 +401,12 @@ impl CocoGitto {
         self.unwrap_or_stash_and_exit(&tag, hook_result);
 
         let sign = self.repository.gpg_sign();
-        let skip_ci_pattern = skip_ci.unwrap_or(SETTINGS.skip_ci.clone().unwrap_or_default());
+
+        let mut skip_ci_pattern = String::new();
+
+        if skip_ci || skip_ci_override.is_some() {
+            skip_ci_pattern = skip_ci_override.unwrap_or(SETTINGS.skip_ci.clone());
+        }
 
         self.repository.commit(
             &format!(

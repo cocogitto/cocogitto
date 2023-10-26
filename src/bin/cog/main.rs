@@ -282,9 +282,13 @@ enum Command {
         #[arg(short, long)]
         dry_run: bool,
 
-        /// Specify a "Skip CI" string to append to the end of the commit
+        /// Add the skip-ci string defined in the cog.toml (or defaults to [skip ci]) to the bump commit
         #[arg(long = "skip-ci")]
-        skip_ci: Option<String>,
+        skip_ci: bool,
+
+        /// Override and add the skip-ci string with the provided value to the bump commit
+        #[arg(long = "skip-ci-override")]
+        skip_ci_override: Option<String>,
 
         /// Don't fail if there are untracked or uncommited files
         #[arg(long = "skip-untracked")]
@@ -346,6 +350,14 @@ struct CommitArgs {
     /// Sign this commit
     #[arg(short, long)]
     sign: bool,
+
+    /// Add the skip-ci string defined in the cog.toml (or defaults to [skip ci]) to the commit
+    #[arg(long = "skip-ci")]
+    skip_ci: bool,
+
+    /// Override and add the <SKIP_CI_OVERRIDE> string to the commit
+    #[arg(long = "skip-ci-override")]
+    skip_ci_override: Option<String>,
 }
 
 fn main() -> Result<()> {
@@ -370,6 +382,7 @@ fn main() -> Result<()> {
             annotated,
             dry_run,
             skip_ci,
+            skip_ci_override,
             skip_untracked,
         } => {
             let mut cocogitto = CocoGitto::get()?;
@@ -406,6 +419,7 @@ fn main() -> Result<()> {
                             annotated,
                             dry_run,
                             skip_ci,
+                            skip_ci_override,
                             skip_untracked,
                         )?
                     }
@@ -416,6 +430,7 @@ fn main() -> Result<()> {
                         annotated,
                         dry_run,
                         skip_ci,
+                        skip_ci_override,
                         skip_untracked,
                     )?,
                 }
@@ -427,6 +442,7 @@ fn main() -> Result<()> {
                     annotated,
                     dry_run,
                     skip_ci,
+                    skip_ci_override,
                     skip_untracked,
                 )?
             }
@@ -588,13 +604,24 @@ fn main() -> Result<()> {
             breaking_change,
             edit,
             sign,
+            skip_ci,
+            skip_ci_override,
         }) => {
             let cocogitto = CocoGitto::get()?;
             cocogitto.run_commit_hook(CommitHook::PreCommit)?;
             let commit_message_path = cocogitto.prepare_edit_message_path();
+
+            let mut skip_ci_pattern = String::new();
+
+            if skip_ci || skip_ci_override.is_some() {
+                skip_ci_pattern = skip_ci_override.unwrap_or(SETTINGS.skip_ci.clone())
+            }
+
+            let commit_message = message + " " + &skip_ci_pattern;
+
             let template = prepare_edit_message(
                 &typ,
-                &message,
+                &commit_message,
                 scope.as_deref(),
                 breaking_change,
                 &commit_message_path,
@@ -606,7 +633,15 @@ fn main() -> Result<()> {
             } else {
                 (None, None, breaking_change)
             };
-            cocogitto.conventional_commit(&typ, scope, message, body, footer, breaking, sign)?;
+            cocogitto.conventional_commit(
+                &typ,
+                scope,
+                commit_message,
+                body,
+                footer,
+                breaking,
+                sign,
+            )?;
             cocogitto.run_commit_hook(CommitHook::PostCommit)?;
         }
     }
