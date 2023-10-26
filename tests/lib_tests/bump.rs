@@ -24,8 +24,16 @@ fn bump_ok() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result =
-        cocogitto.create_version(IncrementCommand::Auto, None, None, None, false, None, false);
+    let result = cocogitto.create_version(
+        IncrementCommand::Auto,
+        None,
+        None,
+        None,
+        false,
+        false,
+        None,
+        false,
+    );
 
     // Assert
     assert_that!(result).is_ok();
@@ -50,6 +58,7 @@ fn annotated_bump_ok() -> Result<()> {
         None,
         None,
         Some(String::from("Release version {{version}}")),
+        false,
         false,
         None,
         false,
@@ -79,6 +88,7 @@ fn monorepo_bump_ok() -> Result<()> {
         None,
         None,
         None,
+        false,
         false,
         None,
         false,
@@ -112,6 +122,7 @@ fn monorepo_bump_manual_ok() -> Result<()> {
         None,
         None,
         false,
+        false,
         None,
         false,
     );
@@ -143,6 +154,7 @@ fn monorepo_bump_manual_disable_changelog_ok() -> Result<()> {
         None,
         None,
         false,
+        false,
         None,
         false,
     );
@@ -173,6 +185,7 @@ fn monorepo_with_tag_prefix_bump_ok() -> Result<()> {
         None,
         None,
         false,
+        false,
         None,
         false,
     );
@@ -202,6 +215,7 @@ fn package_bump_ok() -> Result<()> {
         None,
         None,
         None,
+        false,
         false,
         None,
         false,
@@ -272,6 +286,7 @@ fn consecutive_package_bump_ok() -> Result<()> {
         None,
         None,
         false,
+        false,
         None,
         false,
     )?;
@@ -282,6 +297,7 @@ fn consecutive_package_bump_ok() -> Result<()> {
         None,
         None,
         None,
+        false,
         false,
         None,
         false,
@@ -299,6 +315,7 @@ fn consecutive_package_bump_ok() -> Result<()> {
         None,
         None,
         None,
+        false,
         false,
         None,
         false,
@@ -323,8 +340,16 @@ fn should_fallback_to_0_0_0_when_there_is_no_tag() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result =
-        cocogitto.create_version(IncrementCommand::Auto, None, None, None, false, None, false);
+    let result = cocogitto.create_version(
+        IncrementCommand::Auto,
+        None,
+        None,
+        None,
+        false,
+        false,
+        None,
+        false,
+    );
 
     // Assert
     assert_that!(result).is_ok();
@@ -383,7 +408,7 @@ fn auto_bump_package_only_ok() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    cocogitto.create_all_package_version_auto(None, None, false, None, false)?;
+    cocogitto.create_all_package_version_auto(None, None, false, false, None, false)?;
 
     assert_tag_exists("jenkins-0.1.0")?;
     assert_tag_exists("thumbor-0.1.0")?;
@@ -395,7 +420,7 @@ fn auto_bump_package_only_ok() -> Result<()> {
         git commit -m "fix(jenkins): bug fix on jenkins package";
     )?;
 
-    cocogitto.create_all_package_version_auto(None, None, false, None, false)?;
+    cocogitto.create_all_package_version_auto(None, None, false, false, None, false)?;
 
     // Assert
     assert_tag_exists("jenkins-0.1.1")?;
@@ -447,8 +472,16 @@ fn bump_with_whitelisted_branch_ok() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result =
-        cocogitto.create_version(IncrementCommand::Auto, None, None, None, false, None, false);
+    let result = cocogitto.create_version(
+        IncrementCommand::Auto,
+        None,
+        None,
+        None,
+        false,
+        false,
+        None,
+        false,
+    );
 
     // Assert
     assert_that!(result).is_ok();
@@ -473,8 +506,16 @@ fn bump_with_whitelisted_branch_fails() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result =
-        cocogitto.create_version(IncrementCommand::Auto, None, None, None, false, None, false);
+    let result = cocogitto.create_version(
+        IncrementCommand::Auto,
+        None,
+        None,
+        None,
+        false,
+        false,
+        None,
+        false,
+    );
 
     // Assert
     assert_that!(result.unwrap_err().to_string()).is_equal_to(
@@ -503,8 +544,16 @@ fn bump_with_whitelisted_branch_pattern_ok() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result =
-        cocogitto.create_version(IncrementCommand::Auto, None, None, None, false, None, false);
+    let result = cocogitto.create_version(
+        IncrementCommand::Auto,
+        None,
+        None,
+        None,
+        false,
+        false,
+        None,
+        false,
+    );
 
     // Assert
     assert_that!(result).is_ok();
@@ -529,8 +578,16 @@ fn bump_with_whitelisted_branch_pattern_err() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result =
-        cocogitto.create_version(IncrementCommand::Auto, None, None, None, false, None, false);
+    let result = cocogitto.create_version(
+        IncrementCommand::Auto,
+        None,
+        None,
+        None,
+        false,
+        false,
+        None,
+        false,
+    );
 
     // Assert
     assert_that!(result).is_err();
@@ -593,6 +650,7 @@ fn bump_no_error_should_be_thrown_on_only_chore_docs_commit() -> Result<()> {
         None,
         None,
         false,
+        false,
         None,
         false,
     )?;
@@ -612,6 +670,7 @@ fn bump_no_error_should_be_thrown_on_only_chore_docs_commit() -> Result<()> {
         None,
         None,
         false,
+        false,
         None,
         false,
     )?;
@@ -622,6 +681,7 @@ fn bump_no_error_should_be_thrown_on_only_chore_docs_commit() -> Result<()> {
         None,
         None,
         None,
+        false,
         false,
         None,
         false,
@@ -638,6 +698,7 @@ fn bump_no_error_should_be_thrown_on_only_chore_docs_commit() -> Result<()> {
         None,
         None,
         None,
+        false,
         false,
         None,
         false,
@@ -682,8 +743,16 @@ fn error_on_no_conventionnal_commits_found_for_monorepo() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let first_result =
-        cocogitto.create_version(IncrementCommand::Auto, None, None, None, false, None, false);
+    let first_result = cocogitto.create_version(
+        IncrementCommand::Auto,
+        None,
+        None,
+        None,
+        false,
+        false,
+        None,
+        false,
+    );
 
     // Assert
     assert_that!(first_result).is_ok();
@@ -696,8 +765,16 @@ fn error_on_no_conventionnal_commits_found_for_monorepo() -> Result<()> {
     git_commit("second unconventional feature commit")?;
 
     // Act
-    let second_result =
-        cocogitto.create_version(IncrementCommand::Auto, None, None, None, false, None, false);
+    let second_result = cocogitto.create_version(
+        IncrementCommand::Auto,
+        None,
+        None,
+        None,
+        false,
+        false,
+        None,
+        false,
+    );
 
     // Assert
     assert_that!(second_result).is_err();
@@ -750,6 +827,7 @@ fn error_on_no_conventionnal_commits_found_for_package() -> Result<()> {
         None,
         None,
         false,
+        false,
         None,
         false,
     );
@@ -768,6 +846,7 @@ fn error_on_no_conventionnal_commits_found_for_package() -> Result<()> {
         None,
         None,
         None,
+        false,
         false,
         None,
         false,
@@ -832,6 +911,7 @@ fn bump_with_unconventionnal_and_conventional_commits_found_for_packages() -> Re
         None,
         None,
         None,
+        false,
         false,
         None,
         false,
