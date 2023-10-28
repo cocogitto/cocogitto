@@ -57,6 +57,7 @@ impl Repository {
         let tags: Vec<Tag> = self.all_tags()?;
         tags.into_iter()
             .filter(|tag| tag.package.is_none())
+            .filter(|tag| tag.version.pre.is_empty())
             .max()
             .ok_or(TagError::NoTag)
     }
@@ -176,7 +177,7 @@ impl Tag {
         self.oid.as_ref()
     }
 
-    pub(crate) fn from_str(raw: &str, oid: Option<Oid>) -> Result<Tag, TagError> {
+    pub fn from_str(raw: &str, oid: Option<Oid>) -> Result<Tag, TagError> {
         let prefix = SETTINGS.tag_prefix.as_ref();
 
         let package_tag: Option<Tag> = SETTINGS

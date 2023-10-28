@@ -358,6 +358,37 @@ fn should_fallback_to_0_0_0_when_there_is_no_tag() -> Result<()> {
 }
 
 #[sealed_test]
+fn should_ignore_latest_prerelease_tag() -> Result<()> {
+    // Arrange
+    git_init()?;
+    git_commit("chore: first commit")?;
+    git_commit("feat: add a feature commit")?;
+
+    let mut cocogitto = CocoGitto::get()?;
+    cocogitto.create_version(
+        IncrementCommand::Auto,
+        Some("alpha1"),
+        None,
+        None,
+        false,
+        None,
+        false,
+    )?;
+
+    git_commit("feat: more features")?;
+    // Act
+    let result =
+        cocogitto.create_version(IncrementCommand::Auto, None, None, None, false, None, false);
+
+    // Assert
+    assert_that!(result).is_ok();
+    assert_tag_exists("0.1.0-alpha1")?;
+    assert_latest_tag("0.1.0")?;
+
+    Ok(())
+}
+
+#[sealed_test]
 fn auto_bump_package_only_ok() -> Result<()> {
     // Arrange
     let mut packages = HashMap::new();
