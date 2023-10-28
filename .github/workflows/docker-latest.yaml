@@ -1,27 +1,110 @@
-name: Docker  latest
+name: Publish latest
 
 on:
   push:
     branches:
-      - "feat/docker-img"
+      - feat/docker-img
+
+env:
+  CARGO_TERM_COLOR: always
 
 jobs:
-  docker:
-    name: Building docker image for ${{ matrix.os }}
-    runs-on: ubuntu-latest
+  build:
+    name: Build cog ${{ matrix.os }}-${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: macos-latest
+            target: x86_64-apple-darwin
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            windows: true
+          - os: ubuntu-latest
+            target: armv7-unknown-linux-musleabihf
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
 
     steps:
-      - name: Install docker buildx
-        id: buildx
-        uses: crazy-max/ghaction-docker-buildx@v1
+        - uses: actions/checkout@v4
+
+        - uses: Swatinem/rust-cache@v2
+          with:
+            cache-all-crates: "true"
+            key: "${{ matrix.os }}-${{ matrix.target }}"
+
+        - uses: actions-rs/toolchain@v1
+          with:
+            toolchain: stable
+            target: ${{ matrix.target }}
+
+        - if: ${{ matrix.windows }}
+          uses: actions-rs/cargo@v1
+          with:
+            command: build
+            args: --target ${{ matrix.target }} --release --locked
+
+        - if: ${{ ! matrix.windows }}
+          uses: actions-rs/cargo@v1
+          with:
+            use-cross: true
+            command: build
+            args: --target ${{ matrix.target }} --release --locked
+
+        - if: ${{ ! matrix.windows }}
+          uses: actions/upload-artifact@v3
+          with:
+            name: ${{ matrix.target }}
+            path: target/${{ matrix.target }}/release/cog
+
+        - if: ${{ matrix.windows }}
+          uses: actions/upload-artifact@v3
+          with:
+            name: ${{ matrix.target }}
+            path: target/${{ matrix.target }}/release/cog.exe
+
+  docker:
+    needs: [ build ]
+    name: Docker publish cog:lastest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
         with:
-          version: latest
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Checkout sources
-        uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+        with:
+          path: ~/artifacts
 
-      - name: Docker build
+      - name: Copy artifacts to build dir
         run: |
-          docker buildx build --platform linux/amd64,linux/arm/v7,linux/arm64/v8 \
-          -f docker/Dockerfile . \
-          -t cocogitto/cocogitto:latest
+          mkdir -p target/x86_64-unknown-linux-musl/release/
+          mkdir -p target/armv7-unknown-linux-musleabihf/release/
+          mkdir -p target/aarch64-unknown-linux-gnu/release/
+          
+          cp -r /home/runner/artifacts/x86_64-unknown-linux-musl target/x86_64-unknown-linux-musl/release/cog
+          cp -r /home/runner/artifacts/armv7-unknown-linux-musleabihf target/armv7-unknown-linux-musleabihf/release/cog
+          cp -r /home/runner/artifacts/aarch64-unknown-linux-gnu target/aarch64-unknown-linux-gnu/release/cog
+          
+          chmod +x -R  target/x86_64-unknown-linux-musl/release
+          chmod +x -R  target/armv7-unknown-linux-musleabihf/release
+          chmod +x -R  target/aarch64-unknown-linux-gnu/release
+        working-directory: ./
+
+      - name: Update multi-arch container latest
+        run: |
+          docker buildx build \
+          --push --platform linux/amd64,linux/arm/v7,linux/arm64/v8 \
+          -f docker/Dockerfile \
+          -t ghcr.io/cocogitto/cog:latest .
+          
