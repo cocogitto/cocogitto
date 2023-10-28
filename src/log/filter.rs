@@ -57,7 +57,7 @@ impl CommitFilters {
         } else {
             types
                 .iter()
-                .any(|commit_type| **commit_type == commit.message.commit_type)
+                .any(|commit_type| **commit_type == commit.conventional.commit_type)
         };
 
         // Scope filters
@@ -75,12 +75,12 @@ impl CommitFilters {
         } else {
             scopes
                 .iter()
-                .any(|&scope| Some(scope) == commit.message.scope.as_ref())
+                .any(|&scope| Some(scope) == commit.conventional.scope.as_ref())
         };
 
         // Breaking changes filters
         let filter_breaking_changes = if self.0.contains(&CommitFilter::BreakingChange) {
-            commit.message.is_breaking_change
+            commit.conventional.is_breaking_change
         } else {
             true
         };

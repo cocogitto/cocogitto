@@ -24,7 +24,7 @@ impl Serialize for ChangelogCommit<'_> {
 
         let footers = &self
             .commit
-            .message
+            .conventional
             .footers
             .iter()
             .map(ChangelogFooter::from)
@@ -32,19 +32,22 @@ impl Serialize for ChangelogCommit<'_> {
 
         let commit_type = &COMMITS_METADATA
             .iter()
-            .find(|(commit_type, _config)| *commit_type == &self.commit.message.commit_type)
+            .find(|(commit_type, _config)| *commit_type == &self.commit.conventional.commit_type)
             .map(|meta| meta.1.changelog_title.clone())
-            .unwrap_or_else(|| self.commit.message.commit_type.to_string());
+            .unwrap_or_else(|| self.commit.conventional.commit_type.to_string());
 
         commit.serialize_field("id", &self.commit.oid)?;
         commit.serialize_field("author", &self.author_username)?;
         commit.serialize_field("signature", &self.commit.author)?;
         commit.serialize_field("type", commit_type)?;
         commit.serialize_field("date", &self.commit.date)?;
-        commit.serialize_field("scope", &self.commit.message.scope)?;
-        commit.serialize_field("summary", &self.commit.message.summary)?;
-        commit.serialize_field("body", &self.commit.message.body)?;
-        commit.serialize_field("breaking_change", &self.commit.message.is_breaking_change)?;
+        commit.serialize_field("scope", &self.commit.conventional.scope)?;
+        commit.serialize_field("summary", &self.commit.conventional.summary)?;
+        commit.serialize_field("body", &self.commit.conventional.body)?;
+        commit.serialize_field(
+            "breaking_change",
+            &self.commit.conventional.is_breaking_change,
+        )?;
         commit.serialize_field("footer", footers)?;
         commit.end()
     }
@@ -99,7 +102,7 @@ mod test {
             author_username: Some("Jm Doudou"),
             commit: Commit {
                 oid: "1234567890".to_string(),
-                message: ConventionalCommit {
+                conventional: ConventionalCommit {
                     commit_type: CommitType::BugFix,
                     scope: Some("parser".to_string()),
                     summary: "fix parser implementation".to_string(),

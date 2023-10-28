@@ -16,7 +16,6 @@ use conventional_commit_parser::commit::CommitType;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
-type CommitsMetadataSettings = HashMap<String, CommitConfig>;
 pub(crate) type AuthorSettings = Vec<AuthorSetting>;
 
 mod error;
@@ -44,7 +43,7 @@ pub struct Settings {
     pub pre_package_bump_hooks: Vec<String>,
     pub post_package_bump_hooks: Vec<String>,
     pub git_hooks: HashMap<GitHookType, GitHook>,
-    pub commit_types: CommitsMetadataSettings,
+    pub commit_types: HashMap<String, CommitConfig>,
     pub changelog: Changelog,
     pub bump_profiles: HashMap<String, BumpProfile>,
     pub packages: HashMap<String, MonoRepoPackage>,
@@ -293,8 +292,15 @@ impl Settings {
 
     fn default_commit_config() -> CommitsMetadata {
         let mut default_types = HashMap::new();
-        default_types.insert(CommitType::Feature, CommitConfig::new("Features"));
-        default_types.insert(CommitType::BugFix, CommitConfig::new("Bug Fixes"));
+        default_types.insert(
+            CommitType::Feature,
+            CommitConfig::new("Features").with_minor_bump(),
+        );
+        default_types.insert(
+            CommitType::BugFix,
+            CommitConfig::new("Bug Fixes").with_patch_bump(),
+        );
+
         default_types.insert(CommitType::Chore, CommitConfig::new("Miscellaneous Chores"));
         default_types.insert(CommitType::Revert, CommitConfig::new("Revert"));
         default_types.insert(
