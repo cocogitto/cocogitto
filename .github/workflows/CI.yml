@@ -20,7 +20,7 @@ jobs:
       matrix:
         include:
           - os: macos-latest
-            target: x86_64-osx
+            target: x86_64-apple-darwin
           - os: ubuntu-latest
             target: x86_64-unknown-linux-musl
             coverage: true
@@ -30,6 +30,8 @@ jobs:
             force_lf: true
           - os: ubuntu-latest
             target: armv7-unknown-linux-musleabihf
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
     steps:
       - if: ${{ matrix.force_lf }}
         run: |
@@ -82,7 +84,7 @@ jobs:
           files: lcov.info
           fail_ci_if_error: true
 
-      - name: Test with latest nextest release
+      - name: Test
         if: ${{ ! matrix.coverage }}
         uses: actions-rs/cargo@v1
         with:
