@@ -8,6 +8,7 @@ use speculoos::assert_that;
 use speculoos::iter::ContainingIntoIterAssertions;
 use speculoos::option::OptionAssertions;
 
+use cocogitto::git::tag::Tag;
 use cocogitto::settings::{MonoRepoPackage, Settings};
 use cocogitto::CONFIG_PATH;
 
@@ -118,7 +119,14 @@ pub fn assert_tag_does_not_exist(tag: &str) -> Result<()> {
 
 pub fn assert_latest_tag(tag: &str) -> Result<()> {
     let tags = run_fun!(git --no-pager tag)?;
-    let tags: Vec<&str> = tags.split('\n').collect();
+    let tag = Tag::from_str(tag, None)?;
+    let mut tags: Vec<Tag> = tags
+        .split('\n')
+        .filter_map(|tag| Tag::from_str(tag, None).ok())
+        .collect();
+
+    tags.sort();
+
     assert_that!(tags.last()).is_some().is_equal_to(&tag);
     Ok(())
 }
