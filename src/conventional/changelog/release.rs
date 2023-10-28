@@ -561,7 +561,7 @@ mod test {
                         author_username: Some("oknozor"),
                         commit: Commit {
                             oid: a_commit_hash.to_string(),
-                            message: ConventionalCommit {
+                            conventional: ConventionalCommit {
                                 commit_type: CommitType::BugFix,
                                 scope: Some("parser".to_string()),
                                 summary: "fix parser implementation".to_string(),
@@ -581,7 +581,7 @@ mod test {
                         author_username: None,
                         commit: Commit {
                             oid: a_commit_hash.to_string(),
-                            message: ConventionalCommit {
+                            conventional: ConventionalCommit {
                                 commit_type: CommitType::Feature,
                                 scope: None,
                                 summary: "awesome feature".to_string(),
@@ -601,7 +601,7 @@ mod test {
                         author_username: Some("oknozor"),
                         commit: Commit {
                             oid: a_commit_hash.to_string(),
-                            message: ConventionalCommit {
+                            conventional: ConventionalCommit {
                                 commit_type: CommitType::Feature,
                                 scope: Some("parser".to_string()),
                                 summary: "implement the changelog generator".to_string(),

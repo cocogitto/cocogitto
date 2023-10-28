@@ -324,10 +324,10 @@ impl Release<'_> {
         // won't affect the version number.
         let mut non_bump_commits: Vec<&CommitType> = conventional_commits
             .iter()
-            .filter_map(|commit| match &commit.message.commit_type {
+            .filter_map(|commit| match &commit.conventional.commit_type {
                 CommitType::Feature | CommitType::BugFix => None,
-                _commit_type if commit.message.is_breaking_change => None,
-                _ => Some(&commit.message.commit_type),
+                _commit_type if commit.conventional.is_breaking_change => None,
+                _ => Some(&commit.conventional.commit_type),
             })
             .collect();
 
@@ -350,20 +350,20 @@ impl Release<'_> {
         let bump_commits =
             conventional_commits
                 .iter()
-                .filter(|commit| match &commit.message.commit_type {
+                .filter(|commit| match &commit.conventional.commit_type {
                     CommitType::Feature | CommitType::BugFix => true,
-                    _commit_type if commit.message.is_breaking_change => true,
+                    _commit_type if commit.conventional.is_breaking_change => true,
                     _ => false,
                 });
 
         for commit in bump_commits {
-            match &commit.message.commit_type {
-                _commit_type if commit.message.is_breaking_change => {
+            match &commit.conventional.commit_type {
+                _commit_type if commit.conventional.is_breaking_change => {
                     info!(
                         "\t Found {} commit {} with type: {}",
                         "BREAKING CHANGE".red(),
                         commit.shorthand().blue(),
-                        commit.message.commit_type.as_ref().yellow()
+                        commit.conventional.commit_type.as_ref().yellow()
                     )
                 }
                 CommitType::Feature => {

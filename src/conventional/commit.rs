@@ -13,16 +13,25 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Eq, PartialEq)]
 pub struct Commit {
     pub(crate) oid: String,
-    pub(crate) message: ConventionalCommit,
+    pub(crate) conventional: ConventionalCommit,
     pub(crate) author: String,
     pub(crate) date: NaiveDateTime,
 }
 
+/// Configurations to create new conventional commit types or override behaviors of the existing ones.
 #[derive(Debug, Deserialize, Serialize, Clone, Eq, PartialEq)]
 pub struct CommitConfig {
+    /// Define the title used in generated changelog for this commit type.
     pub changelog_title: String,
+    /// Do not display this commit type in changelogs.
     #[serde(default)]
     pub omit_from_changelog: bool,
+    /// Allow for this commit type to bump the minor version.
+    #[serde(default)]
+    pub bump_minor: bool,
+    /// Allow for this commit type to bump the patch version.
+    #[serde(default)]
+    pub bump_patch: bool,
 }
 
 impl CommitConfig {
@@ -30,7 +39,19 @@ impl CommitConfig {
         CommitConfig {
             changelog_title: changelog_title.to_string(),
             omit_from_changelog: false,
+            bump_minor: false,
+            bump_patch: false,
         }
+    }
+
+    pub(crate) fn with_minor_bump(mut self) -> Self {
+        self.bump_minor = true;
+        self
+    }
+
+    pub(crate) fn with_patch_bump(mut self) -> Self {
+        self.bump_patch = true;
+        self
     }
 }
 
@@ -54,17 +75,20 @@ impl Commit {
             Ok(message) => {
                 let commit = Commit {
                     oid,
-                    message,
+                    conventional: message,
                     author,
                     date,
                 };
 
-                match &SETTINGS.commit_types().get(&commit.message.commit_type) {
+                match &SETTINGS
+                    .commit_types()
+                    .get(&commit.conventional.commit_type)
+                {
                     Some(_) => Ok(commit),
                     None => Err(Box::new(ConventionalCommitError::CommitTypeNotAllowed {
                         oid: commit.oid.to_string(),
-                        summary: format_summary(&commit.message),
-                        commit_type: commit.message.commit_type.to_string(),
+                        summary: format_summary(&commit.conventional),
+                        commit_type: commit.conventional.commit_type.to_string(),
                         author: commit.author,
                     })),
                 }
@@ -93,12 +117,34 @@ impl Commit {
     pub(crate) fn should_omit(&self) -> bool {
         SETTINGS
             .commit_types()
-            .get(&self.message.commit_type)
+            .get(&self.conventional.commit_type)
             .map_or(false, |config| config.omit_from_changelog)
     }
 
+    pub(crate) fn is_major_bump(&self) -> bool {
+        self.conventional.is_breaking_change
+    }
+
+    pub(crate) fn is_minor_bump(&self) -> bool {
+        let commit_settings = SETTINGS.commit_types();
+        let Some(commit_config) = commit_settings.get(&self.conventional.commit_type) else {
+            return false;
+        };
+
+        commit_config.bump_minor
+    }
+
+    pub(crate) fn is_patch_bump(&self) -> bool {
+        let commit_settings = SETTINGS.commit_types();
+        let Some(commit_config) = commit_settings.get(&self.conventional.commit_type) else {
+            return false;
+        };
+
+        commit_config.bump_patch
+    }
+
     pub fn get_log(&self) -> String {
-        let summary = &self.message.summary;
+        let summary = &self.conventional.summary;
         let message_display = Commit::short_summary_from_str(summary).yellow();
         let author_format = "Author:".green().bold();
         let type_format = "Type:".green().bold();
@@ -154,14 +200,14 @@ impl Commit {
             author_format,
             self.author,
             type_format,
-            self.message.commit_type,
+            self.conventional.commit_type,
             scope_format,
-            self.message.scope.as_deref().unwrap_or("none"),
+            self.conventional.scope.as_deref().unwrap_or("none"),
         )
     }
 
     fn format_breaking_change(&self) -> String {
-        if self.message.is_breaking_change {
+        if self.conventional.is_breaking_change {
             format!("{} - ", "BREAKING CHANGE".red().bold())
         } else {
             "".to_string()
@@ -187,13 +233,13 @@ impl fmt::Display for Commit {
 
 impl PartialOrd for Commit {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.message.scope.cmp(&other.message.scope))
+        Some(self.conventional.scope.cmp(&other.conventional.scope))
     }
 }
 
 impl Ord for Commit {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.message.scope.cmp(&other.message.scope)
+        self.conventional.scope.cmp(&other.conventional.scope)
     }
 }
 
@@ -225,7 +271,7 @@ pub fn verify(
                     "{}",
                     Commit {
                         oid: "not committed".to_string(),
-                        message: commit,
+                        conventional: commit,
                         date: Utc::now().naive_utc(),
                         author: author.unwrap_or_else(|| "Unknown".to_string()),
                     }
@@ -405,7 +451,7 @@ mod test {
         // Arrange
         let commit = Commit {
             oid: "1234567".to_string(),
-            message: ConventionalCommit {
+            conventional: ConventionalCommit {
                 commit_type: CommitType::BugFix,
                 scope: Some("scope".to_string()),
                 summary: "this is the message".to_string(),
@@ -419,7 +465,7 @@ mod test {
         };
 
         // Act
-        let summary = format_summary(&commit.message);
+        let summary = format_summary(&commit.conventional);
 
         // Assert
         assert_that!(summary).is_equal_to("fix(scope): this is the message".to_string());
@@ -430,7 +476,7 @@ mod test {
         // Arrange
         let commit = Commit {
             oid: "1234567".to_string(),
-            message: ConventionalCommit {
+            conventional: ConventionalCommit {
                 commit_type: CommitType::BugFix,
                 scope: None,
                 summary: "this is the message".to_string(),
@@ -444,7 +490,7 @@ mod test {
         };
 
         // Act
-        let summary = format_summary(&commit.message);
+        let summary = format_summary(&commit.conventional);
 
         // Assert
         assert_that!(summary).is_equal_to("fix: this is the message".to_string());

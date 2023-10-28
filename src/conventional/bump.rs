@@ -1,11 +1,12 @@
-use crate::conventional::error::BumpError;
-use crate::conventional::version::Increment;
-use crate::{Commit, IncrementCommand, Repository, RevspecPattern, Tag, SETTINGS};
-use conventional_commit_parser::commit::CommitType;
+use std::str::FromStr;
+
 use git2::Commit as Git2Commit;
 use once_cell::sync::Lazy;
 use semver::{BuildMetadata, Prerelease, Version};
-use std::str::FromStr;
+
+use crate::conventional::error::BumpError;
+use crate::conventional::version::Increment;
+use crate::{Commit, IncrementCommand, Repository, RevspecPattern, Tag, SETTINGS};
 
 static FILTER_MERGE_COMMITS: Lazy<fn(&&git2::Commit) -> bool> = Lazy::new(|| {
     |commit| {
@@ -259,24 +260,11 @@ impl Tag {
         &self,
         commits: &[Commit],
     ) -> Result<Increment, BumpError> {
-        let is_major_bump = || {
-            self.version.major != 0
-                && commits
-                    .iter()
-                    .any(|commit| commit.message.is_breaking_change)
-        };
+        let is_major_bump = || self.version.major != 0 && commits.iter().any(Commit::is_major_bump);
 
-        let is_minor_bump = || {
-            commits
-                .iter()
-                .any(|commit| commit.message.commit_type == CommitType::Feature)
-        };
+        let is_minor_bump = || commits.iter().any(Commit::is_minor_bump);
 
-        let is_patch_bump = || {
-            commits
-                .iter()
-                .any(|commit| commit.message.commit_type == CommitType::BugFix)
-        };
+        let is_patch_bump = || commits.iter().any(Commit::is_patch_bump);
 
         // At this point, it is not a major, minor or patch bump but we might have found conventional commits
         // -> Must be only chore, docs, refactor ... which means commits that don't require bump but shouldn't throw error
@@ -298,13 +286,11 @@ impl Tag {
 
 #[cfg(test)]
 mod test {
-    use crate::conventional::bump::Bump;
-    use crate::conventional::commit::Commit;
-    use crate::conventional::error::BumpError;
-    use crate::conventional::version::{Increment, IncrementCommand};
-    use crate::git::repository::Repository;
-    use crate::git::tag::Tag;
-    use crate::settings::{MonoRepoPackage, Settings};
+    use std::collections::HashMap;
+    use std::fs;
+    use std::path::PathBuf;
+    use std::str::FromStr;
+
     use anyhow::Result;
     use chrono::Utc;
     use cmd_lib::run_cmd;
@@ -312,15 +298,20 @@ mod test {
     use sealed_test::prelude::*;
     use semver::Version;
     use speculoos::prelude::*;
-    use std::collections::HashMap;
-    use std::path::PathBuf;
-    use std::str::FromStr;
+
+    use crate::conventional::bump::Bump;
+    use crate::conventional::commit::{Commit, CommitConfig};
+    use crate::conventional::error::BumpError;
+    use crate::conventional::version::{Increment, IncrementCommand};
+    use crate::git::repository::Repository;
+    use crate::git::tag::Tag;
+    use crate::settings::{MonoRepoPackage, Settings};
 
     impl Commit {
         fn commit_fixture(commit_type: CommitType, is_breaking_change: bool) -> Self {
             Commit {
                 oid: "1234".to_string(),
-                message: ConventionalCommit {
+                conventional: ConventionalCommit {
                     commit_type,
                     scope: None,
                     body: None,
@@ -527,6 +518,90 @@ mod test {
         // Arrange
         let patch = Commit::commit_fixture(CommitType::BugFix, false);
         let feature = Commit::commit_fixture(CommitType::Feature, false);
+        let base_version = Tag::from_str("0.1.0", None)?;
+
+        // Act
+        let version = base_version.version_increment_from_commit_history(&[patch, feature]);
+
+        // Assert
+        assert_that!(version).is_ok().is_equal_to(Increment::Minor);
+
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn should_get_next_auto_version_minor_with_custom_commit_type() -> Result<()> {
+        // Arrange
+        Repository::init(".")?;
+        let mut commit_types = HashMap::new();
+        commit_types.insert("ex".to_string(), CommitConfig::new("Ex").with_minor_bump());
+        let settings = Settings {
+            commit_types,
+            ..Default::default()
+        };
+
+        let settings = toml::to_string(&settings)?;
+        fs::write("cog.toml", settings)?;
+
+        let patch = Commit::commit_fixture(CommitType::BugFix, false);
+        let feature = Commit::commit_fixture(CommitType::Custom("ex".to_string()), false);
+        let base_version = Tag::from_str("0.1.0", None)?;
+
+        // Act
+        let version = base_version.version_increment_from_commit_history(&[patch, feature]);
+
+        // Assert
+        assert_that!(version).is_ok().is_equal_to(Increment::Minor);
+
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn should_get_next_auto_version_patch_with_custom_commit_type() -> Result<()> {
+        // Arrange
+        Repository::init(".")?;
+        let mut commit_types = HashMap::new();
+        commit_types.insert("ex".to_string(), CommitConfig::new("Ex").with_patch_bump());
+        let settings = Settings {
+            commit_types,
+            ..Default::default()
+        };
+
+        let settings = toml::to_string(&settings)?;
+        fs::write("cog.toml", settings)?;
+
+        let patch = Commit::commit_fixture(CommitType::Chore, false);
+        let feature = Commit::commit_fixture(CommitType::Custom("ex".to_string()), false);
+        let base_version = Tag::from_str("0.1.0", None)?;
+
+        // Act
+        let version = base_version.version_increment_from_commit_history(&[patch, feature]);
+
+        // Assert
+        assert_that!(version).is_ok().is_equal_to(Increment::Patch);
+
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn should_override_bump_behavior_for_existing_commit_type() -> Result<()> {
+        // Arrange
+        Repository::init(".")?;
+        let mut commit_types = HashMap::new();
+        commit_types.insert(
+            "perf".to_string(),
+            CommitConfig::new("Perf").with_minor_bump(),
+        );
+        let settings = Settings {
+            commit_types,
+            ..Default::default()
+        };
+
+        let settings = toml::to_string(&settings)?;
+        fs::write("cog.toml", settings)?;
+
+        let patch = Commit::commit_fixture(CommitType::Chore, false);
+        let feature = Commit::commit_fixture(CommitType::Performances, false);
         let base_version = Tag::from_str("0.1.0", None)?;
 
         // Act
