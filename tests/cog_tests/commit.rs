@@ -130,3 +130,78 @@ fn empty_commit_err() -> Result<()> {
 
     Ok(())
 }
+
+#[sealed_test]
+fn commit_with_default_skip_ci_ok() -> Result<()> {
+    // Arrange
+    git_init()?;
+    git_add("content", "test_file")?;
+
+    // Act
+    Command::cargo_bin("cog")?
+        .arg("commit")
+        .arg("--skip-ci")
+        .arg("feat")
+        .arg("this is a commit message")
+        .arg("scope")
+        // Assert
+        .assert()
+        .success();
+
+    let commit_message = git_log_head()?;
+
+    assert!(commit_message.contains("[skip ci]"));
+
+    Ok(())
+}
+
+#[sealed_test]
+fn commit_with_cog_toml_defined_skip_ci_ok() -> Result<()> {
+    // Arrange
+    git_init()?;
+    git_add("content", "test_file")?;
+    git_add("skip_ci = \"[ci-skip]\" ", "cog.toml")?;
+
+    // Act
+    Command::cargo_bin("cog")?
+        .arg("commit")
+        .arg("--skip-ci")
+        .arg("feat")
+        .arg("this is a commit message")
+        .arg("scope")
+        // Assert
+        .assert()
+        .success();
+
+    let commit_message = git_log_head()?;
+
+    assert!(commit_message.contains("[ci-skip]"));
+
+    Ok(())
+}
+
+#[sealed_test]
+fn commit_with_skip_ci_override_option_takes_precedence() -> Result<()> {
+    // Arrange
+    git_init()?;
+    git_add("content", "test_file")?;
+    git_add("skip_ci = \"[ci-skip]\" ", "cog.toml")?;
+
+    // Act
+    Command::cargo_bin("cog")?
+        .arg("commit")
+        .arg("--skip-ci-override")
+        .arg("[skip-ci-override]")
+        .arg("feat")
+        .arg("this is a commit message")
+        .arg("scope")
+        // Assert
+        .assert()
+        .success();
+
+    let commit_message = git_log_head()?;
+
+    assert!(commit_message.contains("[skip-ci-override]"));
+
+    Ok(())
+}
