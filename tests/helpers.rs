@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::anyhow;
 use anyhow::Result;
-use cmd_lib::{init_builtin_logger, run_cmd, run_fun};
+use cmd_lib::{run_cmd, run_fun};
 use speculoos::assert_that;
 use speculoos::iter::ContainingIntoIterAssertions;
 use speculoos::option::OptionAssertions;
@@ -40,7 +40,6 @@ pub fn init_monorepo(settings: &mut Settings) -> Result<()> {
 /// - Init a repository in the current directory
 /// - Setup a local git user named Tom <toml.bombadil@themail.org>
 pub fn git_init() -> Result<()> {
-    init_builtin_logger();
     run_cmd!(
         git init -b master;
         git config --local user.name Tom;
@@ -54,7 +53,6 @@ pub fn git_init() -> Result<()> {
 /// - Change the current directory to the newly created repository
 /// - Setup a local git user named Tom <toml.bombadil@themail.org>
 pub fn git_init_and_set_current_path(path: &str) -> Result<()> {
-    init_builtin_logger();
     run_cmd!(
         git init $path;
         cd $path;

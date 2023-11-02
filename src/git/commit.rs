@@ -111,7 +111,7 @@ fn gpg_sign_string(key: Option<String>, content: &str) -> Result<String, Git2Err
 mod test {
     use crate::git::repository::Repository;
     use anyhow::Result;
-    use cmd_lib::{init_builtin_logger, run_cmd};
+    use cmd_lib::run_cmd;
     use sealed_test::prelude::*;
     use speculoos::prelude::*;
 
@@ -137,8 +137,6 @@ mod test {
     #[cfg(not(target_os = "windows"))]
     #[sealed_test]
     fn create_signed_commit_ok() -> Result<()> {
-        init_builtin_logger();
-
         // Arrange
         let crate_dir = std::env::var("CARGO_MANIFEST_DIR")?;
 
@@ -164,8 +162,6 @@ mod test {
 
     #[sealed_test]
     fn create_empty_commit() -> Result<()> {
-        init_builtin_logger();
-
         // Arrange
         run_cmd!(
             git init;
