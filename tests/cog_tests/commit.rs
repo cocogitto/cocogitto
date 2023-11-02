@@ -49,7 +49,7 @@ fn commit_fail_if_not_a_repository() -> Result<()> {
         formatdoc!(
             "Error: failed to open repository
 
-        cause: could not find repository from '{}'; class=Repository (6); code=NotFound (-3)
+        cause: could not find repository at '{}'; class=Repository (6); code=NotFound (-3)
 
         ",
             current_dir
