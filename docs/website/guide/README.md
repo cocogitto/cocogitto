@@ -139,7 +139,7 @@ refactor(runtime): drop support for Node 6
 Upon save a commit will be created with the body and footer typed.
 
 ::: tip
-There are to kind of footer separators in conventional commits : `token: message` and `token #message`.
+There are two kinds of footer separators in conventional commits : `token: message` and `token #message`.
 
 GitHub automatically link issues prefixed with a hash.
 
@@ -977,30 +977,63 @@ tag_prefix = "v"
 
 ## Make Cocogitto skip CI CD
 
-Cocogitto will create a commit when performing a bump, which can trigger your CI/CD if you have one. Some CI/CD tools support a "skip_ci" string that you can add to a commit which will skip the pipeline execution. To do so with `cog`, you can use the `skip_ci` configuration in your `cog.toml` file or the `cog bump --skip-ci <string>` option to add a "skip_ci" pattern your CI/CD tool supports.
+The ```--skip-ci``` option of the ```bump``` and ```commit``` commands offers the possibility to skip CI/CD by adding a "skip-ci" string your commits. The default string used by Cocogitto is ```[skip ci]``` but you can override it with your own string :
+- Using the ```skip_ci``` configuration in the ```cog.toml```.
+- Using the ```--skip-ci-override``` option of the ```bump``` and ```commit``` commands.
+
+Note that the ```--skip-ci-override``` option has precedence over the ```skip_ci``` configuration in the ```cog.toml```.
 
 **Example:**
-```toml
-skip_ci = "[skip ci]"
-```
-
-or using the `cog bump` command :
 
 ```bash
-❯ cog bump --skip-ci "[skip ci]"
+❯ cog bump --skip-ci
 ```
 
 **Result:**
 
 ```bash
 ❯ git log
-commit 213d08c8c1e12ba7d59497e6eda436a3ce63d87c (HEAD -> main, tag: 1.0.0)
+commit xxx (HEAD -> main, tag: 1.0.0)
 Author: John Doe <jon.doe@unknown.com>
 Date: Tue Mar 7 15:06:18 2023 +0200
     chore(version): 1.0.0 [skip ci]
 ```
 
-Note that if both `skip_ci` configuration and `--skip-ci` option are used, `cog` will take the `--skip-ci` option.
+**Example with ```cog.toml``` configuration:**
+
+```toml
+skip_ci = "[ci-skip]"
+```
+
+```bash
+❯ cog bump --skip-ci
+```
+
+**Result:**
+
+```bash
+❯ git log
+commit xxx (HEAD -> main, tag: 1.0.0)
+Author: John Doe <jon.doe@unknown.com>
+Date: Tue Mar 7 15:06:18 2023 +0200
+    chore(version): 1.0.0 [ci-skip]
+```
+
+**Another example using the ```--skip-ci-override``` option:**
+
+```bash
+❯ cog bump --skip-ci-override "[ci-skip]"
+```
+
+**Result:**
+
+```bash
+❯ git log
+commit xxx (HEAD -> main, tag: 1.0.0)
+Author: John Doe <jon.doe@unknown.com>
+Date: Tue Mar 7 15:06:18 2023 +0200
+    chore(version): 1.0.0 [ci-skip]
+```
 
 ## Skip untracked or uncommited changes
 
@@ -1034,5 +1067,3 @@ Finally, if you need the command to print a version no matter the state of your 
 ❯ cog get-version --fallback 0.1.0
 0.1.0
 ```
-
-
