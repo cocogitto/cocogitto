@@ -132,6 +132,7 @@ fn monorepo_bump_manual_ok() -> Result<()> {
     assert_tag_exists("1.0.0")?;
     Ok(())
 }
+
 #[sealed_test]
 fn monorepo_bump_manual_disable_changelog_ok() -> Result<()> {
     // Arrange
