@@ -14,11 +14,10 @@ FROM ${TARGETARCH}-builder AS builder
 FROM alpine
 RUN  apk add --no-cache git
 
-# See https://git-scm.com/docs/git-config#Documentation/git-config.txt-safedirectory
-RUN echo '[safe]\n\tdirectory = *' > /etc/gitconfig
-
 COPY --from=builder /cog /usr/bin/cog
-COPY docker/entrypoint.sh .
+
+# See https://git-scm.com/docs/git-config#Documentation/git-config.txt-safedirectory
+COPY docker/gitconfig /etc/gitconfig
 
 WORKDIR /app
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["cog"]
