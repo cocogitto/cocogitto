@@ -34,15 +34,16 @@ pub fn init<S: AsRef<Path> + ?Sized>(path: &S) -> anyhow::Result<()> {
     };
 
     let settings = Settings::default();
-    let settings_path = path.join(CONFIG_PATH);
+    let settings_path = path.join(CONFIG_PATH.as_str());
     if settings_path.exists() {
-        eprint!("Found {} in {:?}, Nothing to do", CONFIG_PATH, &path);
+        eprint!("Found {} in {:?}, Nothing to do", *(CONFIG_PATH), &path);
         exit(1);
     } else {
         std::fs::write(
             &settings_path,
-            toml::to_string(&settings)
-                .map_err(|err| anyhow!("failed to serialize {}\n\ncause: {}", CONFIG_PATH, err))?,
+            toml::to_string(&settings).map_err(|err| {
+                anyhow!("failed to serialize {}\n\ncause: {}", *(CONFIG_PATH), err)
+            })?,
         )
         .map_err(|err| {
             anyhow!(

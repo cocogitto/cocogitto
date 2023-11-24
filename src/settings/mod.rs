@@ -438,7 +438,7 @@ impl TryFrom<&Repository> for Settings {
     fn try_from(repo: &Repository) -> Result<Self, Self::Error> {
         match repo.get_repo_dir() {
             Some(repo_path) => {
-                let settings_path = repo_path.join(CONFIG_PATH);
+                let settings_path = repo_path.join((*CONFIG_PATH).as_str());
                 if settings_path.exists() {
                     Config::builder()
                         .add_source(File::from(settings_path))
