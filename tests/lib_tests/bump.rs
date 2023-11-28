@@ -371,14 +371,23 @@ fn should_ignore_latest_prerelease_tag() -> Result<()> {
         None,
         None,
         false,
+        false,
         None,
         false,
     )?;
 
     git_commit("feat: more features")?;
     // Act
-    let result =
-        cocogitto.create_version(IncrementCommand::Auto, None, None, None, false, None, false);
+    let result = cocogitto.create_version(
+        IncrementCommand::Auto,
+        None,
+        None,
+        None,
+        false,
+        false,
+        None,
+        false,
+    );
 
     // Assert
     assert_that!(result).is_ok();
