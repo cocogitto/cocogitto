@@ -2,6 +2,44 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## [6.0.0](https://github.com/cocogitto/cocogitto/compare/5.6.0..6.0.0) - 2023-11-30
+#### Bug Fixes
+- shortened commit when parsing into oidof - ([7ed4fa7](https://github.com/cocogitto/cocogitto/commit/7ed4fa738bec4821b8873344b123ca1a70087e9d)) - ABWassim
+- correctly handle bump with pre-release tags - ([891d55b](https://github.com/cocogitto/cocogitto/commit/891d55b2293d10d556455ad4cadb75e19b2ac819)) - [@oknozor](https://github.com/oknozor)
+#### Continuous Integration
+- check tags for release job instead of steps - ([fb23340](https://github.com/cocogitto/cocogitto/commit/fb233402864134304e1ef4c730638062c7125895)) - [@oknozor](https://github.com/oknozor)
+- update docker image and gh release - ([377c2c2](https://github.com/cocogitto/cocogitto/commit/377c2c2481c4403657f825d3c4934d5a8d614098)) - [@oknozor](https://github.com/oknozor)
+- docker build - ([b1ca37b](https://github.com/cocogitto/cocogitto/commit/b1ca37bbefdba3eaefa7a9139ef3fe4b4ac07f85)) - [@oknozor](https://github.com/oknozor)
+- add docker multiarch build - ([9fea07f](https://github.com/cocogitto/cocogitto/commit/9fea07fadd47874b4d8f0ae938b6473daeb5670b)) - [@oknozor](https://github.com/oknozor)
+- run tests on all platforms and add a windows binary to release - ([5987707](https://github.com/cocogitto/cocogitto/commit/59877075e0d90e9e36c5e1b301f00fd7507641d8)) - [@oknozor](https://github.com/oknozor)
+#### Documentation
+- remove coco deprecation notice - ([6ce82f4](https://github.com/cocogitto/cocogitto/commit/6ce82f42a82273333aa55018f56b8ec896896a96)) - [@oknozor](https://github.com/oknozor)
+- add docker to readme and link to github app page - ([6931c79](https://github.com/cocogitto/cocogitto/commit/6931c790641b98b7065fcd71615a3ea2656a5dba)) - [@oknozor](https://github.com/oknozor)
+- fix indentation for gh action doc - ([809b386](https://github.com/cocogitto/cocogitto/commit/809b3867f5d7722096620e628473c6f26500bc30)) - [@oknozor](https://github.com/oknozor)
+- add docs for the docker image - ([bedfaa8](https://github.com/cocogitto/cocogitto/commit/bedfaa81775dd5b8aae1967adbba6720bed05377)) - [@oknozor](https://github.com/oknozor)
+- skip-ci breaking change - ([8e05d9c](https://github.com/cocogitto/cocogitto/commit/8e05d9c01f23e3dbdfa390cea0f7268179c10718)) - ABWassim
+- migrate docs to main repo - ([fb73056](https://github.com/cocogitto/cocogitto/commit/fb73056b0968c13773865099f2f744d9336af109)) - [@oknozor](https://github.com/oknozor)
+- add installation instructions for MacOS - ([b64ce0f](https://github.com/cocogitto/cocogitto/commit/b64ce0f6b68bbcf3ee4f5b6acfdf71d037660f65)) - Gianluca Recchia
+#### Features
+- **(bump)** skip-ci rework - ([3a42e68](https://github.com/cocogitto/cocogitto/commit/3a42e685d9182bbd3148cca8ab532116da6a12d8)) - ABWassim
+- add docker image - ([c28d934](https://github.com/cocogitto/cocogitto/commit/c28d934fd60e75637902e3eb0543d36a88674b42)) - [@oknozor](https://github.com/oknozor)
+- allow bumping with other commit types - ([49d586a](https://github.com/cocogitto/cocogitto/commit/49d586ac1d70057ea0a83a124daba4f6d8b6e1ff)) - [@oknozor](https://github.com/oknozor)
+- version access substitution - ([3346a84](https://github.com/cocogitto/cocogitto/commit/3346a84b5f2a8dd7b2482a868599a6985ae2635a)) - Ezekiel Warren
+- Allow users to disable changelog generation - ([17f98dc](https://github.com/cocogitto/cocogitto/commit/17f98dc3ea2ebf233fb19f8e25700fab3664058f)) - Billie Thompson
+- add option to overwrite existing git-hooks - ([ec2c4c4](https://github.com/cocogitto/cocogitto/commit/ec2c4c43870bc81839b02bd581a62010b2dfb55a)) - marcbull
+#### Miscellaneous Chores
+- cargo update && switch to main for gh release - ([0e8f375](https://github.com/cocogitto/cocogitto/commit/0e8f375406cf3ef01491c8ec7921904dc04f5b3a)) - [@oknozor](https://github.com/oknozor)
+- git ignore docs build - ([187dd4f](https://github.com/cocogitto/cocogitto/commit/187dd4fdf7308f07d4c721235a9ed5f2b3dcfb51)) - [@oknozor](https://github.com/oknozor)
+- update dependencies - ([94ba7bc](https://github.com/cocogitto/cocogitto/commit/94ba7bce7d9b86d5322e41118ec751b9acbb61b1)) - [@oknozor](https://github.com/oknozor)
+- fix clippy lints - ([9cd0644](https://github.com/cocogitto/cocogitto/commit/9cd064422207f27f837521049f731433d5566cc7)) - [@oknozor](https://github.com/oknozor)
+#### Tests
+- **(bump)** fixed missing parameters - ([4bdbe9b](https://github.com/cocogitto/cocogitto/commit/4bdbe9b4464bbc40a0e60f090c6c2dfa81117d67)) - ABWassim
+- **(bump)** added skip-ci tests - ([39ebfa7](https://github.com/cocogitto/cocogitto/commit/39ebfa707a678ea546da449b631ef55d79deb78b)) - ABWassim
+- **(commit)** added skip-ci tests - ([9b31eae](https://github.com/cocogitto/cocogitto/commit/9b31eaed26d25d0bf129e46b2d864fc70743ac1f)) - ABWassim
+- add overwrite test for install_git _hook - ([b471cac](https://github.com/cocogitto/cocogitto/commit/b471cac27d4cc2235ec80974cfce083dbceba8d3)) - marcbull
+
+- - -
+
 ## [5.6.0](https://github.com/cocogitto/cocogitto/compare/5.5.0..5.6.0) - 2023-09-27
 #### Bug Fixes
 - **(bump)** option to disable untracked changes error - ([da459de](https://github.com/cocogitto/cocogitto/commit/da459decff9a84bb5bde471f5d64f577df28df11)) - [@Wassim-AB](https://github.com/Wassim-AB)
