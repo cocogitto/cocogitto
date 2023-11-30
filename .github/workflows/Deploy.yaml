@@ -92,33 +92,33 @@ jobs:
       - name: Copy artifacts to archive
         run: |
           mkdir x86_64-unknown-linux-musl
-          cp -r /home/runner/artifacts/x86_64-unknown-linux-musl x86_64-unknown-linux-musl/cog
+          cp -r /home/runner/artifacts/x86_64-unknown-linux-musl/cog x86_64-unknown-linux-musl/cog
           chmod +x -R  x86_64-unknown-linux-musl/cog
-          cp -r /home/runner/artifacts/LICENSE x86_64-unknown-linux-musl/
+          cp -r /home/runner/artifacts/LICENSE/LICENSE x86_64-unknown-linux-musl/
           tar -czf cocogitto-x86_64-unknown-linux-musl.tar.gz x86_64-unknown-linux-musl/*
           
           mkdir armv7-unknown-linux-musleabihf
-          cp -r /home/runner/artifacts/armv7-unknown-linux-musleabihf armv7-unknown-linux-musleabihf/cog
+          cp -r /home/runner/artifacts/armv7-unknown-linux-musleabihf/cog armv7-unknown-linux-musleabihf/cog
           chmod +x -R  armv7-unknown-linux-musleabihf/cog
-          cp -r /home/runner/artifacts/LICENSE armv7-unknown-linux-musleabihf/
+          cp -r /home/runner/artifacts/LICENSE/LICENSE armv7-unknown-linux-musleabihf/
           tar -czf cocogitto-armv7-unknown-linux-musleabihf.tar.gz armv7-unknown-linux-musleabihf/*
 
           mkdir aarch64-unknown-linux-gnu
-          cp -r /home/runner/artifacts/aarch64-unknown-linux-gnu aarch64-unknown-linux-gnu/cog
+          cp -r /home/runner/artifacts/aarch64-unknown-linux-gnu/cog aarch64-unknown-linux-gnu/cog
           chmod +x -R  aarch64-unknown-linux-gnu/cog
-          cp -r /home/runner/artifacts/LICENSE aarch64-unknown-linux-gnu/
+          cp -r /home/runner/artifacts/LICENSE/LICENSE aarch64-unknown-linux-gnu/
           tar -czf cocogitto-aarch64-unknown-linux-gnu.tar.gz aarch64-unknown-linux-gnu/*
           
           mkdir x86_64-pc-windows-msvc
-          cp -r /home/runner/artifacts/x86_64-pc-windows-msvc x86_64-pc-windows-msvc/cog.exe
+          cp -r /home/runner/artifacts/x86_64-pc-windows-msvc/cog.exe x86_64-pc-windows-msvc/cog.exe
           chmod +x -R  x86_64-pc-windows-msvc/cog.exe
-          cp -r /home/runner/artifacts/LICENSE x86_64-pc-windows-msvc/
+          cp -r /home/runner/artifacts/LICENSE/LICENSE x86_64-pc-windows-msvc/
           tar -czf cocogitto-x86_64-pc-windows-msvc.tar.gz x86_64-pc-windows-msvc/*
 
           mkdir x86_64-apple-darwin
-          cp -r /home/runner/artifacts/x86_64-apple-darwin x86_64-apple-darwin/cog
+          cp -r /home/runner/artifacts/x86_64-apple-darwin/cog x86_64-apple-darwin/cog
           chmod +x -R  x86_64-apple-darwin/cog
-          cp -r /home/runner/artifacts/LICENSE x86_64-apple-darwin/
+          cp -r /home/runner/artifacts/LICENSE/LICENSE x86_64-apple-darwin/
           tar -czf cocogitto-x86_64-apple-darwin.tar.gz x86_64-apple-darwin/*
           
       - uses: svenstaro/upload-release-action@v1-release
