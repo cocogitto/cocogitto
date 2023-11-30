@@ -1,0 +1,1 @@
+const e=JSON.parse('{"key":"v-e1169062","path":"/template/guide/","title":"TOTO","lang":"en-US","frontmatter":{},"headers":[],"git":{},"filePathRelative":"template/guide/index.md"}');export{e as data};
