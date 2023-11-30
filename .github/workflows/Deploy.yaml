@@ -3,7 +3,7 @@ name: Publish latest
 on:
   push:
     branches:
-      - feat/docker-img
+      - main
     tags:
       - '*'
 
