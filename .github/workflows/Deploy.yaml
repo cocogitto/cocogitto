@@ -83,12 +83,12 @@ jobs:
     needs: [ build, upload_license]
     name: Publish cog binaries
     runs-on: ubuntu-latest
+    if: ${{ github.ref_type == 'tag' }}
     steps:
       - uses: actions/download-artifact@v3
         with:
           path: ~/artifacts
 
-      # - if: ${{ github.ref_type }} == 'tag'
       - name: Copy artifacts to archive
         run: |
           mkdir x86_64-unknown-linux-musl
@@ -121,41 +121,35 @@ jobs:
           cp -r /home/runner/artifacts/LICENSE x86_64-apple-darwin/
           tar -czf cocogitto-x86_64-apple-darwin.tar.gz x86_64-apple-darwin/*
           
-
-      - if: ${{ github.ref_type == 'tag' }}
-        uses: svenstaro/upload-release-action@v1-release
+      - uses: svenstaro/upload-release-action@v1-release
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: cocogitto-x86_64-unknown-linux-musl.tar.gz
           tag: ${{ github.ref }}
           asset_name: cocogitto-${{ github.ref_name }}-x86_64-unknown-linux-musl.tar.gz
 
-      - if: ${{ github.ref_type == 'tag' }}
-        uses: svenstaro/upload-release-action@v1-release
+      - uses: svenstaro/upload-release-action@v1-release
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: cocogitto-armv7-unknown-linux-musleabihf.tar.gz
           tag: ${{ github.ref_name }}
           asset_name: cocogitto-${{ github.ref_name }}-armv7-unknown-linux-musleabihf.tar.gz
 
-      - if: ${{ github.ref_type == 'tag' }}
-        uses: svenstaro/upload-release-action@v1-release
+      - uses: svenstaro/upload-release-action@v1-release
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: cocogitto-aarch64-unknown-linux-gnu.tar.gz
           tag: ${{ github.ref_name }}
           asset_name: cocogitto-${{ github.ref_name }}-aarch64-unknown-linux-gnu.tar.gz
 
-      - if: ${{ github.ref_type == 'tag' }}
-        uses: svenstaro/upload-release-action@v1-release
+      - uses: svenstaro/upload-release-action@v1-release
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: cocogitto-x86_64-pc-windows-msvc.tar.gz
           tag: ${{ github.ref_name }}
           asset_name: cocogitto-${{ github.ref_name }}-x86_64-pc-windows-msvc.tar.gz
 
-      - if: ${{ github.ref_type == 'tag' }}
-        uses: svenstaro/upload-release-action@v1-release
+      - uses: svenstaro/upload-release-action@v1-release
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: cocogitto-x86_64-apple-darwin.tar.gz
