@@ -2,6 +2,16 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## [6.0.1](https://github.com/cocogitto/cocogitto/compare/6.0.0..6.0.1) - 2023-11-30
+#### Bug Fixes
+- gh pages build path - ([52b8307](https://github.com/cocogitto/cocogitto/commit/52b8307f23d76cf7d853ff60631e0872a1fb268e)) - [@oknozor](https://github.com/oknozor)
+#### Continuous Integration
+- fix the format of release assets - ([8a1df55](https://github.com/cocogitto/cocogitto/commit/8a1df55ed99d05ca9443a348f446dfdab42fd2fa)) - Shunsuke Suzuki
+#### Documentation
+- fix gh-pages deploy - ([4c79de9](https://github.com/cocogitto/cocogitto/commit/4c79de930fd120e6cee12fa49c3f96e4a52d2faa)) - [@oknozor](https://github.com/oknozor)
+
+- - -
+
 ## [6.0.0](https://github.com/cocogitto/cocogitto/compare/5.6.0..6.0.0) - 2023-11-30
 #### Bug Fixes
 - shortened commit when parsing into oidof - ([7ed4fa7](https://github.com/cocogitto/cocogitto/commit/7ed4fa738bec4821b8873344b123ca1a70087e9d)) - ABWassim
