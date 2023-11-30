@@ -52,6 +52,7 @@ jobs:
       - name: vuepress-deploy
         uses: jenkey2011/vuepress-deploy@master
         env:
+          COMMIT_MESSAGE: "chore: update gh-pages"
           ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BUILD_SCRIPT: cd docs && yarn && yarn docs:build
           BUILD_DIR: docs/website/.vuepress/dist/
