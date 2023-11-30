@@ -83,6 +83,7 @@ export default function(hljs) {
         "cog",
         "git",
         "mkdir",
+        "docker",
     ];
 
     return {

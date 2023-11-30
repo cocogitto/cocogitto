@@ -8,8 +8,8 @@
     "docs:build": "vuepress build website"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Paul Delafosse <paul.delafosse@protonmail.com>",
+  "license": "MIT",
   "devDependencies": {
     "@vuepress/client": "2.0.0-beta.67",
     "@vuepress/plugin-back-to-top": "^1.9.10",
