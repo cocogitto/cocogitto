@@ -230,6 +230,21 @@ Output :
 
 See [User guide -> Changelogs](https://docs.cocogitto.io/guide/#changelogs).
 
+## Docker
+
+There is a docker image for `cog` available [ghcr.io/cocogitto/latest](https://github.com/cocogitto/cocogitto/pkgs/container/cog).
+
+**Usage:**
+
+```shell
+docker pull ghcr.io/cocogitto/cog:latest
+docker run -t -v "$(pwd)":/app/ cog check
+```
+
+Note that you need to mount a volume pointing to your target directory for `cog` to be able to operate on your git log.
+
+See [Docker ->  Using cocogitto with docker](./docker/#Using-cocogitto-with-docker).
+
 ## GitHub integration
 
 **GitHub action:**
@@ -251,7 +266,7 @@ See [Github integration -> GitHub action](https://docs.cocogitto.io/ci_cd/#githu
 
 **GitHub bot:**
 
-[cocogitto-bot](https://github.com/cocogitto/cocogitto-bot) is a standalone, zero-config bot checking your pull requests
+[cocogitto-bot](https://github.com/apps/cocogitto-bot) is a standalone, zero-config bot checking your pull requests
 against the Conventional Commits specification.
 
 ![cog bot example](./docs/assets/cog-bot-example.png)
