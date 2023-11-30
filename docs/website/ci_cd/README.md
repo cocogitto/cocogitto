@@ -92,26 +92,26 @@ on:
 jobs:
   release:
     name: Perform release
-        - uses: actions/checkout@v3
-            with:
-              fetch-depth: 0
-
-        - name: Cocogitto release
-          id: release
-          uses: oknozor/cocogitto-action@v3
+      - uses: actions/checkout@v3
           with:
-            release: true
-              git-user: 'Cog Bot'
-              git-user-email: 'mycoolproject@org.org'
+            fetch-depth: 0
 
-        - name: Generate Changelog
-          run: cog changelog --at ${{ steps.release.outputs.version }} -t full_hash > GITHUB_CHANGELOG.md
+      - name: Cocogitto release
+        id: release
+        uses: oknozor/cocogitto-action@v3
+        with:
+          release: true
+          git-user: 'Cog Bot'
+          git-user-email: 'mycoolproject@org.org'
 
-        - name: Upload github release
-          uses: softprops/action-gh-release@v1
-          with:
-            body_path: GITHUB_CHANGELOG.md
-            tag_name: ${{ steps.release.outputs.version }}
+      - name: Generate Changelog
+        run: cog changelog --at ${{ steps.release.outputs.version }} -t full_hash > GITHUB_CHANGELOG.md
+
+      - name: Upload github release
+        uses: softprops/action-gh-release@v1
+        with:
+          body_path: GITHUB_CHANGELOG.md
+          tag_name: ${{ steps.release.outputs.version }}
 ```
 
 Also see:
