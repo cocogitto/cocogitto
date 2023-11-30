@@ -127,6 +127,11 @@ can decorate your PR with conventional commits status checks.
 
 See [Github integration -> GitHub bot](./ci_cd/#github-action) for more info.
 
+### Docker
+
+There is a docker image for `cog` available [ghcr.io/cocogitto/latest](https://github.com/cocogitto/cocogitto/pkgs/container/cog)
+See [Docker](./docker/#Using-cocogitto-with-docker) for more info.
+
 
 
 

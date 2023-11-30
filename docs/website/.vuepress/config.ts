@@ -50,6 +50,10 @@ export default defineUserConfig({
             {
                 link: '/template/',
                 text: 'Template reference',
+            },
+            {
+                link: '/docker/',
+                text: 'Docker',
             }
         ],
         // sidebar object
@@ -70,6 +74,10 @@ export default defineUserConfig({
             {
                 link: '/template/',
                 text: 'Changelog template reference',
+            },
+            {
+                link: '/docker/',
+                text: 'Using `cog` with docker',
             }
         ],
     }),
