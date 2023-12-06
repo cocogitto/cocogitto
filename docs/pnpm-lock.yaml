@@ -545,14 +545,14 @@ packages:
       source-map: 0.6.1
     dev: true
 
-  /@vitejs/plugin-vue@4.4.0(vite@4.4.11)(vue@3.3.8):
+  /@vitejs/plugin-vue@4.4.0(vite@4.4.12)(vue@3.3.8):
     resolution: {integrity: sha512-xdguqb+VUwiRpSg+nsc2HtbAUSGak25DXYvpQQi4RVU1Xq1uworyoH/md9Rfd8zMmPR/pSghr309QNcftUVseg==}
     engines: {node: ^14.18.0 || >=16.0.0}
     peerDependencies:
       vite: ^4.0.0
       vue: ^3.2.25
     dependencies:
-      vite: 4.4.11
+      vite: 4.4.12
       vue: 3.3.8
     dev: true
 
@@ -646,7 +646,7 @@ packages:
   /@vuepress/bundler-vite@2.0.0-beta.67:
     resolution: {integrity: sha512-W6YXixxu2G+xPECPFvx4Tzv5fmpBYvApEYVw7qfSNf/5YZ6aeIfV0AMGJZvhk7R/KniofvBTGCjAMSK4fqKp8w==}
     dependencies:
-      '@vitejs/plugin-vue': 4.4.0(vite@4.4.11)(vue@3.3.8)
+      '@vitejs/plugin-vue': 4.4.0(vite@4.4.12)(vue@3.3.8)
       '@vuepress/client': 2.0.0-beta.67
       '@vuepress/core': 2.0.0-beta.67
       '@vuepress/shared': 2.0.0-beta.67
@@ -656,7 +656,7 @@ packages:
       postcss: 8.4.31
       postcss-load-config: 4.0.1(postcss@8.4.31)
       rollup: 3.29.4
-      vite: 4.4.11
+      vite: 4.4.12
       vue: 3.3.8
       vue-router: 4.2.5(vue@3.3.8)
     transitivePeerDependencies:
@@ -2110,8 +2110,8 @@ packages:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
     dev: true
 
-  /vite@4.4.11:
-    resolution: {integrity: sha512-ksNZJlkcU9b0lBwAGZGGaZHCMqHsc8OpgtoYhsQ4/I2v5cnpmmmqe5pM4nv/4Hn6G/2GhTdj0DhZh2e+Er1q5A==}
+  /vite@4.4.12:
+    resolution: {integrity: sha512-KtPlUbWfxzGVul8Nut8Gw2Qe8sBzWY+8QVc5SL8iRFnpnrcoCaNlzO40c1R6hPmcdTwIPEDkq0Y9+27a5tVbdQ==}
     engines: {node: ^14.18.0 || >=16.0.0}
     hasBin: true
     peerDependencies:
