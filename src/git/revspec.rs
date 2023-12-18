@@ -1,14 +1,17 @@
 use std::fmt;
 use std::fmt::Formatter;
+use std::path::Path;
 use std::str::FromStr;
 
 use git2::{Commit, DescribeFormatOptions, DescribeOptions, ErrorCode, Oid};
+use globset::{Candidate, GlobBuilder, GlobSet, GlobSetBuilder};
 
 use crate::conventional::changelog::release::Release;
 use crate::git::error::Git2Error;
 use crate::git::oid::OidOf;
 use crate::git::repository::Repository;
 use crate::git::tag::Tag;
+use crate::settings::MonoRepoPackage;
 use crate::SETTINGS;
 
 #[derive(Debug)]
@@ -62,6 +65,62 @@ impl From<(&str, &str)> for RevspecPattern {
             from: Some(from.to_string()),
             to: Some(to.to_string()),
         }
+    }
+}
+
+#[derive(Debug)]
+struct PackagePathFilter {
+    include: GlobSet,
+    exclude: GlobSet,
+}
+
+impl PackagePathFilter {
+    fn new(package_path: &str, include_paths: &[String], exclude_paths: &[String]) -> Self {
+        let include = {
+            let mut builder = GlobSetBuilder::new();
+            builder.add(
+                GlobBuilder::new(format!("{}/**", package_path).as_str())
+                    .literal_separator(true)
+                    .build()
+                    .expect("glob should be valid"),
+            );
+            for include in include_paths {
+                builder.add(
+                    GlobBuilder::new(include)
+                        .literal_separator(true)
+                        .build()
+                        .expect("glob should be valid"),
+                );
+            }
+            builder.build().expect("valid globset")
+        };
+        let exclude = {
+            let mut builder = GlobSetBuilder::new();
+            for exclude in exclude_paths {
+                builder.add(
+                    GlobBuilder::new(exclude)
+                        .literal_separator(true)
+                        .build()
+                        .expect("glob should be valid"),
+                );
+            }
+            builder.build().expect("valid globset")
+        };
+
+        PackagePathFilter { include, exclude }
+    }
+
+    fn from_package(package: &MonoRepoPackage) -> Self {
+        Self::new(
+            package.path.to_str().expect("valid package path"),
+            &package.include,
+            &package.ignore,
+        )
+    }
+
+    fn is_match<P: AsRef<Path> + ?Sized>(&self, path: &P) -> bool {
+        let candidate = Candidate::new(path);
+        self.include.is_match_candidate(&candidate) && !self.exclude.is_match_candidate(&candidate)
     }
 }
 
@@ -220,6 +279,8 @@ impl Repository {
         let mut commit_range = self.get_commit_range(pattern)?;
         let mut commits = vec![];
         let package = SETTINGS.packages.get(package).expect("package exists");
+        let package_path_filter = PackagePathFilter::from_package(package);
+
         for commit in commit_range.commits {
             let parent = commit.parent(0).ok().map(|commit| commit.id().to_string());
 
@@ -241,14 +302,14 @@ impl Repository {
 
             for delta in diff.deltas() {
                 if let Some(old) = delta.old_file().path() {
-                    if old.starts_with(&package.path) {
+                    if package_path_filter.is_match(old) {
                         commits.push(commit);
                         break;
                     }
                 }
 
                 if let Some(new) = delta.new_file().path() {
-                    if new.starts_with(&package.path) {
+                    if package_path_filter.is_match(new) {
                         commits.push(commit);
                         break;
                     }
@@ -545,6 +606,83 @@ mod test {
 
         assert_that!(commit_range_package.commits).has_length(1);
         assert_that!(commit_range_global.commits).has_length(1);
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn get_package_commit_range_with_filtering() -> Result<()> {
+        // Arrange
+        let repo = Repository::init(".")?;
+        let mut packages = HashMap::new();
+        packages.insert(
+            "one".to_string(),
+            MonoRepoPackage {
+                path: PathBuf::from("one"),
+                include: vec![String::from("shared/**"), String::from("README.md")],
+                ignore: vec![String::from("one/ignored/**")],
+                ..Default::default()
+            },
+        );
+
+        let settings = Settings {
+            packages,
+            ..Default::default()
+        };
+
+        let settings = toml::to_string(&settings)?;
+
+        run_cmd!(
+            git init;
+            echo $settings > cog.toml;
+            mkdir -p shared one/ignored;
+            git add .;
+            git commit -m "chore: First commit";
+        )?;
+
+        let commit_range_package =
+            repo.get_commit_range_for_package(&RevspecPattern::from_str("..HEAD")?, "one")?;
+        assert_that!(commit_range_package.commits).has_length(0);
+
+        run_cmd!(
+            echo changes > one/file;
+            git add .;
+            git commit -m "feat: commit to non-ignored path";
+        )?;
+
+        let commit_range_package =
+            repo.get_commit_range_for_package(&RevspecPattern::from_str("HEAD~1..HEAD")?, "one")?;
+        assert_that!(commit_range_package.commits).has_length(1);
+
+        run_cmd!(
+            echo changes > one/ignored/file;
+            git add .;
+            git commit -m "feat: commit to ignored path";
+        )?;
+
+        let commit_range_package =
+            repo.get_commit_range_for_package(&RevspecPattern::from_str("HEAD~1..HEAD")?, "one")?;
+        assert_that!(commit_range_package.commits).has_length(0);
+
+        run_cmd!(
+            echo changes > shared/file;
+            git add .;
+            git commit -m "feat: commit to extra included path";
+        )?;
+
+        let commit_range_package =
+            repo.get_commit_range_for_package(&RevspecPattern::from_str("HEAD~1..HEAD")?, "one")?;
+        assert_that!(commit_range_package.commits).has_length(1);
+
+        run_cmd!(
+            echo changes > README.md;
+            git add .;
+            git commit -m "feat: commit to extra included file";
+        )?;
+
+        let commit_range_package =
+            repo.get_commit_range_for_package(&RevspecPattern::from_str("HEAD~1..HEAD")?, "one")?;
+        assert_that!(commit_range_package.commits).has_length(1);
+
         Ok(())
     }
 

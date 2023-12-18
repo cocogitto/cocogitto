@@ -177,6 +177,12 @@ pub struct MonoRepoPackage {
     /// The package path, relative to the repository root dir.
     /// Used to scan commits and set hook commands current directory
     pub path: PathBuf,
+    /// List of globs for additional paths to include, relative to
+    /// the repository root dir.
+    pub include: Vec<String>,
+    /// List of globs for paths to ignore, relative to
+    /// the repository root dir.
+    pub ignore: Vec<String>,
     /// Where to write the changelog
     pub changelog_path: Option<String>,
     /// Bumping package marked as public api will increment
@@ -194,6 +200,8 @@ impl Default for MonoRepoPackage {
     fn default() -> Self {
         Self {
             path: Default::default(),
+            include: vec![],
+            ignore: vec![],
             changelog_path: None,
             pre_bump_hooks: None,
             post_bump_hooks: None,

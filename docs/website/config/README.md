@@ -1,6 +1,6 @@
 # Configuration reference
 
-The config reference list all value that can be set in the `cog.toml` file at the root of a repository. 
+The config reference list all value that can be set in the `cog.toml` file at the root of a repository.
 
 ## General
 
@@ -18,16 +18,16 @@ The config reference list all value that can be set in the `cog.toml` file at th
 
   [User guide -> Tag prefix](../guide/#tag-prefix)
 
-### `branch_whitelist` 
-    
+### `branch_whitelist`
+
 - Type: `Array<String>`
 - Optional: `true`
-- Description: A list of glob patterns to allow bumping only on matching branches. 
-- Example: 
+- Description: A list of glob patterns to allow bumping only on matching branches.
+- Example:
     ```toml
     branch_whitelist = [ "main", "release/**" ]
     ```
-- Also see: 
+- Also see:
 
     [User guide -> Branch whitelist](../guide/#branch-whitelist)
 
@@ -50,16 +50,16 @@ The config reference list all value that can be set in the `cog.toml` file at th
 - Type: `Hashmap<String, CommitType>`
 - Optional: `true`
 - Description: extend the allowed commit types, creating a new `cog commit` command and allowing to generate changelog entries for the
-    given type. Can also be used to override the default commit types. 
-- Example: 
+    given type. Can also be used to override the default commit types.
+- Example:
     ```toml
     [commit_types]
     hotfix = { changelog_title = "Hotfixes" }
     chore = { changelog_title = "Hotfixes", omit_from_changelog = true }
     release = { changelog_title = "Releases" }
     ```
-- Also see: 
-    
+- Also see:
+
     [User guide -> Custom commit types](../guide/#custom-commit-types)
 
 ### `changelog_title`
@@ -76,7 +76,7 @@ The config reference list all value that can be set in the `cog.toml` file at th
 ### `omit_from_changelog`
 - Type: `Bool`
 - Optional: `true`
-- Default value: `false` 
+- Default value: `false`
 - Description: do not generate changelog entries for the given commit type.
 - Example:
     ```toml
@@ -127,7 +127,7 @@ The config reference list all value that can be set in the `cog.toml` file at th
     * [User guide -> Post-bump hooks](../guide/#post-bump-hooks)
     * [User guide -> Version DSL](../guide/#version-dsl)
 
-### `bump_profiles` 
+### `bump_profiles`
 
 
 - Type: `Hashmap<String, BumpProfile>`
@@ -142,7 +142,7 @@ The config reference list all value that can be set in the `cog.toml` file at th
         "cargo fmt --all",
         "cargo bump {{version}}",
     ]
-  
+
     post_bump_hooks = [
         "cargo package",
         "cargo publish"
@@ -156,7 +156,7 @@ The config reference list all value that can be set in the `cog.toml` file at th
     * [User guide -> Version DSL](../guide/#version-dsl)
     * [User guide -> Bump profiles](../guide/guide/#bump-profiles)
 
-### `skip_ci` 
+### `skip_ci`
 
 - Type: `String`
 - Optional: `true`
@@ -168,11 +168,11 @@ The config reference list all value that can be set in the `cog.toml` file at th
 - Also see:
     * [User guide -> Make Cocogitto skip CI CD](../guide/#make-cocogitto-skip-ci-cd)
 
-### `skip_untracked` 
+### `skip_untracked`
 
 - Type: `boolean`
 - Optional: `true`
-- Default value: `false` 
+- Default value: `false`
 - Description: Allows to perform bump even if there are untracked or uncommited changes.
 - Example:
     ```toml
@@ -181,11 +181,11 @@ The config reference list all value that can be set in the `cog.toml` file at th
 - Also see:
     * [User guide -> Skip untracked or uncommited changes](../guide/#skip-untracked-or-uncommited-changes)
 
-### `disable_changelog` 
+### `disable_changelog`
 
 - Type: `boolean`
 - Optional: `true`
-- Default value: `false` 
+- Default value: `false`
 - Description: Disable changelog generation when bumping.
 - Example:
     ```toml
@@ -217,7 +217,7 @@ The config reference list all value that can be set in the `cog.toml` file at th
 - Default value: `"default"`
 - Description: name of the builtin template to use for changelog generation or path to a custom template.
   Note that `remote`, `repository` and `owner` are mandatory if the "remote" built-in template us used or if your
-  custom template make use of those variables. 
+  custom template make use of those variables.
 - Built-in templates : `default`, `remote`, `full_hash`
 - Example:
     ```toml
@@ -235,7 +235,7 @@ The config reference list all value that can be set in the `cog.toml` file at th
 - Type: `String`
 - Optional: `true`
 - Description: domain name of the git platform hosting the repository, used for Markdown link generation in changelogs.
-  when provided `repository` and `owner` are also required. 
+  when provided `repository` and `owner` are also required.
 - Example:
     ```toml
     [changelog]
@@ -351,11 +351,11 @@ The config reference list all value that can be set in the `cog.toml` file at th
         "cargo set-version {{version}}",
     ]
     ```
-  
+
 ## Mono-repository packages
 
 ### `path`
- 
+
 - Type: `String`
 - Optional: `false`
 - Description: set the package path.
@@ -364,7 +364,33 @@ The config reference list all value that can be set in the `cog.toml` file at th
     [packages]
     my_package = { path = "packages/my_package" }
    ```
-  
+
+### `include`
+
+- Type: `Array<String>`
+- Optional: `true`
+- Description: an array of additional path globs to consider part of the package.
+  These additional paths will trigger a package version bump in addition to the path in `path`.
+  The globs are evaluated with [globset](https://crates.io/crates/globset) with the `literal_separator` option enabled.
+- Example:
+    ```toml
+    [packages]
+    my_package = { path = "packages/my_package", include = ["common/**"] }
+   ```
+
+### `ignore`
+
+- Type: `Array<String>`
+- Optional: `true`
+- Description: an array of path globs to ignore as part of the package.
+  These paths will never trigger a package version bump (even if they normally would based on `path` and `include`).
+  The globs are evaluated with [globset](https://crates.io/crates/globset) with the `literal_separator` option enabled.
+- Example:
+    ```toml
+    [packages]
+    my_package = { path = "packages/my_package", include = ["packages/my_package/.github/**"] }
+   ```
+
 ### `changelog_path`
 
 - Type: `String`
@@ -409,9 +435,9 @@ The config reference list all value that can be set in the `cog.toml` file at th
   * [User guide ->  Automatic versioning for monorepo](../guide/#packages-hooks)
   * [User guide -> Post-bump hooks](../guide/#post-bump-hooks)
   * [User guide -> Version DSL](../guide/#version-dsl)
-  
+
 ### `post_bump_hooks`
- 
+
 - Type: `Array<String>`
 - Optional: `true`
 - Description: an array of command to execute after a version bump.
@@ -427,7 +453,7 @@ The config reference list all value that can be set in the `cog.toml` file at th
   * [User guide ->  Automatic versioning for monorepo](../guide/#packages-hooks)
   * [User guide -> Post-bump hooks](../guide/#post-bump-hooks)
   * [User guide -> Version DSL](../guide/#version-dsl)
-  
+
 ### `bump_profiles`
 
 - Type: `Hashmap<String, BumpProfile>`
@@ -438,14 +464,14 @@ The config reference list all value that can be set in the `cog.toml` file at th
     ```toml
     [packages.my-package]
     path = "packages/my-package"
-    
+
     [bump_profiles.hotfix]
     pre_bump_hooks = [
         "cargo build --release",
         "cargo fmt --all",
         "cargo set-version {{version}}",
     ]
-    
+
     post_bump_hooks = [
         "cargo package",
     ]
