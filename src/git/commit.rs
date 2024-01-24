@@ -165,7 +165,7 @@ mod test {
     use crate::git::repository::Repository;
     use crate::test_helpers::git_init_no_gpg;
     use anyhow::Result;
-    use cmd_lib::run_cmd, run_fun;
+    use cmd_lib::{run_cmd, run_fun, init_builtin_logger};
     use sealed_test::prelude::*;
     use speculoos::prelude::*;
 
