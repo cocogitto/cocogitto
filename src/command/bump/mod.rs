@@ -7,7 +7,7 @@ use crate::git::tag::Tag;
 use crate::hook::{Hook, HookVersion, Hooks};
 use crate::settings::{HookType, MonoRepoPackage, Settings};
 use crate::BumpError;
-use crate::{CocoGitto, SETTINGS};
+use crate::{CocoGitto, COMMITS_METADATA, SETTINGS};
 use anyhow::Result;
 use anyhow::{anyhow, bail, ensure, Context};
 use colored::Colorize;
@@ -324,10 +324,15 @@ impl Release<'_> {
         // won't affect the version number.
         let mut non_bump_commits: Vec<&CommitType> = conventional_commits
             .iter()
-            .filter_map(|commit| match &commit.conventional.commit_type {
-                CommitType::Feature | CommitType::BugFix => None,
-                _commit_type if commit.conventional.is_breaking_change => None,
-                _ => Some(&commit.conventional.commit_type),
+            .filter_map(|commit: &&Commit| {
+                let commit_config = COMMITS_METADATA.get(&commit.conventional.commit_type);
+                match commit_config {
+                    Some(commit_config) if commit_config.bump_minor || commit_config.bump_patch => {
+                        None
+                    }
+                    _ if commit.conventional.is_breaking_change => None,
+                    _ => Some(&commit.conventional.commit_type),
+                }
             })
             .collect();
 
