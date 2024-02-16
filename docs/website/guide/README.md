@@ -415,7 +415,7 @@ The default template we saw in the previous section
 
 A changelog template tailored for GitHub releases
 ```bash
-cog changelog --template hull_hash
+cog changelog --template full_hash
 ```
 
 ```markdown
