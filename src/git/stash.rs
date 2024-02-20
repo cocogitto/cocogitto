@@ -15,7 +15,7 @@ impl Repository {
 
 #[cfg(test)]
 mod test {
-    use crate::git::repository::Repository;
+    use crate::test_helpers::git_init_no_gpg;
     use crate::Tag;
     use anyhow::Result;
     use cmd_lib::run_cmd;
@@ -24,7 +24,7 @@ mod test {
 
     #[sealed_test]
     fn should_stash_failed_bump() -> Result<()> {
-        let mut repo = Repository::init(".")?;
+        let mut repo = git_init_no_gpg()?;
         run_cmd!(git commit -m "Initial commit" --allow-empty;)?;
 
         let statuses = repo.get_statuses()?.0;
@@ -37,7 +37,7 @@ mod test {
         let statuses = repo.get_statuses()?.0;
 
         assert_that!(statuses).has_length(1);
-        repo.stash_failed_version(Tag::from_str("1.0.0", None)?)?;
+        repo.stash_failed_version(Tag::from_str("1.0.0", None, None)?)?;
 
         let statuses = repo.get_statuses()?.0;
         assert_that!(statuses).is_empty();

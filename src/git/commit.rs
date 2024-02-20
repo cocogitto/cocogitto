@@ -110,6 +110,7 @@ fn gpg_sign_string(key: Option<String>, content: &str) -> Result<String, Git2Err
 #[cfg(test)]
 mod test {
     use crate::git::repository::Repository;
+    use crate::test_helpers::git_init_no_gpg;
     use anyhow::Result;
     use cmd_lib::run_cmd;
     use sealed_test::prelude::*;
@@ -118,13 +119,12 @@ mod test {
     #[sealed_test]
     fn create_commit_ok() -> Result<()> {
         // Arrange
+        let repo = git_init_no_gpg()?;
+
         run_cmd!(
-            git init;
             echo changes > file;
             git add .;
         )?;
-
-        let repo = Repository::open(".")?;
 
         // Act
         let oid = repo.commit("feat: a test commit", false, false);
@@ -163,11 +163,7 @@ mod test {
     #[sealed_test]
     fn create_empty_commit() -> Result<()> {
         // Arrange
-        run_cmd!(
-            git init;
-        )?;
-
-        let repo = Repository::open(".")?;
+        let repo = git_init_no_gpg()?;
 
         // Act
         let oid = repo.commit("feat: a test commit", false, true);
@@ -182,6 +178,7 @@ mod test {
         // Arrange
         run_cmd!(
             git init -b main;
+            git config --local commit.gpgsign false;
             echo changes > file;
             git add .;
         )
@@ -199,7 +196,7 @@ mod test {
     #[sealed_test]
     fn not_create_empty_commit() -> Result<()> {
         // Arrange
-        let repo = Repository::init(".")?;
+        let repo = git_init_no_gpg()?;
 
         // Act
         let oid = repo.commit("feat: a test commit", false, false);
@@ -212,12 +209,8 @@ mod test {
     #[sealed_test]
     fn not_create_empty_commit_with_unstaged_changed() -> Result<()> {
         // Arrange
-        run_cmd!(
-            git init;
-            echo changes > file;
-        )?;
-
-        let repo = Repository::open(".")?;
+        let repo = git_init_no_gpg()?;
+        run_cmd!(echo changes > file;)?;
 
         // Act
         let oid = repo.commit("feat: a test commit", false, false);

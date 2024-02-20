@@ -30,21 +30,20 @@ impl Repository {
 
 #[cfg(test)]
 mod test {
-    use crate::git::repository::Repository;
+    use crate::test_helpers::git_init_no_gpg;
     use anyhow::Result;
     use cmd_lib::run_cmd;
     use sealed_test::prelude::*;
 
     #[sealed_test]
     fn get_diff_some() -> Result<()> {
+        let repo = git_init_no_gpg()?;
+
         // Arrange
         run_cmd!(
-            git init;
             echo changes > file;
             git add .;
         )?;
-
-        let repo = Repository::open(".")?;
 
         // Act
         let diffs = repo.get_diff(false);
@@ -56,13 +55,12 @@ mod test {
 
     #[sealed_test]
     fn get_diff_none() -> Result<()> {
+        let repo = git_init_no_gpg()?;
+
         // Arrange
         run_cmd!(
-            git init;
             echo changes > file;
         )?;
-
-        let repo = Repository::open(".")?;
 
         // Act
         let diffs = repo.get_diff(false);
@@ -74,13 +72,12 @@ mod test {
 
     #[sealed_test]
     fn get_diff_include_untracked_some() -> Result<()> {
+        let repo = git_init_no_gpg()?;
+
         // Arrange
         run_cmd!(
-            git init;
             echo changes > file;
         )?;
-
-        let repo = Repository::open(".")?;
 
         // Act
         let diffs = repo.get_diff(true);
@@ -93,7 +90,7 @@ mod test {
     #[sealed_test]
     fn get_diff_include_untracked_none() -> Result<()> {
         // Arrange
-        let repo = Repository::init(".")?;
+        let repo = git_init_no_gpg()?;
 
         // Act
         let diffs = repo.get_diff(true);

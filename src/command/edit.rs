@@ -1,5 +1,6 @@
 use crate::conventional::commit::{verify, Commit};
-use crate::git::revspec::RevspecPattern;
+
+use crate::git::tag::TagLookUpOptions;
 use crate::{CocoGitto, SETTINGS};
 use anyhow::{anyhow, Result};
 use colored::*;
@@ -13,10 +14,12 @@ use tempfile::TempDir;
 impl CocoGitto {
     pub fn check_and_edit(&self, from_latest_tag: bool) -> Result<()> {
         let commits = if from_latest_tag {
-            self.repository
-                .get_commit_range(&RevspecPattern::default())?
+            let tag = self
+                .repository
+                .get_latest_tag(TagLookUpOptions::default())?;
+            self.repository.revwalk(&format!("{tag}.."))?
         } else {
-            self.repository.all_commits()?
+            self.repository.revwalk("..")?
         };
 
         let editor = std::env::var("EDITOR")
@@ -25,8 +28,7 @@ impl CocoGitto {
         let dir = TempDir::new()?;
 
         let errored_commits: Vec<Oid> = commits
-            .commits
-            .iter()
+            .iter_commits()
             .map(|commit| {
                 let conv_commit = Commit::from_git_commit(commit);
                 (commit.id(), conv_commit)

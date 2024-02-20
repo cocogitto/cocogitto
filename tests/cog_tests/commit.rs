@@ -148,7 +148,7 @@ fn commit_with_default_skip_ci_ok() -> Result<()> {
         .assert()
         .success();
 
-    let commit_message = git_log_head()?;
+    let commit_message = git_log_head_message()?;
 
     assert!(commit_message.contains("[skip ci]"));
 
@@ -173,7 +173,7 @@ fn commit_with_cog_toml_defined_skip_ci_ok() -> Result<()> {
         .assert()
         .success();
 
-    let commit_message = git_log_head()?;
+    let commit_message = git_log_head_message()?;
 
     assert!(commit_message.contains("[ci-skip]"));
 
@@ -199,7 +199,7 @@ fn commit_with_skip_ci_override_option_takes_precedence() -> Result<()> {
         .assert()
         .success();
 
-    let commit_message = git_log_head()?;
+    let commit_message = git_log_head_message()?;
 
     assert!(commit_message.contains("[skip-ci-override]"));
 

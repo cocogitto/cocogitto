@@ -52,9 +52,12 @@ impl CocoGitto {
         }
 
         if !SETTINGS.disable_changelog {
-            let pattern = self.get_revspec_for_tag(&current_tag)?;
-            let changelog =
-                self.get_package_changelog_with_target_version(pattern, tag.clone(), package_name)?;
+            let pattern = self.get_bump_revspec(&current_tag);
+            let changelog = self.get_package_changelog_with_target_version(
+                &pattern,
+                tag.clone(),
+                package_name,
+            )?;
 
             changelog.pretty_print_bump_summary()?;
 

@@ -9,7 +9,7 @@ use crate::conventional::changelog::ReleaseType;
 
 use crate::conventional::version::{Increment, IncrementCommand};
 
-use crate::git::tag::Tag;
+use crate::git::tag::{Tag, TagLookUpOptions};
 use crate::hook::HookVersion;
 use crate::{settings, CocoGitto, SETTINGS};
 use anyhow::Result;
@@ -188,7 +188,9 @@ impl CocoGitto {
             .max();
 
         // Get current global tag
-        let old = self.repository.get_latest_tag();
+        let old = self
+            .repository
+            .get_latest_tag(TagLookUpOptions::default().include_pre_release());
         let old = tag_or_fallback_to_zero(old)?;
         let mut tag = old.bump(
             IncrementCommand::AutoMonoRepoGlobal(increment_from_package_bumps),
@@ -232,9 +234,9 @@ impl CocoGitto {
         }
 
         if !SETTINGS.disable_changelog {
-            let pattern = self.get_revspec_for_tag(&old)?;
+            let pattern = self.get_bump_revspec(&old);
             let changelog =
-                self.get_monorepo_global_changelog_with_target_version(pattern, tag.clone())?;
+                self.get_monorepo_global_changelog_with_target_version(&pattern, tag.clone())?;
 
             changelog.pretty_print_bump_summary()?;
 
@@ -251,7 +253,11 @@ impl CocoGitto {
             )?;
         }
 
-        let current = self.repository.get_latest_tag().map(HookVersion::new).ok();
+        let current = self
+            .repository
+            .get_latest_tag(TagLookUpOptions::default())
+            .map(HookVersion::new)
+            .ok();
         let next_version = HookVersion::new(tag.clone());
 
         let hook_result = self.run_hooks(
@@ -341,7 +347,7 @@ impl CocoGitto {
         let bumps = self.get_current_packages()?;
 
         // Get current global tag
-        let old = self.repository.get_latest_tag();
+        let old = self.repository.get_latest_tag(TagLookUpOptions::default());
         let old = tag_or_fallback_to_zero(old)?;
         let mut tag = old.bump(increment, &self.repository)?;
         ensure_tag_is_greater_than_previous(&old, &tag)?;
@@ -368,9 +374,9 @@ impl CocoGitto {
         }
 
         if !SETTINGS.disable_changelog {
-            let pattern = self.get_revspec_for_tag(&old)?;
+            let pattern = self.get_bump_revspec(&old);
             let changelog =
-                self.get_monorepo_global_changelog_with_target_version(pattern, tag.clone())?;
+                self.get_monorepo_global_changelog_with_target_version(&pattern, tag.clone())?;
 
             changelog.pretty_print_bump_summary()?;
 
@@ -387,7 +393,11 @@ impl CocoGitto {
             )?;
         }
 
-        let current = self.repository.get_latest_tag().map(HookVersion::new).ok();
+        let current = self
+            .repository
+            .get_latest_tag(TagLookUpOptions::default())
+            .map(HookVersion::new)
+            .ok();
         let next_version = HookVersion::new(tag.clone());
 
         let hook_result = self.run_hooks(
@@ -533,7 +543,7 @@ impl CocoGitto {
             }
 
             let tag = Tag::create(next_version.version, Some(package_name.to_string()));
-            let pattern = self.get_revspec_for_tag(&old)?;
+            let pattern = self.get_bump_revspec(&old);
 
             let package = SETTINGS
                 .packages
@@ -541,7 +551,7 @@ impl CocoGitto {
                 .expect("package exists");
 
             let changelog = self.get_package_changelog_with_target_version(
-                pattern,
+                &pattern,
                 tag.clone(),
                 package_name.as_str(),
             )?;

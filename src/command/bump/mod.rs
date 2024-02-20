@@ -2,7 +2,7 @@ use crate::conventional::changelog::release::Release;
 use crate::conventional::commit::Commit;
 use crate::git::error::TagError;
 use crate::git::oid::OidOf;
-use crate::git::revspec::RevspecPattern;
+
 use crate::git::tag::Tag;
 use crate::hook::{Hook, HookVersion, Hooks};
 use crate::settings::{HookType, MonoRepoPackage, Settings};
@@ -109,6 +109,14 @@ fn tag_or_fallback_to_zero(tag: Result<Tag, TagError>) -> Result<Tag> {
 }
 
 impl CocoGitto {
+    fn get_bump_revspec(&mut self, current_tag: &Tag) -> String {
+        if current_tag.is_zero() {
+            "..".to_string()
+        } else {
+            format!("{current_tag}..")
+        }
+    }
+
     pub fn unwrap_or_stash_and_exit<T>(&mut self, tag: &Tag, result: Result<T>) -> T {
         match result {
             Ok(res) => res,
@@ -172,13 +180,8 @@ impl CocoGitto {
     }
 
     /// The target version is not created yet when generating the changelog.
-    pub fn get_changelog_with_target_version(
-        &self,
-        pattern: RevspecPattern,
-        tag: Tag,
-    ) -> Result<Release> {
-        let commit_range = self.repository.get_commit_range(&pattern)?;
-
+    pub fn get_changelog_with_target_version(&self, pattern: &str, tag: Tag) -> Result<Release> {
+        let commit_range = self.repository.revwalk(pattern)?;
         let mut release = Release::from(commit_range);
         release.version = OidOf::Tag(tag);
         Ok(release)
@@ -187,13 +190,13 @@ impl CocoGitto {
     /// The target package version is not created yet when generating the changelog.
     pub fn get_package_changelog_with_target_version(
         &self,
-        pattern: RevspecPattern,
+        pattern: &str,
         tag: Tag,
         package: &str,
     ) -> Result<Release> {
         let commit_range = self
             .repository
-            .get_commit_range_for_package(&pattern, package)?;
+            .get_commit_range_for_package(pattern, package)?;
 
         let mut release = Release::from(commit_range);
         release.version = OidOf::Tag(tag);
@@ -203,12 +206,12 @@ impl CocoGitto {
     /// The target global monorepo version is not created yet when generating the changelog.
     pub fn get_monorepo_global_changelog_with_target_version(
         &self,
-        pattern: RevspecPattern,
+        pattern: &str,
         tag: Tag,
     ) -> Result<Release> {
         let commit_range = self
             .repository
-            .get_commit_range_for_monorepo_global(&pattern)?;
+            .get_commit_range_for_monorepo_global(pattern)?;
 
         let mut release = Release::from(commit_range);
         release.version = OidOf::Tag(tag);
@@ -297,18 +300,6 @@ impl CocoGitto {
         }
 
         Ok(())
-    }
-
-    fn get_revspec_for_tag(&mut self, tag: &Tag) -> Result<RevspecPattern> {
-        let origin = if tag.is_zero() {
-            self.repository.get_first_commit()?.to_string()
-        } else {
-            tag.oid_unchecked().to_string()
-        };
-
-        let target = self.repository.get_head_commit_oid()?.to_string();
-        let pattern = (origin.as_str(), target.as_str());
-        Ok(RevspecPattern::from(pattern))
     }
 }
 

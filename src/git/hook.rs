@@ -53,6 +53,7 @@ mod tests {
     use crate::CocoGitto;
 
     use crate::settings::{GitHook, GitHookType, Settings};
+    use crate::test_helpers::git_init_no_gpg;
     use anyhow::Result;
     use cmd_lib::run_cmd;
     use sealed_test::prelude::*;
@@ -62,7 +63,7 @@ mod tests {
     #[sealed_test]
     fn add_pre_commit_hook() -> Result<()> {
         // Arrange
-        run_cmd!(git init)?;
+        let _ = git_init_no_gpg()?;
         let mut git_hooks = HashMap::new();
         let hooks_script = r#"
 if cog check; then
@@ -104,7 +105,7 @@ exit 1"#
     #[sealed_test]
     fn add_all() -> Result<()> {
         // Arrange
-        run_cmd!(git init)?;
+        let _ = git_init_no_gpg()?;
         run_cmd!(echo "echo toto" > pre-push;)?;
 
         let mut git_hooks = HashMap::new();

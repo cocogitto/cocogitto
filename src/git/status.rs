@@ -130,7 +130,7 @@ mod test {
 
     use crate::git::status::{Changes, Statuses};
 
-    use crate::git::repository::Repository;
+    use crate::test_helpers::git_init_no_gpg;
     use anyhow::{anyhow, Result};
     use git2::StatusOptions;
     use sealed_test::prelude::*;
@@ -139,7 +139,7 @@ mod test {
     #[sealed_test]
     fn get_repo_statuses_empty() -> Result<()> {
         // Arrange
-        let repo = Repository::init(".")?;
+        let repo = git_init_no_gpg()?;
 
         // Act
         let statuses = repo.get_statuses()?;
@@ -152,7 +152,7 @@ mod test {
     #[sealed_test]
     fn get_repo_statuses_not_empty() -> Result<()> {
         // Arrange
-        let repo = Repository::init(".")?;
+        let repo = git_init_no_gpg()?;
         std::fs::write("file", "changes")?;
 
         // Act
@@ -166,7 +166,7 @@ mod test {
     #[sealed_test]
     fn should_get_statuses_from_git_statuses() -> Result<()> {
         // Arrange
-        let repo = Repository::init(".")?;
+        let repo = git_init_no_gpg()?;
         fs::write("file", "content")?;
 
         let mut options = StatusOptions::new();

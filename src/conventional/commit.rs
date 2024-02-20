@@ -12,10 +12,10 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct Commit {
-    pub(crate) oid: String,
-    pub(crate) conventional: ConventionalCommit,
-    pub(crate) author: String,
-    pub(crate) date: NaiveDateTime,
+    pub oid: String,
+    pub conventional: ConventionalCommit,
+    pub author: String,
+    pub date: NaiveDateTime,
 }
 
 /// Configurations to create new conventional commit types or override behaviors of the existing ones.
@@ -302,11 +302,10 @@ pub(crate) fn format_summary(commit: &ConventionalCommit) -> String {
 mod test {
     use crate::conventional::commit::{format_summary, verify, Commit, CommitConfig};
 
-    use chrono::NaiveDateTime;
-    use cmd_lib::run_fun;
-
+    use crate::test_helpers::{commit, git_init_no_gpg};
     use crate::Repository;
     use anyhow::Result;
+    use chrono::NaiveDateTime;
     use conventional_commit_parser::commit::{CommitType, ConventionalCommit, Footer, Separator};
     use git2::Oid;
     use indoc::indoc;
@@ -527,17 +526,11 @@ mod test {
     }
 
     #[sealed_test]
-    fn should_map_conventional_commit() {
+    fn should_map_conventional_commit() -> Result<()> {
         // Arrange
-        let oid = run_fun!(
-            git init;
-            git commit --allow-empty -q -m "feat: a commit";
-            git log --format=%H -n 1;
-        )
-        .unwrap();
-
+        let repo = git_init_no_gpg()?;
+        let oid = commit("feat: a commit")?;
         let oid = Oid::from_str(&oid).unwrap();
-        let repo = Repository::open(".").unwrap();
         let commit = repo.0.find_commit(oid).expect("Unable to find commit");
 
         // Act
@@ -545,20 +538,15 @@ mod test {
 
         // Assert
         assert_that!(commit).is_ok();
+        Ok(())
     }
 
     #[sealed_test]
-    fn map_conventional_commit_should_fail_with_invalid_type() {
+    fn map_conventional_commit_should_fail_with_invalid_type() -> Result<()> {
         // Arrange
-        let oid_str = run_fun!(
-            git init;
-            git commit --allow-empty -q -m "toto: a commit";
-            git log --format=%H -n 1;
-        )
-        .unwrap();
-
+        let repo = git_init_no_gpg()?;
+        let oid_str = commit("toto: a commit")?;
         let oid = Oid::from_str(&oid_str).unwrap();
-        let repo = Repository::open(".").unwrap();
         let commit = repo.0.find_commit(oid).expect("Unable to find commit");
 
         // Act
@@ -566,20 +554,16 @@ mod test {
 
         // Assert
         assert_that!(commit).is_err();
+        Ok(())
     }
 
     #[sealed_test]
-    fn map_conventional_commit_should_fail() {
+    fn map_conventional_commit_should_fail() -> Result<()> {
         // Arrange
-        let oid_str = run_fun!(
-            git init;
-            git commit --allow-empty -q -m "a commit";
-            git log --format=%H -n 1;
-        )
-        .unwrap();
-
+        let repo = git_init_no_gpg()?;
+        let oid_str = commit("a commit")?;
         let oid = Oid::from_str(&oid_str).unwrap();
-        let repo = Repository::open(".").unwrap();
+        let _ = Repository::open(".").unwrap();
         let commit = repo.0.find_commit(oid).expect("Unable to find commit");
 
         // Act
@@ -587,5 +571,6 @@ mod test {
 
         // Assert
         assert_that!(commit).is_err();
+        Ok(())
     }
 }

@@ -1,4 +1,5 @@
 use crate::git::status::Statuses;
+
 use colored::Colorize;
 use serde::de::StdError;
 use std::fmt::{Display, Formatter};
@@ -27,6 +28,7 @@ pub enum Git2Error {
     TagError(TagError),
     GitHookNonZeroExit(i32),
     InvalidCommitRangePattern(String),
+    UnknownRevision(String),
 }
 
 #[derive(Debug)]
@@ -125,6 +127,9 @@ impl Display for Git2Error {
             }
             Git2Error::InvalidCommitRangePattern(pattern) => {
                 writeln!(f, "invalid commit range pattern: `{pattern}`")
+            }
+            Git2Error::UnknownRevision(rev) => {
+                writeln!(f, "Unknown revision: `{rev}`")
             }
         }?;
 

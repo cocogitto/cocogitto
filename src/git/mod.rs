@@ -5,7 +5,7 @@ pub mod hook;
 pub mod monorepo;
 pub mod oid;
 pub mod repository;
-pub mod revspec;
+pub mod rev;
 pub mod stash;
 pub mod status;
 pub mod tag;

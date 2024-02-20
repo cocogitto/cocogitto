@@ -10,14 +10,14 @@ pub enum OidOf {
     Tag(Tag),
     Head(Oid),
     Other(Oid),
+    FirstCommit(Oid),
 }
 
 impl OidOf {
     pub fn oid(&self) -> &Oid {
         match self {
             OidOf::Tag(t) => t.oid_unchecked(),
-            OidOf::Head(o) => o,
-            OidOf::Other(o) => o,
+            OidOf::Head(o) | OidOf::Other(o) | OidOf::FirstCommit(o) => o,
         }
     }
 }
@@ -29,6 +29,7 @@ impl Display for OidOf {
             OidOf::Tag(tag) => write!(f, "{tag}"),
             OidOf::Head(_) => write!(f, "HEAD"),
             OidOf::Other(oid) => write!(f, "{}", &oid.to_string()),
+            OidOf::FirstCommit(oid) => write!(f, "{}", &oid.to_string()),
         }
     }
 }

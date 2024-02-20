@@ -17,7 +17,6 @@ use settings::Settings;
 
 use crate::git::error::{Git2Error, TagError};
 
-use crate::git::revspec::RevspecPattern;
 use crate::git::tag::Tag;
 
 pub mod command;
@@ -145,5 +144,32 @@ impl CocoGitto {
             .get_repo_dir()
             .map(|path| path.join(".git/COMMIT_EDITMSG"))
             .expect("git repository")
+    }
+}
+
+#[cfg(test)]
+pub mod test_helpers {
+    use crate::git::repository::Repository;
+    use cmd_lib::{run_cmd, run_fun};
+
+    pub(crate) fn git_init_no_gpg() -> anyhow::Result<Repository> {
+        run_cmd!(
+            git init -b master;
+            git config --local commit.gpgsign false;
+        )?;
+
+        Ok(Repository::open(".")?)
+    }
+
+    pub(crate) fn commit(message: &str) -> anyhow::Result<String> {
+        Ok(run_fun!(
+            git commit --allow-empty -q -m $message;
+            git log --format=%H -n 1;
+        )?)
+    }
+
+    pub(crate) fn git_tag(version: &str) -> anyhow::Result<()> {
+        run_fun!(git tag $version;)?;
+        Ok(())
     }
 }
