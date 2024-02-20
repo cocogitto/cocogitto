@@ -4,7 +4,8 @@ use crate::command::bump::{
 
 use crate::conventional::changelog::ReleaseType;
 use crate::conventional::version::IncrementCommand;
-use crate::git::tag::Tag;
+
+use crate::git::tag::{Tag, TagLookUpOptions};
 use crate::hook::HookVersion;
 use crate::{settings, CocoGitto, SETTINGS};
 use anyhow::Result;
@@ -28,7 +29,7 @@ impl CocoGitto {
     ) -> Result<()> {
         self.pre_bump_checks(skip_untracked)?;
 
-        let current_tag = self.repository.get_latest_tag();
+        let current_tag = self.repository.get_latest_tag(TagLookUpOptions::default());
         let current_tag = tag_or_fallback_to_zero(current_tag)?;
         let mut tag = current_tag.bump(increment, &self.repository)?;
         if current_tag == tag {
@@ -49,10 +50,10 @@ impl CocoGitto {
             return Ok(());
         }
 
-        let pattern = self.get_revspec_for_tag(&current_tag)?;
+        let pattern = self.get_bump_revspec(&current_tag);
 
         if !SETTINGS.disable_changelog {
-            let changelog = self.get_changelog_with_target_version(pattern, tag.clone())?;
+            let changelog = self.get_changelog_with_target_version(&pattern, tag.clone())?;
             changelog.pretty_print_bump_summary()?;
 
             let path = settings::changelog_path();
@@ -61,7 +62,11 @@ impl CocoGitto {
             changelog.write_to_file(path, template, ReleaseType::Standard)?;
         }
 
-        let current = self.repository.get_latest_tag().map(HookVersion::new).ok();
+        let current = self
+            .repository
+            .get_latest_tag(TagLookUpOptions::default())
+            .map(HookVersion::new)
+            .ok();
 
         let next_version = HookVersion::new(tag.clone());
 

@@ -1,12 +1,12 @@
 use crate::conventional::commit::Commit;
 use crate::error::CogCheckReport;
-use crate::git::revspec::RevspecPattern;
+
+use crate::git::tag::TagLookUpOptions;
 use crate::CocoGitto;
 use anyhow::anyhow;
 use anyhow::Result;
 use colored::*;
 use log::info;
-use std::str::FromStr;
 
 impl CocoGitto {
     pub fn check(
@@ -16,27 +16,26 @@ impl CocoGitto {
         range: Option<String>,
     ) -> Result<()> {
         let commit_range = if let Some(range) = range {
-            self.repository
-                .get_commit_range(&RevspecPattern::from_str(range.as_str())?)?
+            self.repository.revwalk(&range)?
         } else if check_from_latest_tag {
-            self.repository
-                .get_commit_range(&RevspecPattern::default())?
+            let tag = self
+                .repository
+                .get_latest_tag(TagLookUpOptions::default())?;
+            self.repository.revwalk(&format!("{tag}.."))?
         } else {
-            self.repository.all_commits()?
+            self.repository.revwalk("..")?
         };
 
         let errors: Vec<_> = if ignore_merge_commits {
             commit_range
-                .commits
-                .iter()
+                .iter_commits()
                 .filter(|commit| commit.parent_count() <= 1)
                 .map(Commit::from_git_commit)
                 .filter_map(Result::err)
                 .collect()
         } else {
             commit_range
-                .commits
-                .iter()
+                .iter_commits()
                 .map(Commit::from_git_commit)
                 .filter_map(Result::err)
                 .collect()
@@ -48,7 +47,7 @@ impl CocoGitto {
             Ok(())
         } else {
             let report = CogCheckReport {
-                from: commit_range.from,
+                from: commit_range.from_oid(),
                 errors: errors.into_iter().map(|err| *err).collect(),
             };
             Err(anyhow!("{}", report))

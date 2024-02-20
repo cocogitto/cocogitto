@@ -4,10 +4,10 @@ use serde::Serialize;
 
 use crate::conventional::commit::Commit;
 use crate::git::oid::OidOf;
-use crate::git::revspec::CommitRange;
-use crate::{settings, SETTINGS};
+use crate::git::rev::CommitIter;
+use crate::settings;
 use colored::Colorize;
-use git2::Oid;
+
 use log::warn;
 
 #[derive(Debug, Serialize)]
@@ -19,66 +19,60 @@ pub struct Release<'a> {
     pub previous: Option<Box<Release<'a>>>,
 }
 
-impl Release<'_> {
-    pub fn drain_to_target(&mut self, target: &Oid) {
-        let target_idx = self
-            .commits
-            .iter()
-            .enumerate()
-            .find(|(_idx, commit)| commit.commit.oid == target.to_string())
-            .map(|(idx, _)| idx);
+impl From<CommitIter<'_>> for Release<'_> {
+    fn from(commits: CommitIter<'_>) -> Self {
+        let mut releases = vec![];
+        let mut commit_iter = commits.into_iter().rev().peekable();
 
-        match target_idx {
-            None => {
-                if let Some(previous) = &mut self.previous {
-                    previous.drain_to_target(target)
+        while let Some((_oid, _commit)) = commit_iter.peek() {
+            let mut release_commits = vec![];
+
+            for (oid, commit) in commit_iter.by_ref() {
+                if matches!(oid, OidOf::Tag(_)) {
+                    release_commits.push((oid, commit));
+                    break;
                 }
+                release_commits.push((oid, commit));
             }
-            Some(idx) => {
-                if self.commits.get(idx + 1).is_some() {
-                    self.commits.drain(idx + 1..);
-                }
-            }
+
+            release_commits.reverse();
+            releases.push(release_commits);
         }
-    }
 
-    pub fn contains_oid(&self, oid: &Oid) -> bool {
-        self.commits
-            .iter()
-            .any(|commit| commit.commit.oid == oid.to_string())
-    }
-}
+        let mut current = None;
 
-impl<'a> From<CommitRange<'a>> for Release<'a> {
-    fn from(commit_range: CommitRange<'a>) -> Self {
-        let mut commits = vec![];
-
-        for commit in commit_range.commits {
-            // Ignore merge commits
-            if commit.parent_count() > 1 && SETTINGS.ignore_merge_commits {
-                continue;
-            }
-
-            match Commit::from_git_commit(&commit) {
-                Ok(commit) => {
-                    if !commit.should_omit() {
-                        commits.push(ChangelogCommit::from(commit))
-                    }
-                }
-                Err(err) => {
-                    let err = err.to_string().red();
-                    warn!("{}", err);
-                }
+        for release in releases {
+            let next = Release {
+                version: release.first().unwrap().0.clone(),
+                from: current
+                    .as_ref()
+                    .map(|current: &Release| current.version.clone())
+                    .unwrap_or(release.last().unwrap().0.clone()),
+                date: Utc::now().naive_local(),
+                commits: release
+                    .iter()
+                    .filter_map(|(_, commit)| match Commit::from_git_commit(commit) {
+                        Ok(commit) => {
+                            if !commit.should_omit() {
+                                Some(ChangelogCommit::from(commit))
+                            } else {
+                                None
+                            }
+                        }
+                        Err(err) => {
+                            let err = err.to_string().red();
+                            warn!("{}", err);
+                            None
+                        }
+                    })
+                    .collect(),
+                previous: current.map(Box::new),
             };
+
+            current = Some(next);
         }
 
-        Release {
-            version: commit_range.to,
-            from: commit_range.from,
-            date: Utc::now().naive_utc(),
-            commits,
-            previous: None,
-        }
+        current.expect("a release")
     }
 }
 
@@ -130,7 +124,18 @@ mod test {
     };
     use crate::conventional::commit::Commit;
     use crate::git::oid::OidOf;
+    use crate::git::repository::Repository;
+
     use crate::git::tag::Tag;
+
+    #[test]
+    fn test() -> anyhow::Result<()> {
+        let repo = Repository::open(".")?;
+        let iter = repo.revwalk("..")?;
+        let release = Release::from(iter);
+        println!("{:?}", release);
+        Ok(())
+    }
 
     #[test]
     fn should_render_default_template() -> Result<()> {
@@ -545,11 +550,13 @@ mod test {
             let version = Tag::from_str(
                 "1.0.0",
                 Some(Oid::from_str("9bb5facac5724bc81385fdd740fedbb49056da00").unwrap()),
+                None,
             )
             .unwrap();
             let from = Tag::from_str(
                 "0.1.0",
                 Some(Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap()),
+                None,
             )
             .unwrap();
             Release {
@@ -633,10 +640,12 @@ mod test {
                     version: OidOf::Tag(Tag::from_str(
                         "0.1.0",
                         Some(Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap()),
+                        None,
                     )?),
                     from: Some(OidOf::Tag(Tag::from_str(
                         "0.2.0",
                         Some(Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap()),
+                        None,
                     )?)),
                 },
                 PackageBumpContext {
@@ -645,10 +654,12 @@ mod test {
                     version: OidOf::Tag(Tag::from_str(
                         "0.2.0",
                         Some(Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap()),
+                        None,
                     )?),
                     from: Some(OidOf::Tag(Tag::from_str(
                         "0.3.0",
                         Some(Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap()),
+                        None,
                     )?)),
                 },
             ],
@@ -667,6 +678,7 @@ mod test {
                     version: OidOf::Tag(Tag::from_str(
                         "0.1.0",
                         Some(Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap()),
+                        None,
                     )?),
                     from: None,
                 },
@@ -676,6 +688,7 @@ mod test {
                     version: OidOf::Tag(Tag::from_str(
                         "0.2.0",
                         Some(Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap()),
+                        None,
                     )?),
                     from: None,
                 },

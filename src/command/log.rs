@@ -1,4 +1,5 @@
 use crate::conventional::commit::Commit;
+use crate::git::tag::TagLookUpOptions;
 use crate::log::filter::CommitFilters;
 use crate::CocoGitto;
 use anyhow::Result;
@@ -6,14 +7,13 @@ use std::fmt::Write;
 
 impl CocoGitto {
     pub fn get_log(&self, filters: CommitFilters) -> Result<String> {
-        let commits = self.repository.all_commits()?;
+        let commits = self.repository.revwalk("..")?;
         let logs = commits
-            .commits
-            .iter()
+            .iter_commits()
             // Remove merge commits
             .filter(|commit| !commit.message().unwrap_or("").starts_with("Merge"))
             .filter(|commit| filters.filter_git2_commit(commit))
-            .map(Commit::from_git_commit)
+            .map(|commit| Commit::from_git_commit(commit))
             // Apply filters
             .filter(|commit| match commit {
                 Ok(commit) => filters.filters(commit),
@@ -38,7 +38,10 @@ impl CocoGitto {
             write!(&mut repo_tag_name, " on {branch_shorthand}").unwrap();
         }
 
-        if let Ok(latest_tag) = self.repository.get_latest_tag() {
+        if let Ok(latest_tag) = self
+            .repository
+            .get_latest_tag(TagLookUpOptions::default().include_pre_release())
+        {
             write!(&mut repo_tag_name, " {latest_tag}").unwrap();
         };
 

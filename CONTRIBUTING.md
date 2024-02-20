@@ -85,14 +85,13 @@ mod test {
   #[sealed_test]
   fn create_commit_ok() -> Result<()> {
     // Arrange
+    let repo = git_init_no_gpg()?;
+    
     run_cmd!(
-            git init;
             echo changes > file;
             git add .;
         )?;
-
-    let repo = Repository::open(".")?;
-
+    
     // Act
     let oid = repo.commit("feat: a test commit");
 

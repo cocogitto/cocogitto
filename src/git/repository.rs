@@ -113,10 +113,11 @@ mod test {
     use speculoos::prelude::*;
 
     use crate::git::repository::Repository;
+    use crate::test_helpers::git_init_no_gpg;
 
     #[sealed_test]
     fn init_repo() -> Result<()> {
-        let repo = Repository::init(".");
+        let repo = git_init_no_gpg();
 
         assert_that!(repo).is_ok();
         Ok(())
@@ -142,12 +143,12 @@ mod test {
     #[sealed_test]
     fn get_repo_head_oid_ok() -> Result<()> {
         // Arrange
+        let repo = git_init_no_gpg()?;
+
         run_cmd!(
-            git init;
             echo changes > file;
             git add .;
         )?;
-        let repo = Repository::open(".")?;
         let commit_oid = repo.commit("first commit", false, false)?;
 
         // Act
@@ -161,7 +162,7 @@ mod test {
     #[sealed_test]
     fn get_repo_head_oid_err() -> Result<()> {
         // Arrange
-        let repo = Repository::init(".")?;
+        let repo = git_init_no_gpg()?;
 
         // Act
         let oid = repo.get_head_commit_oid();
@@ -174,12 +175,13 @@ mod test {
     #[sealed_test]
     fn get_repo_head_obj_ok() -> Result<()> {
         // Arrange
+        let repo = git_init_no_gpg()?;
+
         run_cmd!(
-            git init;
             echo changes > file;
             git add .;
         )?;
-        let repo = Repository::open(".")?;
+
         let commit_oid = repo.commit("first commit", false, false)?;
 
         // Act
@@ -193,12 +195,12 @@ mod test {
     #[sealed_test]
     fn get_repo_head_obj_err() -> Result<()> {
         // Arrange
+        let repo = git_init_no_gpg()?;
+
         run_cmd!(
-            git init;
             echo changes > file;
             git add .;
         )?;
-        let repo = Repository::open(".")?;
 
         // Act
         let head = repo.get_head_commit();
@@ -211,12 +213,12 @@ mod test {
     #[sealed_test]
     fn get_head_some() -> Result<()> {
         // Arrange
+        let repo = git_init_no_gpg()?;
+
         run_cmd!(
-            git init;
             echo changes > file;
             git add .;
         )?;
-        let repo = Repository::open(".")?;
 
         repo.commit("first commit", false, false)?;
 
@@ -231,13 +233,12 @@ mod test {
     #[sealed_test]
     fn get_head_none() -> Result<()> {
         // Arrange
+        let repo = git_init_no_gpg()?;
+
         run_cmd!(
-            git init;
             echo changes > file;
             git add .;
         )?;
-
-        let repo = Repository::open(".")?;
 
         // Act
         let head = repo.get_head();
@@ -250,12 +251,13 @@ mod test {
     #[sealed_test]
     fn get_branch_short_hand() -> Result<()> {
         // Arrange
+        let repo = git_init_no_gpg()?;
+
         run_cmd!(
-            git init -b master;
             echo changes > file;
             git add .;
         )?;
-        let repo = Repository::open(".")?;
+
         repo.commit("hello one", false, false)?;
 
         // Act

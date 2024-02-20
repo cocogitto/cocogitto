@@ -3,12 +3,11 @@ mod mangen;
 
 use std::fs;
 use std::path::PathBuf;
-use std::str::FromStr;
 
 use cocogitto::conventional::changelog::template::{RemoteContext, Template};
 use cocogitto::conventional::commit as conv_commit;
 use cocogitto::conventional::version::IncrementCommand;
-use cocogitto::git::revspec::RevspecPattern;
+
 use cocogitto::log::filter::{CommitFilter, CommitFilters};
 use cocogitto::log::output::Output;
 use cocogitto::{CocoGitto, CommitHook, SETTINGS};
@@ -559,15 +558,12 @@ fn main() -> Result<()> {
                 Template::default()
             };
 
-            let pattern = pattern
-                .as_deref()
-                .map(RevspecPattern::from_str)
-                .transpose()?;
-
+            // TODO: fallback to tag here
+            let pattern = pattern.as_deref().unwrap_or("..");
             let result = match at {
                 Some(at) => cocogitto.get_changelog_at_tag(&at, template)?,
                 None => {
-                    let changelog = cocogitto.get_changelog(pattern.unwrap_or_default(), true)?;
+                    let changelog = cocogitto.get_changelog(pattern, true)?;
                     changelog.into_markdown(template)?
                 }
             };

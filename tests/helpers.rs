@@ -43,6 +43,7 @@ pub fn init_monorepo(settings: &mut Settings) -> Result<()> {
 pub fn git_init() -> Result<()> {
     run_cmd!(
         git init -b master;
+        git config --local commit.gpgsign false;
         git config --local user.name Tom;
         git config --local user.email toml.bombadil@themail.org;
     )?;
@@ -54,6 +55,21 @@ pub fn git_init() -> Result<()> {
 /// - Change the current directory to the newly created repository
 /// - Setup a local git user named Tom <toml.bombadil@themail.org>
 pub fn git_init_and_set_current_path(path: &str) -> Result<()> {
+    run_cmd!(
+        git init $path;
+        cd $path;
+        git config --local commit.gpgsign false;
+    )?;
+
+    std::env::set_current_dir(path).expect("Unable to move into to test repository");
+
+    Ok(())
+}
+
+/// - Init a repository in the given path
+/// - Change the current directory to the newly created repository
+/// - Setup a local git user named Tom <toml.bombadil@themail.org>
+pub fn git_init_and_set_current_path_gpg(path: &str) -> Result<()> {
     run_cmd!(
         git init $path;
         cd $path;
@@ -117,10 +133,10 @@ pub fn assert_tag_does_not_exist(tag: &str) -> Result<()> {
 
 pub fn assert_latest_tag(tag: &str) -> Result<()> {
     let tags = run_fun!(git --no-pager tag)?;
-    let tag = Tag::from_str(tag, None)?;
+    let tag = Tag::from_str(tag, None, None)?;
     let mut tags: Vec<Tag> = tags
         .split('\n')
-        .filter_map(|tag| Tag::from_str(tag, None).ok())
+        .filter_map(|tag| Tag::from_str(tag, None, None).ok())
         .collect();
 
     tags.sort();
@@ -136,9 +152,14 @@ pub fn assert_tag_is_annotated(tag: &str) -> Result<()> {
     Ok(())
 }
 
-/// Git log showing only the HEAD commit, this can be used to make assertion on the last commit
-pub fn git_log_head() -> Result<String> {
+/// Git log showing only the HEAD commit message, this can be used to make assertion on the last commit
+pub fn git_log_head_message() -> Result<String> {
     run_fun!(git log -1 --pretty=%B).map_err(|e| anyhow!(e))
+}
+
+/// Git log showing only the HEAD commit sha, this can be used to make assertion on the last commit
+pub fn git_log_head_sha() -> Result<String> {
+    run_fun!(git log -1 --pretty=%H).map_err(|e| anyhow!(e))
 }
 
 /// Create an empty `cog.toml` config file in the current directory

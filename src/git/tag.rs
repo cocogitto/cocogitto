@@ -1,28 +1,69 @@
+use std::cmp::Ordering;
+use std::fmt;
+use std::fmt::Formatter;
+
+use git2::Oid;
+use semver::Version;
+
 use crate::conventional::version::Increment;
 use crate::git::error::{Git2Error, TagError};
 use crate::git::repository::Repository;
 use crate::SETTINGS;
-use git2::Oid;
-use semver::Version;
-use std::cmp::Ordering;
-use std::fmt;
-use std::fmt::Formatter;
+
+#[derive(Default)]
+pub struct TagLookUpOptions<'a> {
+    include_pre_release: bool,
+    package_name: Option<&'a str>,
+    packages_only: bool,
+    include_packages: bool,
+}
+
+impl<'a> TagLookUpOptions<'a> {
+    /// Perform a tag lookup with pre-release tag included
+    pub fn include_pre_release(mut self) -> Self {
+        self.include_pre_release = true;
+        self
+    }
+
+    /// Perform a tag lookup, keeping only tags for the given package
+    pub fn package(package: &'a str) -> Self {
+        TagLookUpOptions {
+            include_pre_release: false,
+            package_name: Some(package),
+            packages_only: true,
+            include_packages: true,
+        }
+    }
+
+    /// Perform a tag lookup, keeping only packages tags.
+    pub fn packages_only(mut self) -> Self {
+        self.packages_only = true;
+        self
+    }
+
+    /// Perform a tag lookup, mixing non package and package tags.
+    pub fn include_packages(mut self) -> Self {
+        self.include_packages = true;
+        self
+    }
+}
 
 impl Repository {
     /// Given a tag name return a [`Tag`], this will fail if the requested
     /// tag (without configured prefix) is not semver compliant or if the tag
     /// does not exist.
     pub fn resolve_tag(&self, tag: &str) -> Result<Tag, TagError> {
-        self.resolve_lightweight_tag(tag)
-    }
-
-    /// Resolve a tag from a given `&str`, return an error if the tag is not found.
-    fn resolve_lightweight_tag(&self, tag: &str) -> Result<Tag, TagError> {
         self.0
             .resolve_reference_from_short_name(tag)
             .map_err(|err| TagError::not_found(tag, err))
             .map(|reference| reference.target().unwrap())
-            .map(|oid| Tag::from_str(tag, Some(oid)))?
+            .map(|commit_oid| {
+                if let Ok(annotated_tag) = self.0.find_tag(commit_oid) {
+                    Tag::from_str(tag, Some(commit_oid), Some(annotated_tag.target_id()))
+                } else {
+                    Tag::from_str(tag, Some(commit_oid), None)
+                }
+            })?
     }
 
     pub(crate) fn create_tag(&self, tag: &Tag) -> Result<(), Git2Error> {
@@ -53,65 +94,131 @@ impl Repository {
     }
 
     /// Get the latest tag, will ignore package tag if on a monorepo
-    pub(crate) fn get_latest_tag(&self) -> Result<Tag, TagError> {
-        let tags: Vec<Tag> = self.all_tags()?;
-        tags.into_iter()
-            .filter(|tag| tag.package.is_none())
-            .filter(|tag| tag.version.pre.is_empty())
-            .max()
-            .ok_or(TagError::NoTag)
+    pub(crate) fn get_latest_tag(&self, options: TagLookUpOptions) -> Result<Tag, TagError> {
+        let tags: Vec<Tag> = self.tags(options)?;
+        tags.into_iter().max().ok_or(TagError::NoTag)
     }
 
-    pub(crate) fn all_tags(&self) -> Result<Vec<Tag>, TagError> {
-        Ok(self
-            .tags()?
+    pub(crate) fn get_previous_tag(&self, current: &Tag) -> Result<Option<Tag>, TagError> {
+        let mut options = match &current.package {
+            None => TagLookUpOptions::default(),
+            Some(package) => TagLookUpOptions::package(package),
+        };
+
+        if !current.version.pre.is_empty() {
+            options.include_pre_release = true
+        }
+
+        let mut tags: Vec<Tag> = self
+            .tags(options)?
+            .into_iter()
+            .filter(|tag| tag.package == current.package)
+            .collect();
+
+        tags.sort();
+
+        let Some(current_idx) = tags
             .iter()
-            .map(|tag| self.resolve_lightweight_tag(tag))
-            .filter_map(Result::ok)
-            .collect())
+            .enumerate()
+            .find(|(_, tag)| tag == &current)
+            .map(|(idx, _)| idx)
+        else {
+            return Ok(None);
+        };
+
+        if current_idx == 0 {
+            return Ok(None);
+        }
+
+        Ok(tags.get(current_idx - 1).cloned())
     }
 
-    pub(crate) fn get_latest_tag_oid(&self) -> Result<Oid, TagError> {
-        self.get_latest_tag()
+    pub(crate) fn get_latest_tag_oid(&self, options: TagLookUpOptions) -> Result<Oid, TagError> {
+        self.get_latest_tag(options)
             .map(|tag| tag.oid_unchecked().to_owned())
     }
 
-    fn tags(&self) -> Result<Vec<String>, TagError> {
+    pub fn tags(&self, option: TagLookUpOptions) -> Result<Vec<Tag>, TagError> {
+        let pattern = get_prefix_pattern();
+
+        let mut tags: Vec<Tag> = match option.package_name {
+            Some(package) => self
+                .0
+                .tag_names(Some(&get_package_pattern(package)))
+                .map_err(|_| TagError::NoTag)?
+                .into_iter()
+                .flatten()
+                .filter_map(|tag| self.resolve_tag(tag).ok())
+                .collect(),
+            None => {
+                if option.packages_only {
+                    self.get_all_package_tags()?
+                        .into_iter()
+                        .filter_map(|tag| self.resolve_tag(&tag).ok())
+                        .collect()
+                } else if !option.include_packages {
+                    self.0
+                        .tag_names(None)
+                        .map_err(|err| TagError::NoMatchFound { pattern, err })?
+                        .iter()
+                        .flatten()
+                        .filter_map(|tag| self.resolve_tag(tag).ok())
+                        .filter(|tag| tag.package.is_none())
+                        .collect()
+                } else {
+                    self.0
+                        .tag_names(None)
+                        .map_err(|err| TagError::NoMatchFound { pattern, err })?
+                        .iter()
+                        .flatten()
+                        .filter_map(|tag| self.resolve_tag(tag).ok())
+                        .collect()
+                }
+            }
+        };
+
+        if !option.include_pre_release {
+            tags.retain(|tag| tag.version.pre.is_empty())
+        }
+
+        Ok(tags)
+    }
+
+    fn get_all_package_tags(&self) -> Result<Vec<String>, TagError> {
         let packages: Vec<&str> = SETTINGS
             .packages
             .keys()
             .map(|profile| -> &str { profile })
             .collect();
 
-        let pattern = SETTINGS
-            .tag_prefix
-            .as_ref()
-            .map(|prefix| format!("{prefix}*"));
+        let all_package_tags = self.0.tag_names(None).map_err(|_| TagError::NoTag)?;
 
-        // Collect non packages tags
-        let mut tags: Vec<String> = self
-            .0
-            .tag_names(pattern.as_deref())
-            .map_err(|err| TagError::NoMatchFound { pattern, err })?
-            .iter()
+        let package_tags = all_package_tags
+            .into_iter()
             .flatten()
+            .filter(|tag| packages.iter().any(|package| tag.starts_with(package)))
             .map(str::to_string)
             .collect();
 
-        // Extends with packages tags if we are in a mono-repository context
-        if !packages.is_empty() {
-            let package_tags = self.0.tag_names(None).map_err(|_| TagError::NoTag)?;
-            let package_tags = package_tags
-                .into_iter()
-                .flatten()
-                .filter(|tag| packages.iter().any(|package| tag.starts_with(package)))
-                .map(str::to_string);
-
-            tags.extend(package_tags);
-        };
-
-        Ok(tags)
+        Ok(package_tags)
     }
+}
+
+fn get_package_pattern(package: &str) -> String {
+    // Safe unwrap here, we are in a monorepo context
+    let separator = SETTINGS.monorepo_separator().unwrap();
+    let tag_prefix = SETTINGS.tag_prefix.as_ref();
+    match tag_prefix {
+        None => format!("{package}{separator}*"),
+        Some(prefix) => format!("{package}{separator}{prefix}*"),
+    }
+}
+
+fn get_prefix_pattern() -> Option<String> {
+    SETTINGS
+        .tag_prefix
+        .as_ref()
+        .map(|prefix| format!("{prefix}*"))
 }
 
 #[derive(Debug, Eq, Clone)]
@@ -120,6 +227,7 @@ pub struct Tag {
     pub prefix: Option<String>,
     pub version: Version,
     pub oid: Option<Oid>,
+    pub target: Option<Oid>,
 }
 
 impl Ord for Tag {
@@ -170,6 +278,7 @@ impl Tag {
             prefix: SETTINGS.tag_prefix.clone(),
             version,
             oid: None,
+            target: None,
         }
     }
 
@@ -177,7 +286,7 @@ impl Tag {
         self.oid.as_ref()
     }
 
-    pub fn from_str(raw: &str, oid: Option<Oid>) -> Result<Tag, TagError> {
+    pub fn from_str(raw: &str, oid: Option<Oid>, target: Option<Oid>) -> Result<Tag, TagError> {
         let prefix = SETTINGS.tag_prefix.as_ref();
 
         let package_tag: Option<Tag> = SETTINGS
@@ -200,6 +309,7 @@ impl Tag {
                         prefix: SETTINGS.tag_prefix.clone(),
                         version,
                         oid,
+                        target,
                     })
             })
             .next();
@@ -218,6 +328,7 @@ impl Tag {
                 prefix: prefix.cloned(),
                 version,
                 oid,
+                target,
             })
         }
     }
@@ -263,38 +374,40 @@ impl fmt::Display for Tag {
 
 #[cfg(test)]
 mod test {
-    use crate::git::repository::Repository;
-    use crate::git::tag::Tag;
-    use crate::settings::{MonoRepoPackage, Settings};
+    use std::collections::HashMap;
+    use std::fs;
+    use std::path::PathBuf;
+
     use anyhow::Result;
     use cmd_lib::run_cmd;
     use sealed_test::prelude::*;
     use semver::Version;
     use speculoos::prelude::*;
-    use std::collections::HashMap;
-    use std::fs;
-    use std::path::PathBuf;
+
+    use crate::git::tag::{Tag, TagLookUpOptions};
+    use crate::settings::{MonoRepoPackage, Settings};
+    use crate::test_helpers::git_init_no_gpg;
 
     #[test]
     fn should_compare_tags() -> Result<()> {
-        let v1_0_0 = Tag::from_str("1.0.0", None)?;
-        let v1_1_0 = Tag::from_str("1.1.0", None)?;
-        let v2_1_0 = Tag::from_str("2.1.0", None)?;
-        let v0_1_0 = Tag::from_str("0.1.0", None)?;
-        let v0_2_0 = Tag::from_str("0.2.0", None)?;
-        let v0_0_1 = Tag::from_str("0.0.1", None)?;
+        let v1_0_0 = Tag::from_str("1.0.0", None, None)?;
+        let v1_1_0 = Tag::from_str("1.1.0", None, None)?;
+        let v2_1_0 = Tag::from_str("2.1.0", None, None)?;
+        let v0_1_0 = Tag::from_str("0.1.0", None, None)?;
+        let v0_2_0 = Tag::from_str("0.2.0", None, None)?;
+        let v0_0_1 = Tag::from_str("0.0.1", None, None)?;
         assert_that!([v1_0_0, v1_1_0, v2_1_0, v0_1_0, v0_2_0, v0_0_1,]
             .iter()
             .max())
         .is_some()
-        .is_equal_to(&Tag::from_str("2.1.0", None)?);
+        .is_equal_to(&Tag::from_str("2.1.0", None, None)?);
 
         Ok(())
     }
 
     #[sealed_test]
     fn should_compare_tags_with_prefix() -> Result<()> {
-        Repository::init(".")?;
+        git_init_no_gpg()?;
         let settings = Settings {
             tag_prefix: Some("v".to_string()),
             ..Default::default()
@@ -302,29 +415,30 @@ mod test {
         let settings = toml::to_string(&settings)?;
         fs::write("cog.toml", settings)?;
 
-        let v1_0_0 = Tag::from_str("v1.0.0", None)?;
-        let v1_1_0 = Tag::from_str("v1.1.0", None)?;
-        let v2_1_0 = Tag::from_str("v2.1.0", None)?;
-        let v0_1_0 = Tag::from_str("v0.1.0", None)?;
-        let v0_2_0 = Tag::from_str("v0.2.0", None)?;
-        let v0_0_1 = Tag::from_str("v0.0.1", None)?;
+        let v1_0_0 = Tag::from_str("v1.0.0", None, None)?;
+        let v1_1_0 = Tag::from_str("v1.1.0", None, None)?;
+        let v2_1_0 = Tag::from_str("v2.1.0", None, None)?;
+        let v0_1_0 = Tag::from_str("v0.1.0", None, None)?;
+        let v0_2_0 = Tag::from_str("v0.2.0", None, None)?;
+        let v0_0_1 = Tag::from_str("v0.0.1", None, None)?;
         assert_that!([v1_0_0, v1_1_0, v2_1_0, v0_1_0, v0_2_0, v0_0_1,]
             .iter()
             .max())
         .is_some()
-        .is_equal_to(&Tag::from_str("2.1.0", None)?);
+        .is_equal_to(&Tag::from_str("2.1.0", None, None)?);
 
         Ok(())
     }
 
     #[test]
     fn should_get_tag_from_str() -> Result<()> {
-        let tag = Tag::from_str("1.0.0", None);
+        let tag = Tag::from_str("1.0.0", None, None);
         assert_that!(tag).is_ok().is_equal_to(Tag {
             package: None,
             prefix: None,
             version: Version::new(1, 0, 0),
             oid: None,
+            target: None,
         });
 
         Ok(())
@@ -332,7 +446,7 @@ mod test {
 
     #[sealed_test]
     fn should_get_tag_from_str_with_prefix() -> Result<()> {
-        Repository::init(".")?;
+        git_init_no_gpg()?;
 
         let settings = Settings {
             tag_prefix: Some("v".to_string()),
@@ -342,13 +456,14 @@ mod test {
         let settings = toml::to_string(&settings)?;
         fs::write("cog.toml", settings)?;
 
-        let tag = Tag::from_str("v1.0.0", None);
+        let tag = Tag::from_str("v1.0.0", None, None);
 
         assert_that!(tag).is_ok().is_equal_to(Tag {
             package: None,
             prefix: Some("v".to_string()),
             version: Version::new(1, 0, 0),
             oid: None,
+            target: None,
         });
 
         Ok(())
@@ -356,7 +471,7 @@ mod test {
 
     #[sealed_test]
     fn should_get_tag_from_str_with_separator() -> Result<()> {
-        Repository::init(".")?;
+        git_init_no_gpg()?;
 
         let mut packages = HashMap::new();
         packages.insert("one".to_string(), Default::default());
@@ -368,13 +483,14 @@ mod test {
         let settings = toml::to_string(&settings)?;
         fs::write("cog.toml", settings)?;
 
-        let tag = Tag::from_str("one-1.0.0", None);
+        let tag = Tag::from_str("one-1.0.0", None, None);
 
         assert_that!(tag).is_ok().is_equal_to(Tag {
             package: Some("one".to_string()),
             prefix: None,
             version: Version::new(1, 0, 0),
             oid: None,
+            target: None,
         });
 
         Ok(())
@@ -382,7 +498,7 @@ mod test {
 
     #[sealed_test]
     fn should_get_tag_from_str_with_prefix_and_separator() -> Result<()> {
-        Repository::init(".")?;
+        git_init_no_gpg()?;
 
         let mut packages = HashMap::new();
         packages.insert("one".to_string(), Default::default());
@@ -395,13 +511,14 @@ mod test {
         let settings = toml::to_string(&settings)?;
         fs::write("cog.toml", settings)?;
 
-        let tag = Tag::from_str("one-v1.0.0", None);
+        let tag = Tag::from_str("one-v1.0.0", None, None);
 
         assert_that!(tag).is_ok().is_equal_to(Tag {
             package: Some("one".to_string()),
             prefix: Some("v".to_string()),
             version: Version::new(1, 0, 0),
             oid: None,
+            target: None,
         });
 
         Ok(())
@@ -409,7 +526,7 @@ mod test {
 
     #[sealed_test]
     fn should_get_tag_from_str_with_prefix_and_custom_separator() -> Result<()> {
-        Repository::init(".")?;
+        git_init_no_gpg()?;
 
         let mut packages = HashMap::new();
         packages.insert("one".to_string(), Default::default());
@@ -423,29 +540,47 @@ mod test {
         let settings = toml::to_string(&settings)?;
         fs::write("cog.toml", settings)?;
 
-        let tag = Tag::from_str("one#v1.0.0", None);
+        let tag = Tag::from_str("one#v1.0.0", None, None);
 
         assert_that!(tag).is_ok().is_equal_to(Tag {
             package: Some("one".to_string()),
             prefix: Some("v".to_string()),
             version: Version::new(1, 0, 0),
             oid: None,
+            target: None,
         });
 
         Ok(())
     }
 
     #[sealed_test]
+    fn resolve_annotated_tag_ok() -> Result<()> {
+        // Arrange
+        let repo = git_init_no_gpg()?;
+        run_cmd!(
+            git commit --allow-empty -m "first commit";
+            git tag -a 1.0.0 -m "annotated tag";
+        )?;
+
+        // Act
+        let tag = repo.resolve_tag("1.0.0");
+
+        // Assert
+        assert_that!(tag).is_ok();
+        Ok(())
+    }
+
+    #[sealed_test]
     fn resolve_lightweight_tag_ok() -> Result<()> {
         // Arrange
-        let repo = Repository::init(".")?;
+        let repo = git_init_no_gpg()?;
         run_cmd!(
             git commit --allow-empty -m "first commit";
             git tag 1.0.0;
         )?;
 
         // Act
-        let tag = repo.resolve_lightweight_tag("1.0.0");
+        let tag = repo.resolve_tag("1.0.0");
 
         // Assert
         assert_that!(tag).is_ok();
@@ -455,14 +590,14 @@ mod test {
     #[sealed_test]
     fn resolve_lightweight_tag_err() -> Result<()> {
         // Arrange
-        let repo = Repository::init(".")?;
+        let repo = git_init_no_gpg()?;
         run_cmd!(
             git commit --allow-empty -m "first commit";
             git tag the_tag;
         )?;
 
         // Act
-        let tag = repo.resolve_lightweight_tag("the_taaaag");
+        let tag = repo.resolve_tag("the_taaaag");
 
         // Assert
         assert_that!(tag).is_err();
@@ -472,7 +607,7 @@ mod test {
     #[sealed_test]
     fn get_latest_tag_ok() -> Result<()> {
         // Arrange
-        let repo = Repository::init(".")?;
+        let repo = git_init_no_gpg()?;
         run_cmd!(
             git commit --allow-empty -m "first commit";
             git tag 0.1.0;
@@ -481,7 +616,7 @@ mod test {
         )?;
 
         // Act
-        let tag = repo.get_latest_tag()?;
+        let tag = repo.get_latest_tag(TagLookUpOptions::default())?;
 
         // Assert
         assert_that!(tag.to_string()).is_equal_to("0.2.0".to_string());
@@ -489,15 +624,65 @@ mod test {
     }
 
     #[sealed_test]
+    fn get_previous_tag_ok() -> Result<()> {
+        // Arrange
+        let repo = git_init_no_gpg()?;
+        run_cmd!(
+            git commit --allow-empty -m "first commit";
+            git tag 0.1.0;
+            git commit --allow-empty -m "second commit";
+            git tag 0.2.0;
+        )?;
+
+        let tag = repo.get_latest_tag(TagLookUpOptions::default())?;
+
+        // Act
+        let previous = repo.get_previous_tag(&tag)?.map(|t| t.to_string());
+
+        // Assert
+        assert_that!(tag.to_string()).is_equal_to("0.2.0".to_string());
+
+        assert_that!(previous)
+            .is_some()
+            .is_equal_to("0.1.0".to_string());
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn get_previous_tag_pre_release_ok() -> Result<()> {
+        // Arrange
+        let repo = git_init_no_gpg()?;
+        run_cmd!(
+            git commit --allow-empty -m "first commit";
+            git tag 0.1.0;
+            git commit --allow-empty -m "second commit";
+            git tag 0.2.0-pre;
+        )?;
+
+        let tag = repo.get_latest_tag(TagLookUpOptions::default().include_pre_release())?;
+
+        // Act
+        let previous = repo.get_previous_tag(&tag)?.map(|t| t.to_string());
+
+        // Assert
+        assert_that!(tag.to_string()).is_equal_to("0.2.0-pre".to_string());
+
+        assert_that!(previous)
+            .is_some()
+            .is_equal_to("0.1.0".to_string());
+        Ok(())
+    }
+
+    #[sealed_test]
     fn get_latest_tag_err() -> Result<()> {
         // Arrange
-        let repo = Repository::init(".")?;
+        let repo = git_init_no_gpg()?;
         run_cmd!(
             git commit --allow-empty -m "first commit"
         )?;
 
         // Act
-        let tag = repo.get_latest_tag();
+        let tag = repo.get_latest_tag(TagLookUpOptions::default());
 
         // Assert
         assert_that!(tag).is_err();
@@ -507,14 +692,14 @@ mod test {
     #[sealed_test]
     fn get_latest_tag_oid_ok() -> Result<()> {
         // Arrange
-        let repo = Repository::init(".")?;
+        let repo = git_init_no_gpg()?;
         run_cmd!(
             git commit --allow-empty -m "first commit";
             git tag 0.1.0;
         )?;
 
         // Act
-        let tag = repo.get_latest_tag_oid();
+        let tag = repo.get_latest_tag_oid(TagLookUpOptions::default());
 
         // Assert
         assert_that!(tag).is_ok();
@@ -524,11 +709,11 @@ mod test {
     #[sealed_test]
     fn get_latest_tag_oid_err() -> Result<()> {
         // Arrange
-        let repo = Repository::init(".")?;
+        let repo = git_init_no_gpg()?;
         run_cmd!(git commit --allow-empty -m "first commit")?;
 
         // Act
-        let tag = repo.get_latest_tag_oid();
+        let tag = repo.get_latest_tag_oid(TagLookUpOptions::default());
 
         // Assert
         assert_that!(tag).is_err();
@@ -555,7 +740,7 @@ mod test {
             ..Default::default()
         };
 
-        let repo = Repository::init(".")?;
+        let repo = git_init_no_gpg()?;
         let settings = toml::to_string(&settings)?;
 
         run_cmd!(

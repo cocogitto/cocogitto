@@ -66,7 +66,7 @@ impl Serialize for OidOf {
                     oidof.serialize_field("id", &oid.to_string())?;
                 }
             }
-            OidOf::Head(oid) | OidOf::Other(oid) => {
+            OidOf::FirstCommit(oid) | OidOf::Head(oid) | OidOf::Other(oid) => {
                 oidof.serialize_field("id", &oid.to_string())?
             }
         };
@@ -87,7 +87,8 @@ mod test {
 
     #[test]
     fn should_serialize_tag() {
-        let tag = Tag::from_str("1.0.0", Some(Oid::from_str("1234567890").unwrap())).unwrap();
+        let oid = Oid::from_str("1234567890").unwrap();
+        let tag = Tag::from_str("1.0.0", Some(oid), None).unwrap();
 
         let result = toml::to_string(&tag);
 

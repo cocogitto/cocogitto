@@ -78,7 +78,7 @@ fn get_changelog_range() -> Result<()> {
 fn get_changelog_from_untagged_repo() -> Result<()> {
     // Arrange
     git_init()?;
-    let _ = git_commit("chore: init")?;
+    let init = git_commit("chore: init")?;
     let commit_two = git_commit("feat(taef): feature")?;
     let commit_three = git_commit("fix: bug fix")?;
 
@@ -96,14 +96,17 @@ fn get_changelog_from_untagged_repo() -> Result<()> {
     assert_eq!(
         changelog.as_ref(),
         formatdoc!(
-            "## Unreleased ({commit_two}..{commit_three})
+            "## Unreleased ({init}..{commit_three})
                     #### Bug Fixes
                     - bug fix - ({commit_three}) - Tom
                     #### Features
                     - **(taef)** feature - ({commit_two}) - Tom
+                    #### Miscellaneous Chores
+                    - init - ({init}) - Tom
 
 
                     ",
+            init = &init[0..7],
             commit_two = &commit_two[0..7],
             commit_three = &commit_three[0..7]
         )
@@ -115,7 +118,7 @@ fn get_changelog_from_untagged_repo() -> Result<()> {
 fn get_changelog_from_tagged_repo() -> Result<()> {
     // Arrange
     git_init()?;
-    git_commit("chore: init")?;
+    let init = git_commit("chore: init")?;
     let commit_one = git_commit("feat(taef): feature")?;
     git_tag("1.0.0")?;
     let commit_two = git_commit("fix: bug fix")?;
@@ -144,9 +147,12 @@ fn get_changelog_from_tagged_repo() -> Result<()> {
                     ## 1.0.0 - {today}
                     #### Features
                     - **(taef)** feature - ({commit_one}) - Tom
+                    #### Miscellaneous Chores
+                    - init - ({init}) - Tom
 
 
                     ",
+            init = &init[0..7],
             commit_one = &commit_one[0..7],
             commit_two = &commit_two[0..7],
             today = today
@@ -159,7 +165,7 @@ fn get_changelog_from_tagged_repo() -> Result<()> {
 fn get_changelog_at_tag() -> Result<()> {
     // Arrange
     git_init()?;
-    git_commit("chore: init")?;
+    let init = git_commit("chore: init")?;
     let commit_one = git_commit("feat(taef): feature")?;
     let commit_two = git_commit("feat: feature 2")?;
     git_tag("1.0.0")?;
@@ -186,10 +192,13 @@ fn get_changelog_at_tag() -> Result<()> {
                     #### Features
                     - **(taef)** feature - ({commit_one}) - Tom
                     - feature 2 - ({commit_two}) - Tom
+                    #### Miscellaneous Chores
+                    - init - ({init}) - Tom
 
 
                     ",
             today = today,
+            init = &init[0..7],
             commit_one = &commit_one[0..7],
             commit_two = &commit_two[0..7]
         )
@@ -206,10 +215,10 @@ fn get_changelog_with_tag_prefix() -> Result<()> {
     };
 
     let settings = toml::to_string(&settings);
-    std::fs::write("cog.toml", settings?)?;
+    fs::write("cog.toml", settings?)?;
 
     git_init()?;
-    let _ = git_commit("chore: init")?;
+    let init = git_commit("chore: init")?;
     let commit_one = git_commit("feat: feature 1")?;
     git_tag("v1.0.0")?;
     let commit_two = git_commit("fix: bug fix 1")?;
@@ -238,10 +247,13 @@ fn get_changelog_with_tag_prefix() -> Result<()> {
                     ## v1.0.0 - {today}
                     #### Features
                     - feature 1 - ({commit_one}) - Tom
+                    #### Miscellaneous Chores
+                    - init - ({init}) - Tom
 
 
                     ",
             today = today,
+            init = &init[0..7],
             commit_one = &commit_one[0..7],
             commit_two = &commit_two[0..7]
         )
@@ -310,7 +322,7 @@ fn get_changelog_at_tag_prefix() -> Result<()> {
 fn get_changelog_from_tag_to_tagged_head() -> Result<()> {
     // Arrange
     git_init()?;
-    git_commit("chore: init")?;
+    let init = git_commit("chore: init")?;
     let commit_one = git_commit("feat: start")?;
     let commit_two = git_commit("feat: feature 1")?;
     git_tag("1.0.0")?;
@@ -329,7 +341,6 @@ fn get_changelog_from_tag_to_tagged_head() -> Result<()> {
     let changelog = changelog.get_output();
     let changelog = String::from_utf8_lossy(&changelog.stdout);
     let today = Utc::now().date_naive();
-
     assert_eq!(
         changelog.as_ref(),
         formatdoc!(
@@ -347,10 +358,13 @@ fn get_changelog_from_tag_to_tagged_head() -> Result<()> {
                 #### Features
                 - feature 1 - ({commit_two}) - Tom
                 - start - ({commit_one}) - Tom
+                #### Miscellaneous Chores
+                - init - ({init}) - Tom
 
 
                 ",
             today = today,
+            init = &init[0..7],
             commit_one = &commit_one[0..7],
             commit_two = &commit_two[0..7],
             commit_three = &commit_three[0..7],
@@ -358,6 +372,7 @@ fn get_changelog_from_tag_to_tagged_head() -> Result<()> {
             commit_five = &commit_five[0..7],
         )
     );
+
     Ok(())
 }
 
@@ -369,7 +384,7 @@ fn get_changelog_is_unaffected_by_disable_changelog() -> Result<()> {
     let cog_toml = indoc!("disable_changelog = true");
 
     run_cmd!(echo $cog_toml > cog.toml;)?;
-    git_commit("chore: init")?;
+    let init = git_commit("chore: init")?;
     let commit_one = git_commit("feat: start")?;
     let commit_two = git_commit("feat: feature 1")?;
     git_tag("1.0.0")?;
@@ -392,10 +407,13 @@ fn get_changelog_is_unaffected_by_disable_changelog() -> Result<()> {
                 #### Features
                 - feature 1 - ({commit_two}) - Tom
                 - start - ({commit_one}) - Tom
+                #### Miscellaneous Chores
+                - init - ({init}) - Tom
 
 
                 ",
             today = today,
+            init = &init[0..7],
             commit_one = &commit_one[0..7],
             commit_two = &commit_two[0..7],
         )
@@ -421,7 +439,7 @@ fn get_changelog_with_custom_template() -> Result<()> {
     run_cmd!(echo $cog_toml > cog.toml;)?;
 
     let _string = fs::read_to_string("cog.toml")?;
-    let init_commit = git_commit("chore: init")?;
+    let init = git_commit("chore: init")?;
     let commit_one = git_commit("feat(scope1): start")?;
     let commit_two = git_commit("feat: feature 1")?;
     git_tag("1.0.0")?;
@@ -456,15 +474,17 @@ fn get_changelog_with_custom_template() -> Result<()> {
 
             - - -
 
-            ## [1.0.0](https://github.com/test/test/compare/{init_commit}..1.0.0) - {today}
+            ## [1.0.0](https://github.com/test/test/compare/{init}..1.0.0) - {today}
             #### Features
             -  feature 1 - ([{commit_two_short}](https://github.com/test/test/commit/{commit_two})) - Tom
             - **(scope1)** start - ([{commit_one_short}](https://github.com/test/test/commit/{commit_one})) - Tom
+            #### Miscellaneous Chores
+            -  init - ([{init_commit}](https://github.com/test/test/commit/{init})) - Tom
 
 
             ",
             today = today,
-            init_commit = &init_commit,
+            init_commit = &init[0..7],
             commit_one = &commit_one,
             commit_one_short = &commit_one[0..7],
             commit_two = &commit_two,
@@ -542,3 +562,48 @@ fn ensure_omit_from_changelog_is_honored() -> Result<()> {
 
     Ok(())
 }
+
+//TODO
+/*// see: https://github.com/cocogitto/cocogitto/issues/359
+#[sealed_test]
+fn changelog_from_commit_range_should_be_the_same_as_changelog_from_tag_range() -> Result<()> {
+    // Arrange
+    git_init()?;
+
+    git_commit("feat: feature 1")?;
+    let sha_0_1 = git_commit("feat: feature 2")?;
+    let _ = git_tag("0.1.0");
+    git_commit("feat: feature 3")?;
+    let sha_0_2 = git_commit("feat: feature 4")?;
+
+    Command::cargo_bin("cog")?
+        .arg("bump")
+        .arg("--auto")
+        .assert()
+        .success();
+
+    // Act
+    let changelog_from_commit_range = Command::cargo_bin("cog")?
+        .arg("changelog")
+        .arg(&format!("{sha_0_1}..{sha_0_2}"))
+        .assert()
+        .success();
+
+    let changelog_from_commit_range =
+        String::from_utf8_lossy(&changelog_from_commit_range.get_output().stdout);
+
+    let changelog_from_tag_range = Command::cargo_bin("cog")?
+        .arg("changelog")
+        .arg(&"0.1.0..0.2.0".to_string())
+        .assert()
+        .success();
+
+    let changelog_from_tag_range =
+        String::from_utf8_lossy(&changelog_from_tag_range.get_output().stdout);
+
+    // Assert
+    pretty_assertions::assert_eq!(changelog_from_commit_range, changelog_from_tag_range);
+
+    Ok(())
+}
+*/

@@ -1,12 +1,11 @@
-use std::str::FromStr;
-
 use git2::Commit as Git2Commit;
 use once_cell::sync::Lazy;
 use semver::{BuildMetadata, Prerelease, Version};
 
 use crate::conventional::error::BumpError;
 use crate::conventional::version::Increment;
-use crate::{Commit, IncrementCommand, Repository, RevspecPattern, Tag, SETTINGS};
+use crate::git::tag::TagLookUpOptions;
+use crate::{Commit, IncrementCommand, Repository, Tag, SETTINGS};
 
 static FILTER_MERGE_COMMITS: Lazy<fn(&&git2::Commit) -> bool> = Lazy::new(|| {
     |commit| {
@@ -138,22 +137,14 @@ impl Tag {
 
     fn get_version_from_commit_history(&self, repository: &Repository) -> Result<Tag, BumpError> {
         let changelog_start_oid = repository
-            .get_latest_tag_oid()
+            .get_latest_tag_oid(TagLookUpOptions::default())
             .ok()
             .unwrap_or_else(|| repository.get_first_commit().expect("non empty repository"));
-        let changelog_start_oid = changelog_start_oid.to_string();
-        let changelog_start_oid = Some(changelog_start_oid.as_str());
 
-        let pattern = changelog_start_oid
-            .map(|oid| format!("{oid}.."))
-            .unwrap_or_else(|| "..".to_string());
-        let pattern = pattern.as_str();
-        let pattern = RevspecPattern::from_str(pattern)?;
-        let commits = repository.get_commit_range(&pattern)?;
+        let commits = repository.revwalk(&format!("{changelog_start_oid}.."))?;
 
         let commits: Vec<&Git2Commit> = commits
-            .commits
-            .iter()
+            .iter_commits()
             .filter(&*FILTER_MERGE_COMMITS)
             .collect();
 
@@ -184,18 +175,10 @@ impl Tag {
             .and_then(|tag| tag.oid)
             .unwrap_or_else(|| repository.get_first_commit().expect("non empty repository"));
 
-        let changelog_start_oid = changelog_start_oid.to_string();
-        let changelog_start_oid = Some(changelog_start_oid.as_str());
-
-        let pattern = changelog_start_oid
-            .map(|oid| format!("{oid}.."))
-            .unwrap_or_else(|| "..".to_string());
-        let pattern = pattern.as_str();
-        let pattern = RevspecPattern::from_str(pattern)?;
-        let commits = repository.get_commit_range_for_package(&pattern, package)?;
+        let commits = repository
+            .get_commit_range_for_package(&format!("{changelog_start_oid}.."), package)?;
         let commits: Vec<&Git2Commit> = commits
-            .commits
-            .iter()
+            .iter_commits()
             .filter(&*FILTER_MERGE_COMMITS)
             .collect();
 
@@ -220,23 +203,15 @@ impl Tag {
         repository: &Repository,
     ) -> Result<Tag, BumpError> {
         let changelog_start_oid = repository
-            .get_latest_tag_oid()
+            .get_latest_tag_oid(TagLookUpOptions::default())
             .ok()
             .unwrap_or_else(|| repository.get_first_commit().expect("non empty repository"));
 
-        let changelog_start_oid = changelog_start_oid.to_string();
-        let changelog_start_oid = Some(changelog_start_oid.as_str());
-
-        let pattern = changelog_start_oid
-            .map(|oid| format!("{oid}.."))
-            .unwrap_or_else(|| "..".to_string());
-        let pattern = pattern.as_str();
-        let pattern = RevspecPattern::from_str(pattern)?;
-        let commits = repository.get_commit_range_for_monorepo_global(&pattern)?;
+        let commits =
+            repository.get_commit_range_for_monorepo_global(&format!("{changelog_start_oid}.."))?;
 
         let commits: Vec<&Git2Commit> = commits
-            .commits
-            .iter()
+            .iter_commits()
             .filter(&*FILTER_MERGE_COMMITS)
             .collect();
 
@@ -306,6 +281,7 @@ mod test {
     use crate::git::repository::Repository;
     use crate::git::tag::Tag;
     use crate::settings::{MonoRepoPackage, Settings};
+    use crate::test_helpers::git_init_no_gpg;
 
     impl Commit {
         fn commit_fixture(commit_type: CommitType, is_breaking_change: bool) -> Self {
@@ -328,8 +304,8 @@ mod test {
     #[sealed_test]
     fn major_bump() -> Result<()> {
         // Arrange
-        let repository = Repository::init(".")?;
-        let base_version = Tag::from_str("1.0.0", None)?;
+        let repository = git_init_no_gpg()?;
+        let base_version = Tag::from_str("1.0.0", None, None)?;
 
         // Act
         let tag = base_version.bump(IncrementCommand::Major, &repository)?;
@@ -342,8 +318,8 @@ mod test {
     #[sealed_test]
     fn minor_bump() -> Result<()> {
         // Arrange
-        let repository = Repository::init(".")?;
-        let base_version = Tag::from_str("1.0.0", None)?;
+        let repository = git_init_no_gpg()?;
+        let base_version = Tag::from_str("1.0.0", None, None)?;
 
         // Act
         let tag = base_version.bump(IncrementCommand::Minor, &repository)?;
@@ -356,8 +332,8 @@ mod test {
     #[sealed_test]
     fn patch_bump() -> Result<()> {
         // Arrange
-        let repository = Repository::init(".")?;
-        let base_version = Tag::from_str("1.0.0", None)?;
+        let repository = git_init_no_gpg()?;
+        let base_version = Tag::from_str("1.0.0", None, None)?;
 
         // Act
         let tag = base_version.bump(IncrementCommand::Patch, &repository)?;
@@ -370,8 +346,8 @@ mod test {
     #[sealed_test]
     fn no_bump() -> Result<()> {
         // Arrange
-        let repository = Repository::init(".")?;
-        let base_version = Tag::from_str("1.0.0", None)?;
+        let repository = git_init_no_gpg()?;
+        let base_version = Tag::from_str("1.0.0", None, None)?;
 
         // Act
         let tag = base_version.bump(IncrementCommand::NoBump, &repository)?;
@@ -385,7 +361,7 @@ mod test {
     fn should_get_next_auto_version_patch() -> Result<()> {
         // Arrange
         let patch = Commit::commit_fixture(CommitType::BugFix, false);
-        let base_version = Tag::from_str("1.0.0", None)?;
+        let base_version = Tag::from_str("1.0.0", None, None)?;
 
         // Act
         let increment = base_version.version_increment_from_commit_history(&[patch]);
@@ -411,7 +387,7 @@ mod test {
         let build = Commit::commit_fixture(CommitType::Build, false);
         let ci = Commit::commit_fixture(CommitType::Ci, false);
 
-        let base_version = Tag::from_str("1.0.0", None)?;
+        let base_version = Tag::from_str("1.0.0", None, None)?;
 
         // Act
         let increment = base_version.version_increment_from_commit_history(&[
@@ -437,8 +413,8 @@ mod test {
     #[test]
     fn increment_minor_version_should_set_patch_to_zero() -> Result<()> {
         // Arrange
-        let repository = Repository::init(".")?;
-        let version = Tag::from_str("1.1.1", None)?;
+        let repository = git_init_no_gpg()?;
+        let version = Tag::from_str("1.1.1", None, None)?;
 
         // Act
         let tag = version.bump(IncrementCommand::Minor, &repository)?;
@@ -452,8 +428,8 @@ mod test {
     #[sealed_test]
     fn increment_major_version_should_set_minor_and_patch_to_zero() -> Result<()> {
         // Arrange
-        let repository = Repository::init(".")?;
-        let version = Tag::from_str("1.1.1", None)?;
+        let repository = git_init_no_gpg()?;
+        let version = Tag::from_str("1.1.1", None, None)?;
 
         // Act
         let tag = version.bump(IncrementCommand::Major, &repository)?;
@@ -467,8 +443,8 @@ mod test {
     #[sealed_test]
     fn increment_should_strip_metadata() -> Result<()> {
         // Arrange
-        let repository = Repository::init(".")?;
-        let version = Tag::from_str("1.1.1-pre+10.1", None)?;
+        let repository = git_init_no_gpg()?;
+        let version = Tag::from_str("1.1.1-pre+10.1", None, None)?;
 
         // Act
         let tag = version.bump(IncrementCommand::Patch, &repository)?;
@@ -484,7 +460,7 @@ mod test {
         // Arrange
         let feature = Commit::commit_fixture(CommitType::Feature, false);
         let breaking_change = Commit::commit_fixture(CommitType::Feature, true);
-        let base_version = Tag::from_str("1.0.0", None)?;
+        let base_version = Tag::from_str("1.0.0", None, None)?;
 
         // Act
         let version =
@@ -501,7 +477,7 @@ mod test {
         // Arrange
         let feature = Commit::commit_fixture(CommitType::Feature, false);
         let breaking_change = Commit::commit_fixture(CommitType::Feature, true);
-        let base_version = Tag::from_str("0.1.0", None)?;
+        let base_version = Tag::from_str("0.1.0", None, None)?;
 
         // Act
         let version =
@@ -518,7 +494,7 @@ mod test {
         // Arrange
         let patch = Commit::commit_fixture(CommitType::BugFix, false);
         let feature = Commit::commit_fixture(CommitType::Feature, false);
-        let base_version = Tag::from_str("0.1.0", None)?;
+        let base_version = Tag::from_str("0.1.0", None, None)?;
 
         // Act
         let version = base_version.version_increment_from_commit_history(&[patch, feature]);
@@ -532,7 +508,7 @@ mod test {
     #[sealed_test]
     fn should_get_next_auto_version_minor_with_custom_commit_type() -> Result<()> {
         // Arrange
-        Repository::init(".")?;
+        git_init_no_gpg()?;
         let mut commit_types = HashMap::new();
         commit_types.insert("ex".to_string(), CommitConfig::new("Ex").with_minor_bump());
         let settings = Settings {
@@ -545,7 +521,7 @@ mod test {
 
         let patch = Commit::commit_fixture(CommitType::BugFix, false);
         let feature = Commit::commit_fixture(CommitType::Custom("ex".to_string()), false);
-        let base_version = Tag::from_str("0.1.0", None)?;
+        let base_version = Tag::from_str("0.1.0", None, None)?;
 
         // Act
         let version = base_version.version_increment_from_commit_history(&[patch, feature]);
@@ -559,7 +535,7 @@ mod test {
     #[sealed_test]
     fn should_get_next_auto_version_patch_with_custom_commit_type() -> Result<()> {
         // Arrange
-        Repository::init(".")?;
+        git_init_no_gpg()?;
         let mut commit_types = HashMap::new();
         commit_types.insert("ex".to_string(), CommitConfig::new("Ex").with_patch_bump());
         let settings = Settings {
@@ -572,7 +548,7 @@ mod test {
 
         let patch = Commit::commit_fixture(CommitType::Chore, false);
         let feature = Commit::commit_fixture(CommitType::Custom("ex".to_string()), false);
-        let base_version = Tag::from_str("0.1.0", None)?;
+        let base_version = Tag::from_str("0.1.0", None, None)?;
 
         // Act
         let version = base_version.version_increment_from_commit_history(&[patch, feature]);
@@ -586,7 +562,7 @@ mod test {
     #[sealed_test]
     fn should_override_bump_behavior_for_existing_commit_type() -> Result<()> {
         // Arrange
-        Repository::init(".")?;
+        git_init_no_gpg()?;
         let mut commit_types = HashMap::new();
         commit_types.insert(
             "perf".to_string(),
@@ -602,7 +578,7 @@ mod test {
 
         let patch = Commit::commit_fixture(CommitType::Chore, false);
         let feature = Commit::commit_fixture(CommitType::Performances, false);
-        let base_version = Tag::from_str("0.1.0", None)?;
+        let base_version = Tag::from_str("0.1.0", None, None)?;
 
         // Act
         let version = base_version.version_increment_from_commit_history(&[patch, feature]);
@@ -618,7 +594,7 @@ mod test {
         // Arrange
         let chore = Commit::commit_fixture(CommitType::Chore, false);
         let docs = Commit::commit_fixture(CommitType::Documentation, false);
-        let base_version = Tag::from_str("0.1.0", None)?;
+        let base_version = Tag::from_str("0.1.0", None, None)?;
 
         // Act
         let version = base_version.version_increment_from_commit_history(&[chore, docs]);
@@ -640,7 +616,7 @@ mod test {
             git commit -m "feat: feature package one";
         )?;
 
-        let base_version = Tag::from_str("0.1.0", None)?;
+        let base_version = Tag::from_str("0.1.0", None, None)?;
 
         // Act
         let tag = base_version.get_monorepo_global_version_from_commit_history(&repository);
@@ -656,13 +632,13 @@ mod test {
     #[sealed_test]
     fn monorepo_auto_bump_should_succeed_with_only_package_commits() -> Result<()> {
         // Arrange
-        let repository = init_monorepo()?;
+        let repository = git_init_no_gpg()?;
         run_cmd!(
             echo "feature" > one;
             git add .;
             git commit -m "feat: feature package one";
         )?;
-        let base_version = Tag::from_str("0.1.0", None)?;
+        let base_version = Tag::from_str("0.1.0", None, None)?;
 
         // Act
         let tag = base_version.auto_global_bump(&repository, Some(Increment::Minor))?;
@@ -788,8 +764,8 @@ mod test {
         )?;
 
         // Act
-        let tag =
-            Tag::from_str("0.1.0", None)?.auto_global_bump(&repository, Some(Increment::Minor))?;
+        let tag = Tag::from_str("0.1.0", None, None)?
+            .auto_global_bump(&repository, Some(Increment::Minor))?;
 
         // Assert
         assert_that!(tag.version).is_equal_to(Version::new(0, 2, 0));
@@ -798,7 +774,7 @@ mod test {
     }
 
     fn init_monorepo() -> Result<Repository> {
-        let repository = Repository::init(".")?;
+        let repository = git_init_no_gpg()?;
         let mut packages = HashMap::new();
         packages.insert(
             "one".to_string(),

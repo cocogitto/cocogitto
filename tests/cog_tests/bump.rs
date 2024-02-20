@@ -457,7 +457,7 @@ fn bump_package_with_default_skip_ci_ok() -> Result<()> {
         .assert()
         .success();
 
-    let commit_message = git_log_head()?;
+    let commit_message = git_log_head_message()?;
 
     assert_tag_exists("one-0.1.0")?;
     assert!(commit_message.contains("[skip ci]"));
@@ -482,7 +482,7 @@ fn bump_package_with_cog_toml_defined_skip_ci_ok() -> Result<()> {
         .assert()
         .success();
 
-    let commit_message = git_log_head()?;
+    let commit_message = git_log_head_message()?;
 
     assert_tag_exists("one-0.1.0")?;
     assert!(commit_message.contains("[ci-skip]"));
@@ -508,7 +508,7 @@ fn bump_package_with_skip_ci_override_option_takes_predecence() -> Result<()> {
         .assert()
         .success();
 
-    let commit_message = git_log_head()?;
+    let commit_message = git_log_head_message()?;
 
     assert_tag_exists("one-0.1.0")?;
     assert!(commit_message.contains("[ci-skip-override]"));
@@ -529,7 +529,7 @@ fn bump_standard_repository_with_default_skip_ci_ok() -> Result<()> {
         .assert()
         .success();
 
-    let commit_message = git_log_head()?;
+    let commit_message = git_log_head_message()?;
     assert_tag_exists("0.1.0")?;
     assert!(commit_message.contains("[skip ci]"));
 
@@ -550,7 +550,7 @@ fn bump_standard_repository_with_cog_toml_defined_skip_ci_ok() -> Result<()> {
         .assert()
         .success();
 
-    let commit_message = git_log_head()?;
+    let commit_message = git_log_head_message()?;
     assert_tag_exists("0.1.0")?;
     assert!(commit_message.contains("[ci-skip]"));
 
@@ -572,7 +572,7 @@ fn bump_standard_repository_skip_ci_override_option_takes_precedence() -> Result
         .assert()
         .success();
 
-    let commit_message = git_log_head()?;
+    let commit_message = git_log_head_message()?;
     assert_tag_exists("0.1.0")?;
     assert!(commit_message.contains("[ci-skip-override]"));
 
@@ -593,7 +593,7 @@ fn bump_monorepo_with_default_skip_ci_ok() -> Result<()> {
         .assert()
         .success();
 
-    let commit_message = git_log_head()?;
+    let commit_message = git_log_head_message()?;
 
     assert_tag_exists("0.1.0")?;
     assert!(commit_message.contains("[skip ci]"));
@@ -616,7 +616,7 @@ fn bump_monorepo_with_cog_toml_defined_skip_ci_ok() -> Result<()> {
         .assert()
         .success();
 
-    let commit_message = git_log_head()?;
+    let commit_message = git_log_head_message()?;
 
     assert_tag_exists("0.1.0")?;
     assert!(commit_message.contains("[ci-skip]"));
@@ -630,6 +630,7 @@ fn bump_monorepo_skip_ci_override_option_takes_precedence() -> Result<()> {
         skip_ci: String::from("[ci-skip]"),
         ..Default::default()
     };
+
     init_monorepo(&mut settings)?;
 
     Command::cargo_bin("cog")?
@@ -640,7 +641,7 @@ fn bump_monorepo_skip_ci_override_option_takes_precedence() -> Result<()> {
         .assert()
         .success();
 
-    let commit_message = git_log_head()?;
+    let commit_message = git_log_head_message()?;
 
     assert_tag_exists("0.1.0")?;
     assert!(commit_message.contains("[skip-ci-override]"));
