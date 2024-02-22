@@ -237,7 +237,7 @@ mod test {
                 .map(|commit| commit.commit.oid.clone())
                 .collect();
 
-            commits == &[three.clone(), two.clone(), one.clone()]
+            commits == [three.clone(), two.clone(), one.clone()]
         });
 
         assert_that!(release.version.to_string()).is_equal_to("0.2.0".to_string());
