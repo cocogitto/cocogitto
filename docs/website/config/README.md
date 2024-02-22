@@ -83,6 +83,29 @@ The config reference list all value that can be set in the `cog.toml` file at th
     [commit_types]
     chore = { changelog_title = "Chore", omit_from_changelog = true }
     ```
+
+### `bump_patch`
+- Type: `Bool`
+- Optional: `true`
+- Default value: `false`
+- Description: commits of this type will bump the patch version of a tag.
+- Example:
+    ```toml
+    [commit_types]
+    chore = { changelog_title = "Chore", bump_patch = true }
+    ```
+
+### `bump_minor`
+- Type: `Bool`
+- Optional: `true`
+- Default value: `false`
+- Description: commits of this type will bump the minor version of a tag.
+- Example:
+    ```toml
+    [commit_types]
+    chore = { changelog_title = "Chore", bump_minor = true }
+    ```
+
 ## Bump config
 
 ### `pre_bump_hooks`
