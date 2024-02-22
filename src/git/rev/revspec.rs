@@ -1,7 +1,8 @@
 use crate::git::error::Git2Error;
 use crate::git::oid::OidOf;
 use crate::git::repository::Repository;
-use crate::git::tag::{Tag, TagLookUpOptions};
+use crate::git::rev::init_cache;
+use crate::git::tag::Tag;
 use git2::Oid;
 use std::fmt;
 use std::fmt::Formatter;
@@ -27,9 +28,7 @@ impl RevSpecPattern2 {
 }
 
 impl Repository {
-    /// Given a revspec range, return [`RevSpecPattern2`] with resolved oid.
-    /// Error if the revspec is not pointing to existing commit, tag or reference.
-    pub(crate) fn revspec_from_str(&self, s: &str) -> Result<RevSpecPattern2, Git2Error> {
+    pub(super) fn revspec_from_str(&self, s: &str) -> Result<RevSpecPattern2, Git2Error> {
         if let Some((from, to)) = s.split_once("..") {
             let from = if from.is_empty() {
                 OidOf::Other(self.get_first_commit()?)
@@ -61,34 +60,20 @@ impl Repository {
         }
     }
 
-    // Given an oid a tag or a ref, return a typed [`OidOf`]
     pub(super) fn resolve_oid_of(&self, from: &str) -> Result<OidOf, Git2Error> {
-        match self.resolve_tag(from).map(OidOf::Tag) {
-            Ok(tag_oid) => Ok(tag_oid),
-            Err(_) => {
+        let cache = init_cache(self);
+
+        let oid = cache.get(from).cloned();
+
+        match oid {
+            None => {
                 let object = self
                     .0
                     .revparse_single(from)
                     .map_err(|_| Git2Error::UnknownRevision(from.to_string()))?;
-
-                let tag = self
-                    .tags(TagLookUpOptions::default())
-                    .expect("Error trying to get repository tags")
-                    .into_iter()
-                    .find(|tag| {
-                        *tag.oid_unchecked() == object.id() || tag.target == Some(object.id())
-                    });
-
-                let head = self.get_head_commit_oid().expect("HEAD commit");
-                let first = self.get_first_commit().expect("FIRST commit");
-
-                Ok(match tag {
-                    Some(tag) => OidOf::Tag(tag),
-                    None if object.id() == head => OidOf::Head(object.id()),
-                    None if object.id() == first => OidOf::FirstCommit(object.id()),
-                    None => OidOf::Other(object.id()),
-                })
+                Ok(OidOf::Other(object.id()))
             }
+            Some(oid) => Ok(oid),
         }
     }
 }
