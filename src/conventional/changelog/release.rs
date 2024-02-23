@@ -9,6 +9,7 @@ use crate::settings;
 use colored::Colorize;
 
 use log::warn;
+use crate::conventional::changelog::error::ChangelogError;
 
 #[derive(Debug, Serialize)]
 pub struct Release<'a> {
@@ -19,8 +20,10 @@ pub struct Release<'a> {
     pub previous: Option<Box<Release<'a>>>,
 }
 
-impl From<CommitIter<'_>> for Release<'_> {
-    fn from(commits: CommitIter<'_>) -> Self {
+impl TryFrom<CommitIter<'_>> for Release<'_> {
+    type Error = ChangelogError;
+
+    fn try_from(commits: CommitIter<'_>) -> Result<Self, Self::Error> {
         let mut releases = vec![];
         let mut commit_iter = commits.into_iter().rev().peekable();
 
@@ -72,7 +75,7 @@ impl From<CommitIter<'_>> for Release<'_> {
             current = Some(next);
         }
 
-        current.expect("a release")
+        current.ok_or(ChangelogError::EmptyRelease)
     }
 }
 
@@ -132,7 +135,7 @@ mod test {
     fn test() -> anyhow::Result<()> {
         let repo = Repository::open(".")?;
         let iter = repo.revwalk("..")?;
-        let release = Release::from(iter);
+        let release = Release::try_from(iter)?;
         println!("{:?}", release);
         Ok(())
     }

@@ -191,7 +191,7 @@ mod test {
         let range = range?;
 
         // Act
-        let release = Release::from(range);
+        let release = Release::try_from(range)?;
 
         // Assert
         assert_that!(release.previous).is_none();
@@ -224,7 +224,7 @@ mod test {
         let range = repo.revwalk("..0.2.0")?;
 
         // Act
-        let release = Release::from(range);
+        let release = Release::try_from(range)?;
 
         // Assert
         assert_that!(release.previous).is_some().matches(|_child| {
@@ -261,7 +261,7 @@ mod test {
         let range = repo.revwalk("0.32.1..0.32.3")?;
 
         // Act
-        let release = Release::from(range);
+        let release = Release::try_from(range)?;
 
         // Assert
         assert_that!(release.version.to_string()).is_equal_to("0.32.3".to_string());
@@ -521,7 +521,7 @@ mod test {
         let range = repo.revwalk("..")?;
 
         // Act
-        let mut release = Release::from(range);
+        let mut release = Release::try_from(range)?;
         let mut count = 0;
 
         while let Some(previous) = release.previous {
@@ -550,7 +550,7 @@ mod test {
         let range = repo.revwalk(&format!("{}..", &one[0..7]))?;
 
         // Act
-        let release = Release::from(range);
+        let release = Release::try_from(range)?;
 
         // Assert
         let actual_oids: Vec<String> = release
@@ -581,7 +581,7 @@ mod test {
         let range = repo.revwalk(&format!("{}..", &from[0..7]))?;
 
         // Act
-        let release = Release::from(range);
+        let release = Release::try_from(range)?;
 
         // Assert
         let head_to_v1: Vec<String> = release
