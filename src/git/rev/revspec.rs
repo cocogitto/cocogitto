@@ -1,7 +1,7 @@
 use crate::git::error::Git2Error;
 use crate::git::oid::OidOf;
 use crate::git::repository::Repository;
-use crate::git::rev::init_cache;
+use crate::git::rev::refresh;
 use crate::git::tag::Tag;
 use git2::Oid;
 use std::fmt;
@@ -61,7 +61,7 @@ impl Repository {
     }
 
     pub(super) fn resolve_oid_of(&self, from: &str) -> Result<OidOf, Git2Error> {
-        let cache = init_cache(self);
+        let cache = refresh(self);
 
         let oid = cache.get(from).cloned();
 
@@ -192,7 +192,6 @@ mod test {
         let repo = git_init_no_gpg()?;
         commit("chore: first commit")?;
         let pattern = repo.revspec_from_str("..")?;
-        println!("{:?}", pattern);
         assert_that!(matches!(pattern, RevSpecPattern2::Range { .. })).is_true();
         Ok(())
     }

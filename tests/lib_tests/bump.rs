@@ -15,7 +15,7 @@ use crate::helpers::*;
 #[sealed_test]
 fn bump_ok() -> Result<()> {
     // Arrange
-    git_init()?;
+    git_init(false)?;
     git_commit("chore: first commit")?;
     git_commit("feat: add a feature commit")?;
     git_tag("1.0.0")?;
@@ -44,7 +44,7 @@ fn bump_ok() -> Result<()> {
 #[sealed_test]
 fn annotated_bump_ok() -> Result<()> {
     // Arrange
-    git_init()?;
+    git_init(false)?;
     git_commit("chore: first commit")?;
     git_commit("feat: add a feature commit")?;
     git_tag("1.0.0")?;
@@ -259,7 +259,7 @@ fn consecutive_package_bump_ok() -> Result<()> {
 
     let settings = toml::to_string(&settings)?;
 
-    git_init()?;
+    git_init(false)?;
     run_cmd!(
         echo Hello > README.md;
         git add .;
@@ -334,7 +334,7 @@ fn consecutive_package_bump_ok() -> Result<()> {
 #[sealed_test]
 fn should_fallback_to_0_0_0_when_there_is_no_tag() -> Result<()> {
     // Arrange
-    git_init()?;
+    git_init(false)?;
     git_commit("chore: first commit")?;
     git_commit("feat: add a feature commit")?;
 
@@ -361,7 +361,7 @@ fn should_fallback_to_0_0_0_when_there_is_no_tag() -> Result<()> {
 #[sealed_test]
 fn should_ignore_latest_prerelease_tag() -> Result<()> {
     // Arrange
-    git_init()?;
+    git_init(false)?;
     git_commit("chore: first commit")?;
     git_commit("feat: add a feature commit")?;
 
@@ -428,7 +428,7 @@ fn auto_bump_package_only_ok() -> Result<()> {
 
     let settings = toml::to_string(&settings)?;
 
-    git_init()?;
+    git_init(false)?;
     run_cmd!(
         echo Hello > README.md;
         git add .;
@@ -473,7 +473,7 @@ fn auto_bump_package_only_ok() -> Result<()> {
 // #[sealed_test]
 // fn should_fail_when_latest_tag_is_not_semver_compliant() -> Result<()> {
 //     // Arrange
-//     git_init()?;
+//     git_init(false)?;
 //     git_commit("chore: first commit")?;
 //     git_commit("feat: add a feature commit")?;
 //     git_tag("toto")?;
@@ -501,7 +501,7 @@ fn bump_with_whitelisted_branch_ok() -> Result<()> {
     // Arrange
     let settings = r#"branch_whitelist = [ "master" ]"#;
 
-    git_init()?;
+    git_init(false)?;
     run_cmd!(
         echo $settings > cog.toml;
         git add .;
@@ -535,7 +535,7 @@ fn bump_with_whitelisted_branch_fails() -> Result<()> {
     // Arrange
     let settings = r#"branch_whitelist = [ "main" ]"#;
 
-    git_init()?;
+    git_init(false)?;
     run_cmd!(
         echo $settings > cog.toml;
         git add .;
@@ -571,7 +571,7 @@ fn bump_with_whitelisted_branch_pattern_ok() -> Result<()> {
     // Arrange
     let settings = r#"branch_whitelist = [ "main", "release/**" ]"#;
 
-    git_init()?;
+    git_init(false)?;
     run_cmd!(
         echo $settings > cog.toml;
         git add .;
@@ -607,7 +607,7 @@ fn bump_with_whitelisted_branch_pattern_err() -> Result<()> {
     // Arrange
     let settings = r#"branch_whitelist = [ "release/**" ]"#;
 
-    git_init()?;
+    git_init(false)?;
     run_cmd!(
         echo $settings > cog.toml;
         git add .;
@@ -664,7 +664,7 @@ fn bump_no_error_should_be_thrown_on_only_chore_docs_commit() -> Result<()> {
 
     let settings = toml::to_string(&settings)?;
 
-    git_init()?;
+    git_init(false)?;
     run_cmd!(
         echo Hello > README.md;
         git add .;
@@ -766,7 +766,7 @@ fn error_on_no_conventionnal_commits_found_for_monorepo() -> Result<()> {
 
     let settings = toml::to_string(&settings)?;
 
-    git_init()?;
+    git_init(false)?;
 
     run_cmd!(
         echo Hello > README.md;
@@ -843,7 +843,7 @@ fn error_on_no_conventionnal_commits_found_for_package() -> Result<()> {
 
     let settings = toml::to_string(&settings)?;
 
-    git_init()?;
+    git_init(false)?;
     run_cmd!(
         echo Hello > README.md;
         git add .;
@@ -926,7 +926,7 @@ fn bump_with_unconventionnal_and_conventional_commits_found_for_packages() -> Re
 
     let settings = toml::to_string(&settings)?;
 
-    git_init()?;
+    git_init(false)?;
     run_cmd!(
         echo Hello > README.md;
         git add .;

@@ -241,7 +241,7 @@ impl Tag {
 
         let is_patch_bump = || commits.iter().any(Commit::is_patch_bump);
 
-        // At this point, it is not a major, minor or patch bump but we might have found conventional commits
+        // At this point, it is not a major, minor or patch bump, but we might have found conventional commits
         // -> Must be only chore, docs, refactor ... which means commits that don't require bump but shouldn't throw error
         let no_bump_required = !commits.is_empty();
 
@@ -281,7 +281,7 @@ mod test {
     use crate::git::repository::Repository;
     use crate::git::tag::Tag;
     use crate::settings::{MonoRepoPackage, Settings};
-    use crate::test_helpers::git_init_no_gpg;
+    use crate::test_helpers::{git_init_no_gpg, git_tag};
 
     impl Commit {
         fn commit_fixture(commit_type: CommitType, is_breaking_change: bool) -> Self {
@@ -615,8 +615,9 @@ mod test {
             git add .;
             git commit -m "feat: feature package one";
         )?;
+        git_tag("1.0.0")?;
 
-        let base_version = Tag::from_str("0.1.0", None, None)?;
+        let base_version = Tag::from_str("1.0.0", None, None)?;
 
         // Act
         let tag = base_version.get_monorepo_global_version_from_commit_history(&repository);

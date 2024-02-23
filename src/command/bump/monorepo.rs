@@ -22,6 +22,7 @@ use tera::Tera;
 use crate::conventional::error::BumpError;
 use crate::git::oid::OidOf;
 
+#[derive(Debug)]
 struct PackageBumpData {
     package_name: String,
     package_path: String,
@@ -31,6 +32,7 @@ struct PackageBumpData {
     increment: Increment,
 }
 
+#[derive(Debug)]
 struct PackageData {
     package_name: String,
     package_path: String,
@@ -174,7 +176,6 @@ impl CocoGitto {
         self.pre_bump_checks(skip_untracked)?;
         // Get package bumps
         let bumps = self.get_packages_bumps(pre_release)?;
-
         if bumps.is_empty() {
             print!("No conventional commits found for your packages that required a bump. Changelogs will be updated on the next bump.\nPre-Hooks and Post-Hooks have been skiped.\n");
             return Ok(());
@@ -196,6 +197,7 @@ impl CocoGitto {
             IncrementCommand::AutoMonoRepoGlobal(increment_from_package_bumps),
             &self.repository,
         )?;
+
         ensure_tag_is_greater_than_previous(&old, &tag)?;
 
         if let Some(pre_release) = pre_release {
@@ -235,8 +237,11 @@ impl CocoGitto {
 
         if !SETTINGS.disable_changelog {
             let pattern = self.get_bump_revspec(&old);
-            let changelog =
-                self.get_monorepo_global_changelog_with_target_version(&pattern, tag.clone())?;
+            let changelog = self.get_monorepo_global_changelog_for_version(
+                &pattern,
+                OidOf::Tag(old.clone()),
+                tag.clone(),
+            )?;
 
             changelog.pretty_print_bump_summary()?;
 
@@ -375,8 +380,11 @@ impl CocoGitto {
 
         if !SETTINGS.disable_changelog {
             let pattern = self.get_bump_revspec(&old);
-            let changelog =
-                self.get_monorepo_global_changelog_with_target_version(&pattern, tag.clone())?;
+            let changelog = self.get_monorepo_global_changelog_for_version(
+                &pattern,
+                OidOf::Tag(old.clone()),
+                tag.clone(),
+            )?;
 
             changelog.pretty_print_bump_summary()?;
 

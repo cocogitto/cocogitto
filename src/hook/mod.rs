@@ -44,6 +44,7 @@ pub struct VersionSpan {
     tokens: VecDeque<Token>,
 }
 
+#[derive(Debug)]
 pub(crate) struct HookVersion {
     pub prefixed_tag: Tag,
 }

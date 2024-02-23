@@ -204,17 +204,30 @@ impl CocoGitto {
     }
 
     /// The target global monorepo version is not created yet when generating the changelog.
-    pub fn get_monorepo_global_changelog_with_target_version(
+    pub fn get_monorepo_global_changelog_for_version(
         &self,
         pattern: &str,
+        from: OidOf,
         tag: Tag,
     ) -> Result<Release> {
         let commit_range = self
             .repository
             .get_commit_range_for_monorepo_global(pattern)?;
 
-        let mut release = Release::try_from(commit_range)?;
-        release.version = OidOf::Tag(tag);
+        let release = match Release::try_from(commit_range) {
+            Ok(mut release) => {
+                release.version = OidOf::Tag(tag);
+                release
+            }
+            Err(_) => Release {
+                version: OidOf::Tag(tag),
+                from,
+                date: Default::default(),
+                commits: vec![],
+                previous: None,
+            },
+        };
+
         Ok(release)
     }
 

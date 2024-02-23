@@ -13,7 +13,7 @@ use std::path::Path;
 
 #[sealed_test]
 fn auto_bump_from_start_ok() -> Result<()> {
-    git_init()?;
+    git_init(false)?;
     git_commit("chore: init")?;
     git_commit("feat(taef): feature")?;
     git_commit("fix: bug fix")?;
@@ -31,7 +31,7 @@ fn auto_bump_from_start_ok() -> Result<()> {
 
 #[sealed_test]
 fn auto_bump_minor_from_latest_tag() -> Result<()> {
-    git_init()?;
+    git_init(false)?;
     git_commit("chore: init")?;
     git_commit("feat(taef): feature")?;
     git_commit("fix: bug fix")?;
@@ -53,7 +53,7 @@ fn auto_bump_minor_from_latest_tag() -> Result<()> {
 
 #[sealed_test]
 fn auto_bump_dry_run_from_latest_tag() -> Result<()> {
-    git_init()?;
+    git_init(false)?;
     git_commit("chore: init")?;
     git_commit("feat(taef): feature")?;
     git_commit("fix: bug fix")?;
@@ -77,7 +77,7 @@ fn auto_bump_dry_run_from_latest_tag() -> Result<()> {
 
 #[sealed_test]
 fn auto_bump_major_from_latest_tag() -> Result<()> {
-    git_init()?;
+    git_init(false)?;
     git_commit("chore: init")?;
     git_commit("feat(taef): feature")?;
     git_commit("fix: bug fix")?;
@@ -99,7 +99,7 @@ fn auto_bump_major_from_latest_tag() -> Result<()> {
 
 #[sealed_test]
 fn auto_bump_with_prefix() -> Result<()> {
-    git_init()?;
+    git_init(false)?;
     git_add("tag_prefix = \"v\"", "cog.toml")?;
     git_commit("chore: init")?;
     git_commit("feat(taef): feature")?;
@@ -122,7 +122,7 @@ fn auto_bump_with_prefix() -> Result<()> {
 
 #[sealed_test]
 fn disable_changelog_disables_changelog_generation() -> Result<()> {
-    git_init()?;
+    git_init(false)?;
     git_add("disable_changelog = true", "cog.toml")?;
     git_commit("chore: first commit")?;
     git_commit("feat: add a feature commit")?;
@@ -182,7 +182,7 @@ fn disable_changelog_disables_changelog_generation_for_packages() -> Result<()> 
 
 #[sealed_test]
 fn auto_bump_patch_from_latest_tag() -> Result<()> {
-    git_init()?;
+    git_init(false)?;
     git_commit("chore: init")?;
     git_commit("feat(taef): feature")?;
     git_commit("fix: bug fix")?;
@@ -204,7 +204,7 @@ fn auto_bump_patch_from_latest_tag() -> Result<()> {
 
 #[sealed_test]
 fn auto_bump_respect_semver_sorting() -> Result<()> {
-    git_init()?;
+    git_init(false)?;
     git_commit("chore: init")?;
     git_commit("feat(taef): feature")?;
     git_commit("fix: bug fix")?;
@@ -227,7 +227,7 @@ fn auto_bump_respect_semver_sorting() -> Result<()> {
 
 #[sealed_test]
 fn minor_bump() -> Result<()> {
-    git_init()?;
+    git_init(false)?;
     git_commit("chore: init")?;
     git_tag("1.0.0")?;
     git_commit("feat: feature")?;
@@ -245,7 +245,7 @@ fn minor_bump() -> Result<()> {
 
 #[sealed_test]
 fn major_bump() -> Result<()> {
-    git_init()?;
+    git_init(false)?;
     git_commit("chore: init")?;
     git_tag("1.0.0")?;
     git_commit("feat: feature")?;
@@ -263,7 +263,7 @@ fn major_bump() -> Result<()> {
 
 #[sealed_test]
 fn patch_bump() -> Result<()> {
-    git_init()?;
+    git_init(false)?;
     git_commit("chore: init")?;
     git_tag("1.0.0")?;
     git_commit("feat: feature")?;
@@ -280,7 +280,7 @@ fn patch_bump() -> Result<()> {
 
 #[sealed_test]
 fn pre_release_bump() -> Result<()> {
-    git_init()?;
+    git_init(false)?;
     git_commit("chore: init")?;
     git_tag("1.0.0")?;
     git_commit("feat: feature")?;
@@ -302,7 +302,7 @@ fn pre_release_bump() -> Result<()> {
 #[cfg(target_os = "linux")]
 fn bump_with_hook() -> Result<()> {
     // Arrange
-    git_init()?;
+    git_init(false)?;
     git_add(r#"pre_bump_hooks = ["touch {{version}}"]"#, "cog.toml")?;
     git_commit("chore: init")?;
     git_tag("1.0.0")?;
@@ -325,7 +325,7 @@ fn bump_with_hook() -> Result<()> {
 #[cfg(target_os = "linux")]
 fn bump_with_profile_hook() -> Result<()> {
     // Arrange
-    git_init()?;
+    git_init(false)?;
 
     let config = indoc! {
         "[bump_profiles.custom]
@@ -518,7 +518,7 @@ fn bump_package_with_skip_ci_override_option_takes_predecence() -> Result<()> {
 
 #[sealed_test]
 fn bump_standard_repository_with_default_skip_ci_ok() -> Result<()> {
-    git_init()?;
+    git_init(false)?;
     git_commit("chore: init")?;
     git_commit("feat: feature")?;
 
@@ -538,7 +538,7 @@ fn bump_standard_repository_with_default_skip_ci_ok() -> Result<()> {
 
 #[sealed_test]
 fn bump_standard_repository_with_cog_toml_defined_skip_ci_ok() -> Result<()> {
-    git_init()?;
+    git_init(false)?;
     git_commit("chore: init")?;
     git_add("skip_ci = \"[ci-skip]\"", "cog.toml")?;
     git_commit("feat: feature")?;
@@ -559,7 +559,7 @@ fn bump_standard_repository_with_cog_toml_defined_skip_ci_ok() -> Result<()> {
 
 #[sealed_test]
 fn bump_standard_repository_skip_ci_override_option_takes_precedence() -> Result<()> {
-    git_init()?;
+    git_init(false)?;
     git_commit("chore: init")?;
     git_add("skip_ci = \"[ci-skip]\"", "cog.toml")?;
     git_commit("feat: feature")?;

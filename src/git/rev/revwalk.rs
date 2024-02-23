@@ -74,8 +74,9 @@ impl Repository {
         for (oid_of, commit) in commit_range.into_iter().rev() {
             let parent = commit.parent(0);
 
-            // This is the first commit
+            // First commit is always included in monorepo global tag
             if parent.is_err() {
+                commits.push((oid_of, commit));
                 continue;
             }
 
@@ -269,7 +270,6 @@ mod test {
         let release = *release.previous.unwrap();
         assert_that!(release.version.to_string()).is_equal_to("0.32.2".to_string());
 
-        println!("{:?}", release.previous);
         assert_that!(release.previous).is_none();
         Ok(())
     }
@@ -337,13 +337,112 @@ mod test {
         let commit_range_global = repo.get_commit_range_for_monorepo_global("..HEAD");
         let commit_range_global = commit_range_global?;
         assert_that!(commit_range_package.0).has_length(1);
-        assert_that!(commit_range_global.0).has_length(1);
+        assert_that!(commit_range_global.0).has_length(2);
         Ok(())
     }
 
     #[sealed_test]
-    fn get_package_commit_range_with_filtering() -> Result<()> {
-        // Arrange
+    fn package_with_changes_have_some_commits() -> Result<()> {
+        let repo = init_mono_repo_for_range_filtering()?;
+
+        run_cmd!(
+            echo changes > one/file;
+            git add .;
+            git commit -m "feat: commit to non-ignored path";
+        )?;
+
+        let commit_range_package = repo.get_commit_range_for_package("HEAD~1..HEAD", "one")?;
+
+        asserting!("package with changes have some commits")
+            .that(&commit_range_package.0)
+            .mapped_contains(
+                |(_, commit)| commit.message(),
+                &Some("feat: commit to non-ignored path\n"),
+            );
+
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn package_with_no_changes_should_have_no_commit() -> Result<()> {
+        let repo = init_mono_repo_for_range_filtering()?;
+
+        run_cmd!(
+            echo changes > one/ignored/file;
+            git add .;
+            git commit -m "feat: commit to ignored path";
+        )?;
+
+        let commit_range_package = repo.get_commit_range_for_package("HEAD~1..HEAD", "one")?;
+
+        asserting!("package with no changes should have some commits for HEAD~1 revspec")
+            .that(&commit_range_package.0)
+            .has_length(0);
+
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn package_with_shared_changes_should_have_some_commits() -> Result<()> {
+        let repo = init_mono_repo_for_range_filtering()?;
+
+        run_cmd!(
+            echo changes > shared/file;
+            git add .;
+            git commit -m "feat: commit to extra included path";
+        )?;
+
+        let commit_range_package = repo.get_commit_range_for_package("HEAD~1..HEAD", "one")?;
+
+        asserting!("package with shared changes should have some commits for HEAD~1 revspec")
+            .that(&commit_range_package.0)
+            .mapped_contains(
+                |(_, commit)| commit.message(),
+                &Some("feat: commit to extra included path\n"),
+            );
+
+        assert_that!(commit_range_package.0).has_length(1);
+
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn package_with_extra_included_changes_should_have_some_commits() -> Result<()> {
+        let repo = init_mono_repo_for_range_filtering()?;
+
+        run_cmd!(
+            echo changes > README.md;
+            git add .;
+            git commit -m "feat: commit to extra included file";
+        )?;
+
+        let commit_range_package = repo.get_commit_range_for_package("HEAD~1..HEAD", "one")?;
+
+        asserting!(
+            "package with extra included changes should have some commits for HEAD~1 revspec"
+        )
+        .that(&commit_range_package.0)
+        .mapped_contains(
+            |(_, commit)| commit.message(),
+            &Some("feat: commit to extra included file\n"),
+        );
+
+        assert_that!(commit_range_package.0).has_length(1);
+
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn package_with_with_only_ignored_path_should_have_no_commit() -> Result<()> {
+        let repo = init_mono_repo_for_range_filtering()?;
+        let commit_range_package = repo.get_commit_range_for_package("..HEAD", "one")?;
+        asserting!("package with with only ignored path commit should have no commits for full range revspec")
+            .that(&commit_range_package.0).has_length(0);
+
+        Ok(())
+    }
+
+    fn init_mono_repo_for_range_filtering() -> Result<Repository> {
         let repo = git_init_no_gpg()?;
         let mut packages = HashMap::new();
         packages.insert(
@@ -369,49 +468,7 @@ mod test {
             git add .;
             git commit -m "chore: First commit";
         )?;
-
-        let commit_range_package = repo.get_commit_range_for_package("..HEAD", "one")?;
-
-        assert_that!(commit_range_package.0).has_length(0);
-
-        run_cmd!(
-            echo changes > one/file;
-            git add .;
-            git commit -m "feat: commit to non-ignored path";
-        )?;
-
-        let commit_range_package = repo.get_commit_range_for_package("HEAD~1..HEAD", "one")?;
-
-        assert_that!(commit_range_package.0).has_length(1);
-
-        run_cmd!(
-            echo changes > one/ignored/file;
-            git add .;
-            git commit -m "feat: commit to ignored path";
-        )?;
-
-        let commit_range_package = repo.get_commit_range_for_package("HEAD~1..HEAD", "one")?;
-        assert_that!(commit_range_package.0).has_length(0);
-
-        run_cmd!(
-            echo changes > shared/file;
-            git add .;
-            git commit -m "feat: commit to extra included path";
-        )?;
-
-        let commit_range_package = repo.get_commit_range_for_package("HEAD~1..HEAD", "one")?;
-        assert_that!(commit_range_package.0).has_length(1);
-
-        run_cmd!(
-            echo changes > README.md;
-            git add .;
-            git commit -m "feat: commit to extra included file";
-        )?;
-
-        let commit_range_package = repo.get_commit_range_for_package("HEAD~1..HEAD", "one")?;
-        assert_that!(commit_range_package.0).has_length(1);
-
-        Ok(())
+        Ok(repo)
     }
 
     #[sealed_test]
@@ -491,9 +548,6 @@ mod test {
         let _v2_1_1 = OidOf::Tag(Tag::from_str("2.1.1", Some(v2_1_1), None)?);
         let v3_0_0 = Oid::from_str("c6508e243e2816e2d2f58828ee0c6721502958dd")?;
         let v3_0_0 = OidOf::Tag(Tag::from_str("3.0.0", Some(v3_0_0), None)?);
-
-        let pattern = repo.revspec_from_str("2.1.1..3.0.0")?;
-        println!("{:?}", pattern);
 
         // Act
         let range = repo.revwalk("2.1.1..3.0.0")?;
