@@ -145,7 +145,8 @@ mod test {
             gpg --import $crate_dir/tests/assets/privkey.key;
             echo -e "5\ny\n" | gpg --no-tty --command-fd 0 --expert --edit-key test@cocogitto.org trust;
             git init;
-            git config --local user.signingkey 35B66CC21AEBFC9B0E8C89F1FD753A01E06E05D7;
+            git config --local user.signingkey 24CAC643C7098768E2A90E1A2A8180559460836E;
+            git config --local commit.gpgsign true;
             echo changes > file;
             git add .;
         )?;
