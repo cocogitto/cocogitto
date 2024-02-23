@@ -138,6 +138,7 @@ impl Repository {
             .map(|tag| tag.oid_unchecked().to_owned())
     }
 
+    /// TODO: replace with cache
     pub fn tags(&self, option: TagLookUpOptions) -> Result<Vec<Tag>, TagError> {
         let pattern = get_prefix_pattern();
 

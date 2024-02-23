@@ -9,6 +9,7 @@ pub enum ChangelogError {
     TeraError(tera::Error),
     WriteError(io::Error),
     SeparatorNotFound(PathBuf),
+    EmptyRelease,
 }
 
 impl Display for ChangelogError {
@@ -28,6 +29,9 @@ impl Display for ChangelogError {
                 "cannot find default separator '- - -' in {}",
                 path.as_path().display()
             ),
+            ChangelogError::EmptyRelease => writeln!(
+                f, "No commit found to create a changelog",
+            )
         }
     }
 }

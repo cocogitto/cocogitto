@@ -11,7 +11,7 @@ impl CocoGitto {
     /// - `to` default value:`HEAD` or else first commit
     pub fn get_changelog(&self, pattern: &str, _with_child_releases: bool) -> Result<Release> {
         let commit_range = self.repository.revwalk(pattern)?;
-        Ok(Release::from(commit_range))
+        Release::try_from(commit_range).map_err(Into::into)
     }
 
     pub fn get_changelog_at_tag(&self, tag: &str, template: Template) -> Result<String> {
