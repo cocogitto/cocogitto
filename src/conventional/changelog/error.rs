@@ -29,9 +29,7 @@ impl Display for ChangelogError {
                 "cannot find default separator '- - -' in {}",
                 path.as_path().display()
             ),
-            ChangelogError::EmptyRelease => writeln!(
-                f, "No commit found to create a changelog",
-            )
+            ChangelogError::EmptyRelease => writeln!(f, "No commit found to create a changelog",),
         }
     }
 }

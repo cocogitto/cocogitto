@@ -24,7 +24,7 @@ pub fn init_monorepo(settings: &mut Settings) -> Result<()> {
     settings.packages = packages;
     let settings = toml::to_string(&settings)?;
 
-    git_init()?;
+    git_init(false)?;
     run_cmd!(
         echo $settings > cog.toml;
         git add .;
@@ -40,10 +40,10 @@ pub fn init_monorepo(settings: &mut Settings) -> Result<()> {
 
 /// - Init a repository in the current directory
 /// - Setup a local git user named Tom <toml.bombadil@themail.org>
-pub fn git_init() -> Result<()> {
+pub fn git_init(gpg: bool) -> Result<()> {
     run_cmd!(
         git init -b master;
-        git config --local commit.gpgsign false;
+        git config --local commit.gpgsign $gpg;
         git config --local user.name Tom;
         git config --local user.email toml.bombadil@themail.org;
     )?;

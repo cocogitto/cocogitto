@@ -8,8 +8,8 @@ use crate::git::rev::CommitIter;
 use crate::settings;
 use colored::Colorize;
 
-use log::warn;
 use crate::conventional::changelog::error::ChangelogError;
+use log::warn;
 
 #[derive(Debug, Serialize)]
 pub struct Release<'a> {
@@ -119,6 +119,7 @@ mod test {
     use git2::Oid;
     use indoc::indoc;
     use pretty_assertions::assert_eq;
+    use speculoos::prelude::*;
 
     use crate::conventional::changelog::release::{ChangelogCommit, Release};
     use crate::conventional::changelog::renderer::Renderer;
@@ -132,11 +133,13 @@ mod test {
     use crate::git::tag::Tag;
 
     #[test]
-    fn test() -> anyhow::Result<()> {
+    fn should_get_a_release() -> anyhow::Result<()> {
         let repo = Repository::open(".")?;
         let iter = repo.revwalk("..")?;
-        let release = Release::try_from(iter)?;
-        println!("{:?}", release);
+        let release = Release::try_from(iter);
+        assert_that!(release)
+            .is_ok()
+            .matches(|r| !r.commits.is_empty());
         Ok(())
     }
 

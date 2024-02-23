@@ -7,10 +7,11 @@ use semver::Version;
 
 use crate::conventional::version::Increment;
 use crate::git::error::{Git2Error, TagError};
+use crate::git::oid::OidOf;
 use crate::git::repository::Repository;
 use crate::SETTINGS;
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct TagLookUpOptions<'a> {
     include_pre_release: bool,
     package_name: Option<&'a str>,
@@ -95,7 +96,7 @@ impl Repository {
 
     /// Get the latest tag, will ignore package tag if on a monorepo
     pub(crate) fn get_latest_tag(&self, options: TagLookUpOptions) -> Result<Tag, TagError> {
-        let tags: Vec<Tag> = self.tags(options)?;
+        let tags: Vec<Tag> = self.tag_lookup(options)?;
         tags.into_iter().max().ok_or(TagError::NoTag)
     }
 
@@ -110,7 +111,7 @@ impl Repository {
         }
 
         let mut tags: Vec<Tag> = self
-            .tags(options)?
+            .tag_lookup(options)?
             .into_iter()
             .filter(|tag| tag.package == current.package)
             .collect();
@@ -138,88 +139,31 @@ impl Repository {
             .map(|tag| tag.oid_unchecked().to_owned())
     }
 
-    /// TODO: replace with cache
-    pub fn tags(&self, option: TagLookUpOptions) -> Result<Vec<Tag>, TagError> {
-        let pattern = get_prefix_pattern();
+    pub fn tag_lookup(&self, option: TagLookUpOptions) -> Result<Vec<Tag>, TagError> {
+        let prefix = SETTINGS.tag_prefix.as_ref();
+        let repo_cache = crate::git::rev::refresh(self);
+        let include_pre_release = option.include_pre_release;
 
-        let mut tags: Vec<Tag> = match option.package_name {
-            Some(package) => self
-                .0
-                .tag_names(Some(&get_package_pattern(package)))
-                .map_err(|_| TagError::NoTag)?
-                .into_iter()
-                .flatten()
-                .filter_map(|tag| self.resolve_tag(tag).ok())
-                .collect(),
-            None => {
-                if option.packages_only {
-                    self.get_all_package_tags()?
-                        .into_iter()
-                        .filter_map(|tag| self.resolve_tag(&tag).ok())
-                        .collect()
-                } else if !option.include_packages {
-                    self.0
-                        .tag_names(None)
-                        .map_err(|err| TagError::NoMatchFound { pattern, err })?
-                        .iter()
-                        .flatten()
-                        .filter_map(|tag| self.resolve_tag(tag).ok())
-                        .filter(|tag| tag.package.is_none())
-                        .collect()
+        let tag_filter = |tag: &Tag| {
+            tag.prefix.as_ref() == prefix
+                && tag.package.as_deref() == option.package_name
+                && option.include_packages != tag.package.is_none()
+                && if include_pre_release {
+                    true
                 } else {
-                    self.0
-                        .tag_names(None)
-                        .map_err(|err| TagError::NoMatchFound { pattern, err })?
-                        .iter()
-                        .flatten()
-                        .filter_map(|tag| self.resolve_tag(tag).ok())
-                        .collect()
+                    tag.version.pre.is_empty()
                 }
-            }
         };
 
-        if !option.include_pre_release {
-            tags.retain(|tag| tag.version.pre.is_empty())
-        }
-
-        Ok(tags)
+        Ok(repo_cache
+            .values()
+            .filter_map(|oid| match oid {
+                OidOf::Tag(tag) if tag_filter(tag) => Some(tag),
+                _ => None,
+            })
+            .cloned()
+            .collect())
     }
-
-    fn get_all_package_tags(&self) -> Result<Vec<String>, TagError> {
-        let packages: Vec<&str> = SETTINGS
-            .packages
-            .keys()
-            .map(|profile| -> &str { profile })
-            .collect();
-
-        let all_package_tags = self.0.tag_names(None).map_err(|_| TagError::NoTag)?;
-
-        let package_tags = all_package_tags
-            .into_iter()
-            .flatten()
-            .filter(|tag| packages.iter().any(|package| tag.starts_with(package)))
-            .map(str::to_string)
-            .collect();
-
-        Ok(package_tags)
-    }
-}
-
-fn get_package_pattern(package: &str) -> String {
-    // Safe unwrap here, we are in a monorepo context
-    let separator = SETTINGS.monorepo_separator().unwrap();
-    let tag_prefix = SETTINGS.tag_prefix.as_ref();
-    match tag_prefix {
-        None => format!("{package}{separator}*"),
-        Some(prefix) => format!("{package}{separator}{prefix}*"),
-    }
-}
-
-fn get_prefix_pattern() -> Option<String> {
-    SETTINGS
-        .tag_prefix
-        .as_ref()
-        .map(|prefix| format!("{prefix}*"))
 }
 
 #[derive(Debug, Eq, Clone)]
@@ -387,7 +331,7 @@ mod test {
 
     use crate::git::tag::{Tag, TagLookUpOptions};
     use crate::settings::{MonoRepoPackage, Settings};
-    use crate::test_helpers::git_init_no_gpg;
+    use crate::test_helpers::{commit, git_init_no_gpg, git_tag};
 
     #[test]
     fn should_compare_tags() -> Result<()> {
@@ -403,6 +347,39 @@ mod test {
         .is_some()
         .is_equal_to(&Tag::from_str("2.1.0", None, None)?);
 
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn tag_lookup() -> Result<()> {
+        let repository = git_init_no_gpg()?;
+        let settings = Settings {
+            tag_prefix: Some("v".to_string()),
+            ..Default::default()
+        };
+        let settings = toml::to_string(&settings)?;
+        fs::write("cog.toml", settings)?;
+
+        commit("first commit")?;
+        git_tag("v1.0.0")?;
+        git_tag("v1.1.0")?;
+        git_tag("v2.1.0")?;
+        git_tag("v0.1.0")?;
+        git_tag("v0.2.0")?;
+        git_tag("v0.0.1")?;
+
+        let result = repository.tag_lookup(TagLookUpOptions::default())?;
+
+        let tags: Vec<_> = result.into_iter().map(|tag| tag.to_string()).collect();
+
+        assert_that!(tags).contains_all_of(&[
+            &"v1.0.0".to_string(),
+            &"v1.1.0".to_string(),
+            &"v2.1.0".to_string(),
+            &"v0.1.0".to_string(),
+            &"v0.2.0".to_string(),
+            &"v0.0.1".to_string(),
+        ]);
         Ok(())
     }
 

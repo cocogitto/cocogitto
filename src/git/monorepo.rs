@@ -6,7 +6,7 @@ use crate::{Tag, TagError};
 impl Repository {
     /// Get the latest SemVer tag for a given monorepo package.
     pub fn get_latest_package_tag(&self, package: &str) -> Result<Tag, TagError> {
-        let tags: Vec<Tag> = self.tags(TagLookUpOptions::package(package))?;
+        let tags: Vec<Tag> = self.tag_lookup(TagLookUpOptions::package(package))?;
 
         tags.into_iter().max().ok_or(TagError::NoTag)
     }

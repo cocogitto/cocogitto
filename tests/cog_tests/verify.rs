@@ -11,7 +11,7 @@ use sealed_test::prelude::*;
 #[sealed_test]
 fn verify_ok() -> Result<()> {
     // Arrange
-    git_init()?;
+    git_init(false)?;
     let message = "chore: a commit message";
     let expected = indoc!(
         "a commit message (not committed) - now
@@ -37,7 +37,7 @@ fn verify_ok() -> Result<()> {
 #[sealed_test]
 fn verify_with_scope() -> Result<()> {
     // Arrange
-    git_init()?;
+    git_init(false)?;
     let message = "feat(feature): a commit message";
     let expected = indoc!(
         "a commit message (not committed) - now
@@ -127,7 +127,7 @@ fn should_ignore_merge_commit_with_ignore_flag() -> Result<()> {
 #[sealed_test]
 fn should_ignore_merge_commit_via_config() -> Result<()> {
     // Arrange
-    git_init()?;
+    git_init(false)?;
     let settings = r#"ignore_merge_commits = true"#;
 
     run_cmd!(
@@ -152,7 +152,7 @@ fn should_ignore_merge_commit_via_config() -> Result<()> {
 #[sealed_test(files = ["tests/assets/commit_message.txt"])]
 fn verify_file_ok() -> Result<()> {
     // Arrange
-    git_init()?;
+    git_init(false)?;
     let expected = indoc!(
         "a commit message (not committed) - now
             \tAuthor: Tom
