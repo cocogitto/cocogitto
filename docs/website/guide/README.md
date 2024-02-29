@@ -603,11 +603,12 @@ Cocogitto let you specify the target version with the following flags :
 - `--patch` : increment the PATCH version.
 - `--version <version>` : set version manually ( ex : `cog bump --version 3.2.1`).
 - `--pre <metadata>` : set the [pre-release metatada](https://semver.org/#spec-item-9).
+- `--build <metadata>` : set the [build metatada](https://semver.org/#spec-item-10).
 
 **Example:**
 ```bash
-cog bump --major --pre "beta.1"
-# 1.2.3 -> 2.0.0-beta.1
+cog bump --major --pre "beta.1" --build "foo.bar"
+# 1.2.3 -> 2.0.0-beta.1+foo.bar
 ```
 :::
 
