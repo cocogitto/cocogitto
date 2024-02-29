@@ -10,7 +10,7 @@ use crate::{settings, CocoGitto, SETTINGS};
 use anyhow::Result;
 use colored::*;
 use log::info;
-use semver::Prerelease;
+use semver::{Prerelease, BuildMetadata};
 use tera::Tera;
 
 impl CocoGitto {
@@ -29,6 +29,10 @@ impl CocoGitto {
 
         if let Some(pre_release) = opts.pre_release {
             tag.version.pre = Prerelease::new(pre_release)?;
+        }
+
+        if let Some(build) = opts.build {
+            tag.version.build = BuildMetadata::new(build)?;
         }
 
         let tag = Tag::create(tag.version, None);

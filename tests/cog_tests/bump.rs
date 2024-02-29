@@ -299,6 +299,26 @@ fn pre_release_bump() -> Result<()> {
 }
 
 #[sealed_test]
+fn build_release_bump() -> Result<()> {
+    git_init()?;
+    git_commit("chore: init")?;
+    git_tag("1.0.0")?;
+    git_commit("feat: feature")?;
+
+    Command::cargo_bin("cog")?
+        .arg("bump")
+        .arg("--major")
+        .arg("--build")
+        .arg("a.b.c")
+        .assert()
+        .success();
+
+    assert_that!(Path::new("CHANGELOG.md")).exists();
+    assert_tag_exists("2.0.0+a.b.c")?;
+    Ok(())
+}
+
+#[sealed_test]
 #[cfg(target_os = "linux")]
 fn bump_with_hook() -> Result<()> {
     // Arrange

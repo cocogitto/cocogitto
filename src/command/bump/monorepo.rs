@@ -16,7 +16,7 @@ use anyhow::Result;
 use colored::*;
 
 use log::{info, warn};
-use semver::Prerelease;
+use semver::{Prerelease, BuildMetadata};
 use tera::Tera;
 
 use crate::conventional::error::BumpError;
@@ -80,7 +80,7 @@ impl CocoGitto {
 
         self.repository.add_all()?;
         self.unwrap_or_stash_and_exit(&Tag::default(), hook_result);
-        self.bump_packages(opts.pre_release, opts.hooks_config, &bumps)?;
+        self.bump_packages(opts.pre_release, opts.build, opts.hooks_config, &bumps)?;
 
         if !disable_bump_commit {
             let sign = self.repository.gpg_sign();
@@ -127,7 +127,7 @@ impl CocoGitto {
     fn create_monorepo_version_auto(&mut self, opts: BumpOptions) -> Result<()> {
         self.pre_bump_checks(opts.skip_untracked)?;
         // Get package bumps
-        let bumps = self.get_packages_bumps(opts.pre_release)?;
+        let bumps = self.get_packages_bumps(opts.pre_release, opts.build)?;
         if bumps.is_empty() {
             print!("No conventional commits found for your packages that required a bump. Changelogs will be updated on the next bump.\nPre-Hooks and Post-Hooks have been skiped.\n");
             return Ok(());
@@ -154,6 +154,10 @@ impl CocoGitto {
 
         if let Some(pre_release) = opts.pre_release {
             tag.version.pre = Prerelease::new(pre_release)?;
+        }
+
+        if let Some(build) = opts.build {
+            tag.version.build = BuildMetadata::new(build)?;
         }
 
         let tag = Tag::create(tag.version, None);
@@ -225,8 +229,10 @@ impl CocoGitto {
         );
 
         self.repository.add_all()?;
-        self.unwrap_or_stash_and_exit(&Tag::default(), hook_result);
+        self.unwrap_or_stash_and_exit(&tag, hook_result);
         self.bump_packages(opts.pre_release, opts.hooks_config, &bumps)?;
+
+        self.bump_packages(opts.pre_release, opts.build, opts.build, opts.hooks_config, &bumps)?;
 
         let disable_bump_commit = opts.disable_bump_commit || SETTINGS.disable_bump_commit;
 
@@ -306,6 +312,10 @@ impl CocoGitto {
 
         if let Some(pre_release) = opts.pre_release {
             tag.version.pre = Prerelease::new(pre_release)?;
+        }
+
+        if let Some(build) = opts.build {
+            tag.version.build = BuildMetadata::new(build)?;
         }
 
         let tag = Tag::create(tag.version, None);
@@ -427,7 +437,7 @@ impl CocoGitto {
     }
 
     // Calculate all package bump
-    fn get_packages_bumps(&self, pre_release: Option<&str>) -> Result<Vec<PackageBumpData>> {
+    fn get_packages_bumps(&self, pre_release: Option<&str>, build: Option<&str>) -> Result<Vec<PackageBumpData>> {
         let mut package_bumps = vec![];
         for (package_name, package) in SETTINGS.packages.iter() {
             let old = self.repository.get_latest_package_tag(package_name);
@@ -450,6 +460,10 @@ impl CocoGitto {
 
             if let Some(pre_release) = pre_release {
                 next_version.version.pre = Prerelease::new(pre_release)?;
+            }
+
+            if let Some(build) = build {
+                next_version.version.build = BuildMetadata::new(build)?;
             }
 
             let tag = Tag::create(next_version.version, Some(package_name.to_string()));
@@ -480,6 +494,7 @@ impl CocoGitto {
     fn bump_packages(
         &mut self,
         pre_release: Option<&str>,
+        build: Option<&str>,
         hooks_config: Option<&str>,
         package_bumps: &Vec<PackageBumpData>,
     ) -> Result<()> {
@@ -503,6 +518,10 @@ impl CocoGitto {
 
             if let Some(pre_release) = pre_release {
                 next_version.version.pre = Prerelease::new(pre_release)?;
+            }
+
+            if let Some(build) = build {
+                next_version.version.build = BuildMetadata::new(build)?;
             }
 
             let tag = Tag::create(next_version.version, Some(package_name.to_string()));
