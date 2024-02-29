@@ -267,6 +267,10 @@ enum Command {
         #[arg(long)]
         pre: Option<String>,
 
+        /// Set the build suffix
+        #[arg(long)]
+        build: Option<String>,
+
         /// Specify the bump profile hooks to run
         #[arg(short = 'H', long, value_parser = hook_profiles())]
         hook_profile: Option<String>,
@@ -390,6 +394,7 @@ fn main() -> Result<()> {
             minor,
             patch,
             pre,
+            build,
             hook_profile,
             package,
             annotated,
@@ -431,6 +436,7 @@ fn main() -> Result<()> {
                             package,
                             increment,
                             pre_release: pre.as_deref(),
+                            build: build.as_deref(),
                             hooks_config: hook_profile.as_deref(),
                             annotated,
                             dry_run,
@@ -446,6 +452,7 @@ fn main() -> Result<()> {
                         let opts = BumpOptions {
                             increment,
                             pre_release: pre.as_deref(),
+                            build: build.as_deref(),
                             hooks_config: hook_profile.as_deref(),
                             annotated,
                             dry_run,
@@ -462,6 +469,7 @@ fn main() -> Result<()> {
                 let opts = BumpOptions {
                     increment,
                     pre_release: pre.as_deref(),
+                    build: build.as_deref(),
                     hooks_config: hook_profile.as_deref(),
                     annotated,
                     dry_run,

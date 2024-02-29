@@ -29,6 +29,7 @@ mod standard;
 pub struct BumpOptions<'a> {
     pub increment: IncrementCommand,
     pub pre_release: Option<&'a str>,
+    pub build: Option<&'a str>,
     pub hooks_config: Option<&'a str>,
     pub annotated: Option<String>,
     pub dry_run: bool,
@@ -44,6 +45,7 @@ pub struct PackageBumpOptions<'a> {
     pub package: &'a MonoRepoPackage,
     pub increment: IncrementCommand,
     pub pre_release: Option<&'a str>,
+    pub build: Option<&'a str>,
     pub hooks_config: Option<&'a str>,
     pub annotated: Option<String>,
     pub dry_run: bool,
