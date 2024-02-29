@@ -183,9 +183,9 @@ jobs:
           mkdir -p target/armv7-unknown-linux-musleabihf/release/
           mkdir -p target/aarch64-unknown-linux-gnu/release/
           
-          cp -r /home/runner/artifacts/x86_64-unknown-linux-musl target/x86_64-unknown-linux-musl/release/cog
-          cp -r /home/runner/artifacts/armv7-unknown-linux-musleabihf target/armv7-unknown-linux-musleabihf/release/cog
-          cp -r /home/runner/artifacts/aarch64-unknown-linux-gnu target/aarch64-unknown-linux-gnu/release/cog
+          cp -r /home/runner/artifacts/x86_64-unknown-linux-musl/. target/x86_64-unknown-linux-musl/release
+          cp -r /home/runner/artifacts/armv7-unknown-linux-musleabihf/. target/armv7-unknown-linux-musleabihf/release
+          cp -r /home/runner/artifacts/aarch64-unknown-linux-gnu/. target/aarch64-unknown-linux-gnu/release
           
           chmod +x -R  target/x86_64-unknown-linux-musl/release
           chmod +x -R  target/armv7-unknown-linux-musleabihf/release

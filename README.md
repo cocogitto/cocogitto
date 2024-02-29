@@ -236,7 +236,7 @@ There is a docker image for `cog` available [ghcr.io/cocogitto/latest](https://g
 
 ```shell
 docker pull ghcr.io/cocogitto/cog:latest
-docker run -t -v "$(pwd)":/app/ cog check
+docker run -t -v "$(pwd)":/app/ check
 ```
 
 Note that you need to mount a volume pointing to your target directory for `cog` to be able to operate on your git log.
