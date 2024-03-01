@@ -24,7 +24,7 @@ jobs:
           fetch-depth: 0
 
       - name: Conventional commits check
-        uses: oknozor/cocogitto-action@v3
+        uses: cocogitto/cocogitto-action@v3
 ```
 
 ::: warning
@@ -36,7 +36,7 @@ full git history before running cocogitto-action.
 If you want the action to check only commits since the latest SemVer tag you can do the following: 
 ```yaml
   - name: Conventional commits check
-    uses: oknozor/cocogitto-action@v3
+    uses: cocogitto/cocogitto-action@v3
     with:
       check-latest-tag-only: true
 ```
@@ -47,7 +47,7 @@ To create a release with cocogitto-action simply add the `release` option :
 
 ```yaml
   - name: Semver release
-    uses: oknozor/cocogitto-action@v3
+    uses: cocogitto/cocogitto-action@v3
     with:
       release: true
       git-user: 'Cog Bot'
@@ -98,7 +98,7 @@ jobs:
 
       - name: Cocogitto release
         id: release
-        uses: oknozor/cocogitto-action@v3
+        uses: cocogitto/cocogitto-action@v3
         with:
           release: true
           git-user: 'Cog Bot'
