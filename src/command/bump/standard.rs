@@ -25,6 +25,7 @@ impl CocoGitto {
         skip_ci: bool,
         skip_ci_override: Option<String>,
         skip_untracked: bool,
+        scope_override: Option<String>
     ) -> Result<()> {
         self.pre_bump_checks(skip_untracked)?;
 
@@ -79,14 +80,18 @@ impl CocoGitto {
 
         let mut skip_ci_pattern = String::new();
 
+        let scope = scope_override.unwrap_or("version".to_string());
+
         if skip_ci || skip_ci_override.is_some() {
             skip_ci_pattern = skip_ci_override.unwrap_or(SETTINGS.skip_ci.clone());
         }
 
         self.repository.commit(
             &format!(
-                "chore(version): {} {}",
-                next_version.prefixed_tag, skip_ci_pattern
+                "chore({}): {} {}",
+                scope,
+                next_version.prefixed_tag,
+                skip_ci_pattern
             ),
             sign,
             true,

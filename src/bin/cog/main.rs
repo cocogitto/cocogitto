@@ -293,6 +293,9 @@ enum Command {
         /// Don't fail if there are untracked or uncommited files
         #[arg(long = "skip-untracked")]
         skip_untracked: bool,
+
+        #[arg(long = "scope")]
+        scope_override: Option<String>,
     },
 
     /// Install cog config files
@@ -384,6 +387,7 @@ fn main() -> Result<()> {
             skip_ci,
             skip_ci_override,
             skip_untracked,
+            scope_override
         } => {
             let mut cocogitto = CocoGitto::get()?;
             let is_monorepo = !SETTINGS.packages.is_empty();
@@ -444,6 +448,7 @@ fn main() -> Result<()> {
                     skip_ci,
                     skip_ci_override,
                     skip_untracked,
+                    scope_override
                 )?
             }
         }

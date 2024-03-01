@@ -7,8 +7,8 @@ use cmd_lib::run_cmd;
 use sealed_test::prelude::*;
 use speculoos::prelude::*;
 
+use cocogitto::{CocoGitto, conventional::version::IncrementCommand};
 use cocogitto::settings::{MonoRepoPackage, Settings};
-use cocogitto::{conventional::version::IncrementCommand, CocoGitto};
 
 use crate::helpers::*;
 
@@ -33,6 +33,37 @@ fn bump_ok() -> Result<()> {
         false,
         None,
         false,
+        None
+    );
+
+    // Assert
+    assert_that!(result).is_ok();
+    assert_latest_tag("1.1.0")?;
+    Ok(())
+}
+
+#[sealed_test]
+fn scoped_bump_ok() -> Result<()> {
+    // Arrange
+    git_init()?;
+    git_commit("chore: first commit")?;
+    git_commit("feat: add a feature commit")?;
+    git_tag("1.0.0")?;
+    git_commit("feat: add another feature commit")?;
+
+    let mut cocogitto = CocoGitto::get()?;
+
+    // Act
+    let result = cocogitto.create_version(
+        IncrementCommand::Auto,
+        None,
+        None,
+        None,
+        false,
+        false,
+        None,
+        false,
+        Some("release".to_string())
     );
 
     // Assert
@@ -62,6 +93,7 @@ fn annotated_bump_ok() -> Result<()> {
         false,
         None,
         false,
+        None
     );
 
     // Assert
@@ -350,6 +382,7 @@ fn should_fallback_to_0_0_0_when_there_is_no_tag() -> Result<()> {
         false,
         None,
         false,
+        None
     );
 
     // Assert
@@ -375,6 +408,7 @@ fn should_ignore_latest_prerelease_tag() -> Result<()> {
         false,
         None,
         false,
+        None
     )?;
 
     git_commit("feat: more features")?;
@@ -388,6 +422,7 @@ fn should_ignore_latest_prerelease_tag() -> Result<()> {
         false,
         None,
         false,
+        None
     );
 
     // Assert
@@ -522,6 +557,7 @@ fn bump_with_whitelisted_branch_ok() -> Result<()> {
         false,
         None,
         false,
+        None
     );
 
     // Assert
@@ -556,6 +592,7 @@ fn bump_with_whitelisted_branch_fails() -> Result<()> {
         false,
         None,
         false,
+        None
     );
 
     // Assert
@@ -594,6 +631,7 @@ fn bump_with_whitelisted_branch_pattern_ok() -> Result<()> {
         false,
         None,
         false,
+        None
     );
 
     // Assert
@@ -628,6 +666,7 @@ fn bump_with_whitelisted_branch_pattern_err() -> Result<()> {
         false,
         None,
         false,
+        None
     );
 
     // Assert
@@ -793,6 +832,7 @@ fn error_on_no_conventionnal_commits_found_for_monorepo() -> Result<()> {
         false,
         None,
         false,
+        None
     );
 
     // Assert
@@ -815,6 +855,7 @@ fn error_on_no_conventionnal_commits_found_for_monorepo() -> Result<()> {
         false,
         None,
         false,
+        None
     );
 
     // Assert
