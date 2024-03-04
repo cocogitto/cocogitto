@@ -1,7 +1,7 @@
 use crate::git::error::Git2Error;
 use crate::git::oid::OidOf;
 use crate::git::repository::Repository;
-use crate::git::rev::cache::init;
+use crate::git::rev::cache::get_cache;
 use crate::git::tag::Tag;
 use git2::Oid;
 use std::fmt;
@@ -61,7 +61,7 @@ impl Repository {
     }
 
     pub(super) fn resolve_oid_of(&self, from: &str) -> Result<OidOf, Git2Error> {
-        let cache = init(self);
+        let cache = get_cache(self);
 
         let oid = cache.get(from).cloned();
 

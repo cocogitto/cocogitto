@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::path::Path;
 use std::path::PathBuf;
 
@@ -7,11 +7,10 @@ use cmd_lib::run_cmd;
 use sealed_test::prelude::*;
 use speculoos::prelude::*;
 
+use crate::helpers::*;
 use cocogitto::command::bump::{BumpOptions, PackageBumpOptions};
 use cocogitto::settings::{MonoRepoPackage, Settings};
 use cocogitto::{conventional::version::IncrementCommand, CocoGitto};
-
-use crate::helpers::*;
 
 #[sealed_test]
 fn bump_ok() -> Result<()> {
@@ -241,6 +240,8 @@ fn consecutive_package_bump_ok() -> Result<()> {
         ..Default::default()
     })?;
 
+    cocogitto.clear_cache();
+
     cocogitto.create_package_version(PackageBumpOptions {
         package_name: "jenkins",
         package: &jenkins(),
@@ -253,6 +254,8 @@ fn consecutive_package_bump_ok() -> Result<()> {
         git add .;
         git commit -m "fix(jenkins): bug fix on jenkins package";
     )?;
+
+    cocogitto.clear_cache();
 
     cocogitto.create_package_version(PackageBumpOptions {
         package_name: "jenkins",
@@ -369,6 +372,8 @@ fn auto_bump_package_only_ok() -> Result<()> {
     assert_tag_exists("jenkins-0.1.0")?;
     assert_tag_exists("thumbor-0.1.0")?;
     assert_tag_does_not_exist("0.1.0")?;
+
+    cocogitto.clear_cache();
 
     run_cmd!(
         echo "fix jenkins bug" > jenkins/fix;
@@ -575,7 +580,11 @@ fn bump_no_error_should_be_thrown_on_only_chore_docs_commit() -> Result<()> {
         git commit -m "docs(jenkins): jenkins docs";
     )?;
 
+    cocogitto.clear_cache();
+
     cocogitto.create_monorepo_version(BumpOptions::default())?;
+
+    cocogitto.clear_cache();
 
     cocogitto.create_package_version(PackageBumpOptions {
         package_name: "jenkins",
@@ -589,6 +598,8 @@ fn bump_no_error_should_be_thrown_on_only_chore_docs_commit() -> Result<()> {
         git add .;
         git commit -m "feat(thumbor): more feat on thumbor";
     )?;
+
+    cocogitto.clear_cache();
 
     cocogitto.create_monorepo_version(BumpOptions::default())?;
 
