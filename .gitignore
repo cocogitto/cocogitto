@@ -2,3 +2,8 @@
 .idea
 .vscode
 issues
+flamegraph.svg
+massif.out.*
+perf.data
+perf.data.old
+stacks.folded
