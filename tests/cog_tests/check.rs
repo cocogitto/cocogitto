@@ -8,7 +8,7 @@ use sealed_test::prelude::*;
 #[sealed_test]
 fn cog_check_ok() -> Result<()> {
     // Arrange
-    git_init(false)?;
+    git_init()?;
     git_commit("chore: init")?;
     git_commit("feat: feature")?;
     git_commit("fix: bug fix")?;
@@ -26,7 +26,7 @@ fn cog_check_ok() -> Result<()> {
 #[sealed_test]
 fn cog_check_failure() -> Result<()> {
     // Arrange
-    git_init(false)?;
+    git_init()?;
     git_commit("chore: init")?;
     git_commit("toto: feature")?;
     git_commit("fix: bug fix")?;
@@ -44,7 +44,7 @@ fn cog_check_failure() -> Result<()> {
 #[sealed_test]
 fn cog_check_from_latest_tag_ok() -> Result<()> {
     // Arrange
-    git_init(false)?;
+    git_init()?;
     git_commit("chore: init")?;
     git_commit("toto: errored commit")?;
     git_commit("feat: feature")?;
@@ -65,7 +65,7 @@ fn cog_check_from_latest_tag_ok() -> Result<()> {
 #[sealed_test]
 fn cog_check_from_latest_tag_failure() -> Result<()> {
     // Arrange
-    git_init(false)?;
+    git_init()?;
     git_commit("chore: init")?;
     git_commit("toto: errored commit")?;
     git_commit("feat: feature")?;
@@ -87,7 +87,7 @@ fn cog_check_from_latest_tag_failure() -> Result<()> {
 #[sealed_test]
 fn cog_check_commit_range_ok() -> Result<()> {
     // Arrange
-    git_init(false)?;
+    git_init()?;
     let range_start = git_commit("chore: init")?;
     git_commit("feat: feature")?;
     let range_end = git_commit("fix: bug fix")?;
@@ -107,7 +107,7 @@ fn cog_check_commit_range_ok() -> Result<()> {
 #[sealed_test]
 fn cog_check_commit_range_failure() -> Result<()> {
     // Arrange
-    git_init(false)?;
+    git_init()?;
     let range_start = git_commit("chore: init")?;
     git_commit("toto: errored commit")?;
     git_commit("feat: feature")?;

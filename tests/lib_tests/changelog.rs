@@ -12,7 +12,7 @@ use crate::helpers::{git_commit, git_init, git_log_head_sha, git_tag};
 fn getting_changelog_from_tags_should_produce_the_same_range_either_from_tags_or_from_commits(
 ) -> Result<()> {
     // Arrange
-    git_init(false)?;
+    git_init()?;
 
     git_commit("feat: feature 1")?;
     let sha_0_1 = git_commit("feat: feature 2")?;
@@ -73,7 +73,7 @@ fn getting_changelog_from_tags_should_produce_the_same_range_either_from_tags_or
 #[sealed_test]
 fn from_commit_should_be_drained() -> Result<()> {
     // Arrange
-    git_init(false)?;
+    git_init()?;
 
     git_commit("feat: feature 1")?;
     git_commit("feat: feature 2")?;

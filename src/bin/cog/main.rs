@@ -18,6 +18,8 @@ use clap::builder::{PossibleValue, PossibleValuesParser};
 use clap::{ArgAction, ArgGroup, Args, CommandFactory, Parser, Subcommand, ValueEnum};
 use clap_complete::{shells, Generator};
 use clap_complete_nushell::Nushell;
+use cocogitto::command::bump::{BumpOptions, PackageBumpOptions};
+use cocogitto::command::commit::CommitOptions;
 use cocogitto::settings::GitHookType;
 
 fn hook_profiles() -> PossibleValuesParser {
@@ -410,40 +412,49 @@ fn main() -> Result<()> {
                     Some(package_name) => {
                         // Safe unwrap here, package name is validated by clap
                         let package = SETTINGS.packages.get(&package_name).unwrap();
-                        cocogitto.create_package_version(
-                            (&package_name, package),
+
+                        let opts = PackageBumpOptions {
+                            package_name: &package_name,
+                            package,
                             increment,
-                            pre.as_deref(),
-                            hook_profile.as_deref(),
+                            pre_release: pre.as_deref(),
+                            hooks_config: hook_profile.as_deref(),
                             annotated,
                             dry_run,
                             skip_ci,
                             skip_ci_override,
                             skip_untracked,
-                        )?
+                        };
+
+                        cocogitto.create_package_version(opts)?
                     }
-                    None => cocogitto.create_monorepo_version(
-                        increment,
-                        pre.as_deref(),
-                        hook_profile.as_deref(),
-                        annotated,
-                        dry_run,
-                        skip_ci,
-                        skip_ci_override,
-                        skip_untracked,
-                    )?,
+                    None => {
+                        let opts = BumpOptions {
+                            increment,
+                            pre_release: pre.as_deref(),
+                            hooks_config: hook_profile.as_deref(),
+                            annotated,
+                            dry_run,
+                            skip_ci,
+                            skip_ci_override,
+                            skip_untracked,
+                        };
+
+                        cocogitto.create_monorepo_version(opts)?
+                    }
                 }
             } else {
-                cocogitto.create_version(
+                let opts = BumpOptions {
                     increment,
-                    pre.as_deref(),
-                    hook_profile.as_deref(),
+                    pre_release: pre.as_deref(),
+                    hooks_config: hook_profile.as_deref(),
                     annotated,
                     dry_run,
                     skip_ci,
                     skip_ci_override,
                     skip_untracked,
-                )?
+                };
+                cocogitto.create_version(opts)?
             }
         }
         Command::Verify {
@@ -629,15 +640,18 @@ fn main() -> Result<()> {
             } else {
                 (None, None, breaking_change)
             };
-            cocogitto.conventional_commit(
-                &typ,
+
+            let opts = CommitOptions {
+                commit_type: &typ,
                 scope,
-                commit_message,
+                summary: commit_message,
                 body,
                 footer,
                 breaking,
                 sign,
-            )?;
+            };
+
+            cocogitto.conventional_commit(opts)?;
             cocogitto.run_commit_hook(CommitHook::PostCommit)?;
         }
     }

@@ -1,10 +1,11 @@
 use std::cmp::Ordering;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Default)]
 pub enum IncrementCommand {
     Major,
     Minor,
     Patch,
+    #[default]
     Auto,
     NoBump,
     AutoPackage(String),

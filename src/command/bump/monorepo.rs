@@ -1,5 +1,5 @@
 use crate::command::bump::{
-    ensure_tag_is_greater_than_previous, tag_or_fallback_to_zero, HookRunOptions,
+    ensure_tag_is_greater_than_previous, tag_or_fallback_to_zero, BumpOptions, HookRunOptions,
 };
 
 use crate::conventional::changelog::template::{
@@ -40,94 +40,52 @@ struct PackageData {
 }
 
 impl CocoGitto {
-    #[allow(clippy::too_many_arguments)]
-    pub fn create_monorepo_version(
-        &mut self,
-        increment: IncrementCommand,
-        pre_release: Option<&str>,
-        hooks_config: Option<&str>,
-        annotated: Option<String>,
-        dry_run: bool,
-        skip_ci: bool,
-        skip_ci_override: Option<String>,
-        skip_untracked: bool,
-    ) -> Result<()> {
-        match increment {
+    pub fn create_monorepo_version(&mut self, opts: BumpOptions) -> Result<()> {
+        match opts.increment {
             IncrementCommand::Auto => {
                 if SETTINGS.generate_mono_repository_global_tag {
-                    self.create_monorepo_version_auto(
-                        pre_release,
-                        hooks_config,
-                        annotated,
-                        dry_run,
-                        skip_ci,
-                        skip_ci_override,
-                        skip_untracked,
-                    )
+                    self.create_monorepo_version_auto(opts)
                 } else {
-                    if annotated.is_some() {
+                    if opts.annotated.is_some() {
                         warn!("--annotated flag is not supported for package bumps without a global tag");
                     }
-                    self.create_all_package_version_auto(
-                        pre_release,
-                        hooks_config,
-                        dry_run,
-                        skip_ci,
-                        skip_ci_override,
-                        skip_untracked,
-                    )
+                    self.create_all_package_version_auto(opts)
                 }
             }
-            _ => self.create_monorepo_version_manual(
-                increment,
-                pre_release,
-                hooks_config,
-                annotated,
-                dry_run,
-                skip_ci,
-                skip_ci_override,
-                skip_untracked,
-            ),
+            _ => self.create_monorepo_version_manual(opts),
         }
     }
 
-    pub fn create_all_package_version_auto(
-        &mut self,
-        pre_release: Option<&str>,
-        hooks_config: Option<&str>,
-        dry_run: bool,
-        skip_ci: bool,
-        skip_ci_override: Option<String>,
-        skip_untracked: bool,
-    ) -> Result<()> {
-        self.pre_bump_checks(skip_untracked)?;
+    pub fn create_all_package_version_auto(&mut self, opts: BumpOptions) -> Result<()> {
+        self.pre_bump_checks(opts.skip_untracked)?;
         // Get package bumps
-        let bumps = self.get_packages_bumps(pre_release)?;
+        let bumps = self.get_packages_bumps(opts.pre_release)?;
 
         if bumps.is_empty() {
             print!("No conventional commits found for your packages that required a bump. Changelogs will be updated on the next bump.\nPre-Hooks and Post-Hooks have been skiped.\n");
             return Ok(());
         }
 
-        if dry_run {
+        if opts.dry_run {
             for bump in bumps {
                 println!("{}", bump.new_version.prefixed_tag)
             }
             return Ok(());
         }
 
-        let hook_result = self.run_hooks(HookRunOptions::pre_bump().hook_profile(hooks_config));
+        let hook_result =
+            self.run_hooks(HookRunOptions::pre_bump().hook_profile(opts.hooks_config));
 
         self.repository.add_all()?;
         self.unwrap_or_stash_and_exit(&Tag::default(), hook_result);
-        self.bump_packages(pre_release, hooks_config, &bumps)?;
+        self.bump_packages(opts.pre_release, opts.hooks_config, &bumps)?;
 
         let sign = self.repository.gpg_sign();
 
         let mut skip_ci_pattern = String::new();
 
-        if skip_ci || skip_ci_override.is_some() {
-            skip_ci_pattern = skip_ci_override.unwrap_or(SETTINGS.skip_ci.clone());
+        if opts.skip_ci || opts.skip_ci_override.is_some() {
+            skip_ci_pattern = opts.skip_ci_override.unwrap_or(SETTINGS.skip_ci.clone());
         }
 
         self.repository.commit(
@@ -151,31 +109,21 @@ impl CocoGitto {
                 HookRunOptions::post_bump()
                     .current_tag(bump.old_version.as_ref())
                     .next_version(&bump.new_version)
-                    .hook_profile(hooks_config)
+                    .hook_profile(opts.hooks_config)
                     .package(&bump.package_name, package),
             )?;
         }
 
         // Run global post hooks
-        self.run_hooks(HookRunOptions::post_bump().hook_profile(hooks_config))?;
+        self.run_hooks(HookRunOptions::post_bump().hook_profile(opts.hooks_config))?;
 
         Ok(())
     }
 
-    #[allow(clippy::too_many_arguments)]
-    fn create_monorepo_version_auto(
-        &mut self,
-        pre_release: Option<&str>,
-        hooks_config: Option<&str>,
-        annotated: Option<String>,
-        dry_run: bool,
-        skip_ci: bool,
-        skip_ci_override: Option<String>,
-        skip_untracked: bool,
-    ) -> Result<()> {
-        self.pre_bump_checks(skip_untracked)?;
+    fn create_monorepo_version_auto(&mut self, opts: BumpOptions) -> Result<()> {
+        self.pre_bump_checks(opts.skip_untracked)?;
         // Get package bumps
-        let bumps = self.get_packages_bumps(pre_release)?;
+        let bumps = self.get_packages_bumps(opts.pre_release)?;
         if bumps.is_empty() {
             print!("No conventional commits found for your packages that required a bump. Changelogs will be updated on the next bump.\nPre-Hooks and Post-Hooks have been skiped.\n");
             return Ok(());
@@ -200,13 +148,13 @@ impl CocoGitto {
 
         ensure_tag_is_greater_than_previous(&old, &tag)?;
 
-        if let Some(pre_release) = pre_release {
+        if let Some(pre_release) = opts.pre_release {
             tag.version.pre = Prerelease::new(pre_release)?;
         }
 
         let tag = Tag::create(tag.version, None);
 
-        if dry_run {
+        if opts.dry_run {
             for bump in bumps {
                 println!("{}", bump.new_version.prefixed_tag)
             }
@@ -269,21 +217,21 @@ impl CocoGitto {
             HookRunOptions::pre_bump()
                 .current_tag(current.as_ref())
                 .next_version(&next_version)
-                .hook_profile(hooks_config),
+                .hook_profile(opts.hooks_config),
         );
 
         self.repository.add_all()?;
 
         self.unwrap_or_stash_and_exit(&tag, hook_result);
 
-        self.bump_packages(pre_release, hooks_config, &bumps)?;
+        self.bump_packages(opts.pre_release, opts.hooks_config, &bumps)?;
 
         let sign = self.repository.gpg_sign();
 
         let mut skip_ci_pattern = String::new();
 
-        if skip_ci || skip_ci_override.is_some() {
-            skip_ci_pattern = skip_ci_override.unwrap_or(SETTINGS.skip_ci.clone());
+        if opts.skip_ci || opts.skip_ci_override.is_some() {
+            skip_ci_pattern = opts.skip_ci_override.unwrap_or(SETTINGS.skip_ci.clone());
         }
 
         self.repository.commit(
@@ -299,7 +247,7 @@ impl CocoGitto {
             self.repository.create_tag(&bump.new_version.prefixed_tag)?;
         }
 
-        if let Some(msg_tmpl) = annotated {
+        if let Some(msg_tmpl) = opts.annotated {
             let mut context = tera::Context::new();
             context.insert("latest", &old.version.to_string());
             context.insert("version", &tag.version.to_string());
@@ -319,7 +267,7 @@ impl CocoGitto {
                 HookRunOptions::post_bump()
                     .current_tag(bump.old_version.as_ref())
                     .next_version(&bump.new_version)
-                    .hook_profile(hooks_config)
+                    .hook_profile(opts.hooks_config)
                     .package(&bump.package_name, package),
             )?;
         }
@@ -329,41 +277,30 @@ impl CocoGitto {
             HookRunOptions::post_bump()
                 .current_tag(current.as_ref())
                 .next_version(&next_version)
-                .hook_profile(hooks_config),
+                .hook_profile(opts.hooks_config),
         )?;
 
         Ok(())
     }
 
-    #[allow(clippy::too_many_arguments)]
-    fn create_monorepo_version_manual(
-        &mut self,
-        increment: IncrementCommand,
-        pre_release: Option<&str>,
-        hooks_config: Option<&str>,
-        annotated: Option<String>,
-        dry_run: bool,
-        skip_ci: bool,
-        skip_ci_override: Option<String>,
-        skip_untracked: bool,
-    ) -> Result<()> {
-        self.pre_bump_checks(skip_untracked)?;
+    fn create_monorepo_version_manual(&mut self, opts: BumpOptions) -> Result<()> {
+        self.pre_bump_checks(opts.skip_untracked)?;
         // Get package bumps
         let bumps = self.get_current_packages()?;
 
         // Get current global tag
         let old = self.repository.get_latest_tag(TagLookUpOptions::default());
         let old = tag_or_fallback_to_zero(old)?;
-        let mut tag = old.bump(increment, &self.repository)?;
+        let mut tag = old.bump(opts.increment, &self.repository)?;
         ensure_tag_is_greater_than_previous(&old, &tag)?;
 
-        if let Some(pre_release) = pre_release {
+        if let Some(pre_release) = opts.pre_release {
             tag.version.pre = Prerelease::new(pre_release)?;
         }
 
         let tag = Tag::create(tag.version, None);
 
-        if dry_run {
+        if opts.dry_run {
             print!("{tag}");
             return Ok(());
         }
@@ -412,7 +349,7 @@ impl CocoGitto {
             HookRunOptions::pre_bump()
                 .current_tag(current.as_ref())
                 .next_version(&next_version)
-                .hook_profile(hooks_config),
+                .hook_profile(opts.hooks_config),
         );
 
         self.repository.add_all()?;
@@ -422,8 +359,8 @@ impl CocoGitto {
 
         let mut skip_ci_pattern = String::new();
 
-        if skip_ci || skip_ci_override.is_some() {
-            skip_ci_pattern = skip_ci_override.unwrap_or(SETTINGS.skip_ci.clone());
+        if opts.skip_ci || opts.skip_ci_override.is_some() {
+            skip_ci_pattern = opts.skip_ci_override.unwrap_or(SETTINGS.skip_ci.clone());
         }
 
         self.repository.commit(
@@ -435,7 +372,7 @@ impl CocoGitto {
             true,
         )?;
 
-        if let Some(msg_tmpl) = annotated {
+        if let Some(msg_tmpl) = opts.annotated {
             let mut context = tera::Context::new();
             context.insert("latest", &old.version.to_string());
             context.insert("version", &tag.version.to_string());
@@ -450,7 +387,7 @@ impl CocoGitto {
             HookRunOptions::post_bump()
                 .current_tag(current.as_ref())
                 .next_version(&next_version)
-                .hook_profile(hooks_config),
+                .hook_profile(opts.hooks_config),
         )?;
 
         Ok(())

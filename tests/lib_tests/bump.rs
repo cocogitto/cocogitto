@@ -7,6 +7,7 @@ use cmd_lib::run_cmd;
 use sealed_test::prelude::*;
 use speculoos::prelude::*;
 
+use cocogitto::command::bump::{BumpOptions, PackageBumpOptions};
 use cocogitto::settings::{MonoRepoPackage, Settings};
 use cocogitto::{conventional::version::IncrementCommand, CocoGitto};
 
@@ -15,7 +16,7 @@ use crate::helpers::*;
 #[sealed_test]
 fn bump_ok() -> Result<()> {
     // Arrange
-    git_init(false)?;
+    git_init()?;
     git_commit("chore: first commit")?;
     git_commit("feat: add a feature commit")?;
     git_tag("1.0.0")?;
@@ -24,16 +25,10 @@ fn bump_ok() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result = cocogitto.create_version(
-        IncrementCommand::Auto,
-        None,
-        None,
-        None,
-        false,
-        false,
-        None,
-        false,
-    );
+    let result = cocogitto.create_version(BumpOptions {
+        increment: IncrementCommand::Auto,
+        ..Default::default()
+    });
 
     // Assert
     assert_that!(result).is_ok();
@@ -44,7 +39,7 @@ fn bump_ok() -> Result<()> {
 #[sealed_test]
 fn annotated_bump_ok() -> Result<()> {
     // Arrange
-    git_init(false)?;
+    git_init()?;
     git_commit("chore: first commit")?;
     git_commit("feat: add a feature commit")?;
     git_tag("1.0.0")?;
@@ -53,16 +48,10 @@ fn annotated_bump_ok() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result = cocogitto.create_version(
-        IncrementCommand::Auto,
-        None,
-        None,
-        Some(String::from("Release version {{version}}")),
-        false,
-        false,
-        None,
-        false,
-    );
+    let result = cocogitto.create_version(BumpOptions {
+        annotated: Some(String::from("Release version {{version}}")),
+        ..Default::default()
+    });
 
     // Assert
     assert_that!(result).is_ok();
@@ -83,16 +72,7 @@ fn monorepo_bump_ok() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result = cocogitto.create_monorepo_version(
-        IncrementCommand::Auto,
-        None,
-        None,
-        None,
-        false,
-        false,
-        None,
-        false,
-    );
+    let result = cocogitto.create_monorepo_version(BumpOptions::default());
 
     // Assert
     assert_that!(result).is_ok();
@@ -116,16 +96,10 @@ fn monorepo_bump_manual_ok() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result = cocogitto.create_monorepo_version(
-        IncrementCommand::Major,
-        None,
-        None,
-        None,
-        false,
-        false,
-        None,
-        false,
-    );
+    let result = cocogitto.create_monorepo_version(BumpOptions {
+        increment: IncrementCommand::Major,
+        ..Default::default()
+    });
 
     // Assert
     assert_that!(result).is_ok();
@@ -149,16 +123,10 @@ fn monorepo_bump_manual_disable_changelog_ok() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result = cocogitto.create_monorepo_version(
-        IncrementCommand::Major,
-        None,
-        None,
-        None,
-        false,
-        false,
-        None,
-        false,
-    );
+    let result = cocogitto.create_monorepo_version(BumpOptions {
+        increment: IncrementCommand::Major,
+        ..Default::default()
+    });
 
     // Assert
     assert_that!(result).is_ok();
@@ -180,16 +148,7 @@ fn monorepo_with_tag_prefix_bump_ok() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result = cocogitto.create_monorepo_version(
-        IncrementCommand::Auto,
-        None,
-        None,
-        None,
-        false,
-        false,
-        None,
-        false,
-    );
+    let result = cocogitto.create_monorepo_version(BumpOptions::default());
 
     // Assert
     assert_that!(result).is_ok();
@@ -210,17 +169,12 @@ fn package_bump_ok() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result = cocogitto.create_package_version(
-        ("one", package),
-        IncrementCommand::AutoPackage("one".to_string()),
-        None,
-        None,
-        None,
-        false,
-        false,
-        None,
-        false,
-    );
+    let result = cocogitto.create_package_version(PackageBumpOptions {
+        package_name: "one",
+        package,
+        increment: IncrementCommand::AutoPackage("one".to_string()),
+        ..Default::default()
+    });
 
     // Assert
     assert_that!(result).is_ok();
@@ -259,7 +213,7 @@ fn consecutive_package_bump_ok() -> Result<()> {
 
     let settings = toml::to_string(&settings)?;
 
-    git_init(false)?;
+    git_init()?;
     run_cmd!(
         echo Hello > README.md;
         git add .;
@@ -280,29 +234,19 @@ fn consecutive_package_bump_ok() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    cocogitto.create_package_version(
-        ("thumbor", &thumbor()),
-        IncrementCommand::AutoPackage("thumbor".to_owned()),
-        None,
-        None,
-        None,
-        false,
-        false,
-        None,
-        false,
-    )?;
+    cocogitto.create_package_version(PackageBumpOptions {
+        package_name: "thumbor",
+        package: &thumbor(),
+        increment: IncrementCommand::AutoPackage("thumbor".to_owned()),
+        ..Default::default()
+    })?;
 
-    cocogitto.create_package_version(
-        ("jenkins", &jenkins()),
-        IncrementCommand::AutoPackage("jenkins".to_owned()),
-        None,
-        None,
-        None,
-        false,
-        false,
-        None,
-        false,
-    )?;
+    cocogitto.create_package_version(PackageBumpOptions {
+        package_name: "jenkins",
+        package: &jenkins(),
+        increment: IncrementCommand::AutoPackage("jenkins".to_owned()),
+        ..Default::default()
+    })?;
 
     run_cmd!(
         echo "fix jenkins bug" > jenkins/fix;
@@ -310,17 +254,12 @@ fn consecutive_package_bump_ok() -> Result<()> {
         git commit -m "fix(jenkins): bug fix on jenkins package";
     )?;
 
-    cocogitto.create_package_version(
-        ("jenkins", &jenkins()),
-        IncrementCommand::AutoPackage("jenkins".to_owned()),
-        None,
-        None,
-        None,
-        false,
-        false,
-        None,
-        false,
-    )?;
+    cocogitto.create_package_version(PackageBumpOptions {
+        package_name: "jenkins",
+        package: &jenkins(),
+        increment: IncrementCommand::AutoPackage("jenkins".to_owned()),
+        ..Default::default()
+    })?;
 
     // Assert
     assert_tag_exists("jenkins-0.1.0")?;
@@ -334,23 +273,14 @@ fn consecutive_package_bump_ok() -> Result<()> {
 #[sealed_test]
 fn should_fallback_to_0_0_0_when_there_is_no_tag() -> Result<()> {
     // Arrange
-    git_init(false)?;
+    git_init()?;
     git_commit("chore: first commit")?;
     git_commit("feat: add a feature commit")?;
 
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result = cocogitto.create_version(
-        IncrementCommand::Auto,
-        None,
-        None,
-        None,
-        false,
-        false,
-        None,
-        false,
-    );
+    let result = cocogitto.create_version(BumpOptions::default());
 
     // Assert
     assert_that!(result).is_ok();
@@ -361,34 +291,19 @@ fn should_fallback_to_0_0_0_when_there_is_no_tag() -> Result<()> {
 #[sealed_test]
 fn should_ignore_latest_prerelease_tag() -> Result<()> {
     // Arrange
-    git_init(false)?;
+    git_init()?;
     git_commit("chore: first commit")?;
     git_commit("feat: add a feature commit")?;
 
     let mut cocogitto = CocoGitto::get()?;
-    cocogitto.create_version(
-        IncrementCommand::Auto,
-        Some("alpha1"),
-        None,
-        None,
-        false,
-        false,
-        None,
-        false,
-    )?;
+    cocogitto.create_version(BumpOptions {
+        pre_release: Some("alpha1"),
+        ..Default::default()
+    })?;
 
     git_commit("feat: more features")?;
     // Act
-    let result = cocogitto.create_version(
-        IncrementCommand::Auto,
-        None,
-        None,
-        None,
-        false,
-        false,
-        None,
-        false,
-    );
+    let result = cocogitto.create_version(BumpOptions::default());
 
     // Assert
     assert_that!(result).is_ok();
@@ -428,7 +343,7 @@ fn auto_bump_package_only_ok() -> Result<()> {
 
     let settings = toml::to_string(&settings)?;
 
-    git_init(false)?;
+    git_init()?;
     run_cmd!(
         echo Hello > README.md;
         git add .;
@@ -449,7 +364,7 @@ fn auto_bump_package_only_ok() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    cocogitto.create_all_package_version_auto(None, None, false, false, None, false)?;
+    cocogitto.create_all_package_version_auto(BumpOptions::default())?;
 
     assert_tag_exists("jenkins-0.1.0")?;
     assert_tag_exists("thumbor-0.1.0")?;
@@ -461,7 +376,7 @@ fn auto_bump_package_only_ok() -> Result<()> {
         git commit -m "fix(jenkins): bug fix on jenkins package";
     )?;
 
-    cocogitto.create_all_package_version_auto(None, None, false, false, None, false)?;
+    cocogitto.create_all_package_version_auto(BumpOptions::default())?;
 
     // Assert
     assert_tag_exists("jenkins-0.1.1")?;
@@ -473,7 +388,7 @@ fn auto_bump_package_only_ok() -> Result<()> {
 // #[sealed_test]
 // fn should_fail_when_latest_tag_is_not_semver_compliant() -> Result<()> {
 //     // Arrange
-//     git_init(false)?;
+//     git_init()?;
 //     git_commit("chore: first commit")?;
 //     git_commit("feat: add a feature commit")?;
 //     git_tag("toto")?;
@@ -501,7 +416,7 @@ fn bump_with_whitelisted_branch_ok() -> Result<()> {
     // Arrange
     let settings = r#"branch_whitelist = [ "master" ]"#;
 
-    git_init(false)?;
+    git_init()?;
     run_cmd!(
         echo $settings > cog.toml;
         git add .;
@@ -513,16 +428,7 @@ fn bump_with_whitelisted_branch_ok() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result = cocogitto.create_version(
-        IncrementCommand::Auto,
-        None,
-        None,
-        None,
-        false,
-        false,
-        None,
-        false,
-    );
+    let result = cocogitto.create_version(BumpOptions::default());
 
     // Assert
     assert_that!(result).is_ok();
@@ -535,7 +441,7 @@ fn bump_with_whitelisted_branch_fails() -> Result<()> {
     // Arrange
     let settings = r#"branch_whitelist = [ "main" ]"#;
 
-    git_init(false)?;
+    git_init()?;
     run_cmd!(
         echo $settings > cog.toml;
         git add .;
@@ -547,16 +453,7 @@ fn bump_with_whitelisted_branch_fails() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result = cocogitto.create_version(
-        IncrementCommand::Auto,
-        None,
-        None,
-        None,
-        false,
-        false,
-        None,
-        false,
-    );
+    let result = cocogitto.create_version(BumpOptions::default());
 
     // Assert
     assert_that!(result.unwrap_err().to_string()).is_equal_to(
@@ -571,7 +468,7 @@ fn bump_with_whitelisted_branch_pattern_ok() -> Result<()> {
     // Arrange
     let settings = r#"branch_whitelist = [ "main", "release/**" ]"#;
 
-    git_init(false)?;
+    git_init()?;
     run_cmd!(
         echo $settings > cog.toml;
         git add .;
@@ -585,16 +482,7 @@ fn bump_with_whitelisted_branch_pattern_ok() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result = cocogitto.create_version(
-        IncrementCommand::Auto,
-        None,
-        None,
-        None,
-        false,
-        false,
-        None,
-        false,
-    );
+    let result = cocogitto.create_version(BumpOptions::default());
 
     // Assert
     assert_that!(result).is_ok();
@@ -607,7 +495,7 @@ fn bump_with_whitelisted_branch_pattern_err() -> Result<()> {
     // Arrange
     let settings = r#"branch_whitelist = [ "release/**" ]"#;
 
-    git_init(false)?;
+    git_init()?;
     run_cmd!(
         echo $settings > cog.toml;
         git add .;
@@ -619,16 +507,7 @@ fn bump_with_whitelisted_branch_pattern_err() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result = cocogitto.create_version(
-        IncrementCommand::Auto,
-        None,
-        None,
-        None,
-        false,
-        false,
-        None,
-        false,
-    );
+    let result = cocogitto.create_version(BumpOptions::default());
 
     // Assert
     assert_that!(result).is_err();
@@ -664,7 +543,7 @@ fn bump_no_error_should_be_thrown_on_only_chore_docs_commit() -> Result<()> {
 
     let settings = toml::to_string(&settings)?;
 
-    git_init(false)?;
+    git_init()?;
     run_cmd!(
         echo Hello > README.md;
         git add .;
@@ -685,16 +564,7 @@ fn bump_no_error_should_be_thrown_on_only_chore_docs_commit() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    cocogitto.create_monorepo_version(
-        IncrementCommand::Auto,
-        None,
-        None,
-        None,
-        false,
-        false,
-        None,
-        false,
-    )?;
+    cocogitto.create_monorepo_version(BumpOptions::default())?;
 
     run_cmd!(
         echo "chore on jenkins" > jenkins/fix;
@@ -705,28 +575,14 @@ fn bump_no_error_should_be_thrown_on_only_chore_docs_commit() -> Result<()> {
         git commit -m "docs(jenkins): jenkins docs";
     )?;
 
-    cocogitto.create_monorepo_version(
-        IncrementCommand::Auto,
-        None,
-        None,
-        None,
-        false,
-        false,
-        None,
-        false,
-    )?;
+    cocogitto.create_monorepo_version(BumpOptions::default())?;
 
-    cocogitto.create_package_version(
-        ("jenkins", &jenkins()),
-        IncrementCommand::AutoPackage("jenkins".to_owned()),
-        None,
-        None,
-        None,
-        false,
-        false,
-        None,
-        false,
-    )?;
+    cocogitto.create_package_version(PackageBumpOptions {
+        package_name: "jenkins",
+        package: &jenkins(),
+        increment: IncrementCommand::AutoPackage("jenkins".to_owned()),
+        ..Default::default()
+    })?;
 
     run_cmd!(
         echo "more feat on thumbor" > thumbor/feat;
@@ -734,16 +590,7 @@ fn bump_no_error_should_be_thrown_on_only_chore_docs_commit() -> Result<()> {
         git commit -m "feat(thumbor): more feat on thumbor";
     )?;
 
-    cocogitto.create_monorepo_version(
-        IncrementCommand::Auto,
-        None,
-        None,
-        None,
-        false,
-        false,
-        None,
-        false,
-    )?;
+    cocogitto.create_monorepo_version(BumpOptions::default())?;
 
     // Assert
     assert_tag_exists("jenkins-0.1.0")?;
@@ -766,7 +613,7 @@ fn error_on_no_conventionnal_commits_found_for_monorepo() -> Result<()> {
 
     let settings = toml::to_string(&settings)?;
 
-    git_init(false)?;
+    git_init()?;
 
     run_cmd!(
         echo Hello > README.md;
@@ -784,16 +631,7 @@ fn error_on_no_conventionnal_commits_found_for_monorepo() -> Result<()> {
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let first_result = cocogitto.create_version(
-        IncrementCommand::Auto,
-        None,
-        None,
-        None,
-        false,
-        false,
-        None,
-        false,
-    );
+    let first_result = cocogitto.create_version(BumpOptions::default());
 
     // Assert
     assert_that!(first_result).is_ok();
@@ -806,16 +644,7 @@ fn error_on_no_conventionnal_commits_found_for_monorepo() -> Result<()> {
     git_commit("second unconventional feature commit")?;
 
     // Act
-    let second_result = cocogitto.create_version(
-        IncrementCommand::Auto,
-        None,
-        None,
-        None,
-        false,
-        false,
-        None,
-        false,
-    );
+    let second_result = cocogitto.create_version(BumpOptions::default());
 
     // Assert
     assert_that!(second_result).is_err();
@@ -843,7 +672,7 @@ fn error_on_no_conventionnal_commits_found_for_package() -> Result<()> {
 
     let settings = toml::to_string(&settings)?;
 
-    git_init(false)?;
+    git_init()?;
     run_cmd!(
         echo Hello > README.md;
         git add .;
@@ -861,17 +690,12 @@ fn error_on_no_conventionnal_commits_found_for_package() -> Result<()> {
 
     let mut cocogitto = CocoGitto::get()?;
 
-    let first_result = cocogitto.create_package_version(
-        ("jenkins", &jenkins()),
-        IncrementCommand::AutoPackage("jenkins".to_owned()),
-        None,
-        None,
-        None,
-        false,
-        false,
-        None,
-        false,
-    );
+    let first_result = cocogitto.create_package_version(PackageBumpOptions {
+        package_name: "jenkins",
+        package: &jenkins(),
+        increment: IncrementCommand::AutoPackage("jenkins".to_owned()),
+        ..Default::default()
+    });
 
     assert_that!(first_result).is_ok();
 
@@ -881,17 +705,12 @@ fn error_on_no_conventionnal_commits_found_for_package() -> Result<()> {
         git commit -m "some other jenkins stuff";
     )?;
 
-    let second_result = cocogitto.create_package_version(
-        ("jenkins", &jenkins()),
-        IncrementCommand::AutoPackage("jenkins".to_owned()),
-        None,
-        None,
-        None,
-        false,
-        false,
-        None,
-        false,
-    );
+    let second_result = cocogitto.create_package_version(PackageBumpOptions {
+        package_name: "jenkins",
+        package: &jenkins(),
+        increment: IncrementCommand::AutoPackage("jenkins".to_owned()),
+        ..Default::default()
+    });
 
     assert_that!(second_result).is_err();
 
@@ -926,7 +745,7 @@ fn bump_with_unconventionnal_and_conventional_commits_found_for_packages() -> Re
 
     let settings = toml::to_string(&settings)?;
 
-    git_init(false)?;
+    git_init()?;
     run_cmd!(
         echo Hello > README.md;
         git add .;
@@ -947,16 +766,7 @@ fn bump_with_unconventionnal_and_conventional_commits_found_for_packages() -> Re
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
-    let result = cocogitto.create_monorepo_version(
-        IncrementCommand::Auto,
-        None,
-        None,
-        None,
-        false,
-        false,
-        None,
-        false,
-    );
+    let result = cocogitto.create_monorepo_version(BumpOptions::default());
 
     // Assert
     assert_that!(result).is_ok();

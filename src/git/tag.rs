@@ -50,23 +50,6 @@ impl<'a> TagLookUpOptions<'a> {
 }
 
 impl Repository {
-    /// Given a tag name return a [`Tag`], this will fail if the requested
-    /// tag (without configured prefix) is not semver compliant or if the tag
-    /// does not exist.
-    pub fn resolve_tag(&self, tag: &str) -> Result<Tag, TagError> {
-        self.0
-            .resolve_reference_from_short_name(tag)
-            .map_err(|err| TagError::not_found(tag, err))
-            .map(|reference| reference.target().unwrap())
-            .map(|commit_oid| {
-                if let Ok(annotated_tag) = self.0.find_tag(commit_oid) {
-                    Tag::from_str(tag, Some(commit_oid), Some(annotated_tag.target_id()))
-                } else {
-                    Tag::from_str(tag, Some(commit_oid), None)
-                }
-            })?
-    }
-
     pub(crate) fn create_tag(&self, tag: &Tag) -> Result<(), Git2Error> {
         if self.get_diff(true).is_some() {
             let statuses = self.get_statuses()?;
@@ -141,7 +124,7 @@ impl Repository {
 
     pub fn tag_lookup(&self, option: TagLookUpOptions) -> Result<Vec<Tag>, TagError> {
         let prefix = SETTINGS.tag_prefix.as_ref();
-        let repo_cache = crate::git::rev::refresh(self);
+        let repo_cache = crate::git::rev::cache::init(self);
         let include_pre_release = option.include_pre_release;
 
         let tag_filter = |tag: &Tag| {
@@ -528,57 +511,6 @@ mod test {
             target: None,
         });
 
-        Ok(())
-    }
-
-    #[sealed_test]
-    fn resolve_annotated_tag_ok() -> Result<()> {
-        // Arrange
-        let repo = git_init_no_gpg()?;
-        run_cmd!(
-            git commit --allow-empty -m "first commit";
-            git tag -a 1.0.0 -m "annotated tag";
-        )?;
-
-        // Act
-        let tag = repo.resolve_tag("1.0.0");
-
-        // Assert
-        assert_that!(tag).is_ok();
-        Ok(())
-    }
-
-    #[sealed_test]
-    fn resolve_lightweight_tag_ok() -> Result<()> {
-        // Arrange
-        let repo = git_init_no_gpg()?;
-        run_cmd!(
-            git commit --allow-empty -m "first commit";
-            git tag 1.0.0;
-        )?;
-
-        // Act
-        let tag = repo.resolve_tag("1.0.0");
-
-        // Assert
-        assert_that!(tag).is_ok();
-        Ok(())
-    }
-
-    #[sealed_test]
-    fn resolve_lightweight_tag_err() -> Result<()> {
-        // Arrange
-        let repo = git_init_no_gpg()?;
-        run_cmd!(
-            git commit --allow-empty -m "first commit";
-            git tag the_tag;
-        )?;
-
-        // Act
-        let tag = repo.resolve_tag("the_taaaag");
-
-        // Assert
-        assert_that!(tag).is_err();
         Ok(())
     }
 

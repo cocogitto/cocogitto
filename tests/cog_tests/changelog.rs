@@ -77,7 +77,7 @@ fn get_changelog_range() -> Result<()> {
 #[sealed_test]
 fn get_changelog_from_untagged_repo() -> Result<()> {
     // Arrange
-    git_init(false)?;
+    git_init()?;
     let init = git_commit("chore: init")?;
     let commit_two = git_commit("feat(taef): feature")?;
     let commit_three = git_commit("fix: bug fix")?;
@@ -117,7 +117,7 @@ fn get_changelog_from_untagged_repo() -> Result<()> {
 #[sealed_test]
 fn get_changelog_from_tagged_repo() -> Result<()> {
     // Arrange
-    git_init(false)?;
+    git_init()?;
     let init = git_commit("chore: init")?;
     let commit_one = git_commit("feat(taef): feature")?;
     git_tag("1.0.0")?;
@@ -164,7 +164,7 @@ fn get_changelog_from_tagged_repo() -> Result<()> {
 #[sealed_test]
 fn get_changelog_at_tag() -> Result<()> {
     // Arrange
-    git_init(false)?;
+    git_init()?;
     let init = git_commit("chore: init")?;
     let commit_one = git_commit("feat(taef): feature")?;
     let commit_two = git_commit("feat: feature 2")?;
@@ -217,7 +217,7 @@ fn get_changelog_with_tag_prefix() -> Result<()> {
     let settings = toml::to_string(&settings);
     fs::write("cog.toml", settings?)?;
 
-    git_init(false)?;
+    git_init()?;
     let init = git_commit("chore: init")?;
     let commit_one = git_commit("feat: feature 1")?;
     git_tag("v1.0.0")?;
@@ -273,7 +273,7 @@ fn get_changelog_at_tag_prefix() -> Result<()> {
     let settings = toml::to_string(&settings);
     std::fs::write("cog.toml", settings?)?;
 
-    git_init(false)?;
+    git_init()?;
     git_commit("chore: init")?;
     let _ = git_commit("feat: start")?;
     git_tag("v1.0.0")?;
@@ -321,7 +321,7 @@ fn get_changelog_at_tag_prefix() -> Result<()> {
 #[sealed_test]
 fn get_changelog_from_tag_to_tagged_head() -> Result<()> {
     // Arrange
-    git_init(false)?;
+    git_init()?;
     let init = git_commit("chore: init")?;
     let commit_one = git_commit("feat: start")?;
     let commit_two = git_commit("feat: feature 1")?;
@@ -379,7 +379,7 @@ fn get_changelog_from_tag_to_tagged_head() -> Result<()> {
 #[sealed_test]
 fn get_changelog_is_unaffected_by_disable_changelog() -> Result<()> {
     // Arrange
-    git_init(false)?;
+    git_init()?;
 
     let cog_toml = indoc!("disable_changelog = true");
 
@@ -427,7 +427,7 @@ fn get_changelog_with_custom_template() -> Result<()> {
     let crate_dir = env!("CARGO_MANIFEST_DIR");
     let template = PathBuf::from(crate_dir).join("tests/cog_tests/template.md");
 
-    git_init(false)?;
+    git_init()?;
 
     let cog_toml = indoc!(
         "[changelog]
@@ -506,7 +506,7 @@ fn get_changelog_with_custom_template() -> Result<()> {
 /// a given commit type.
 fn ensure_omit_from_changelog_is_honored() -> Result<()> {
     // Arrange
-    git_init(false)?;
+    git_init()?;
 
     let cog_toml = indoc!(
         "[changelog]
@@ -568,7 +568,7 @@ fn ensure_omit_from_changelog_is_honored() -> Result<()> {
 #[sealed_test]
 fn changelog_from_commit_range_should_be_the_same_as_changelog_from_tag_range() -> Result<()> {
     // Arrange
-    git_init(false)?;
+    git_init()?;
 
     git_commit("feat: feature 1")?;
     let sha_0_1 = git_commit("feat: feature 2")?;

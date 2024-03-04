@@ -21,7 +21,7 @@ fn should_init_a_cog_repository() -> Result<()> {
 #[sealed_test]
 fn should_skip_initialization_if_repository_exists() -> Result<()> {
     // Arrange
-    git_init(false)?;
+    git_init()?;
     git_commit("The first commit")?;
 
     // Act

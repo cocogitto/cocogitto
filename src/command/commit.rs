@@ -7,34 +7,35 @@ use conventional_commit_parser::parse_footers;
 use log::info;
 use std::fs;
 
+#[derive(Default)]
+pub struct CommitOptions<'a> {
+    pub commit_type: &'a str,
+    pub scope: Option<String>,
+    pub summary: String,
+    pub body: Option<String>,
+    pub footer: Option<String>,
+    pub breaking: bool,
+    pub sign: bool,
+}
+
 impl CocoGitto {
-    #[allow(clippy::too_many_arguments)]
-    pub fn conventional_commit(
-        &self,
-        commit_type: &str,
-        scope: Option<String>,
-        summary: String,
-        body: Option<String>,
-        footer: Option<String>,
-        is_breaking_change: bool,
-        sign: bool,
-    ) -> Result<()> {
+    pub fn conventional_commit(&self, opts: CommitOptions) -> Result<()> {
         // Ensure commit type is known
-        let commit_type = CommitType::from(commit_type);
+        let commit_type = CommitType::from(opts.commit_type);
 
         // Ensure footers are correctly formatted
-        let footers = match footer {
+        let footers = match opts.footer {
             Some(footers) => parse_footers(&footers)?,
             None => Vec::with_capacity(0),
         };
 
         let conventional_message = ConventionalCommit {
             commit_type,
-            scope,
-            body,
+            scope: opts.scope,
+            body: opts.body,
             footers,
-            summary,
-            is_breaking_change,
+            summary: opts.summary,
+            is_breaking_change: opts.breaking,
         }
         .to_string();
 
@@ -42,7 +43,7 @@ impl CocoGitto {
         conventional_commit_parser::parse(&conventional_message)?;
 
         // Git commit
-        let sign = sign || self.repository.gpg_sign();
+        let sign = opts.sign || self.repository.gpg_sign();
         fs::write(self.prepare_edit_message_path(), &conventional_message)?;
         self.run_commit_hook(CommitMessage)?;
         let oid = self.repository.commit(&conventional_message, sign, false)?;

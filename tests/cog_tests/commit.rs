@@ -12,7 +12,7 @@ use sealed_test::prelude::*;
 #[sealed_test]
 fn commit_ok() -> Result<()> {
     // Arrange
-    git_init(false)?;
+    git_init()?;
     git_add("content", "test_file")?;
 
     // Act
@@ -61,7 +61,7 @@ fn commit_fail_if_not_a_repository() -> Result<()> {
 #[sealed_test]
 fn unstaged_changes_commit_err() -> Result<()> {
     // Arrange
-    git_init(false)?;
+    git_init()?;
     std::fs::write("test_file", "content")?;
 
     // Act
@@ -91,7 +91,7 @@ fn unstaged_changes_commit_err() -> Result<()> {
 #[sealed_test]
 fn untracked_changes_commit_ok() -> Result<()> {
     // Arrange
-    git_init(false)?;
+    git_init()?;
     git_add("content", "staged")?;
     std::fs::write("untracked", "content")?;
 
@@ -110,7 +110,7 @@ fn untracked_changes_commit_ok() -> Result<()> {
 #[sealed_test]
 fn empty_commit_err() -> Result<()> {
     // Arrange
-    git_init(false)?;
+    git_init()?;
 
     // Act
     let output = Command::cargo_bin("cog")?
@@ -134,7 +134,7 @@ fn empty_commit_err() -> Result<()> {
 #[sealed_test]
 fn commit_with_default_skip_ci_ok() -> Result<()> {
     // Arrange
-    git_init(false)?;
+    git_init()?;
     git_add("content", "test_file")?;
 
     // Act
@@ -158,7 +158,7 @@ fn commit_with_default_skip_ci_ok() -> Result<()> {
 #[sealed_test]
 fn commit_with_cog_toml_defined_skip_ci_ok() -> Result<()> {
     // Arrange
-    git_init(false)?;
+    git_init()?;
     git_add("content", "test_file")?;
     git_add("skip_ci = \"[ci-skip]\" ", "cog.toml")?;
 
@@ -183,7 +183,7 @@ fn commit_with_cog_toml_defined_skip_ci_ok() -> Result<()> {
 #[sealed_test]
 fn commit_with_skip_ci_override_option_takes_precedence() -> Result<()> {
     // Arrange
-    git_init(false)?;
+    git_init()?;
     git_add("content", "test_file")?;
     git_add("skip_ci = \"[ci-skip]\" ", "cog.toml")?;
 

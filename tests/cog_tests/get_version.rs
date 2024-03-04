@@ -11,7 +11,7 @@ use crate::helpers::*;
 
 #[sealed_test]
 fn get_initial_version_expected_error() -> Result<()> {
-    git_init(false)?;
+    git_init()?;
     git_commit("chore: init")?;
     git_commit("feat(taef): feature")?;
 
@@ -26,7 +26,7 @@ fn get_initial_version_expected_error() -> Result<()> {
 
 #[sealed_test]
 fn get_initial_version_fallback_ok() -> Result<()> {
-    git_init(false)?;
+    git_init()?;
     git_commit("chore: init")?;
     git_commit("feat(taef): feature")?;
 
@@ -43,7 +43,7 @@ fn get_initial_version_fallback_ok() -> Result<()> {
 
 #[sealed_test]
 fn get_initial_version_invalid_fallback_parse_error() -> Result<()> {
-    git_init(false)?;
+    git_init()?;
     git_commit("chore: init")?;
     git_commit("feat(taef): feature")?;
 
@@ -62,7 +62,7 @@ fn get_initial_version_invalid_fallback_parse_error() -> Result<()> {
 
 #[sealed_test]
 fn get_version_invalid_fallback_parse_error_in_versioned_repo() -> Result<()> {
-    git_init(false)?;
+    git_init()?;
     git_commit("chore: init")?;
     git_commit("feat(taef): feature")?;
 
@@ -87,7 +87,7 @@ fn get_version_invalid_fallback_parse_error_in_versioned_repo() -> Result<()> {
 
 #[sealed_test]
 fn get_initial_version_fails_as_expected_error() -> Result<()> {
-    git_init(false)?;
+    git_init()?;
     git_commit("chore: init")?;
     git_commit("feat(taef): feature")?;
 
@@ -102,7 +102,7 @@ fn get_initial_version_fails_as_expected_error() -> Result<()> {
 
 #[sealed_test]
 fn get_version_after_bump_ok() -> Result<()> {
-    git_init(false)?;
+    git_init()?;
     git_commit("chore: init")?;
     git_commit("feat(taef): feature")?;
 
@@ -124,7 +124,7 @@ fn get_version_after_bump_ok() -> Result<()> {
 
 #[sealed_test]
 fn get_version_after_bump_fallback_not_used_ok() -> Result<()> {
-    git_init(false)?;
+    git_init()?;
     git_commit("chore: init")?;
     git_commit("feat(taef): feature")?;
 
