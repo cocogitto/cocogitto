@@ -24,7 +24,8 @@ docker-build: build-all
     docker buildx build --platform linux/amd64,linux/arm/v7,linux/arm64/v8  . -t cocogitto/cog:latest -f docker/Dockerfile
 
 changelog-inferno:
-    perf record --call-graph dwarf cog changelog
+    cargo build --release
+    perf record --call-graph dwarf target/release/cog changelog
     perf script | inferno-collapse-perf > stacks.folded
     cat stacks.folded | inferno-flamegraph > flamegraph.svg
     chromium flamegraph.svg
