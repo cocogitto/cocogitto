@@ -3,6 +3,7 @@ use crate::conventional::commit::Commit;
 use crate::git::error::TagError;
 use crate::git::oid::OidOf;
 
+use crate::conventional::version::IncrementCommand;
 use crate::git::tag::Tag;
 use crate::hook::{Hook, HookVersion, Hooks};
 use crate::settings::{HookType, MonoRepoPackage, Settings};
@@ -15,6 +16,7 @@ use conventional_commit_parser::commit::CommitType;
 use globset::Glob;
 use itertools::Itertools;
 use log::{error, info, warn};
+use std::default::Default;
 use std::fmt;
 use std::fmt::Write;
 use std::process::exit;
@@ -22,6 +24,32 @@ use std::process::exit;
 mod monorepo;
 mod package;
 mod standard;
+
+#[derive(Default)]
+pub struct BumpOptions<'a> {
+    pub increment: IncrementCommand,
+    pub pre_release: Option<&'a str>,
+    pub hooks_config: Option<&'a str>,
+    pub annotated: Option<String>,
+    pub dry_run: bool,
+    pub skip_ci: bool,
+    pub skip_ci_override: Option<String>,
+    pub skip_untracked: bool,
+}
+
+#[derive(Default)]
+pub struct PackageBumpOptions<'a> {
+    pub package_name: &'a str,
+    pub package: &'a MonoRepoPackage,
+    pub increment: IncrementCommand,
+    pub pre_release: Option<&'a str>,
+    pub hooks_config: Option<&'a str>,
+    pub annotated: Option<String>,
+    pub dry_run: bool,
+    pub skip_ci: bool,
+    pub skip_ci_override: Option<String>,
+    pub skip_untracked: bool,
+}
 
 struct HookRunOptions<'a> {
     hook_type: HookType,

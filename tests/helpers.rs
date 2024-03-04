@@ -24,7 +24,7 @@ pub fn init_monorepo(settings: &mut Settings) -> Result<()> {
     settings.packages = packages;
     let settings = toml::to_string(&settings)?;
 
-    git_init(false)?;
+    git_init()?;
     run_cmd!(
         echo $settings > cog.toml;
         git add .;
@@ -40,10 +40,10 @@ pub fn init_monorepo(settings: &mut Settings) -> Result<()> {
 
 /// - Init a repository in the current directory
 /// - Setup a local git user named Tom <toml.bombadil@themail.org>
-pub fn git_init(gpg: bool) -> Result<()> {
+pub fn git_init() -> Result<()> {
     run_cmd!(
         git init -b master;
-        git config --local commit.gpgsign $gpg;
+        git config --local commit.gpgsign false;
         git config --local user.name Tom;
         git config --local user.email toml.bombadil@themail.org;
     )?;
@@ -59,22 +59,6 @@ pub fn git_init_and_set_current_path(path: &str) -> Result<()> {
         git init $path;
         cd $path;
         git config --local commit.gpgsign false;
-    )?;
-
-    std::env::set_current_dir(path).expect("Unable to move into to test repository");
-
-    Ok(())
-}
-
-/// - Init a repository in the given path
-/// - Change the current directory to the newly created repository
-/// - Setup a local git user named Tom <toml.bombadil@themail.org>
-pub fn git_init_and_set_current_path_gpg(path: &str) -> Result<()> {
-    run_cmd!(
-        git init $path;
-        cd $path;
-        git config --local user.name "Tom";
-        git config --local user.email "toml.bombadil@themail.org";
     )?;
 
     std::env::set_current_dir(path).expect("Unable to move into to test repository");

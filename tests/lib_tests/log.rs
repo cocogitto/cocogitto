@@ -10,7 +10,7 @@ use speculoos::prelude::*;
 #[sealed_test]
 fn get_unfiltered_logs() -> Result<()> {
     // Arrange
-    git_init(false)?;
+    git_init()?;
     git_commit("feat: a commit")?;
     git_commit("test: do you test your code ?")?;
     git_commit("I am afraid I can't do that Dave")?;
@@ -30,7 +30,7 @@ fn get_unfiltered_logs() -> Result<()> {
 #[sealed_test]
 fn get_log_with_no_errors() -> Result<()> {
     // Arrange
-    git_init(false)?;
+    git_init()?;
     git_commit("feat: a commit")?;
     git_commit("test: do you test your code ?")?;
     git_commit("I am afraid I can't do that Dave")?;

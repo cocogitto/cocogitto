@@ -196,6 +196,23 @@ pub struct MonoRepoPackage {
     pub bump_profiles: HashMap<String, BumpProfile>,
 }
 
+impl Default for &MonoRepoPackage {
+    fn default() -> Self {
+        let package = Box::new(MonoRepoPackage {
+            path: Default::default(),
+            include: vec![],
+            ignore: vec![],
+            changelog_path: None,
+            pre_bump_hooks: None,
+            post_bump_hooks: None,
+            bump_profiles: Default::default(),
+            public_api: true,
+        });
+
+        Box::leak(package)
+    }
+}
+
 impl Default for MonoRepoPackage {
     fn default() -> Self {
         Self {

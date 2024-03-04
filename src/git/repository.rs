@@ -61,12 +61,6 @@ impl Repository {
             .map_err(Git2Error::CommitNotFound)
     }
 
-    pub(crate) fn get_head(&self) -> Option<Object> {
-        self.tree_to_treeish(Some(&"HEAD".to_string()))
-            .ok()
-            .flatten()
-    }
-
     pub(crate) fn get_branch_shorthand(&self) -> Option<String> {
         self.0
             .head()
@@ -207,44 +201,6 @@ mod test {
 
         // Assert
         assert_that!(head).is_err();
-        Ok(())
-    }
-
-    #[sealed_test]
-    fn get_head_some() -> Result<()> {
-        // Arrange
-        let repo = git_init_no_gpg()?;
-
-        run_cmd!(
-            echo changes > file;
-            git add .;
-        )?;
-
-        repo.commit("first commit", false, false)?;
-
-        // Act
-        let head = repo.get_head();
-
-        // Assert
-        assert_that!(head).is_some();
-        Ok(())
-    }
-
-    #[sealed_test]
-    fn get_head_none() -> Result<()> {
-        // Arrange
-        let repo = git_init_no_gpg()?;
-
-        run_cmd!(
-            echo changes > file;
-            git add .;
-        )?;
-
-        // Act
-        let head = repo.get_head();
-
-        // Assert
-        assert_that!(head).is_none();
         Ok(())
     }
 
