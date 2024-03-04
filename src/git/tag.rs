@@ -124,7 +124,7 @@ impl Repository {
 
     pub fn tag_lookup(&self, option: TagLookUpOptions) -> Result<Vec<Tag>, TagError> {
         let prefix = SETTINGS.tag_prefix.as_ref();
-        let repo_cache = crate::git::rev::cache::init(self);
+        let repo_cache = crate::git::rev::cache::get_cache(self);
         let include_pre_release = option.include_pre_release;
 
         let tag_filter = |tag: &Tag| {

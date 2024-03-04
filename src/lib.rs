@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
@@ -16,6 +16,7 @@ use git::repository::Repository;
 use settings::Settings;
 
 use crate::git::error::{Git2Error, TagError};
+use crate::git::rev::cache::get_cache;
 
 use crate::git::tag::Tag;
 
@@ -145,12 +146,21 @@ impl CocoGitto {
             .map(|path| path.join(".git/COMMIT_EDITMSG"))
             .expect("git repository")
     }
+
+    // Currently only used in test to force rebuild the tag cache
+    pub fn clear_cache(&self) {
+        let mut cache = get_cache(&self.repository);
+        *cache = BTreeMap::new();
+    }
 }
 
 #[cfg(test)]
 pub mod test_helpers {
     use crate::git::repository::Repository;
+    use crate::git::rev::cache::get_cache;
+    use crate::CocoGitto;
     use cmd_lib::{run_cmd, run_fun};
+    use std::collections::BTreeMap;
 
     pub(crate) fn git_init_no_gpg() -> anyhow::Result<Repository> {
         run_cmd!(
