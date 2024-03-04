@@ -63,7 +63,10 @@ impl Repository {
     pub(super) fn resolve_oid_of(&self, from: &str) -> Result<OidOf, Git2Error> {
         let cache = get_cache(self);
 
-        let oid = cache.get(from).cloned();
+        let oid = cache
+            .iter()
+            .find(|(k, _)| k.starts_with(from))
+            .map(|(_, v)| v);
 
         match oid {
             None => {
@@ -73,7 +76,7 @@ impl Repository {
                     .map_err(|_| Git2Error::UnknownRevision(from.to_string()))?;
                 Ok(OidOf::Other(object.id()))
             }
-            Some(oid) => Ok(oid),
+            Some(oid) => Ok(oid.clone()),
         }
     }
 }

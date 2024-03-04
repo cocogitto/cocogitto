@@ -11,7 +11,6 @@ static REPO_CACHE: Lazy<Arc<Mutex<BTreeMap<String, OidOf>>>> =
 
 static FIRST_COMMIT: OnceCell<OidOf> = OnceCell::new();
 
-// TODO: we need to handle the case where multiple tags point to the same commit Oid
 pub(crate) fn get_cache(repository: &Repository) -> MutexGuard<'_, BTreeMap<String, OidOf>> {
     let mut cache = REPO_CACHE.lock().unwrap();
     if cache.is_empty() {
@@ -36,14 +35,12 @@ pub(crate) fn get_cache(repository: &Repository) -> MutexGuard<'_, BTreeMap<Stri
         for tag in tag_iter {
             if let Some(target) = tag.target.as_ref() {
                 let target = target.to_string();
-                cache.insert(target.clone(), OidOf::Tag(tag.clone()));
-                cache.insert(target[0..7].to_string(), OidOf::Tag(tag.clone()));
+                cache.insert(target, OidOf::Tag(tag.clone()));
             }
 
             if let Some(oid) = tag.oid.as_ref() {
-                let string = oid.to_string();
-                cache.insert(string.clone(), OidOf::Tag(tag.clone()));
-                cache.insert(string[0..7].to_string(), OidOf::Tag(tag.clone()));
+                let oid = oid.to_string();
+                cache.insert(oid, OidOf::Tag(tag.clone()));
             }
 
             cache.insert(tag.to_string(), OidOf::Tag(tag));

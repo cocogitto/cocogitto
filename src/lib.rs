@@ -157,10 +157,7 @@ impl CocoGitto {
 #[cfg(test)]
 pub mod test_helpers {
     use crate::git::repository::Repository;
-    use crate::git::rev::cache::get_cache;
-    use crate::CocoGitto;
     use cmd_lib::{run_cmd, run_fun};
-    use std::collections::BTreeMap;
 
     pub(crate) fn git_init_no_gpg() -> anyhow::Result<Repository> {
         run_cmd!(
