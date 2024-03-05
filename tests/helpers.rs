@@ -143,6 +143,6 @@ pub fn git_log_head() -> Result<String> {
 
 /// Create an empty `cog.toml` config file in the current directory
 pub fn create_empty_config() -> Result<()> {
-    std::fs::File::create(CONFIG_PATH)?;
+    std::fs::File::create(CONFIG_PATH.as_str())?;
     Ok(())
 }

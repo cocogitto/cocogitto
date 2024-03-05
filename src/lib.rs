@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::env;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
@@ -30,7 +31,15 @@ pub mod settings;
 
 pub type CommitsMetadata = HashMap<CommitType, CommitConfig>;
 
-pub const CONFIG_PATH: &str = "cog.toml";
+pub const DEFAULT_CONFIG_PATH: &str = "cog.toml";
+
+pub static CONFIG_PATH: Lazy<String> = Lazy::new(|| {
+    if let Ok(val) = env::var("COG_CONFIG_PATH") {
+        val
+    } else {
+        DEFAULT_CONFIG_PATH.to_string()
+    }
+});
 
 pub static SETTINGS: Lazy<Settings> = Lazy::new(|| {
     if let Ok(repo) = Repository::open(".") {

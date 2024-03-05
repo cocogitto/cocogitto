@@ -44,7 +44,7 @@ fn init_existing_repo() -> Result<()> {
 fn fail_if_config_exist() -> Result<()> {
     // Arrange
     git_init_and_set_current_path("test_repo_existing")?;
-    std::fs::write(PathBuf::from_str(CONFIG_PATH)?, "[hooks]")?;
+    std::fs::write(PathBuf::from_str((*CONFIG_PATH).as_ref())?, "[hooks]")?;
     git_commit("chore: test commit")?;
 
     // Act
