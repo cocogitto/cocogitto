@@ -3,7 +3,7 @@ use std::fmt::{self, Formatter};
 
 pub use crate::conventional::error::ConventionalCommitError;
 use crate::SETTINGS;
-use chrono::{NaiveDateTime, Utc};
+use chrono::{DateTime, NaiveDateTime, Utc};
 use colored::*;
 use conventional_commit_parser::commit::ConventionalCommit;
 use git2::Commit as Git2Commit;
@@ -62,8 +62,9 @@ impl Commit {
         let oid = commit.id().to_string();
 
         let commit = commit.to_owned();
-        let date = NaiveDateTime::from_timestamp_opt(commit.time().seconds(), 0)
-            .expect("valid commit date");
+        let date = DateTime::from_timestamp(commit.time().seconds(), 0)
+            .expect("valid commit date")
+            .naive_utc();
         let message = commit.message();
         let git2_message = message.unwrap().to_owned();
         let author = commit.author().name().unwrap_or("").to_string();
