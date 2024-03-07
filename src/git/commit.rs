@@ -248,6 +248,7 @@ mod test {
             chmod 600 $crate_dir/tests/assets/sshkey;
             chmod 600 $crate_dir/tests/assets/sshkey.pub;
             git config --local user.signingkey "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHsnHukmf4SX31jdbf+aZjH2pvmHwuz7ysxdjErMK+i2";
+            git config --local commit.gpgSign true;
             git config --local gpg.format ssh;
             git config --local gpg.ssh.program ssh-keygen;
             ssh-add $crate_dir/tests/assets/sshkey;
