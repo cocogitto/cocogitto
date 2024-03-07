@@ -636,13 +636,15 @@ fn main() -> Result<()> {
             cocogitto.run_commit_hook(CommitHook::PreCommit)?;
             let commit_message_path = cocogitto.prepare_edit_message_path();
 
-            let mut skip_ci_pattern = String::new();
-
-            if skip_ci || skip_ci_override.is_some() {
-                skip_ci_pattern = skip_ci_override.unwrap_or(SETTINGS.skip_ci.clone())
-            }
-
-            let commit_message = message + " " + &skip_ci_pattern;
+            let commit_message = if skip_ci || skip_ci_override.is_some() {
+                format!(
+                    "{} {}",
+                    message,
+                    skip_ci_override.unwrap_or(SETTINGS.skip_ci.clone())
+                )
+            } else {
+                message
+            };
 
             let template = prepare_edit_message(
                 &typ,

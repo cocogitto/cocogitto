@@ -5,6 +5,7 @@ use crate::helpers::*;
 
 use anyhow::Result;
 use assert_cmd::prelude::*;
+use cmd_lib::run_cmd;
 use indoc::{formatdoc, indoc};
 use pretty_assertions::assert_eq;
 use sealed_test::prelude::*;
@@ -150,7 +151,10 @@ fn commit_with_default_skip_ci_ok() -> Result<()> {
 
     let commit_message = git_log_head_message()?;
 
-    assert!(commit_message.contains("[skip ci]"));
+    assert_eq!(
+        commit_message,
+        "feat(scope): this is a commit message [skip ci]"
+    );
 
     Ok(())
 }
@@ -175,7 +179,10 @@ fn commit_with_cog_toml_defined_skip_ci_ok() -> Result<()> {
 
     let commit_message = git_log_head_message()?;
 
-    assert!(commit_message.contains("[ci-skip]"));
+    assert_eq!(
+        commit_message,
+        "feat(scope): this is a commit message [ci-skip]"
+    );
 
     Ok(())
 }
@@ -201,7 +208,13 @@ fn commit_with_skip_ci_override_option_takes_precedence() -> Result<()> {
 
     let commit_message = git_log_head_message()?;
 
-    assert!(commit_message.contains("[skip-ci-override]"));
+    assert_eq!(
+        commit_message,
+        "feat(scope): this is a commit message [skip-ci-override]"
+    );
+
+    Ok(())
+}
 
 #[sealed_test]
 fn add_option_git_commit_ok() -> Result<()> {
