@@ -165,7 +165,7 @@ mod test {
     use crate::git::repository::Repository;
     use crate::test_helpers::git_init_no_gpg;
     use anyhow::Result;
-    use cmd_lib::{run_cmd, run_fun, init_builtin_logger};
+    use cmd_lib::{run_cmd, run_fun};
     use sealed_test::prelude::*;
     use speculoos::prelude::*;
 
@@ -229,8 +229,6 @@ mod test {
 
     #[sealed_test]
     fn crate_signed_ssh_commit_ok() -> Result<()> {
-        init_builtin_logger();
-
         // Arrange
         let crate_dir = std::env::var("CARGO_MANIFEST_DIR")?;
 
