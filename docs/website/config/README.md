@@ -215,6 +215,19 @@ The config reference list all value that can be set in the `cog.toml` file at th
     disable_changelog = true
     ```
 
+### `disable_bump_commit`
+
+- Type: `boolean`
+- Optional: `true`
+- Default value: `false`
+- Description: Cocogitto will not create a bump commit and will instead tag the latest commit.
+- Example:
+    ```toml
+    disable_bump_commit = true
+    ```
+- Also see:
+    * [User guide -> Disable bump commit creation](../guide/#disable-bump-commit-creation)
+
 ## Changelog
 
 ### `path`
