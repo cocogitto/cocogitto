@@ -203,5 +203,68 @@ fn commit_with_skip_ci_override_option_takes_precedence() -> Result<()> {
 
     assert!(commit_message.contains("[skip-ci-override]"));
 
+#[sealed_test]
+fn add_option_git_commit_ok() -> Result<()> {
+    // Arrange
+    git_init()?;
+    run_cmd!(
+        echo "new file" > new_file;
+        echo "dot file" > .dotfile;
+    )?;
+
+    Command::cargo_bin("cog")?
+        .arg("commit")
+        .arg("-a")
+        .arg("feat")
+        .arg("feature")
+        .assert()
+        .success();
+
+    let commit_message = git_log_head_message()?;
+
+    assert_eq!(commit_message, "feat: feature");
+
+    Command::new("git")
+        .arg("status")
+        .arg("-s")
+        .assert()
+        .success()
+        .stdout(indoc!(""));
+
+    Ok(())
+}
+
+#[sealed_test]
+fn update_option_git_commit_ok() -> Result<()> {
+    // Arrange
+    git_init()?;
+
+    run_cmd!(
+        echo "existing file" > existing_file;
+        git add .;
+        git commit -m "feat: existing file";
+        echo "update existing file" > existing_file;
+        echo "new file" > new_file;
+    )?;
+
+    Command::cargo_bin("cog")?
+        .arg("commit")
+        .arg("-u")
+        .arg("feat")
+        .arg("update existing file")
+        .assert()
+        .success();
+
+    let commit_message = git_log_head_message()?;
+
+    assert_eq!(commit_message, "feat: update existing file");
+
+    Command::new("git")
+        .arg("status")
+        .arg("-s")
+        .assert()
+        .success()
+        .stdout(indoc!("?? new_file\n"));
+
     Ok(())
 }
