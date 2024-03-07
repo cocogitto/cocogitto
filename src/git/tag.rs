@@ -50,8 +50,8 @@ impl<'a> TagLookUpOptions<'a> {
 }
 
 impl Repository {
-    pub(crate) fn create_tag(&self, tag: &Tag) -> Result<(), Git2Error> {
-        if self.get_diff(true).is_some() {
+    pub(crate) fn create_tag(&self, tag: &Tag, disable_bump_commit: bool) -> Result<(), Git2Error> {
+        if !disable_bump_commit && self.get_diff(true).is_some() {
             let statuses = self.get_statuses()?;
             return Err(Git2Error::ChangesNeedToBeCommitted(statuses));
         }
@@ -63,8 +63,13 @@ impl Repository {
             .map_err(Git2Error::from)
     }
 
-    pub(crate) fn create_annotated_tag(&self, tag: &Tag, msg: &str) -> Result<(), Git2Error> {
-        if self.get_diff(true).is_some() {
+    pub(crate) fn create_annotated_tag(
+        &self,
+        tag: &Tag,
+        msg: &str,
+        disable_bump_commit: bool,
+    ) -> Result<(), Git2Error> {
+        if !disable_bump_commit && self.get_diff(true).is_some() {
             let statuses = self.get_statuses()?;
             return Err(Git2Error::ChangesNeedToBeCommitted(statuses));
         }
