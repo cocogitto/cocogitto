@@ -227,6 +227,7 @@ mod test {
         Ok(())
     }
 
+    #[cfg(not(target_os = "windows"))]
     #[sealed_test]
     fn crate_signed_ssh_commit_ok() -> Result<()> {
         // Arrange
