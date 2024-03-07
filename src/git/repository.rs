@@ -36,7 +36,13 @@ impl Repository {
 
     pub(crate) fn add_all(&self) -> Result<(), Git2Error> {
         let mut index = self.0.index()?;
-        index.add_all(["*"], IndexAddOption::DEFAULT, None)?;
+        index.add_all(["."], IndexAddOption::DEFAULT, None)?;
+        index.write().map_err(Git2Error::GitAddError)
+    }
+
+    pub(crate) fn update_all(&self) -> Result<(), Git2Error> {
+        let mut index = self.0.index()?;
+        index.update_all(["."], None)?;
         index.write().map_err(Git2Error::GitAddError)
     }
 

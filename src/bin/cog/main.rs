@@ -359,6 +359,14 @@ struct CommitArgs {
     /// Override and add the <SKIP_CI_OVERRIDE> string to the commit
     #[arg(long = "skip-ci-override")]
     skip_ci_override: Option<String>,
+
+    /// Add files to the commit (similar to git add .)
+    #[arg(short, long = "add")]
+    add_files: bool,
+
+    /// Update but doesn't add files to the commit (similar to git add -u .)
+    #[arg(short, long = "update")]
+    update_files: bool,
 }
 
 fn main() -> Result<()> {
@@ -613,6 +621,8 @@ fn main() -> Result<()> {
             sign,
             skip_ci,
             skip_ci_override,
+            add_files,
+            update_files,
         }) => {
             let cocogitto = CocoGitto::get()?;
             cocogitto.run_commit_hook(CommitHook::PreCommit)?;
@@ -649,6 +659,8 @@ fn main() -> Result<()> {
                 footer,
                 breaking,
                 sign,
+                add_files,
+                update_files,
             };
 
             cocogitto.conventional_commit(opts)?;

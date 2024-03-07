@@ -16,6 +16,8 @@ pub struct CommitOptions<'a> {
     pub footer: Option<String>,
     pub breaking: bool,
     pub sign: bool,
+    pub add_files: bool,
+    pub update_files: bool,
 }
 
 impl CocoGitto {
@@ -41,6 +43,14 @@ impl CocoGitto {
 
         // Validate the message
         conventional_commit_parser::parse(&conventional_message)?;
+
+        if opts.add_files {
+            self.repository.add_all()?;
+        }
+
+        if opts.update_files {
+            self.repository.update_all()?;
+        }
 
         // Git commit
         let sign = opts.sign || self.repository.gpg_sign();
