@@ -602,6 +602,28 @@ fn bump_monorepo_with_default_skip_ci_ok() -> Result<()> {
 }
 
 #[sealed_test]
+fn bump_monorepo_manual_increment_with_default_skip_ci_ok() -> Result<()> {
+    let mut settings = Settings {
+        ..Default::default()
+    };
+    init_monorepo(&mut settings)?;
+
+    Command::cargo_bin("cog")?
+        .arg("bump")
+        .arg("--minor")
+        .arg("--skip-ci")
+        .assert()
+        .success();
+
+    let commit_message = git_log_head_message()?;
+
+    assert_tag_exists("0.1.0")?;
+    assert!(commit_message.contains("[skip ci]"));
+
+    Ok(())
+}
+
+#[sealed_test]
 fn bump_monorepo_with_cog_toml_defined_skip_ci_ok() -> Result<()> {
     let mut settings = Settings {
         skip_ci: String::from("[ci-skip]"),
@@ -645,6 +667,30 @@ fn bump_monorepo_skip_ci_override_option_takes_precedence() -> Result<()> {
 
     assert_tag_exists("0.1.0")?;
     assert!(commit_message.contains("[skip-ci-override]"));
+
+    Ok(())
+}
+
+#[sealed_test]
+fn bump_only_package_with_default_skip_ci_ok() -> Result<()> {
+    let mut settings = Settings {
+        generate_mono_repository_global_tag: false,
+        ..Default::default()
+    };
+    init_monorepo(&mut settings)?;
+
+    Command::cargo_bin("cog")?
+        .arg("bump")
+        .arg("--auto")
+        .arg("--skip-ci")
+        .assert()
+        .success();
+
+    let commit_message = git_log_head_message()?;
+
+    assert_tag_does_not_exist("0.1.0")?;
+    assert_tag_exists("one-0.1.0")?;
+    assert!(commit_message.contains("[skip ci]"));
 
     Ok(())
 }
