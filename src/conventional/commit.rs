@@ -306,7 +306,7 @@ mod test {
     use crate::test_helpers::{commit, git_init_no_gpg};
     use crate::Repository;
     use anyhow::Result;
-    use chrono::NaiveDateTime;
+    use chrono::DateTime;
     use conventional_commit_parser::commit::{CommitType, ConventionalCommit, Footer, Separator};
     use git2::Oid;
     use indoc::indoc;
@@ -461,7 +461,7 @@ mod test {
             },
 
             author: "".to_string(),
-            date: NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
+            date: DateTime::from_timestamp(0, 0).unwrap().naive_utc(),
         };
 
         // Act
@@ -486,7 +486,7 @@ mod test {
             },
 
             author: "".to_string(),
-            date: NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
+            date: DateTime::from_timestamp(0, 0).unwrap().naive_utc(),
         };
 
         // Act
