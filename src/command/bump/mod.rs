@@ -35,6 +35,7 @@ pub struct BumpOptions<'a> {
     pub skip_ci: bool,
     pub skip_ci_override: Option<String>,
     pub skip_untracked: bool,
+    pub disable_bump_commit: bool,
 }
 
 #[derive(Default)]
@@ -49,6 +50,7 @@ pub struct PackageBumpOptions<'a> {
     pub skip_ci: bool,
     pub skip_ci_override: Option<String>,
     pub skip_untracked: bool,
+    pub disable_bump_commit: bool,
 }
 
 struct HookRunOptions<'a> {

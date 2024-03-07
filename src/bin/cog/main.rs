@@ -294,6 +294,10 @@ enum Command {
         /// Don't fail if there are untracked or uncommited files
         #[arg(long = "skip-untracked")]
         skip_untracked: bool,
+
+        /// Disable the creation of the bump commit
+        #[arg(long = "disable-bump-commit")]
+        disable_bump_commit: bool,
     },
 
     /// Install cog config files
@@ -385,6 +389,7 @@ fn main() -> Result<()> {
             skip_ci,
             skip_ci_override,
             skip_untracked,
+            disable_bump_commit,
         } => {
             let mut cocogitto = CocoGitto::get()?;
             let is_monorepo = !SETTINGS.packages.is_empty();
@@ -424,6 +429,7 @@ fn main() -> Result<()> {
                             skip_ci,
                             skip_ci_override,
                             skip_untracked,
+                            disable_bump_commit,
                         };
 
                         cocogitto.create_package_version(opts)?
@@ -438,6 +444,7 @@ fn main() -> Result<()> {
                             skip_ci,
                             skip_ci_override,
                             skip_untracked,
+                            disable_bump_commit,
                         };
 
                         cocogitto.create_monorepo_version(opts)?
@@ -453,6 +460,7 @@ fn main() -> Result<()> {
                     skip_ci,
                     skip_ci_override,
                     skip_untracked,
+                    disable_bump_commit,
                 };
                 cocogitto.create_version(opts)?
             }

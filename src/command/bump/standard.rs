@@ -66,33 +66,41 @@ impl CocoGitto {
         );
 
         self.repository.add_all()?;
-        self.unwrap_or_stash_and_exit(&tag, hook_result);
+        self.unwrap_or_stash_and_exit(&Tag::default(), hook_result);
 
-        let sign = self.repository.gpg_sign();
+        let disable_bump_commit = opts.disable_bump_commit || SETTINGS.disable_bump_commit;
 
-        let mut skip_ci_pattern = String::new();
+        if !disable_bump_commit {
+            let sign = self.repository.gpg_sign();
 
-        if opts.skip_ci || opts.skip_ci_override.is_some() {
-            skip_ci_pattern = opts.skip_ci_override.unwrap_or(SETTINGS.skip_ci.clone());
+            if opts.skip_ci || opts.skip_ci_override.is_some() {
+                let skip_ci_pattern = opts.skip_ci_override.unwrap_or(SETTINGS.skip_ci.clone());
+                self.repository.commit(
+                    &format!(
+                        "chore(version): {} {}",
+                        next_version.prefixed_tag, skip_ci_pattern
+                    ),
+                    sign,
+                    true,
+                )?;
+            } else {
+                self.repository.commit(
+                    &format!("chore(version): {}", next_version.prefixed_tag),
+                    sign,
+                    true,
+                )?;
+            }
         }
-
-        self.repository.commit(
-            &format!(
-                "chore(version): {} {}",
-                next_version.prefixed_tag, skip_ci_pattern
-            ),
-            sign,
-            true,
-        )?;
 
         if let Some(msg_tmpl) = opts.annotated {
             let mut context = tera::Context::new();
             context.insert("latest", &current_tag.version.to_string());
             context.insert("version", &tag.version.to_string());
             let msg = Tera::one_off(&msg_tmpl, &context, false)?;
-            self.repository.create_annotated_tag(&tag, &msg)?;
+            self.repository
+                .create_annotated_tag(&tag, &msg, disable_bump_commit)?;
         } else {
-            self.repository.create_tag(&tag)?;
+            self.repository.create_tag(&tag, disable_bump_commit)?;
         }
 
         self.run_hooks(
