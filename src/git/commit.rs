@@ -1,7 +1,8 @@
 use crate::git::error::Git2Error;
 use crate::git::repository::Repository;
 use git2::{Commit, ObjectType, Oid, ResetType, Signature, Tree};
-use std::io::Write;
+use std::fs;
+use std::io::{Read, Write};
 use std::process::{Command, Stdio};
 
 impl Repository {
@@ -65,10 +66,18 @@ impl Repository {
             .to_string();
 
         let key = self.signin_key().ok();
-        let gpg_signature = gpg_sign_string(key, &commit_as_str)?;
+
+        let signature = if self.ssh_sign() {
+            let program = self.ssh_program();
+            ssh_sign_string(program, key, &commit_as_str)?
+        } else {
+            let program = self.gpg_program();
+            gpg_sign_string(program, key, &commit_as_str)?
+        };
+
         let oid = self
             .0
-            .commit_signed(&commit_as_str, &gpg_signature, Some("gpgsig"))?;
+            .commit_signed(&commit_as_str, &signature, Some("gpgsig"))?;
 
         // This is needed because git2 does not update HEAD after creating a signed commit
         let commit = self.0.find_object(oid, Some(ObjectType::Commit))?;
@@ -77,8 +86,12 @@ impl Repository {
     }
 }
 
-fn gpg_sign_string(key: Option<String>, content: &str) -> Result<String, Git2Error> {
-    let mut child = Command::new("gpg");
+fn gpg_sign_string(
+    program: String,
+    key: Option<String>,
+    content: &str,
+) -> Result<String, Git2Error> {
+    let mut child = Command::new(program);
     child.args(["--armor", "--detach-sig"]);
 
     if let Some(key) = &key {
@@ -107,12 +120,52 @@ fn gpg_sign_string(key: Option<String>, content: &str) -> Result<String, Git2Err
     })?
 }
 
+fn ssh_sign_string(
+    program: String,
+    key: Option<String>,
+    content: &str,
+) -> Result<String, Git2Error> {
+    let Some(key) = key else {
+        return Err(Git2Error::SshError("No ssh key found".to_string()));
+    };
+
+    let mut child = Command::new(program);
+    child.args(["-Y", "sign", "-n", "git"]);
+
+    let mut signing_key = tempfile::NamedTempFile::new()?;
+    let mut buffer = tempfile::NamedTempFile::new()?;
+    signing_key.write_all(key.as_bytes())?;
+    buffer.write_all(content.as_bytes())?;
+    let signing_key_ref = signing_key.into_temp_path();
+    let buffer_ref = buffer.into_temp_path();
+    child.args([
+        "-f",
+        signing_key_ref.to_str().unwrap(),
+        buffer_ref.to_str().unwrap(),
+    ]); // TODO: Is there a way to avoid unwrap here ?
+
+    child
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .spawn()
+        .map_err(Git2Error::IOError)?
+        .wait()?;
+
+    let mut signature = String::new();
+    let sig_file = buffer_ref.to_str().unwrap().to_string() + ".sig";
+    fs::File::open(sig_file)?
+        .read_to_string(&mut signature)
+        .map_err(Git2Error::IOError)?;
+
+    Ok(signature)
+}
+
 #[cfg(test)]
 mod test {
     use crate::git::repository::Repository;
     use crate::test_helpers::git_init_no_gpg;
     use anyhow::Result;
-    use cmd_lib::run_cmd;
+    use cmd_lib::{run_cmd, run_fun};
     use sealed_test::prelude::*;
     use speculoos::prelude::*;
 
@@ -168,6 +221,52 @@ mod test {
 
         // Act
         let oid = repo.commit("feat: a test commit", false, true);
+
+        // Assert
+        assert_that!(oid).is_ok();
+        Ok(())
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    #[sealed_test]
+    fn crate_signed_ssh_commit_ok() -> Result<()> {
+        // Arrange
+        let crate_dir = std::env::var("CARGO_MANIFEST_DIR")?;
+
+        // Source a ssh-agent and set env variables
+        let output = run_fun!(
+            ssh-agent;
+        )?;
+
+        let variables = output.split(';').map(|s| s.trim()).collect::<Vec<&str>>();
+        let ssh_auth_sock = variables[0].split('=').collect::<Vec<&str>>()[1];
+        let ssh_agent_pid = variables[2].split('=').collect::<Vec<&str>>()[1];
+        std::env::set_var("SSH_AUTH_SOCK", ssh_auth_sock);
+        std::env::set_var("SSH_AGENT_PID", ssh_agent_pid);
+
+        run_cmd!(
+            git init;
+            chmod 600 $crate_dir/tests/assets/sshkey;
+            chmod 600 $crate_dir/tests/assets/sshkey.pub;
+            git config --local user.signingkey "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHsnHukmf4SX31jdbf+aZjH2pvmHwuz7ysxdjErMK+i2";
+            git config --local commit.gpgSign true;
+            git config --local gpg.format ssh;
+            git config --local gpg.ssh.program ssh-keygen;
+            ssh-add $crate_dir/tests/assets/sshkey;
+            echo changes > file;
+            git add .;
+        )?;
+
+        let repo = Repository::open(".")?;
+
+        // Act
+        let oid = repo.commit("feat: a test commit", true, false);
+
+        // Clean up
+        run_cmd!(
+            ssh-add -d $crate_dir/tests/assets/sshkey;
+            kill $ssh_agent_pid;
+        )?;
 
         // Assert
         assert_that!(oid).is_ok();
