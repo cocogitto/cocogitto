@@ -648,3 +648,143 @@ fn bump_monorepo_skip_ci_override_option_takes_precedence() -> Result<()> {
 
     Ok(())
 }
+
+#[sealed_test]
+fn disable_commit_creation_with_config_standard_ok() -> Result<()> {
+    git_init()?;
+
+    git_add("disable_bump_commit = true", "cog.toml")?;
+
+    git_commit("chore: init")?;
+    git_commit("feat: feature")?;
+
+    Command::cargo_bin("cog")?
+        .arg("bump")
+        .arg("--auto")
+        .assert()
+        .success();
+
+    assert_tag_exists("0.1.0")?;
+
+    Command::new("git")
+        .arg("status")
+        .arg("-s")
+        .assert()
+        .success()
+        .stdout(indoc!("A  CHANGELOG.md\n"));
+
+    Ok(())
+}
+
+#[sealed_test]
+fn disable_commit_creation_with_flag_standard_ok() -> Result<()> {
+    git_init()?;
+
+    git_commit("chore: init")?;
+    git_commit("feat: feature")?;
+
+    Command::cargo_bin("cog")?
+        .arg("bump")
+        .arg("--auto")
+        .arg("--disable-bump-commit")
+        .assert()
+        .success();
+
+    assert_tag_exists("0.1.0")?;
+
+    Command::new("git")
+        .arg("status")
+        .arg("-s")
+        .assert()
+        .success()
+        .stdout(indoc!("A  CHANGELOG.md\n"));
+
+    Ok(())
+}
+
+#[sealed_test]
+fn disable_commit_creation_with_pre_bump_hooks_standard_ok() -> Result<()> {
+    git_init()?;
+
+    git_add(
+        "pre_bump_hooks = [\"echo pre_bump_file > pre_bump_file\"]\ndisable_bump_commit = true",
+        "cog.toml",
+    )?;
+
+    git_commit("chore: init")?;
+    git_commit("feat: feature")?;
+
+    Command::cargo_bin("cog")?
+        .arg("bump")
+        .arg("--auto")
+        .arg("--disable-bump-commit")
+        .assert()
+        .success();
+
+    assert_tag_exists("0.1.0")?;
+
+    Command::new("git")
+        .arg("status")
+        .arg("-s")
+        .assert()
+        .success()
+        .stdout(indoc!("A  CHANGELOG.md\nA  pre_bump_file\n"));
+
+    Ok(())
+}
+
+#[sealed_test]
+fn disable_commit_creation_monorepo_ok() -> Result<()> {
+    let mut settings = Settings {
+        disable_bump_commit: true,
+        ..Default::default()
+    };
+    init_monorepo(&mut settings)?;
+
+    Command::cargo_bin("cog")?
+        .arg("bump")
+        .arg("--auto")
+        .assert()
+        .success();
+
+    assert_tag_exists("0.1.0")?;
+    assert_tag_exists("one-0.1.0")?;
+
+    Command::new("git")
+        .arg("status")
+        .arg("-s")
+        .assert()
+        .success()
+        .stdout(indoc!("A  CHANGELOG.md\nA  one/CHANGELOG.md\n"));
+
+    Ok(())
+}
+
+#[sealed_test]
+fn disable_commit_creation_package_ok() -> Result<()> {
+    let mut settings = Settings {
+        disable_bump_commit: true,
+        ..Default::default()
+    };
+    init_monorepo(&mut settings)?;
+
+    Command::cargo_bin("cog")?
+        .arg("bump")
+        .arg("--auto")
+        .arg("--package")
+        .arg("one")
+        .arg("--disable-bump-commit")
+        .assert()
+        .success();
+
+    assert_tag_exists("one-0.1.0")?;
+
+    Command::new("git")
+        .arg("status")
+        .arg("-s")
+        .assert()
+        .success()
+        .stdout(indoc!("A  one/CHANGELOG.md\n"));
+
+    Ok(())
+}
