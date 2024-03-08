@@ -10,7 +10,7 @@ use crate::{settings, CocoGitto, SETTINGS};
 use anyhow::Result;
 use colored::*;
 use log::info;
-use semver::{Prerelease, BuildMetadata};
+use semver::{BuildMetadata, Prerelease};
 use tera::Tera;
 
 impl CocoGitto {
