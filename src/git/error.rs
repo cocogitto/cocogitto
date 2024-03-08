@@ -29,6 +29,7 @@ pub enum Git2Error {
     InvalidCommitRangePattern(String),
     SshProgramError(String),
     SshError(String),
+    MissingEmailInSignature,
     UnknownRevision(String),
 }
 
@@ -128,6 +129,9 @@ impl Display for Git2Error {
             }
             Git2Error::InvalidCommitRangePattern(pattern) => {
                 writeln!(f, "invalid commit range pattern: `{pattern}`")
+            }
+            Git2Error::MissingEmailInSignature => {
+                writeln!(f, "`user.email` is required to sign commit with gitsign")
             }
             Git2Error::SshProgramError(_) => {
                 writeln!(f, "there was a problem while executing the ssh program")

@@ -70,6 +70,10 @@ impl Repository {
         let signature = if self.ssh_sign() {
             let program = self.ssh_program();
             ssh_sign_string(program, key, &commit_as_str)?
+        } else if self.x509_sign() {
+            let program = self.gpg_x509_program();
+            let user = sig.email().ok_or(Git2Error::MissingEmailInSignature)?;
+            x509_gitsign(program, user, &commit_as_str)?
         } else {
             let program = self.gpg_program();
             gpg_sign_string(program, key, &commit_as_str)?
@@ -84,6 +88,32 @@ impl Repository {
         self.0.reset(&commit, ResetType::Mixed, None)?;
         Ok(oid).map_err(Git2Error::Other)
     }
+}
+
+fn x509_gitsign(program: String, user: &str, content: &str) -> Result<String, Git2Error> {
+    let mut child = Command::new(program);
+    child.args(["--armor", "-b", "-s", "-u", user]);
+
+    let mut child = child
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("error calling gpg command, is gpg installed ?");
+
+    {
+        let stdin = child.stdin.as_mut().unwrap();
+        stdin.write_all(content.as_bytes())?;
+    }
+
+    child.wait_with_output().map(|output| {
+        if output.status.success() {
+            Ok(String::from_utf8_lossy(&output.stdout).to_string())
+        } else {
+            Err(Git2Error::GpgError(
+                String::from_utf8_lossy(&output.stderr).to_string(),
+            ))
+        }
+    })?
 }
 
 fn gpg_sign_string(
@@ -140,9 +170,9 @@ fn ssh_sign_string(
     let buffer_ref = buffer.into_temp_path();
     child.args([
         "-f",
-        signing_key_ref.to_str().unwrap(),
-        buffer_ref.to_str().unwrap(),
-    ]); // TODO: Is there a way to avoid unwrap here ?
+        signing_key_ref.to_string_lossy().as_ref(),
+        buffer_ref.to_string_lossy().as_ref(),
+    ]);
 
     child
         .stdin(Stdio::null())
