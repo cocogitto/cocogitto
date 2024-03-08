@@ -10,7 +10,7 @@ use crate::{CocoGitto, SETTINGS};
 use anyhow::Result;
 use colored::*;
 use log::info;
-use semver::{Prerelease, BuildMetadata};
+use semver::{BuildMetadata, Prerelease};
 use tera::Tera;
 
 impl CocoGitto {
@@ -34,7 +34,7 @@ impl CocoGitto {
         }
 
         if let Some(build) = opts.build {
-            tag.version.build = BuildMetadata::new(build)?;
+            next_version.version.build = BuildMetadata::new(build)?;
         }
 
         let tag = Tag::create(

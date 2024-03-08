@@ -16,7 +16,7 @@ use anyhow::Result;
 use colored::*;
 
 use log::{info, warn};
-use semver::{Prerelease, BuildMetadata};
+use semver::{BuildMetadata, Prerelease};
 use tera::Tera;
 
 use crate::conventional::error::BumpError;
@@ -59,7 +59,7 @@ impl CocoGitto {
     pub fn create_all_package_version_auto(&mut self, opts: BumpOptions) -> Result<()> {
         self.pre_bump_checks(opts.skip_untracked)?;
         // Get package bumps
-        let bumps = self.get_packages_bumps(opts.pre_release)?;
+        let bumps = self.get_packages_bumps(opts.pre_release, opts.build)?;
 
         if bumps.is_empty() {
             print!("No conventional commits found for your packages that required a bump. Changelogs will be updated on the next bump.\nPre-Hooks and Post-Hooks have been skiped.\n");
@@ -230,9 +230,7 @@ impl CocoGitto {
 
         self.repository.add_all()?;
         self.unwrap_or_stash_and_exit(&tag, hook_result);
-        self.bump_packages(opts.pre_release, opts.hooks_config, &bumps)?;
-
-        self.bump_packages(opts.pre_release, opts.build, opts.build, opts.hooks_config, &bumps)?;
+        self.bump_packages(opts.pre_release, opts.build, opts.hooks_config, &bumps)?;
 
         let disable_bump_commit = opts.disable_bump_commit || SETTINGS.disable_bump_commit;
 
@@ -437,7 +435,11 @@ impl CocoGitto {
     }
 
     // Calculate all package bump
-    fn get_packages_bumps(&self, pre_release: Option<&str>, build: Option<&str>) -> Result<Vec<PackageBumpData>> {
+    fn get_packages_bumps(
+        &self,
+        pre_release: Option<&str>,
+        build: Option<&str>,
+    ) -> Result<Vec<PackageBumpData>> {
         let mut package_bumps = vec![];
         for (package_name, package) in SETTINGS.packages.iter() {
             let old = self.repository.get_latest_package_tag(package_name);
