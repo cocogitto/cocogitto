@@ -2,6 +2,51 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## [6.1.0](https://github.com/cocogitto/cocogitto/compare/6.0.1..6.1.0) - 2024-03-14
+#### Bug Fixes
+- **(bump)** use commit meta to determine no bump commits - ([f9d3dd3](https://github.com/cocogitto/cocogitto/commit/f9d3dd35a1adeffc465b5aa7e3645bdbcdff7bbf)) - Maksym Kondratenko
+#### Continuous Integration
+- fixed copy wrong path - ([facdefb](https://github.com/cocogitto/cocogitto/commit/facdefbae670f4b2ca245a1106dc9d07345ac993)) - ABWassim
+#### Documentation
+- **(README)** fix typo - ([64fc19c](https://github.com/cocogitto/cocogitto/commit/64fc19cef4e3625d7dc15f4104871a3813002ae5)) - Oluf Lorenzen
+- **(bump)** disable bump commit - ([12df7a2](https://github.com/cocogitto/cocogitto/commit/12df7a23d6bea841d00314f7c4fa07ad1e2c6f57)) - ABWassim
+- **(commits-types)** bump minor and patch options - ([dd5517b](https://github.com/cocogitto/cocogitto/commit/dd5517b4a1d079c38565ac7b3c223ea25d9a8310)) - ABWassim
+- update docs with semver build meta - ([aec74df](https://github.com/cocogitto/cocogitto/commit/aec74df67038732c872c45334b38141a0ce6303a)) - David Arnold
+#### Features
+- **(bump)** disable bump commit - ([e6b5468](https://github.com/cocogitto/cocogitto/commit/e6b5468c698ab15db6129a3edb7c8ec48895cdcc)) - ABWassim
+- **(commit)** add gitsign support - ([56a8f32](https://github.com/cocogitto/cocogitto/commit/56a8f32f2591d0b6985fb8173c8305d9883e5579)) - [@oknozor](https://github.com/oknozor)
+- **(commit)** add and update files - ([0666ffe](https://github.com/cocogitto/cocogitto/commit/0666ffed9c93942751258622c4fbf08ba2e779c2)) - ABWassim
+- add build version to command - ([1680042](https://github.com/cocogitto/cocogitto/commit/1680042edd9f811fee2f6232a7573e456d3a65b9)) - David Arnold
+- ssh signing for commits - ([3cd580e](https://github.com/cocogitto/cocogitto/commit/3cd580e6b6cfb500e1d14fa84486f26d0b0523db)) - [@DaRacci](https://github.com/DaRacci)
+- complete rework of revspec and revwalk - ([6a3b2db](https://github.com/cocogitto/cocogitto/commit/6a3b2dbabeaf243050902628810e684ff278590d)) - [@oknozor](https://github.com/oknozor)
+- add additional package path filtering options - ([dde8ffe](https://github.com/cocogitto/cocogitto/commit/dde8ffe38ac4b3395e55f542ff7d1d57f1f89a43)) - Greg Fairbanks
+#### Miscellaneous Chores
+- **(commit)** reinforce skip-ci tests and process - ([9f7fcd6](https://github.com/cocogitto/cocogitto/commit/9f7fcd6029edc88f737e7d0dc3c0f0e7de5996da)) - ABWassim
+- **(deps)** bump vite and vuepress in /docs - ([01cfa4a](https://github.com/cocogitto/cocogitto/commit/01cfa4a3a9a81c942307759b2e8d6c8c72fea8c3)) - dependabot[bot]
+- **(deps-dev)** bump vite from 4.4.11 to 4.4.12 in /docs - ([21ceb2a](https://github.com/cocogitto/cocogitto/commit/21ceb2a915d641c8154d94bbdd95e87dff2b58ba)) - dependabot[bot]
+- **(deps-dev)** bump follow-redirects from 1.15.3 to 1.15.4 in /docs - ([398019b](https://github.com/cocogitto/cocogitto/commit/398019bc68989779d25448ab7cb7270603434604)) - dependabot[bot]
+- **(doc)** update repo name in doc - ([19a9303](https://github.com/cocogitto/cocogitto/commit/19a9303a6f2f7c90b800ce12ff33c53d509b9410)) - Guillaume Gayot
+- **(website)** add doc on how to access tag with prefix in conf - ([a3da049](https://github.com/cocogitto/cocogitto/commit/a3da049b0adc0e9a70e9e95eb002127e39cbb555)) - SergeJomon
+- thanks clippy - ([093306a](https://github.com/cocogitto/cocogitto/commit/093306a06667e350fbfeae4159edd7c34c705fde)) - [@oknozor](https://github.com/oknozor)
+- update dependencies - ([a4403ce](https://github.com/cocogitto/cocogitto/commit/a4403cea8b7a4a2dd60f3781a9546515fc3a7f3d)) - [@oknozor](https://github.com/oknozor)
+- fix deprecated usage in chrono - ([d7edf13](https://github.com/cocogitto/cocogitto/commit/d7edf13296f0305eece034f747b7f252476aa72c)) - [@oknozor](https://github.com/oknozor)
+- thanks clippy - ([104d23a](https://github.com/cocogitto/cocogitto/commit/104d23ac072b06ec6e0f01d64504881295b6e598)) - [@oknozor](https://github.com/oknozor)
+#### Performance Improvements
+- **(changelog)** build cache once - ([1ca130f](https://github.com/cocogitto/cocogitto/commit/1ca130f8e0c034f1cadc18bedffe48c23779886c)) - [@oknozor](https://github.com/oknozor)
+- **(revwalk)** cache every tags and ref - ([99eef16](https://github.com/cocogitto/cocogitto/commit/99eef1603c58b5d15a7be24e484838d182d13431)) - [@oknozor](https://github.com/oknozor)
+- add flamegraph and massif scripts to justfile - ([3f1d2cf](https://github.com/cocogitto/cocogitto/commit/3f1d2cf6ae5c91de363c2bacc5a5e4a0dcf4aea1)) - [@oknozor](https://github.com/oknozor)
+#### Refactoring
+- **(bump)** wrap bump and commit args into dedicated opts structs - ([452097d](https://github.com/cocogitto/cocogitto/commit/452097dd152542e3783a08ecd5ee842a8dcb7810)) - [@oknozor](https://github.com/oknozor)
+- try from impl for release - ([06ec52b](https://github.com/cocogitto/cocogitto/commit/06ec52bbc29f08d3937149c522d575d736eec010)) - [@oknozor](https://github.com/oknozor)
+#### Tests
+- **(bump)** more skip-ci tests - ([1c478ed](https://github.com/cocogitto/cocogitto/commit/1c478ed1cf9b6bb3f2e2d976f22361f7647c0815)) - ABWassim
+- **(bump)** disable bump commit - ([b03d66e](https://github.com/cocogitto/cocogitto/commit/b03d66e468db4f40d6f3609187ae5ce010ef6ba5)) - ABWassim
+- **(commit)** add and update files - ([9bf9045](https://github.com/cocogitto/cocogitto/commit/9bf9045e7bd923506b916ca9d587039905ebc8ef)) - ABWassim
+- update test keys expiration - ([a27b725](https://github.com/cocogitto/cocogitto/commit/a27b725385939673f59058d4d26a7882eb03b829)) - [@oknozor](https://github.com/oknozor)
+- fix monorepo test - ([a9be507](https://github.com/cocogitto/cocogitto/commit/a9be5079cab0c21a2ebde065ebd64b7947fdcc16)) - [@oknozor](https://github.com/oknozor)
+
+- - -
+
 ## [6.0.1](https://github.com/cocogitto/cocogitto/compare/6.0.0..6.0.1) - 2023-11-30
 #### Bug Fixes
 - gh pages build path - ([52b8307](https://github.com/cocogitto/cocogitto/commit/52b8307f23d76cf7d853ff60631e0872a1fb268e)) - [@oknozor](https://github.com/oknozor)
