@@ -48,6 +48,7 @@ pub struct Settings {
     pub changelog: Changelog,
     pub bump_profiles: HashMap<String, BumpProfile>,
     pub packages: HashMap<String, MonoRepoPackage>,
+    pub scopes: Vec<String>,
 }
 
 impl Default for Settings {
@@ -72,6 +73,7 @@ impl Default for Settings {
             changelog: Default::default(),
             bump_profiles: Default::default(),
             packages: Default::default(),
+            scopes: Default::default(),
         }
     }
 }
@@ -315,6 +317,14 @@ impl Settings {
         default_types.extend(custom_types);
 
         default_types
+    }
+
+    pub fn commit_scopes(&self) -> Option<Vec<String>> {
+        if self.scopes.is_empty() {
+            return None;
+        };
+
+        Some(self.scopes.clone())
     }
 
     fn default_commit_config() -> CommitsMetadata {

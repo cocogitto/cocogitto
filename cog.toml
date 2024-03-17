@@ -1,6 +1,49 @@
 # A list of glob patterns describing branches on which semver bump are allowed
 branch_whitelist = ["main"]
 
+scopes = [
+	"README",
+	"bump",
+	"cd",
+	"changelog",
+	"check",
+	"ci",
+	"cli",
+	"coco",
+	"codecov",
+	"cog",
+	"commit",
+	"compat",
+	"conventional",
+	"coverage",
+	"edit",
+	"error",
+	"errors",
+	"formatting",
+	"git",
+	"git-hooks",
+	"github",
+	"gitignore",
+	"hook",
+	"hooks",
+	"lib",
+	"log",
+	"logo",
+	"monorepo",
+	"parser",
+	"partial",
+	"readme",
+	"revspec",
+	"scope",
+	"semver",
+	"settings",
+	"tag",
+	"template",
+	"tests",
+	"verify",
+	"version",
+]
+
 # Ignore merge commits from conventional commit checks
 ignore_merge_commits = true
 
