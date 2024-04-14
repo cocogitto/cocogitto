@@ -34,10 +34,12 @@ identifiers = { identifier ~ (dot ~ identifier)* }
 pre_release = { pre_release_separator ~ identifiers }
 build_metadata = { build_metadata_separator ~ identifiers }
 
+default_separator = _{"|"}
+default_version = {  default_separator ~ identifiers }
 
 package = { "package" }
 version = { delimiter_start ~ (
-        ((current_tag | current_version | latest_tag | latest_version) ~ ops* ~ pre_release? ~ build_metadata?)
+        ((current_tag | current_version | latest_tag | latest_version) ~ default_version? ~ ops* ~ pre_release? ~ build_metadata?)
         | package
     ) ~ ( version_access_major | version_access_minor | version_access_patch )? ~ delimiter_end}
 version_dsl = { SOI ~ ( version | (!delimiter_start ~ ANY) )* ~ EOI }

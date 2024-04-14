@@ -8,11 +8,12 @@ use std::str::FromStr;
 use std::{fmt, path};
 
 use crate::hook::parser::VersionAccessToken;
-use crate::Tag;
+use crate::{SETTINGS, Tag};
 use parser::Token;
 
 use crate::settings::{BumpProfile, HookType};
 use anyhow::{anyhow, ensure, Result};
+use semver::Version;
 
 pub trait Hooks {
     fn bump_profiles(&self) -> &HashMap<String, BumpProfile>;
@@ -42,6 +43,7 @@ pub trait Hooks {
 pub struct VersionSpan {
     range: Range<usize>,
     tokens: VecDeque<Token>,
+    default_version: Option<Version>,
 }
 
 #[derive(Debug)]
@@ -61,21 +63,36 @@ impl VersionSpan {
         version: Option<&HookVersion>,
         latest: Option<&HookVersion>,
     ) -> Result<String> {
+
+        let default_tag = self.default_version.clone().map(|version| Tag {
+            package: None,
+            prefix: SETTINGS.tag_prefix.clone(),
+            version,
+            oid: None,
+            target: None,
+        });
+
         // According to the pest grammar, a `version` or `latest_version` token is expected first
         let mut tag = match self.tokens.pop_front() {
             Some(Token::Version) => version
-                .map(|version| version.prefixed_tag.strip_metadata())
+                .map(|version| version.prefixed_tag.clone())
+                .or(default_tag.clone())
+                .map(|tag| tag.strip_metadata())
                 .ok_or_else(|| anyhow!("No previous tag found to replace {{{{version}}}} version")),
             Some(Token::LatestVersion) => latest
-                .map(|version| version.prefixed_tag.strip_metadata())
+                .map(|version| version.prefixed_tag.clone())
+                .or(default_tag.clone())
+                .map(|tag| tag.strip_metadata())
                 .ok_or_else(|| anyhow!("No previous tag found to replace {{{{latest}}}} version")),
             Some(Token::LatestVersionTag) => latest
                 .map(|version| version.prefixed_tag.clone())
+                .or(default_tag.clone())
                 .ok_or_else(|| {
                     anyhow!("No previous tag found to replace {{{{latest_tag}}}} version")
                 }),
             Some(Token::VersionTag) => version
                 .map(|version| version.prefixed_tag.clone())
+                .or(default_tag.clone())
                 .ok_or_else(|| {
                     anyhow!("No previous tag found to replace {{{{version_tag}}}} version")
                 }),
@@ -501,6 +518,63 @@ mod test {
 
         assert_that!(hook.0.as_str())
             .is_equal_to("echo \"the latest 2.0.0-pre.alpha-bravo+build.42\"");
+        Ok(())
+    }
+
+    #[test]
+    fn replaces_version_with_default_when_no_version_available() -> Result<()> {
+        let mut hook =
+            Hook::from_str("echo \"the latest {{version|1.0.0}}\"")?;
+        hook.insert_versions(
+            None,
+            None,
+        )
+            .unwrap();
+
+        assert_that!(hook.0.as_str())
+            .is_equal_to("echo \"the latest 1.0.0\"");
+        Ok(())
+    }
+
+    #[test]
+    fn replaces_version_with_default_with_modifiers_when_no_version_available() -> Result<()> {
+        let mut hook =
+            Hook::from_str("echo \"the latest {{version|1.0.0+1major-pre.alpha-bravo+build.42}}\"")?;
+        hook.insert_versions(
+            None,
+            None,
+        )
+            .unwrap();
+
+        assert_that!(hook.0.as_str())
+            .is_equal_to("echo \"the latest 2.0.0-pre.alpha-bravo+build.42\"");
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn replaces_version_tag_with_default_when_no_version_tag_available() -> Result<()> {
+        let settings = Settings {
+            tag_prefix: Some("v".to_string()),
+            ..Default::default()
+        };
+        let settings = toml::to_string(&settings)?;
+
+        let _ = git_init_no_gpg()?;
+
+        run_cmd!(
+            echo $settings > cog.toml;
+        )?;
+
+        let mut hook =
+            Hook::from_str("echo \"the latest {{version_tag|1.0.0}}\"")?;
+        hook.insert_versions(
+            None,
+            None,
+        )
+            .unwrap();
+
+        assert_that!(hook.0.as_str())
+            .is_equal_to("echo \"the latest v1.0.0\"");
         Ok(())
     }
 
