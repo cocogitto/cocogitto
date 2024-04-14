@@ -8,7 +8,7 @@ use std::str::FromStr;
 use std::{fmt, path};
 
 use crate::hook::parser::VersionAccessToken;
-use crate::{SETTINGS, Tag};
+use crate::{Tag, SETTINGS};
 use parser::Token;
 
 use crate::settings::{BumpProfile, HookType};
@@ -63,7 +63,6 @@ impl VersionSpan {
         version: Option<&HookVersion>,
         latest: Option<&HookVersion>,
     ) -> Result<String> {
-
         let default_tag = self.default_version.clone().map(|version| Tag {
             package: None,
             prefix: SETTINGS.tag_prefix.clone(),
@@ -523,28 +522,19 @@ mod test {
 
     #[test]
     fn replaces_version_with_default_when_no_version_available() -> Result<()> {
-        let mut hook =
-            Hook::from_str("echo \"the latest {{version|1.0.0}}\"")?;
-        hook.insert_versions(
-            None,
-            None,
-        )
-            .unwrap();
+        let mut hook = Hook::from_str("echo \"the latest {{version|1.0.0}}\"")?;
+        hook.insert_versions(None, None).unwrap();
 
-        assert_that!(hook.0.as_str())
-            .is_equal_to("echo \"the latest 1.0.0\"");
+        assert_that!(hook.0.as_str()).is_equal_to("echo \"the latest 1.0.0\"");
         Ok(())
     }
 
     #[test]
     fn replaces_version_with_default_with_modifiers_when_no_version_available() -> Result<()> {
-        let mut hook =
-            Hook::from_str("echo \"the latest {{version|1.0.0+1major-pre.alpha-bravo+build.42}}\"")?;
-        hook.insert_versions(
-            None,
-            None,
-        )
-            .unwrap();
+        let mut hook = Hook::from_str(
+            "echo \"the latest {{version|1.0.0+1major-pre.alpha-bravo+build.42}}\"",
+        )?;
+        hook.insert_versions(None, None).unwrap();
 
         assert_that!(hook.0.as_str())
             .is_equal_to("echo \"the latest 2.0.0-pre.alpha-bravo+build.42\"");
@@ -565,16 +555,10 @@ mod test {
             echo $settings > cog.toml;
         )?;
 
-        let mut hook =
-            Hook::from_str("echo \"the latest {{version_tag|1.0.0}}\"")?;
-        hook.insert_versions(
-            None,
-            None,
-        )
-            .unwrap();
+        let mut hook = Hook::from_str("echo \"the latest {{version_tag|1.0.0}}\"")?;
+        hook.insert_versions(None, None).unwrap();
 
-        assert_that!(hook.0.as_str())
-            .is_equal_to("echo \"the latest v1.0.0\"");
+        assert_that!(hook.0.as_str()).is_equal_to("echo \"the latest v1.0.0\"");
         Ok(())
     }
 
