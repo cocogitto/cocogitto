@@ -229,7 +229,7 @@ mod test {
                     Token::Amount(1),
                     Token::Minor,
                 ]),
-                default_version: Some(Version::new(1,0,0))
+                default_version: Some(Version::new(1, 0, 0)),
             });
     }
 }
