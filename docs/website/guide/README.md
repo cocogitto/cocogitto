@@ -730,17 +730,18 @@ A typical example in the java world would be to bump your maven snapshot on your
 # cog.toml
 post_bump_hooks = [
     "git push",
-    "git push origin {{version}}",
+    "git push origin {{version|1.0.0}}",
     "git checkout develop",
     "git rebase master",
-    "mvn versions:set -DnewVersion={{version+minor-SNAPSHOT}}",
-    "cog commit chore \"bump snapshot to {{version+1minor-SNAPSHOT}}\"",
+    "mvn versions:set -DnewVersion={{version|1.0.0+minor-SNAPSHOT}}",
+    "cog commit chore \"bump snapshot to {{version|1.0.0+1minor-SNAPSHOT}}\"",
     "git push",
 ]
 ```
 
 As you can see we are bumping the manifest using a small DSL. It as only a few keywords :
 - start with the one of `version`,`version_tag`, `latest`, `latest_tag` or `package` keyword.
+- followed by the optional `|` operator and a default value (in SemVer format) in case the value for the keyword is not found.
 - followed by the `+` operator.
 - `major`, `minor` and `patch` to specify the kind of increment you want.
   Then an optional amount, default being one (`version+1minor` and `version+minor` being the same).
