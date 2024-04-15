@@ -642,7 +642,9 @@ or perform some additional checks before doing so.
 
 A typical example is editing your project manifest in your package manager configuration file.
 You can run pre bump commands with the `latest` and `version` aliases to reference respectively
-the latest known tag and the target version.
+the latest known version and the target version.
+
+In case you are first setting out your project and you don't have a version yet, you can define a default value for the aliases. This can be simply done by adding a default value to the alias like: `{{version|0.0.0}}`. The same can be done for any of the version aliases.
 
 **Example:**
 
@@ -652,8 +654,8 @@ When adding the following hooks to `cog.toml`, the hook commands will be run bef
 # cog.toml
 pre_bump_hooks = [
     "cargo build --release",
-    "echo 'bumping from {{latest}} to {{version}}'",
-    "cargo bump {{version}}",
+    "echo 'bumping from {{latest|0.0.0}} to {{version|0.0.1}}'",
+    "cargo bump {{version|0.0.1}}",
 ]
 ```
 
@@ -741,7 +743,7 @@ post_bump_hooks = [
 
 As you can see we are bumping the manifest using a small DSL. It as only a few keywords :
 - start with the one of `version`,`version_tag`, `latest`, `latest_tag` or `package` keyword.
-- followed by the optional `|` operator and a default value (in SemVer format) in case the value for the keyword is not found.
+- followed by the optional `|` operator and a default value (in SemVer format - in the example above: `|1.0.0`) in case the value for the keyword is not available.
 - followed by the `+` operator.
 - `major`, `minor` and `patch` to specify the kind of increment you want.
   Then an optional amount, default being one (`version+1minor` and `version+minor` being the same).
