@@ -745,7 +745,7 @@ post_bump_hooks = [
 
 As you can see we are bumping the manifest using a small DSL. It as only a few keywords :
 - start with the one of `version`,`version_tag`, `latest`, `latest_tag` or `package` keyword.
-- followed by the optional `|` operator and a default value (in SemVer format - in the example above: `|1.0.0`) in case the value for the keyword is not available.
+- followed by an optional default value (example above: `|1.0.0`) in SemVer format in case the value for the keyword is not available - the default cannot be used with the package keyword.
 - followed by the `+` operator.
 - `major`, `minor` and `patch` to specify the kind of increment you want.
   Then an optional amount, default being one (`version+1minor` and `version+minor` being the same).
