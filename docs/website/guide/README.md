@@ -644,7 +644,9 @@ A typical example is editing your project manifest in your package manager confi
 You can run pre bump commands with the `latest` and `version` aliases to reference respectively
 the latest known version and the target version.
 
-In case you are first setting out your project and you don't have a version yet, you can define a default value for the aliases. This can be simply done by adding a default value to the alias like: `{{version|0.0.0}}`. The same can be done for any of the version aliases.
+In case you are first setting out your project and you don't have a version yet, you can define a default value for the aliases. 
+This can be simply done by adding a default value to the alias like: `{{version|0.0.0}}`. 
+The same can be done for any of the version aliases.
 
 **Example:**
 
