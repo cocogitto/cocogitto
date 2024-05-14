@@ -1,4 +1,3 @@
-
 name: CI
 
 on:
@@ -57,8 +56,8 @@ jobs:
         if: ${{matrix.conventional_commit_check }}
         uses: cocogitto/cocogitto-action@v3.5
         with:
-          git-user: 'github-actions'
-          git-user-email: 'github-actions@github.com'
+          git-user: "github-actions"
+          git-user-email: "github-actions@github.com"
 
       - name: Install stable toolchain
         uses: actions-rs/toolchain@v1
@@ -79,8 +78,9 @@ jobs:
 
       - name: Upload coverage to Codecov
         if: ${{matrix.coverage}}
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: lcov.info
           fail_ci_if_error: true
 
@@ -90,7 +90,6 @@ jobs:
         with:
           command: nextest
           args: run
-
 
   lints:
     name: Lints & Format
