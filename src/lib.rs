@@ -4,6 +4,7 @@ use std::process::{Command, Stdio};
 
 use anyhow::Result;
 
+use ::log::warn;
 use conventional_commit_parser::commit::{CommitType, ConventionalCommit};
 use conventional_commit_parser::parse_footers;
 use once_cell::sync::Lazy;
@@ -13,6 +14,7 @@ use conventional::version::IncrementCommand;
 use error::BumpError;
 use git::repository::Repository;
 
+use serde::{Deserialize, Serialize};
 use settings::Settings;
 
 use crate::git::error::{Git2Error, TagError};
@@ -28,22 +30,35 @@ pub mod hook;
 pub mod log;
 pub mod settings;
 
-pub type CommitsMetadata = HashMap<CommitType, CommitConfig>;
+pub type CommitsMetadata = HashMap<CommitType, CommitConfigOrNull>;
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]
+#[serde(untagged)]
+pub enum CommitConfigOrNull {
+    CommitConfig(CommitConfig),
+    None {},
+}
 
 pub const CONFIG_PATH: &str = "cog.toml";
 
 pub static SETTINGS: Lazy<Settings> = Lazy::new(|| {
     if let Ok(repo) = Repository::open(".") {
-        Settings::get(&repo).unwrap_or_default()
-    } else {
-        Settings::default()
+        let settings = Settings::get(&repo);
+        if let Err(err) = settings.as_ref() {
+            warn!("Failed to get config, falling back to default: {err}");
+        }
+
+        return settings.unwrap_or_default();
     }
+
+    Settings::default()
 });
 
 // This cannot be carried by `Cocogitto` struct since we need it to be available in `Changelog`,
 // `Commit` etc. Be sure that `CocoGitto::new` is called before using this  in order to bypass
 // unwrapping in case of error.
-pub static COMMITS_METADATA: Lazy<CommitsMetadata> = Lazy::new(|| SETTINGS.commit_types());
+pub static COMMITS_METADATA: Lazy<HashMap<CommitType, CommitConfig>> =
+    Lazy::new(|| SETTINGS.commit_types());
 
 #[derive(Debug)]
 pub struct CocoGitto {

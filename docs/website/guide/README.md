@@ -35,6 +35,7 @@ Changes to be committed:
   (use "git restore --staged <file>..." to unstage)
 	new file:   cog.toml
 ```
+
 ## Conventional commits
 
 `cog commit` allows you to easily create commits respecting the
@@ -107,7 +108,6 @@ commit : `fix(cli)!: fix a nasty bug`.
 you manually create breaking changes commits with [the footer notation](https://www.conventionalcommits.org/en/v1.0.0/#commit-message-with-description-and-breaking-change-footer)
 cocogitto tools will still pick them.
 
-
 ### Commit Body and footers
 
 If you need to create more complex commit messages with body and footers use the `--edit` flag.
@@ -115,7 +115,7 @@ If you need to create more complex commit messages with body and footers use the
 **Example:**
 
 ```bash
-cog commit refactor -e -B "drop support for Node 6" runtime 
+cog commit refactor -e -B "drop support for Node 6" runtime
 ```
 
 This would open the following commit message template in your `$EDITOR` of choice :
@@ -144,13 +144,14 @@ There are two kinds of footer separators in conventional commits : `token: messa
 GitHub automatically link issues prefixed with a hash.
 
 **Example:**
+
 ```
     feat(changelog): add full_hash changelog template
 
     Closes #127
 ```
-:::
 
+:::
 
 ### Custom commit types
 
@@ -169,7 +170,8 @@ The above config would generate a `cog commit hotfix` and `cog commit release` s
 
 **Overriding existing commit types:**
 
-Existing commit type can be overridden just like custom ones: 
+Existing commit type can be overridden just like custom ones:
+
 ```toml
 [commit_types]
 feat = { changelog_title = "➕ Additional features" }
@@ -178,7 +180,7 @@ fix = { changelog_title = "🪲 Releases" }
 
 **Omit commits from changelog:**
 
-If you want to make changelog more concise you can skip some commit types with the `omit_from_changelog` option. 
+If you want to make changelog more concise you can skip some commit types with the `omit_from_changelog` option.
 
 ```toml
 [commit_types]
@@ -187,17 +189,27 @@ ci = { changelog_title = "", omit_from_changelog = true }
 perf = { changelog_title = "", omit_from_changelog = true }
 ```
 
+**Disabling default commit types:**
+
+While active by default, you can disable any of the default commit types by providing an empty configuration :
+
+```toml
+[commit_types]
+perf = {}
+```
+
 ### Deal with merge commits
 
-By default, git will write the following message to merge commit : `Merge my 'branch'`. These merge commits do not respect 
-the Conventional Commits specification, and we strongly advise avoiding them by setting the following in your `.gitconfig` : 
+By default, git will write the following message to merge commit : `Merge my 'branch'`. These merge commits do not respect
+the Conventional Commits specification, and we strongly advise avoiding them by setting the following in your `.gitconfig` :
 
 ```toml
 [merge]
   ff = only
 ```
 
-That said you can simply make Cocogitto ignore merge commits by setting the following in your `cog.toml`: 
+That said you can simply make Cocogitto ignore merge commits by setting the following in your `cog.toml`:
+
 ```toml
 ignore_merge_commits = true
 ```
@@ -212,11 +224,13 @@ No errored commits
 ```
 
 Let us create an invalid commit :
+
 ```bash
 git commit -m "Your Mother Was A Hamster, And Your Father Smelt Of Elderberries"
 ```
 
 And check our commit history again :
+
 ```bash
 ❯ cog check
 Error:
@@ -227,7 +241,7 @@ ________________________________________________________
 Errored commit: db5151486a41f1b694fd8f90144dd02c87268988 <Paul Delafosse>
 	Commit message: 'Your Mother Was A Hamster, And Your Father Smelt Of Elderberries'
 	Error: Missing commit type separator `:`
-	
+
 	Caused by:
 	     --> 1:5
 	      |
@@ -237,16 +251,15 @@ Errored commit: db5151486a41f1b694fd8f90144dd02c87268988 <Paul Delafosse>
 	      = expected scope or type_separator
 ```
 
-
 ::: tip
-You can check your history, starting from the latest tag using `--from-latest-tag` or `-l` flag.  
+You can check your history, starting from the latest tag using `--from-latest-tag` or `-l` flag.
 This is useful when your git repo started to use conventional commits from a certain point in history and you
 don't care about editing old commits.
 :::
 
 ## Managing git-hooks
 
-Cocogitto provide a way to share [git hooks](https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks). 
+Cocogitto provide a way to share [git hooks](https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks).
 
 First you need to set up some hooks in `cog.toml`:
 
@@ -271,14 +284,16 @@ Not that unlike `git commit`, `cog commit` will not pick a default shell when ru
 a shebang in your hook definition.
 :::
 
-Now that our hook are defined in cocogitto's config they can be installed with `cog install-hook`. 
+Now that our hook are defined in cocogitto's config they can be installed with `cog install-hook`.
 
 **Install all git-hooks:**
+
 ```bash
 ❯ cog install-hook --all
 ```
 
 **Install a single hook:**
+
 ```bash
 ❯ cog install-hook commit-msg
 ```
@@ -289,6 +304,7 @@ Now that our hook are defined in cocogitto's config they can be installed with `
 It will not create any commit.
 
 **Example:**
+
 ```bash
 ❯ cog verify "Your Mother Was A Hamster, And Your Father Smelt Of Elderberries"
 Error: Missing commit type separator `:`
@@ -331,9 +347,7 @@ You can use the `--from-latest-tag` or `-l` to edit only commits since the lates
 `cog log` is just like `git log` but it displays additional conventional commit information, such as commit scope,
 commit type etc.
 
-
 [![asciicast](https://asciinema.org/a/ssH4yRSlc28Rb9dHEDN7TowGe.svg)](https://asciinema.org/a/ssH4yRSlc28Rb9dHEDN7TowGe)
-
 
 ::: tip
 You can filter the log content with the following flags :
@@ -349,13 +363,14 @@ Those flag can be combined to achieve complex search in your commit history :
 ```bash
 cog log --author "Paul Delafosse" "Mike Lubinets" --type feat --scope cli --no-error
 ```
+
 :::
 
-## Changelogs 
+## Changelogs
 
-`cog changelog` can generate changelog automatically. 
+`cog changelog` can generate changelog automatically.
 
-Let's assume the following history : 
+Let's assume the following history :
 
 ```git
 * e3ff26a - (HEAD -> master) feat!: implement parser specification <Paul Delafosse>
@@ -364,20 +379,29 @@ Let's assume the following history :
 * 6d014b4 - chore: initial commit <Paul Delafosse>
 ```
 
-Let us now get a changelog : 
+Let us now get a changelog :
+
 ```bash
 cog changelog
 ```
 
 ```markdown
 ## 0.2.0 - 2021-11-10
+
 #### Features
+
 - **(hello)** say hello to the galaxy - (da4af95) - Paul Delafosse
+
 #### Refactoring
+
 - **(hello)** say hello to the martians - (22db158) - Paul Delafosse
-- - -
+
+---
+
 ## 0.1.0 - 2021-11-10
+
 #### Features
+
 - implement parser specification - (e3ff26a) - Paul Delafosse
 - a commit - (78dedea) - Paul Delafosse
 - say hello to the world - (c361eea) - Paul Delafosse
@@ -387,6 +411,7 @@ As you can see above a changelog is generated for each semver compliant tag.
 
 ::: tip
 You can specify a custom changelog range or tag like so :
+
 ```bash
 # Display the changelog between `^1` and `2.0.0`
 cog changelog --at 2.0.0
@@ -400,12 +425,13 @@ cog changelog 8806a55..
 # From first commit to `1.0.0`
 cog changelog 8806a5..1.0.0
 ```
+
 :::
 
 ### Built-in templates
 
-A raw changelog is nice, but its even nicer to generate some links for repository hosted on git web platforms 
-such as GitHub. To do this you can use the `--template` or `t` flag. Cocogitto comes with three pre built templates: 
+A raw changelog is nice, but its even nicer to generate some links for repository hosted on git web platforms
+such as GitHub. To do this you can use the `--template` or `t` flag. Cocogitto comes with three pre built templates:
 
 #### `default`
 
@@ -414,23 +440,30 @@ The default template we saw in the previous section
 #### `full_hash`
 
 A changelog template tailored for GitHub releases
+
 ```bash
 cog changelog --template full_hash
 ```
 
 ```markdown
-  #### Features
-  - da4af95b223bb8942ffd289d1a62d930c80d7bbd - **(hello)** say hello to the galaxy - @oknozor
-  #### Refactoring
-  - 22db158f6c75aa5e9e7d4ed4a5b5af7b147453d7 - **(hello)** say hello to the martians - @oknozor
-  - - -
-  #### Features
-  - e3ff26a8247b9690ce241e9843eea595bcac8d06 - implement parser specification - @oknozor
-  - 78dedeaf5e7222cd338627f7ee982e271a3f9a4c - a commit - Paul Delafosse
-  - c361eeae958a0a28041aecfed10091dc0e6768dd - say hello to the world - @oknozor
+#### Features
+
+- da4af95b223bb8942ffd289d1a62d930c80d7bbd - **(hello)** say hello to the galaxy - @oknozor
+
+#### Refactoring
+
+- 22db158f6c75aa5e9e7d4ed4a5b5af7b147453d7 - **(hello)** say hello to the martians - @oknozor
+
+---
+
+#### Features
+
+- e3ff26a8247b9690ce241e9843eea595bcac8d06 - implement parser specification - @oknozor
+- 78dedeaf5e7222cd338627f7ee982e271a3f9a4c - a commit - Paul Delafosse
+- c361eeae958a0a28041aecfed10091dc0e6768dd - say hello to the world - @oknozor
 ```
-  
-Below is the changelog as rendered by GitHub release, notice how the committer git signature as been replaced 
+
+Below is the changelog as rendered by GitHub release, notice how the committer git signature as been replaced
 by their github username. To do that you need to tell cocogitto about your contributor's username in `cog.toml`:
 
 ```toml
@@ -438,31 +471,35 @@ by their github username. To do that you need to tell cocogitto about your contr
   authors = [
       { username = "oknozor", signature = "Paul Delafosse" }
   ]
-  ```
+```
+
 <img :src="$withBase('github-release-changelog.png')" alt="Github release changelog screenshot">
 
 #### `remote`
 
 A template generating links for web platform hosted repository.
-  
+
 ```bash
 cog changelog --at 0.1.0 -t remote --remote github.com --owner oknozor --repository  cocogitto
 ```
 
 As you can see below a changelog is generated with full links to issues, tags, diff and usernames according
-to the provided remote, owner and repository flags. 
+to the provided remote, owner and repository flags.
 
 ```markdown
 ## [0.1.0](https://github.com/oknozor/cocogitto/compare/6d014b40f552fc1ad08f574fe33355175b0783ff..0.1.0) - 2021-11-11
+
 #### Features
+
 - implement parser specification - ([e3ff26a](https://github.com/oknozor/cocogitto/commit/e3ff26a8247b9690ce241e9843eea595bcac8d06)) - [@oknozor](https://github.com/oknozor)
 - a commit - ([78dedea](https://github.com/oknozor/cocogitto/commit/78dedeaf5e7222cd338627f7ee982e271a3f9a4c)) - [@oknozor](https://github.com/oknozor)
 - say hello to the world - ([c361eea](https://github.com/oknozor/cocogitto/commit/c361eeae958a0a28041aecfed10091dc0e6768dd)) - [@oknozor](https://github.com/oknozor)
 ```
-::: tip 
-To avoid typing the remote information and changelog template everytime you can set  some default values in `cog.toml`.
 
-Here is the config used by cocogitto itself. 
+::: tip
+To avoid typing the remote information and changelog template everytime you can set some default values in `cog.toml`.
+
+Here is the config used by cocogitto itself.
 
 ```toml
 [changelog]
@@ -482,42 +519,42 @@ authors = [
   { signature = "Danny Tatom", username = "its-danny" },
 ]
 ```
+
 :::
 
 ### Custom templates
 
-If you are not happy with the default you can create your own changelog template. 
-Internally cocogitto uses [tera](https://tera.netlify.app/) template engine to render changelogs. 
+If you are not happy with the default you can create your own changelog template.
+Internally cocogitto uses [tera](https://tera.netlify.app/) template engine to render changelogs.
 
 Also see [template reference](../template).
 
 **Example:**
 
 ```tera
-{% for type, typed_commits in commits | sort(attribute="type")| group_by(attribute="type")%}                            
+{% for type, typed_commits in commits | sort(attribute="type")| group_by(attribute="type")%}
 #### {{ type | upper_first }}
-                                                                                                                        
-    {% for scope, scoped_commits in typed_commits | group_by(attribute="scope") %}                                      
-        {% for commit in scoped_commits | sort(attribute="scope") %}                                                    
-            {% if commit.author %}                                                                                      
-                {% set author = "@" ~ commit.author %}                                                                  
-            {% else %}                                                                                                  
-                {% set author = commit.signature %}                                                                     
-            {% endif %}                                                                                                 
-            - {{ commit.id }} - **({{ scope }})** {{ commit.summary }} - {{ author }}
-        {% endfor %}                                                                                                    
-    {% endfor %}                                                                                                        
-    {% for commit in typed_commits | unscoped %}                                                                        
-        {% if commit.author %}                                                                                          
-            {% set author = "@" ~ commit.author %}                                                                      
-        {% else %}                                                                                                      
-            {% set author = commit.signature %}                                                                         
-        {% endif %}                                                                                                     
-            - {{ commit.id }} - {{ commit.summary }} - {{ author }}
-    {% endfor %}                                                                                                        
-{% endfor %}                                                                                                            
-```
 
+    {% for scope, scoped_commits in typed_commits | group_by(attribute="scope") %}
+        {% for commit in scoped_commits | sort(attribute="scope") %}
+            {% if commit.author %}
+                {% set author = "@" ~ commit.author %}
+            {% else %}
+                {% set author = commit.signature %}
+            {% endif %}
+            - {{ commit.id }} - **({{ scope }})** {{ commit.summary }} - {{ author }}
+        {% endfor %}
+    {% endfor %}
+    {% for commit in typed_commits | unscoped %}
+        {% if commit.author %}
+            {% set author = "@" ~ commit.author %}
+        {% else %}
+            {% set author = commit.signature %}
+        {% endif %}
+            - {{ commit.id }} - {{ commit.summary }} - {{ author }}
+    {% endfor %}
+{% endfor %}
+```
 
 ## Automatic versioning
 
@@ -536,12 +573,13 @@ The `bump` subcommand will execute the following steps :
 ### Auto bump
 
 `cog bump` will calculate the next version based on your commit history since the latest
-semver tag. Once a tag number as been calculated it will create a tagged commit containing 
-the changelog for this new tag. 
+semver tag. Once a tag number as been calculated it will create a tagged commit containing
+the changelog for this new tag.
 
-**Example:** 
+**Example:**
 
 Assuming we are working on the following git repository :
+
 ```git
 * 8e08b78 - (HEAD -> master) feat: another cool feature <Paul Delafosse>
 * 490b846 - docs: add some documentation <Paul Delafosse>
@@ -551,6 +589,7 @@ Assuming we are working on the following git repository :
 ```
 
 Let us now create a version :
+
 ```bash
 ❯ cog bump --auto
 Warning: using 'cog bump' with the default configuration.
@@ -567,28 +606,38 @@ Bumped version: ... -> 0.1.0
 ```
 
 If we look again at our git log :
+
 ```git
 * 76c0ffd - (HEAD -> master, tag: 0.1.0) chore(version): 0.1.0 (2 minutes ago) <Paul Delafosse>
-... 
+...
 ```
 
-Also, a `CHANGELOG.md` file have been created using the `default` template: 
+Also, a `CHANGELOG.md` file have been created using the `default` template:
 
 ```markdown
 # Changelog
+
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
-- - -
+
+---
 
 ## 0.1.0 - 2021-11-11
+
 #### Bug Fixes
+
 - fix a ugly bug - (8bc0d28) - Paul Delafosse
+
 #### Documentation
+
 - add some documentation - (490b846) - Paul Delafosse
+
 #### Features
+
 - another cool feature - (8e08b78) - Paul Delafosse
 - add awesome feature - (a0c9050) - Paul Delafosse
 
-- - -
+---
+
 Changelog generated by [cocogitto](https://github.com/cocogitto/cocogitto).
 ```
 
@@ -596,7 +645,8 @@ Also see [template config](/config) if you need to change the default changelog 
 
 ::: tip
 Sometimes getting a version number automatically is not what you want.
-Cocogitto let you specify the target version with the following flags : 
+Cocogitto let you specify the target version with the following flags :
+
 - `--auto` : choose the next version for you (based on feature commit, bug fixes commit and BREAKING_CHANGE commit).
 - `--major` : increment the MAJOR version.
 - `--minor` : increment the MINOR version.
@@ -606,10 +656,12 @@ Cocogitto let you specify the target version with the following flags :
 - `--build <metadata>` : set the [build metatada](https://semver.org/#spec-item-10).
 
 **Example:**
+
 ```bash
 cog bump --major --pre "beta.1" --build "foo.bar"
 # 1.2.3 -> 2.0.0-beta.1+foo.bar
 ```
+
 :::
 
 **Note:** `cog bump --auto` treats `0.y.z` versions specially,
@@ -618,19 +670,20 @@ That way, you can keep adding features in the development stage and decide yours
 
 #### Dry run
 
-If you just need to get the next version number without performing the automatic bump use the `--dry-run` flag : 
+If you just need to get the next version number without performing the automatic bump use the `--dry-run` flag :
 
 ```shell
-cog bump --dry-run --auto 
+cog bump --dry-run --auto
 ```
 
 :::tip
-The `dry-run` flag can be helpful when writing shell scritps using cocogitto. Since only the version number will 
-output to stdout so you can do the following: 
+The `dry-run` flag can be helpful when writing shell scritps using cocogitto. Since only the version number will
+output to stdout so you can do the following:
 
 ```shell
 VERSION=$(cog bump --dry-run --auto) # -> VERSION=1.0.0
 ```
+
 :::
 
 ### Bump hooks
@@ -644,13 +697,13 @@ A typical example is editing your project manifest in your package manager confi
 You can run pre bump commands with the `latest` and `version` aliases to reference respectively
 the latest known version and the target version.
 
-In case you are first setting out your project and you don't have a version yet, you can define a default value for the aliases. 
-This can be simply done by adding a default value to the alias like: `{{version|0.0.0}}`. 
+In case you are first setting out your project and you don't have a version yet, you can define a default value for the aliases.
+This can be simply done by adding a default value to the alias like: `{{version|0.0.0}}`.
 The same can be done for any of the version aliases.
 
 **Example:**
 
-When adding the following hooks to `cog.toml`, the hook commands will be run before creating the version commit : 
+When adding the following hooks to `cog.toml`, the hook commands will be run before creating the version commit :
 
 ```toml
 # cog.toml
@@ -661,7 +714,7 @@ pre_bump_hooks = [
 ]
 ```
 
-And result in the following bump: 
+And result in the following bump:
 
 ```bash
 ❯ cog bump --auto
@@ -674,13 +727,14 @@ bump from 0.1.0 to 0.2.0
 Bumped version: 0.1.0 -> 0.2.0
 ```
 
-::: tip 
-If any of the pre-bump command fails cocogitto will abort the bump. 
+::: tip
+If any of the pre-bump command fails cocogitto will abort the bump.
 Any changes made to the repository during the pre-bump phase will be stashed under `cog_bump_{{version}}`.
 
 **Example:**
 
 cog.toml :
+
 ```toml
 pre_bump_hooks = [
   "cargo build --release",
@@ -690,6 +744,7 @@ pre_bump_hooks = [
 ```
 
 run :
+
 ```bash
 ❯ cog bump --auto
 Skipping irrelevant commits:
@@ -702,12 +757,12 @@ Error: prehook run `exit 1` failed
 	All changes made during hook runs have been stashed on `cog_bump_0.2.1`
 	you can run `git stash apply stash@0` to restore these changes.
 ```
-:::
 
+:::
 
 #### Post bump hooks
 
-Post-bump hooks works exactly like pre-bum hooks. They are run after the version has been created 
+Post-bump hooks works exactly like pre-bum hooks. They are run after the version has been created
 and are typically used to push changes to the remote, publish packages and apply branching model strategies.
 
 ```toml
@@ -717,12 +772,12 @@ post_bump_hooks = [
     "git push origin {{version}}",
     "cargo publish"
 ]
-```  
+```
 
 ::: danger
 There is no rollback procedure for post-bump hook, on failure cog will abort and leave the repository
-in an undefined state. 
-We are working on allowing user to define there rollback procedures, but it is not there yet. 
+in an undefined state.
+We are working on allowing user to define there rollback procedures, but it is not there yet.
 :::
 
 #### Version DSL
@@ -744,6 +799,7 @@ post_bump_hooks = [
 ```
 
 As you can see we are bumping the manifest using a small DSL. It as only a few keywords :
+
 - start with the one of `version`,`version_tag`, `latest`, `latest_tag` or `package` keyword.
 - followed by an optional default value (example above: `|1.0.0`) in SemVer format in case the value for the keyword is not available - the default cannot be used with the package keyword.
 - followed by the `+` operator.
@@ -755,7 +811,7 @@ As you can see we are bumping the manifest using a small DSL. It as only a few k
 #### Bump profiles
 
 For some branching model or release cadence you might want to bump your versions with
-different hooks. 
+different hooks.
 
 To do so you can define alternate profile hooks in `cog.toml` :
 
@@ -773,7 +829,7 @@ post_bump_hooks = []
 
 Once your custom hook profile is set you can call it with the `--hook-profile` flag :
 
-```bash 
+```bash
 ❯ cog bump -h hotfix --auto
 Skipping irrelevant commits:
 
@@ -784,8 +840,8 @@ On branch release/0.2.0
 Bumped version: 0.2.0 -> 0.3.0
 ```
 
-Note that for the sake of readability in this documentation, the above example use a oneliner 
-to check the current branch but you would probably want to can a shell script instead :  
+Note that for the sake of readability in this documentation, the above example use a oneliner
+to check the current branch but you would probably want to can a shell script instead :
 
 ```toml
 pre_bump_hooks = [
@@ -798,9 +854,9 @@ pre_bump_hooks = [
 ### Branch whitelist
 
 It is a common practice to bump always from the same set of branches. For instance, you might want to allow bumping only
-on branch `main` and branches prefixed with `release/`. 
+on branch `main` and branches prefixed with `release/`.
 
-To do so add the following to your `cog.toml` : 
+To do so add the following to your `cog.toml` :
 
 ```toml
 branch_whitelist = [
@@ -811,38 +867,37 @@ branch_whitelist = [
 
 ## Automatic versioning for monorepo
 
-Managing versions for mono-repository is slightly different from the standard Cocogitto flow. 
-Instead of the [standard bump steps](#automatic-versioning) using `cog bump --auto` on a mono-repository will 
-perform the following actions: 
+Managing versions for mono-repository is slightly different from the standard Cocogitto flow.
+Instead of the [standard bump steps](#automatic-versioning) using `cog bump --auto` on a mono-repository will
+perform the following actions:
 
 1. Calculate next version for each package based on commits that changes the package content.
-2. Calculate a global version based on the created package versions and the commit that does not belong to a specific package.  
+2. Calculate a global version based on the created package versions and the commit that does not belong to a specific package.
 3. Execute global pre-bump hooks.
 4. Execute per package pre-bump hooks.
 5. Append the changes for each package to `{package_path}/CHANGELOG.md`.
 6. Append global changes and a list of package version to `/CHANGELOG.md`.
 7. Create a version commit containing changes made during the previous steps.
 8. Create global git tag on the version commit.
-9. Create a tag for each new package version on the version commit. 
+9. Create a tag for each new package version on the version commit.
 10. Execute per package post-bump hooks.
 11. Execute global post-bump hooks.
 
 ### Mono-repository bump
 
-When using `cog bump` in a mono-repository context, it behaves slightly differently. 
- 
-- `cog bump --auto`: creates a tag per changed packages since their respective latest releases and creates a global 
-    mono-repository tag.
+When using `cog bump` in a mono-repository context, it behaves slightly differently.
+
+- `cog bump --auto`: creates a tag per changed packages since their respective latest releases and creates a global
+  mono-repository tag.
 - `cog bump` used why manual bump flags such as `--minor`, `--major`, `--patch` or `--version` will only
-    create the monorepo version without bumping packages.
+  create the monorepo version without bumping packages.
 
 - `cog bump --package=my_package --auto` creates a single package tag from the latest package tag
 
 :::tip
-We strongly advise to use automatic bump whenever possible. Manual bump should only be used when there are changes that 
+We strongly advise to use automatic bump whenever possible. Manual bump should only be used when there are changes that
 Cocogitto is not able to detect (ex: a breaking change occurring in a package via updating a global dependency).
 :::
-
 
 ### Packages configuration
 
@@ -851,7 +906,7 @@ config. Once packages are defined, `cog` will automatically scan your packages d
 
 **Example:**
 
-A real life example from [oknozor/gill](https://github.com/oknozor/gill/blob/main/cog.toml). 
+A real life example from [oknozor/gill](https://github.com/oknozor/gill/blob/main/cog.toml).
 
 ```toml
 [packages]
@@ -868,17 +923,18 @@ syntect-plugin = { path = "crates/syntect-plugin", public_api = false }
 ```
 
 :::tip
-If some of your packages does not belong to your project public API use `public_api = false` to prevent `--auto` bump 
-from updating the global project version. 
+If some of your packages does not belong to your project public API use `public_api = false` to prevent `--auto` bump
+from updating the global project version.
 :::
 
 #### Packages hooks
 
 When creating a monorepo version Cocogitto will execute the pre-bump and post-bump hooks normally. Additionally, it will
 run `pre_package_bump_hooks` and `post_package_bump_hooks` before and after each package bump.
-To override these you can define per package hooks. 
+To override these you can define per package hooks.
 
 **Example:**
+
 ```shell
 ## Pre hooks executed before each package bump, here we use a cargo command to bump rust package manifest
 pre_package_bump_hooks = [
@@ -948,7 +1004,7 @@ post_bump_hooks = [
 #### Java Maven projects
 
 A recipe for Java Maven projects.
-Notably, the version bump is also included in the `pom.xml` project manifest  by running `mvn versions:set`
+Notably, the version bump is also included in the `pom.xml` project manifest by running `mvn versions:set`
 and then staging the change before creating the bump commit.
 
 You can also run `mvn deploy` if this phase is configured in your `pom.xml`.
@@ -972,10 +1028,10 @@ post_bump_hooks = [
 ## Tag prefix
 
 It is common to use a tag prefix when creating version in your repository. This is described in the [SemVer specification
-FAQ](https://semver.org/#is-v123-a-semantic-version). This convention provide a handy way to distinguish between release 
-versions and tags that does not represent releases. 
+FAQ](https://semver.org/#is-v123-a-semantic-version). This convention provide a handy way to distinguish between release
+versions and tags that does not represent releases.
 
-To tell `cog` to pick only version starting with a prefix set this in your `cog.toml` file : 
+To tell `cog` to pick only version starting with a prefix set this in your `cog.toml` file :
 
 ```toml
 tag_prefix = "v"
@@ -985,7 +1041,6 @@ full tag including the prefix can be access in configuration file with {{version
 
 tag_prefix = "v"
 
-
 ```toml
 post_bump_hooks = [
 "git push origin {{version_tag}}"
@@ -994,11 +1049,12 @@ post_bump_hooks = [
 
 ## Make Cocogitto skip CI CD
 
-The ```--skip-ci``` option of the ```bump``` and ```commit``` commands offers the possibility to skip CI/CD by adding a "skip-ci" string your commits. The default string used by Cocogitto is ```[skip ci]``` but you can override it with your own string :
-- Using the ```skip_ci``` configuration in the ```cog.toml```.
-- Using the ```--skip-ci-override``` option of the ```bump``` and ```commit``` commands.
+The `--skip-ci` option of the `bump` and `commit` commands offers the possibility to skip CI/CD by adding a "skip-ci" string your commits. The default string used by Cocogitto is `[skip ci]` but you can override it with your own string :
 
-Note that the ```--skip-ci-override``` option has precedence over the ```skip_ci``` configuration in the ```cog.toml```.
+- Using the `skip_ci` configuration in the `cog.toml`.
+- Using the `--skip-ci-override` option of the `bump` and `commit` commands.
+
+Note that the `--skip-ci-override` option has precedence over the `skip_ci` configuration in the `cog.toml`.
 
 **Example:**
 
@@ -1016,7 +1072,7 @@ Date: Tue Mar 7 15:06:18 2023 +0200
     chore(version): 1.0.0 [skip ci]
 ```
 
-**Example with ```cog.toml``` configuration:**
+**Example with `cog.toml` configuration:**
 
 ```toml
 skip_ci = "[ci-skip]"
@@ -1036,7 +1092,7 @@ Date: Tue Mar 7 15:06:18 2023 +0200
     chore(version): 1.0.0 [ci-skip]
 ```
 
-**Another example using the ```--skip-ci-override``` option:**
+**Another example using the `--skip-ci-override` option:**
 
 ```bash
 ❯ cog bump --skip-ci-override "[ci-skip]"
@@ -1074,8 +1130,8 @@ To disable its creation, you can use the `disable_bump_commit` configuration in 
 
 ## Get the current version
 
-It's sometime needed to display the current version for scripting purpose. 
-You can print the latest SemVer tag on your repo with the `get-version` subcommand: 
+It's sometime needed to display the current version for scripting purpose.
+You can print the latest SemVer tag on your repo with the `get-version` subcommand:
 
 ```bash
 ❯ cog get-version
@@ -1083,19 +1139,22 @@ Current version:
 5.3.1
 ```
 
-To silence the additional info and get only the version use the `-v` flag: 
+To silence the additional info and get only the version use the `-v` flag:
+
 ```bash
 ❯ cog -v get-version
 5.3.1
 ```
 
-If working on a monorepo you can also specify the target package: 
+If working on a monorepo you can also specify the target package:
+
 ```bash
 ❯ cog -v get-version --package gill-db
 0.1.0
 ```
 
-Finally, if you need the command to print a version no matter the state of your repository, you can provide a fallback: 
+Finally, if you need the command to print a version no matter the state of your repository, you can provide a fallback:
+
 ```bash
 ❯ cog get-version --fallback 0.1.0
 0.1.0

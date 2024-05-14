@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 use crate::conventional::commit::CommitConfig;
 use crate::git::repository::Repository;
-use crate::{CommitsMetadata, CONFIG_PATH, SETTINGS};
+use crate::{CommitConfigOrNull, CommitsMetadata, CONFIG_PATH, SETTINGS};
 
 use crate::conventional::changelog::error::ChangelogError;
 use crate::conventional::changelog::template::{RemoteContext, Template};
@@ -44,7 +44,7 @@ pub struct Settings {
     pub pre_package_bump_hooks: Vec<String>,
     pub post_package_bump_hooks: Vec<String>,
     pub git_hooks: HashMap<GitHookType, GitHook>,
-    pub commit_types: HashMap<String, CommitConfig>,
+    pub commit_types: HashMap<String, CommitConfigOrNull>,
     pub changelog: Changelog,
     pub bump_profiles: HashMap<String, BumpProfile>,
     pub packages: HashMap<String, MonoRepoPackage>,
@@ -302,47 +302,73 @@ impl Settings {
         repository.try_into()
     }
 
-    pub fn commit_types(&self) -> CommitsMetadata {
+    pub fn commit_types(&self) -> HashMap<CommitType, CommitConfig> {
         let commit_settings = self.commit_types.clone();
         let mut custom_types = HashMap::new();
 
         commit_settings.iter().for_each(|(key, value)| {
             let _ = custom_types.insert(CommitType::from(key.as_str()), value.clone());
         });
-
         let mut default_types = Settings::default_commit_config();
 
         default_types.extend(custom_types);
 
         default_types
+            .into_iter()
+            .filter_map(|(key, value)| match value {
+                CommitConfigOrNull::CommitConfig(config) => Some((key, config)),
+                CommitConfigOrNull::None {} => None,
+            })
+            .collect()
     }
 
     fn default_commit_config() -> CommitsMetadata {
         let mut default_types = HashMap::new();
         default_types.insert(
             CommitType::Feature,
-            CommitConfig::new("Features").with_minor_bump(),
+            CommitConfigOrNull::CommitConfig(CommitConfig::new("Features").with_minor_bump()),
         );
         default_types.insert(
             CommitType::BugFix,
-            CommitConfig::new("Bug Fixes").with_patch_bump(),
+            CommitConfigOrNull::CommitConfig(CommitConfig::new("Bug Fixes").with_patch_bump()),
         );
 
-        default_types.insert(CommitType::Chore, CommitConfig::new("Miscellaneous Chores"));
-        default_types.insert(CommitType::Revert, CommitConfig::new("Revert"));
+        default_types.insert(
+            CommitType::Chore,
+            CommitConfigOrNull::CommitConfig(CommitConfig::new("Miscellaneous Chores")),
+        );
+        default_types.insert(
+            CommitType::Revert,
+            CommitConfigOrNull::CommitConfig(CommitConfig::new("Revert")),
+        );
         default_types.insert(
             CommitType::Performances,
-            CommitConfig::new("Performance Improvements"),
+            CommitConfigOrNull::CommitConfig(CommitConfig::new("Performance Improvements")),
         );
         default_types.insert(
             CommitType::Documentation,
-            CommitConfig::new("Documentation"),
+            CommitConfigOrNull::CommitConfig(CommitConfig::new("Documentation")),
         );
-        default_types.insert(CommitType::Style, CommitConfig::new("Style"));
-        default_types.insert(CommitType::Refactor, CommitConfig::new("Refactoring"));
-        default_types.insert(CommitType::Test, CommitConfig::new("Tests"));
-        default_types.insert(CommitType::Build, CommitConfig::new("Build system"));
-        default_types.insert(CommitType::Ci, CommitConfig::new("Continuous Integration"));
+        default_types.insert(
+            CommitType::Style,
+            CommitConfigOrNull::CommitConfig(CommitConfig::new("Style")),
+        );
+        default_types.insert(
+            CommitType::Refactor,
+            CommitConfigOrNull::CommitConfig(CommitConfig::new("Refactoring")),
+        );
+        default_types.insert(
+            CommitType::Test,
+            CommitConfigOrNull::CommitConfig(CommitConfig::new("Tests")),
+        );
+        default_types.insert(
+            CommitType::Build,
+            CommitConfigOrNull::CommitConfig(CommitConfig::new("Build system")),
+        );
+        default_types.insert(
+            CommitType::Ci,
+            CommitConfigOrNull::CommitConfig(CommitConfig::new("Continuous Integration")),
+        );
         default_types
     }
 
@@ -479,5 +505,29 @@ impl TryFrom<&Repository> for Settings {
             }
             None => Ok(Settings::default()),
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use std::fs;
+
+    use conventional_commit_parser::commit::CommitType;
+    use sealed_test::prelude::*;
+    use speculoos::prelude::*;
+
+    use crate::{test_helpers::git_init_no_gpg, COMMITS_METADATA};
+
+    #[sealed_test]
+    fn should_disable_default_commit_type() -> anyhow::Result<()> {
+        git_init_no_gpg()?;
+        let settings = r#"
+[commit_types]
+feat = {}
+"#;
+        fs::write("cog.toml", settings)?;
+        assert_that!(COMMITS_METADATA.keys()).does_not_contain(&CommitType::Feature);
+        assert_that!(COMMITS_METADATA.keys()).contains(&CommitType::BugFix);
+        Ok(())
     }
 }

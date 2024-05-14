@@ -1,5 +1,5 @@
-use std::ffi::OsStr;
 use std::process::Command;
+use std::{ffi::OsStr, fs};
 
 use crate::helpers::*;
 
@@ -279,5 +279,28 @@ fn update_option_git_commit_ok() -> Result<()> {
         .success()
         .stdout(indoc!("?? new_file\n"));
 
+    Ok(())
+}
+
+#[sealed_test]
+fn should_error_on_disabled_commit_error() -> Result<()> {
+    // Arrange
+    git_init()?;
+    git_add("content", "test_file")?;
+    let settings = r#"
+        [commit_types]
+        perf = {}
+        "#;
+
+    fs::write("cog.toml", settings)?;
+
+    // Act
+    Command::cargo_bin("cog")?
+        .arg("commit")
+        .arg("perf")
+        .arg("fails at the speed of light")
+        // Assert
+        .assert()
+        .failure();
     Ok(())
 }
