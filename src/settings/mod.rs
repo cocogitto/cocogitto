@@ -372,57 +372,6 @@ impl Settings {
         default_types
     }
 
-    pub fn get_template_context(&self) -> Option<RemoteContext> {
-        let remote = self.changelog.remote.as_ref().cloned();
-
-        let repository = self.changelog.repository.as_ref().cloned();
-
-        let owner = self.changelog.owner.as_ref().cloned();
-
-        RemoteContext::try_new(remote, repository, owner)
-    }
-
-    pub fn get_changelog_template(&self) -> Result<Template, ChangelogError> {
-        let context = self.get_template_context();
-        let template = self.changelog.template.as_deref().unwrap_or("default");
-
-        Template::from_arg(template, context)
-    }
-
-    pub fn get_package_changelog_template(&self) -> Result<Template, ChangelogError> {
-        let context = self.get_template_context();
-        let template = self
-            .changelog
-            .package_template
-            .as_deref()
-            .unwrap_or("package_default");
-
-        let template = match template {
-            "remote" => "package_remote",
-            "full_hash" => "package_full_hash",
-            template => template,
-        };
-
-        Template::from_arg(template, context)
-    }
-
-    pub fn get_monorepo_changelog_template(&self) -> Result<Template, ChangelogError> {
-        let context = self.get_template_context();
-        let template = self
-            .changelog
-            .template
-            .as_deref()
-            .unwrap_or("monorepo_default");
-
-        let template = match template {
-            "remote" => "monorepo_remote",
-            "full_hash" => "monorepo_full_hash",
-            template => template,
-        };
-
-        Template::from_arg(template, context)
-    }
-
     pub fn monorepo_separator(&self) -> Option<&str> {
         if self.packages.is_empty() {
             None

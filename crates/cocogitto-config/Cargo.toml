@@ -15,3 +15,4 @@ log.workspace = true
 speculoos.workspace = true
 sealed_test.workspace = true
 cocogitto-test-helpers.workspace = true
+anyhow.workspace = true

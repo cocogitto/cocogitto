@@ -18,13 +18,9 @@ pub static SETTINGS: Lazy<Settings> = Lazy::new(|| {
         let path = match path {
             gix_discover::repository::Path::LinkedWorkTree {
                 work_dir: _,
-                git_dir: _,
-            } => {
-                panic!("Git worktree are not supported yet")
-            }
-            gix_discover::repository::Path::WorkTree(_) => {
-                panic!("Git worktree are not supported yet")
-            }
+                git_dir,
+            } => git_dir,
+            gix_discover::repository::Path::WorkTree(path) => path,
             gix_discover::repository::Path::Repository(path) => path,
         };
 
@@ -250,7 +246,7 @@ pub struct CommitConfig {
 }
 
 impl CommitConfig {
-    pub(crate) fn new(changelog_title: &str) -> Self {
+    pub fn new(changelog_title: &str) -> Self {
         CommitConfig {
             changelog_title: changelog_title.to_string(),
             omit_from_changelog: false,
@@ -259,12 +255,12 @@ impl CommitConfig {
         }
     }
 
-    pub(crate) fn with_minor_bump(mut self) -> Self {
+    pub fn with_minor_bump(mut self) -> Self {
         self.bump_minor = true;
         self
     }
 
-    pub(crate) fn with_patch_bump(mut self) -> Self {
+    pub fn with_patch_bump(mut self) -> Self {
         self.bump_patch = true;
         self
     }
@@ -393,7 +389,7 @@ pub struct BumpProfile {
 
 impl Settings {
     // Fails only if config exists and is malformed
-    pub(crate) fn get<T: TryInto<Settings, Error = SettingError>>(
+    pub fn get<T: TryInto<Settings, Error = SettingError>>(
         repository: T,
     ) -> Result<Self, SettingError> {
         repository.try_into()
@@ -553,11 +549,12 @@ impl TryFrom<&Path> for Settings {
 mod test {
     use std::fs;
 
+    use cocogitto_test_helpers::git_init_no_gpg;
     use conventional_commit_parser::commit::CommitType;
     use sealed_test::prelude::*;
     use speculoos::prelude::*;
 
-    use crate::{test_helpers::git_init_no_gpg, COMMITS_METADATA};
+    use crate::COMMITS_METADATA;
 
     #[sealed_test]
     fn should_disable_default_commit_type() -> anyhow::Result<()> {

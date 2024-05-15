@@ -7,3 +7,9 @@ edition = "2021"
 git2.workspace = true
 cmd_lib.workspace = true
 cog.workspace = true
+anyhow.workspace = true
+
+[dev-dependencies]
+anyhow.workspace = true
+sealed_test.workspace = true
+cocogitto-test-helpers.workspace = true
