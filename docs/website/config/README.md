@@ -4,11 +4,22 @@ The config reference list all value that can be set in the `cog.toml` file at th
 
 ## General
 
+### `from_latest_tag`
+
+- Type: `boolean`
+- Optional: `true`
+- Default: `false`
+- Description: Whether to only consider commits since the latest SemVer tag.
+- Example:
+  ```toml
+  from_latest_tag = true
+  ```
+
 ### `tag_prefix`
 
 - Type: `String`
 - Optional: `true`
-- Description: set a tag prefix value for cocogitto. For instance if you have a `v` as a tag prefix, cocogitto will
+- Description: Set a tag prefix value for cocogitto. For instance if you have a `v` as a tag prefix, cocogitto will
   generate version starting with `v` and commands like `cog changelog` will pick only those versions.
 - Example:
   ```toml
@@ -36,7 +47,7 @@ The config reference list all value that can be set in the `cog.toml` file at th
 - Type: `boolean`
 - Optional: `true`
 - Default: `false`
-- Description: whether to ignore or to lint merge commits.
+- Description: Whether to ignore or to lint merge commits.
 - Example:
   ```toml
   ignore_merge_commits = true
@@ -49,7 +60,7 @@ The config reference list all value that can be set in the `cog.toml` file at th
 
 - Type: `Hashmap<String, CommitType>`
 - Optional: `true`
-- Description: extend the allowed commit types, creating a new `cog commit` command and allowing to generate changelog entries for the
+- Description: Extend the allowed commit types, creating a new `cog commit` command, and allowing generation of changelog entries for the
   given type. Can also be used to override the default commit types.
 - Example:
   ```toml
@@ -67,7 +78,7 @@ The config reference list all value that can be set in the `cog.toml` file at th
 
 - Type: `String`
 - Optional: `false`
-- Description: change the changelog title for the given commit type.
+- Description: Change the changelog title for the given commit type.
 - Example:
   ```toml
   [commit_types]
@@ -80,7 +91,7 @@ The config reference list all value that can be set in the `cog.toml` file at th
 - Type: `Bool`
 - Optional: `true`
 - Default value: `false`
-- Description: do not generate changelog entries for the given commit type.
+- Description: Do not generate changelog entries for the given commit type.
 - Example:
   ```toml
   [commit_types]
@@ -92,7 +103,7 @@ The config reference list all value that can be set in the `cog.toml` file at th
 - Type: `Bool`
 - Optional: `true`
 - Default value: `false`
-- Description: commits of this type will bump the patch version of a tag.
+- Description: Commits of this type will bump the patch version of a tag.
 - Example:
   ```toml
   [commit_types]
@@ -104,7 +115,7 @@ The config reference list all value that can be set in the `cog.toml` file at th
 - Type: `Bool`
 - Optional: `true`
 - Default value: `false`
-- Description: commits of this type will bump the minor version of a tag.
+- Description: Commits of this type will bump the minor version of a tag.
 - Example:
   ```toml
   [commit_types]
@@ -117,7 +128,7 @@ The config reference list all value that can be set in the `cog.toml` file at th
 
 - Type: `Array<String>`
 - Optional: `true`
-- Description: an array of command to execute before a version bump.
+- Description: An array of commands to execute before a version bump.
 - Example:
   ```toml
   pre_bump_hooks = [
@@ -139,7 +150,7 @@ The config reference list all value that can be set in the `cog.toml` file at th
 
 - Type: `Array<String>`
 - Optional: `true`
-- Description: an array of command to execute after a version bump.
+- Description: An array of commands to execute after a version bump.
 - Example:
   ```toml
   post_bump_hooks = [
@@ -159,7 +170,7 @@ The config reference list all value that can be set in the `cog.toml` file at th
 
 - Type: `Hashmap<String, BumpProfile>`
 - Optional: `true`
-- Description: add additional [pre-bump](./#pre_bump_hooks) and [post-bump](./#post_bump_hooks) hooks profile.
+- Description: Add additional [pre-bump](./#pre_bump_hooks) and [post-bump](./#post_bump_hooks) hooks profile.
   a profile can be used with the `cog bump --hook-profile <profile_name>` flag.
 - Example:
 
@@ -236,12 +247,37 @@ The config reference list all value that can be set in the `cog.toml` file at th
 
 ## Changelog
 
+- Type: `Changelog`
+- Optional: `true`
+- Description: Set the configuration for the changelog generation.
+- Example:
+  ```toml
+  [changelog]
+  path = "CHANGELOG.md"
+  template = "remote"
+  remote = "github.com"
+  repository = "cocogitto"
+  owner = "cocogitto"
+  authors = [
+    { signature = "Paul Delafosse", username = "oknozor" },
+    { signature = "Jack Dorland", username = "jackdorland" },
+    { signature = "Mike Lubinets", username = "mersinvald" },
+    { signature = "Marcin Puc", username = "tranzystorek-io" },
+    { signature = "Renault Fernandes", username = "renaultfernandes" },
+    { signature = "Pieter Joost van de Sande", username = "pjvds" },
+    { signature = "orhun", username = "orhun" },
+    { signature = "Danny Tatom", username = "its-danny" },
+  ]
+  ```
+- Also see:
+  - [User guide -> Changelog](../guide/#changelogs)
+
 ### `path`
 
 - Type: `String`
 - Optional: `true`
 - Default value: `"CHANGELOG.md"`
-- Description: path the repository markdown changelog.
+- Description: Path the repository markdown changelog.
 - Example:
   ```toml
   [changelog]
@@ -257,8 +293,8 @@ The config reference list all value that can be set in the `cog.toml` file at th
 - Type: `String`
 - Optional: `true`
 - Default value: `"default"`
-- Description: name of the builtin template to use for changelog generation or path to a custom template.
-  Note that `remote`, `repository` and `owner` are mandatory if the "remote" built-in template us used or if your
+- Description: Name of the builtin template to use for changelog generation or path to a custom template.
+  Note that `remote`, `repository` and `owner` are mandatory if the "remote" built-in template is used or if your
   custom template make use of those variables.
 - Built-in templates : `default`, `remote`, `full_hash`
 - Example:
@@ -272,11 +308,26 @@ The config reference list all value that can be set in the `cog.toml` file at th
   - [User guide -> Built-in templates](../guide/#built-in-templates)
   - [User guide -> Custom templates](../guide/#custom-templates)
 
+### `package_template`
+
+- Type: `String`
+- Optional: `true`
+- Default value: `"package_default"`
+- Description: Name of the builtin template to use for package changelog generation or path to a custom template.
+  Note that `remote`, `repository` and `owner` are mandatory if the "remote" built-in template is used or if your
+  custom template make use of those variables.
+- Built-in templates : `package_default`, `package_remote`, `package_full_hash`
+- Example:
+  ```toml
+  [changelog]
+  package_template = "package_full_hash"
+  ```
+
 ### `remote`
 
 - Type: `String`
 - Optional: `true`
-- Description: domain name of the git platform hosting the repository, used for Markdown link generation in changelogs.
+- Description: Domain name of the git platform hosting the repository, used for Markdown link generation in changelogs.
   when provided `repository` and `owner` are also required.
 - Example:
   ```toml
@@ -296,7 +347,7 @@ The config reference list all value that can be set in the `cog.toml` file at th
 
 - Type: `String`
 - Optional: `true`
-- Description: name of the repository on the remote git platform.
+- Description: Name of the repository on the remote git platform.
 - Example:
   ```toml
   [changelog]
@@ -315,7 +366,7 @@ The config reference list all value that can be set in the `cog.toml` file at th
 
 - Type: `String`
 - Optional: `true`
-- Description: owner of the repository on the remote git platform.
+- Description: Owner of the repository on the remote git platform.
 - Example:
   ```toml
   [changelog]
@@ -360,7 +411,7 @@ The config reference list all value that can be set in the `cog.toml` file at th
 
 - Type: `String`
 - Optional: `true`
-- Description: set a package tag separator. For instance if you have a `-` as package separator, cocogitto will
+- Description: Set a package tag separator. For instance if you have a `-` as package separator, cocogitto will
   generate monorepo package version starting with the package name followed by the optional prefix and package version (ex: `my-package-v1.0.0`)
 - Example:
   ```toml
@@ -371,7 +422,7 @@ The config reference list all value that can be set in the `cog.toml` file at th
 
 - Type: `Array<String>`
 - Optional: `true`
-- Description: an array of command executed before every package bump.
+- Description: An array of commands executed before every package bump.
 - Example:
   ```toml
   pre_bump_hooks = [
@@ -385,7 +436,7 @@ The config reference list all value that can be set in the `cog.toml` file at th
 
 - Type: `Array<String>`
 - Optional: `true`
-- Description: an array of command executed after every package bump.
+- Description: An array of commands executed after every package bump.
 - Example:
   ```toml
   pre_bump_hooks = [
@@ -397,11 +448,32 @@ The config reference list all value that can be set in the `cog.toml` file at th
 
 ## Mono-repository packages
 
+- Type: `Hashmap<String, MonoRepoPackage>`
+- Optional: `true`
+- Description: Add packages that will be included when doing `cog bump`.
+- Example:
+  ```toml
+  [packages]
+  my_package = { 
+    path = "packages/my_package",
+    public_api = false,
+    include = [],
+    ignore = [],
+    pre_bump_hooks = [],
+    post_bump_hooks = []
+  }
+  my_other_package = {
+    path = "packages/my_other_package",
+  }
+  ```
+ - See also
+   [User guide -> Packages configuration](../guide/README.md#packages-configuration)
+
 ### `path`
 
 - Type: `String`
 - Optional: `false`
-- Description: set the package path.
+- Description: Set the package path.
 - Example:
   ```toml
   [packages]
@@ -412,7 +484,7 @@ The config reference list all value that can be set in the `cog.toml` file at th
 
 - Type: `Array<String>`
 - Optional: `true`
-- Description: an array of additional path globs to consider part of the package.
+- Description: An array of additional path globs to consider part of the package.
   These additional paths will trigger a package version bump in addition to the path in `path`.
   The globs are evaluated with [globset](https://crates.io/crates/globset) with the `literal_separator` option enabled.
 - Example:
@@ -425,7 +497,7 @@ The config reference list all value that can be set in the `cog.toml` file at th
 
 - Type: `Array<String>`
 - Optional: `true`
-- Description: an array of path globs to ignore as part of the package.
+- Description: An array of path globs to ignore as part of the package.
   These paths will never trigger a package version bump (even if they normally would based on `path` and `include`).
   The globs are evaluated with [globset](https://crates.io/crates/globset) with the `literal_separator` option enabled.
 - Example:
@@ -439,7 +511,7 @@ The config reference list all value that can be set in the `cog.toml` file at th
 - Type: `String`
 - Optional: `true`
 - Default: `{path}/CHANGELOG.md`
-- Description: overrides the default changelog path, allowing to set an absolute path.
+- Description: Overrides the default changelog path, allowing to set an absolute path.
 - Example:
   ```toml
   [packages]
@@ -451,7 +523,7 @@ The config reference list all value that can be set in the `cog.toml` file at th
 - Type: `boolean`
 - Optional: `true`
 - Default: `true`
-- Description: if set to false package will not trigger global version bump.
+- Description: If set to `false` the package will not trigger global version bump.
 - Example:
   ```toml
   [packages]
@@ -465,7 +537,7 @@ The config reference list all value that can be set in the `cog.toml` file at th
 
 - Type: `Array<String>`
 - Optional: `true`
-- Description: an array of command to execute before a package bump.
+- Description: An array of commands to execute before a package bump.
 - Example:
 
   ```toml
@@ -487,7 +559,7 @@ The config reference list all value that can be set in the `cog.toml` file at th
 
 - Type: `Array<String>`
 - Optional: `true`
-- Description: an array of command to execute after a version bump.
+- Description: An array of commands to execute after a version bump.
 - Example:
   ```toml
   post_bump_hooks = [
@@ -505,7 +577,7 @@ The config reference list all value that can be set in the `cog.toml` file at th
 
 - Type: `Hashmap<String, BumpProfile>`
 - Optional: `true`
-- Description: add additional per package [pre-bump](./#pre_bump_hooks) and [post-bump](./#post_bump_hooks) hooks profile.
+- Description: Add additional per package [pre-bump](./#pre_bump_hooks) and [post-bump](./#post_bump_hooks) hooks profile.
   a profile can be used with the `cog bump --hook-profile <profile_name>` flag.
 - Example:
 

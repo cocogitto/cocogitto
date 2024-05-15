@@ -21,7 +21,7 @@ impl CocoGitto {
         let current_tag = tag_or_fallback_to_zero(current_tag)?;
         let mut next_version = current_tag.bump(opts.increment, &self.repository)?;
         if current_tag == next_version {
-            print!("No conventional commits found for {} that required a bump. Changelog will be updated on the next bump.\nPre-Hooks and Post-Hooks have been skiped.\n",
+            print!("No conventional commits found for {} that required a bump. Changelog will be updated on the next bump.\nPre-Hooks and Post-Hooks have been skipped.\n",
                    opts.package_name
             );
             return Ok(());

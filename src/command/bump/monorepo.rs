@@ -62,7 +62,7 @@ impl CocoGitto {
         let bumps = self.get_packages_bumps(opts.pre_release, opts.build)?;
 
         if bumps.is_empty() {
-            print!("No conventional commits found for your packages that required a bump. Changelogs will be updated on the next bump.\nPre-Hooks and Post-Hooks have been skiped.\n");
+            print!("No conventional commits found for your packages that required a bump. Changelogs will be updated on the next bump.\nPre-Hooks and Post-Hooks have been skipped.\n");
             return Ok(());
         }
 
@@ -129,7 +129,7 @@ impl CocoGitto {
         // Get package bumps
         let bumps = self.get_packages_bumps(opts.pre_release, opts.build)?;
         if bumps.is_empty() {
-            print!("No conventional commits found for your packages that required a bump. Changelogs will be updated on the next bump.\nPre-Hooks and Post-Hooks have been skiped.\n");
+            print!("No conventional commits found for your packages that required a bump. Changelogs will be updated on the next bump.\nPre-Hooks and Post-Hooks have been skipped.\n");
             return Ok(());
         }
 
