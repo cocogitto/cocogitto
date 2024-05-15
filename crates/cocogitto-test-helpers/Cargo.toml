@@ -1,0 +1,9 @@
+[package]
+name = "cocogitto-test-helpers"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+git2.workspace = true
+cmd_lib.workspace = true
+cog.workspace = true

@@ -1,0 +1,29 @@
+[workspace]
+members = ["crates/*"]
+
+[workspace.dependencies]
+cocogitto-config = { path = "crates/cocogitto-config" }
+cocogitto-test-helpers = { path = "crates/cocogitto-test-helpers" }
+semver = "1.0.23"
+# TODO: DELETE ME
+cog = { path = "crates/cog" }
+
+config = { version = "0.14.0", default-features = false, features = ["toml"] }
+serde = { version = "^1", features = ["derive"] }
+conventional_commit_parser = "0.9.4"
+once_cell = "^1"
+log = "0.4.21"
+
+# Gix
+git2 = { version = "0.18.2", default-features = false, features = [] }
+gix-discover = "0.31.0"
+
+# Testing
+assert_cmd = "2.0"
+predicates = "3.1.0"
+rand = "0.8.5"
+indoc = "2.0.4"
+speculoos = "0.11.0"
+pretty_assertions = "1.4.0"
+sealed_test = "1.0.0"
+cmd_lib = "1.9.3"

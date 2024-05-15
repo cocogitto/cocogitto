@@ -1,0 +1,17 @@
+[package]
+name = "cocogitto-config"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+config.workspace = true
+serde.workspace = true
+conventional_commit_parser.workspace = true
+once_cell.workspace = true
+gix-discover.workspace = true
+log.workspace = true
+
+[dev-dependencies]
+speculoos.workspace = true
+sealed_test.workspace = true
+cocogitto-test-helpers.workspace = true
