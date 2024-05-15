@@ -33,10 +33,10 @@ struct PackageBumpData {
 }
 
 #[derive(Debug)]
-struct PackageData {
-    package_name: String,
-    package_path: String,
-    version: Tag,
+pub struct PackageData {
+    pub package_name: String,
+    pub package_path: String,
+    pub version: Tag,
 }
 
 impl CocoGitto {
@@ -419,7 +419,7 @@ impl CocoGitto {
         Ok(())
     }
 
-    fn get_current_packages(&self) -> Result<Vec<PackageData>> {
+    pub fn get_current_packages(&self) -> Result<Vec<PackageData>> {
         let mut packages = vec![];
         for (package_name, package) in SETTINGS.packages.iter() {
             let tag = self.repository.get_latest_package_tag(package_name);

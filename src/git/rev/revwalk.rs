@@ -32,9 +32,9 @@ impl Repository {
                 None => self
                     .0
                     .diff_tree_to_tree(None, current_tree.as_tree(), None)?,
-                Some(tree) => {
+                Some(parent_tree) => {
                     self.0
-                        .diff_tree_to_tree(tree.as_tree(), current_tree.as_tree(), None)?
+                        .diff_tree_to_tree(parent_tree.as_tree(), current_tree.as_tree(), None)?
                 }
             };
 

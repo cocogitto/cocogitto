@@ -564,7 +564,7 @@ fn ensure_omit_from_changelog_is_honored() -> Result<()> {
 }
 
 #[sealed_test]
-fn should_get_package_changelog() -> anyhow::Result<()> {
+fn should_get_global_changelog() -> anyhow::Result<()> {
     // Arrange
     git_init()?;
     run_cmd!(
@@ -583,11 +583,11 @@ fn should_get_package_changelog() -> anyhow::Result<()> {
         pkg2 = { path = "packages/pkg2" }
         "#
     );
-    run_cmd!(echo $cog > cog.toml)?;
+    git_add(cog, "cog.toml")?;
     git_commit("chore: init")?;
-    run_cmd!(echo "pkg1" > packages/pkg1/README.md)?;
+    git_add("pkg1", "packages/pkg1/README.md")?;
     let _ = git_commit("feat: package 1 feat")?;
-    run_cmd!(echo pkg2 > packages/pkg2/README.md)?;
+    git_add("pkg2", "packages/pkg2/README.md")?;
     let _ = git_commit("feat: package 2 fix")?;
 
     Command::cargo_bin("cog")?
