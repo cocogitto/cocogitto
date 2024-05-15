@@ -563,6 +563,42 @@ fn ensure_omit_from_changelog_is_honored() -> Result<()> {
     Ok(())
 }
 
+#[sealed_test]
+fn should_get_package_changelog() -> anyhow::Result<()> {
+    // Arrange
+    git_init()?;
+    run_cmd!(
+        mkdir -p packages/pkg1
+        mkdir -p packages/pkg2
+    )?;
+
+    let cog = indoc!(
+        r#"[changelog]
+        remote = "github.com"
+        repository = "test"
+        owner = "test"
+
+        [packages]
+        pkg1 = { path = "packages/pkg1" }
+        pkg2 = { path = "packages/pkg2" }
+        "#
+    );
+    run_cmd!(echo $cog > cog.toml)?;
+    git_commit("chore: init")?;
+    run_cmd!(echo "pkg1" > packages/pkg1/README.md)?;
+    let _ = git_commit("feat: package 1 feat")?;
+    run_cmd!(echo pkg2 > packages/pkg2/README.md)?;
+    let _ = git_commit("feat: package 2 fix")?;
+
+    Command::cargo_bin("cog")?
+        .arg("changelog")
+        .arg("--template")
+        .arg("monorepo_default")
+        .assert()
+        .success();
+
+    Ok(())
+}
 //TODO
 /*// see: https://github.com/cocogitto/cocogitto/issues/359
 #[sealed_test]
