@@ -11,15 +11,22 @@
 {% if package_lock -%}
 ### Packages
 {% for package in packages -%}
+
+{% if package.version.tag -%}
 - {{ package.package_name }} locked to {{ package.version.tag }}
+{% endif -%}
+
 {% endfor -%}
+
 {% else -%}
 ### Package updates
 {% for package in packages -%}
-- {{ package.package_name }} bumped to {{ package.version.tag }}
-{% endfor -%}
-{% endif -%}
 
+{% if package.version.tag -%}
+- {{ package.package_name }} bumped to {{ package.version.tag }}
+{% endif -%}
+{% endfor -%}
+{%- endif -%}
 
 ### Global changes
 {% for type, typed_commits in commits | sort(attribute="type")| group_by(attribute="type")-%}
