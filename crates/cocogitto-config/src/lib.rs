@@ -1,15 +1,24 @@
 use std::collections::HashMap;
-use std::fmt;
-use std::fmt::Formatter;
 use std::path::PathBuf;
 
+use changelog::Changelog;
+use commit::CommitConfig;
 use config::{Config, File, FileFormat};
 use conventional_commit_parser::commit::CommitType;
 use error::SettingError;
+use git_hook::{GitHook, GitHookType};
 use log::warn;
+use monorepo::MonoRepoPackage;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
+
+pub mod changelog;
+pub mod commit;
+pub mod error;
+pub mod git_hook;
+pub mod hook;
+pub mod monorepo;
 
 pub const CONFIG_PATH: &str = "cog.toml";
 
@@ -35,14 +44,9 @@ pub static SETTINGS: Lazy<Settings> = Lazy::new(|| {
     Settings::default()
 });
 
-// This cannot be carried by `Cocogitto` struct since we need it to be available in `Changelog`,
-// `Commit` etc. Be sure that `CocoGitto::new` is called before using this  in order to bypass
-// unwrapping in case of error.
 pub static COMMITS_METADATA: Lazy<HashMap<CommitType, CommitConfig>> =
     Lazy::new(|| SETTINGS.commit_types());
-pub(crate) type AuthorSettings = Vec<AuthorSetting>;
 
-mod error;
 pub type CommitsMetadata = HashMap<CommitType, CommitConfigOrNull>;
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]
@@ -50,36 +54,6 @@ pub type CommitsMetadata = HashMap<CommitType, CommitConfigOrNull>;
 pub enum CommitConfigOrNull {
     CommitConfig(CommitConfig),
     None {},
-}
-
-pub trait Hooks {
-    fn bump_profiles(&self) -> &HashMap<String, BumpProfile>;
-    fn pre_bump_hooks(&self) -> &Vec<String>;
-    fn post_bump_hooks(&self) -> &Vec<String>;
-
-    fn get_hooks(&self, hook_type: HookType) -> &Vec<String> {
-        match hook_type {
-            HookType::PreBump => self.pre_bump_hooks(),
-            HookType::PostBump => self.post_bump_hooks(),
-        }
-    }
-
-    fn get_profile_hooks(&self, profile: &str, hook_type: HookType) -> &Vec<String> {
-        let profile = self
-            .bump_profiles()
-            .get(profile)
-            .expect("Bump profile not found");
-        match hook_type {
-            HookType::PreBump => &profile.pre_bump_hooks,
-            HookType::PostBump => &profile.post_bump_hooks,
-        }
-    }
-}
-
-#[derive(Copy, Clone)]
-pub enum HookType {
-    PreBump,
-    PostBump,
 }
 
 #[derive(Debug, Deserialize, Serialize, Eq, PartialEq)]
@@ -130,239 +104,6 @@ impl Default for Settings {
             packages: Default::default(),
         }
     }
-}
-
-#[derive(Debug, Deserialize, Serialize, Eq, PartialEq, Hash, Copy, Clone)]
-#[serde(deny_unknown_fields, rename_all = "kebab-case", into = "&str")]
-pub enum GitHookType {
-    ApplypatchMsg,
-    PreApplypatch,
-    PostApplypatch,
-    PreCommit,
-    PreMergeCommit,
-    PrePrepareCommitMsg,
-    CommitMsg,
-    PostCommit,
-    PreRebase,
-    PostCheckout,
-    PostMerge,
-    PrePush,
-    PreAutoGc,
-    PostRewrite,
-    SendemailValidate,
-    FsmonitorWatchman,
-    P4Changelist,
-    P4PrepareChangelist,
-    P4Postchangelist,
-    P4PreSubmit,
-    PostIndexChange,
-}
-
-impl From<String> for GitHookType {
-    fn from(value: String) -> Self {
-        match value.as_str() {
-            "applypatch-msg" => Self::ApplypatchMsg,
-            "pre-applypatch" => Self::PreApplypatch,
-            "post-applypatch" => Self::PostApplypatch,
-            "pre-commit" => Self::PreCommit,
-            "pre-merge-commit" => Self::PreMergeCommit,
-            "pre-commit-msg" => Self::PrePrepareCommitMsg,
-            "commit-msg" => Self::CommitMsg,
-            "post-commit" => Self::PostCommit,
-            "pre-rebase" => Self::PreRebase,
-            "post-checkout" => Self::PostCheckout,
-            "post-merge" => Self::PostMerge,
-            "pre-push" => Self::PrePush,
-            "pre-auto-gc" => Self::PreAutoGc,
-            "post-rewrite" => Self::PostRewrite,
-            "sendemail-validate" => Self::SendemailValidate,
-            "fsmonitor-watchman" => Self::FsmonitorWatchman,
-            "p4-changelist" => Self::P4Changelist,
-            "p4-prepare-changelist" => Self::P4PrepareChangelist,
-            "p4-postchangelist" => Self::P4Postchangelist,
-            "p4-pre-submit" => Self::P4PreSubmit,
-            "post-index-change" => Self::PostIndexChange,
-            _ => unreachable!(),
-        }
-    }
-}
-
-impl From<GitHookType> for &str {
-    fn from(val: GitHookType) -> Self {
-        match val {
-            GitHookType::ApplypatchMsg => "applypatch-msg",
-            GitHookType::PreApplypatch => "pre-applypatch",
-            GitHookType::PostApplypatch => "post-applypatch",
-            GitHookType::PreCommit => "pre-commit",
-            GitHookType::PreMergeCommit => "pre-merge-commit",
-            GitHookType::PrePrepareCommitMsg => "pre-commit-msg",
-            GitHookType::CommitMsg => "commit-msg",
-            GitHookType::PostCommit => "post-commit",
-            GitHookType::PreRebase => "pre-rebase",
-            GitHookType::PostCheckout => "post-checkout",
-            GitHookType::PostMerge => "post-merge",
-            GitHookType::PrePush => "pre-push",
-            GitHookType::PreAutoGc => "pre-auto-gc",
-            GitHookType::PostRewrite => "post-rewrite",
-            GitHookType::SendemailValidate => "sendemail-validate",
-            GitHookType::FsmonitorWatchman => "fsmonitor-watchman",
-            GitHookType::P4Changelist => "p4-changelist",
-            GitHookType::P4PrepareChangelist => "p4-prepare-changelist",
-            GitHookType::P4Postchangelist => "p4-postchangelist",
-            GitHookType::P4PreSubmit => "p4-pre-submit",
-            GitHookType::PostIndexChange => "post-index-change",
-        }
-    }
-}
-
-impl fmt::Display for GitHookType {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let value: &str = (*self).into();
-        write!(f, "{}", value)
-    }
-}
-
-#[derive(Debug, Deserialize, Serialize, Eq, PartialEq)]
-#[serde(deny_unknown_fields, untagged)]
-pub enum GitHook {
-    Script { script: String },
-    File { path: PathBuf },
-}
-
-/// Configurations to create new conventional commit types or override behaviors of the existing ones.
-#[derive(Debug, Deserialize, Serialize, Clone, Eq, PartialEq)]
-pub struct CommitConfig {
-    /// Define the title used in generated changelog for this commit type.
-    pub changelog_title: String,
-    /// Do not display this commit type in changelogs.
-    #[serde(default)]
-    pub omit_from_changelog: bool,
-    /// Allow for this commit type to bump the minor version.
-    #[serde(default)]
-    pub bump_minor: bool,
-    /// Allow for this commit type to bump the patch version.
-    #[serde(default)]
-    pub bump_patch: bool,
-}
-
-impl CommitConfig {
-    pub fn new(changelog_title: &str) -> Self {
-        CommitConfig {
-            changelog_title: changelog_title.to_string(),
-            omit_from_changelog: false,
-            bump_minor: false,
-            bump_patch: false,
-        }
-    }
-
-    pub fn with_minor_bump(mut self) -> Self {
-        self.bump_minor = true;
-        self
-    }
-
-    pub fn with_patch_bump(mut self) -> Self {
-        self.bump_patch = true;
-        self
-    }
-}
-
-#[derive(Debug, Deserialize, Serialize, Eq, PartialEq)]
-#[serde(deny_unknown_fields, default)]
-pub struct MonoRepoPackage {
-    /// The package path, relative to the repository root dir.
-    /// Used to scan commits and set hook commands current directory
-    pub path: PathBuf,
-    /// List of globs for additional paths to include, relative to
-    /// the repository root dir.
-    pub include: Vec<String>,
-    /// List of globs for paths to ignore, relative to
-    /// the repository root dir.
-    pub ignore: Vec<String>,
-    /// Where to write the changelog
-    pub changelog_path: Option<String>,
-    /// Bumping package marked as public api will increment
-    /// the global monorepo once_celversion when using `cog bump --auto`
-    pub public_api: bool,
-    /// Overrides `pre_package_bump_hooks`
-    pub pre_bump_hooks: Option<Vec<String>>,
-    /// Overrides `post_package_bump_hooks`
-    pub post_bump_hooks: Option<Vec<String>>,
-    /// Custom profile to override `pre_bump_hooks`, `post_bump_hooks`
-    pub bump_profiles: HashMap<String, BumpProfile>,
-}
-
-impl Default for &MonoRepoPackage {
-    fn default() -> Self {
-        let package = Box::new(MonoRepoPackage {
-            path: Default::default(),
-            include: vec![],
-            ignore: vec![],
-            changelog_path: None,
-            pre_bump_hooks: None,
-            post_bump_hooks: None,
-            bump_profiles: Default::default(),
-            public_api: true,
-        });
-
-        Box::leak(package)
-    }
-}
-
-impl Default for MonoRepoPackage {
-    fn default() -> Self {
-        Self {
-            path: Default::default(),
-            include: vec![],
-            ignore: vec![],
-            changelog_path: None,
-            pre_bump_hooks: None,
-            post_bump_hooks: None,
-            bump_profiles: Default::default(),
-            public_api: true,
-        }
-    }
-}
-
-impl MonoRepoPackage {
-    pub fn changelog_path(&self) -> PathBuf {
-        self.changelog_path
-            .as_ref()
-            .map(PathBuf::from)
-            .unwrap_or_else(|| self.path.join("CHANGELOG.md"))
-    }
-}
-
-#[derive(Debug, Deserialize, Serialize, Clone, Eq, PartialEq)]
-#[serde(deny_unknown_fields, default)]
-pub struct Changelog {
-    pub template: Option<String>,
-    pub package_template: Option<String>,
-    pub remote: Option<String>,
-    pub path: PathBuf,
-    pub owner: Option<String>,
-    pub repository: Option<String>,
-    pub authors: AuthorSettings,
-}
-
-impl Default for Changelog {
-    fn default() -> Self {
-        Changelog {
-            template: None,
-            package_template: None,
-            remote: None,
-            path: PathBuf::from("CHANGELOG.md"),
-            owner: None,
-            repository: None,
-            authors: vec![],
-        }
-    }
-}
-
-#[derive(Debug, Deserialize, Serialize, Clone, Eq, PartialEq)]
-#[serde(deny_unknown_fields)]
-pub struct AuthorSetting {
-    pub signature: String,
-    pub username: String,
 }
 
 pub fn commit_username(author: &str) -> Option<&'static str> {
@@ -475,38 +216,6 @@ impl Settings {
 
     pub fn package_paths(&self) -> impl Iterator<Item = &Path> {
         self.packages.values().map(|package| package.path.as_path())
-    }
-}
-
-impl Hooks for Settings {
-    fn bump_profiles(&self) -> &HashMap<String, BumpProfile> {
-        &self.bump_profiles
-    }
-
-    fn pre_bump_hooks(&self) -> &Vec<String> {
-        &self.pre_bump_hooks
-    }
-
-    fn post_bump_hooks(&self) -> &Vec<String> {
-        &self.post_bump_hooks
-    }
-}
-
-impl Hooks for MonoRepoPackage {
-    fn bump_profiles(&self) -> &HashMap<String, BumpProfile> {
-        &self.bump_profiles
-    }
-
-    fn pre_bump_hooks(&self) -> &Vec<String> {
-        self.pre_bump_hooks
-            .as_ref()
-            .unwrap_or(&SETTINGS.pre_package_bump_hooks)
-    }
-
-    fn post_bump_hooks(&self) -> &Vec<String> {
-        self.post_bump_hooks
-            .as_ref()
-            .unwrap_or(&SETTINGS.post_package_bump_hooks)
     }
 }
 

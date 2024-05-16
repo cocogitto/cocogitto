@@ -11,16 +11,21 @@ panic = "abort"
 [workspace.dependencies]
 cocogitto-config = { path = "crates/cocogitto-config" }
 cocogitto-test-helpers = { path = "crates/cocogitto-test-helpers" }
-cog = { path = "crates/cog" }
+cocogitto = { path = "crates/cocogitto" }
 semver = "1.0.23"
 # TODO: DELETE ME
 
+toml = "0.5.11"
+edit = "^0"
+stderrlog = "0.6.0"
+itertools = "^0"
 config = { version = "0.14.0", default-features = false, features = ["toml"] }
 serde = { version = "^1", features = ["derive"] }
 conventional_commit_parser = "0.9.4"
 once_cell = "^1"
 log = "0.4.21"
 anyhow = "1.0.75"
+chrono = { version = "0.4.35", features = ["serde"] }
 
 # Gix
 git2 = { version = "0.18.2", default-features = false, features = [] }
@@ -35,3 +40,4 @@ speculoos = "0.11.0"
 pretty_assertions = "1.4.0"
 sealed_test = "1.0.0"
 cmd_lib = "1.9.3"
+cargo_metadata = "0.18.1"
