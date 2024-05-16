@@ -25,7 +25,6 @@ git2 = { version = "0.18.2", default-features = false, features = [] }
 anyhow.workspace = true
 colored.workspace = true
 chrono.workspace = true
-config = { version = "0.14.0", default-features = false, features = ["toml"] }
 serde = { version = "^1", features = ["derive"] }
 tempfile = "^3"
 semver = "^1"
