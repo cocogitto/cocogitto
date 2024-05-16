@@ -32,35 +32,35 @@ impl Tag {
         next.version.major += 1;
         next.version.minor = 0;
         next.version.patch = 0;
-        next.reset_metadata()
+        next.reset_semver_metadata()
     }
 
     pub fn minor_bump(&self) -> Self {
         let mut next = self.clone();
         next.version.minor += 1;
         next.version.patch = 0;
-        next.reset_metadata()
+        next.reset_semver_metadata()
     }
 
     pub fn patch_bump(&self) -> Self {
         let mut next = self.clone();
         next.version.patch += 1;
-        next.reset_metadata()
+        next.reset_semver_metadata()
     }
 
     pub fn no_bump(&self) -> Self {
         let next = self.clone();
-        next.reset_metadata()
+        next.reset_semver_metadata()
     }
 
-    fn reset_metadata(mut self) -> Self {
+    fn reset_semver_metadata(mut self) -> Self {
         self.version.build = BuildMetadata::EMPTY;
         self.version.pre = Prerelease::EMPTY;
         self.oid = None;
         self
     }
 
-    pub fn strip_metadata(&self) -> Self {
+    pub fn strip_cog_metadata(&self) -> Self {
         let mut copy_without_prefix = self.clone();
         copy_without_prefix.package = None;
         copy_without_prefix.prefix = None;

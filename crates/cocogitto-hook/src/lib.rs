@@ -50,12 +50,12 @@ impl VersionSpan {
             Some(Token::Version) => version
                 .map(|version| version.prefixed_tag.clone())
                 .or(default_tag.clone())
-                .map(|tag| tag.strip_metadata())
+                .map(|tag| tag.strip_cog_metadata())
                 .ok_or_else(|| anyhow!("No previous tag found to replace {{{{version}}}} version")),
             Some(Token::LatestVersion) => latest
                 .map(|version| version.prefixed_tag.clone())
                 .or(default_tag.clone())
-                .map(|tag| tag.strip_metadata())
+                .map(|tag| tag.strip_cog_metadata())
                 .ok_or_else(|| anyhow!("No previous tag found to replace {{{{latest}}}} version")),
             Some(Token::LatestVersionTag) => latest
                 .map(|version| version.prefixed_tag.clone())
