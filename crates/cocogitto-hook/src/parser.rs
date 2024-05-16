@@ -1,16 +1,14 @@
 use std::collections::VecDeque;
 
-use crate::hook::{HookSpan, VersionSpan};
-
-use crate::hook::error::HookParseError;
+use crate::error::HookParseError;
+use crate::{HookSpan, VersionSpan};
 use pest::iterators::{Pair, Pairs};
 use pest::Parser;
-use pest_derive::Parser as ParserDerive;
 use semver::{BuildMetadata, Prerelease, Version};
 
 #[doc(hidden)]
-#[derive(ParserDerive)]
-#[grammar = "hook/version_dsl.pest"]
+#[derive(pest_derive::Parser)]
+#[grammar = "version_dsl.pest"]
 struct HookDslParser;
 
 #[derive(Debug, Eq, PartialEq)]
@@ -128,15 +126,15 @@ fn parse_operator(
 mod test {
     use std::collections::VecDeque;
 
-    use crate::hook::parser::Token;
-    use crate::hook::{parser, VersionSpan};
-
     use semver::{Prerelease, Version};
     use speculoos::prelude::*;
 
+    use crate::parser::{parse, Token};
+    use crate::VersionSpan;
+
     #[test]
     fn parse_version_and_latest() {
-        let result = parser::parse("the latest {{latest+1minor}}, the greatest {{version+patch}}");
+        let result = parse("the latest {{latest+1minor}}, the greatest {{version+patch}}");
         assert_that!(result)
             .is_ok()
             .map(|span| &span.version_spans)
@@ -154,8 +152,7 @@ mod test {
 
     #[test]
     fn parse_version_tag() -> anyhow::Result<()> {
-        let span =
-            parser::parse("the latest {{latest_tag+1minor}}, the greatest {{version_tag+patch}}")?;
+        let span = parse("the latest {{latest_tag+1minor}}, the greatest {{version_tag+patch}}")?;
 
         assert_that!(&span.version_spans).contains(&VersionSpan {
             range: 11..32,
@@ -179,7 +176,7 @@ mod test {
 
     #[test]
     fn parse_version_with_pre_release() {
-        let result = parser::parse("the greatest {{version+patch-pre.alpha0}}");
+        let result = parse("the greatest {{version+patch-pre.alpha0}}");
         assert_that!(result)
             .is_ok()
             .map(|span| &span.version_spans)
@@ -197,7 +194,7 @@ mod test {
 
     #[test]
     fn parse_package() {
-        let result = parser::parse("version package: {{package}}");
+        let result = parse("version package: {{package}}");
         assert_that!(result)
             .is_ok()
             .map(|span| &span.version_spans)
@@ -210,14 +207,14 @@ mod test {
 
     #[test]
     fn invalid_dsl_is_err() {
-        let result = parser::parse("the greatest {{+patch-pre.alpha0}}");
+        let result = parse("the greatest {{+patch-pre.alpha0}}");
 
         assert_that!(result).is_err();
     }
 
     #[test]
     fn parse_default_version() {
-        let result = parser::parse("the default {{version|1.0.0+1minor}}");
+        let result = parse("the default {{version|1.0.0+1minor}}");
         assert_that!(result)
             .is_ok()
             .map(|span| &span.version_spans)

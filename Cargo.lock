@@ -331,6 +331,7 @@ dependencies = [
  "chrono",
  "cmd_lib",
  "cocogitto-config",
+ "cocogitto-hook",
  "cocogitto-tag",
  "cocogitto-test-helpers",
  "colored",
@@ -342,8 +343,6 @@ dependencies = [
  "itertools",
  "log",
  "once_cell",
- "pest",
- "pest_derive",
  "predicates",
  "pretty_assertions",
  "rand",
@@ -372,6 +371,24 @@ dependencies = [
  "sealed_test",
  "serde",
  "speculoos",
+]
+
+[[package]]
+name = "cocogitto-hook"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "cmd_lib",
+ "cocogitto-config",
+ "cocogitto-tag",
+ "cocogitto-test-helpers",
+ "pest",
+ "pest_derive",
+ "sealed_test",
+ "semver",
+ "serde",
+ "speculoos",
+ "toml 0.5.11",
 ]
 
 [[package]]

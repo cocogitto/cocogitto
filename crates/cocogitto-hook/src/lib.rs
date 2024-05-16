@@ -7,10 +7,10 @@ use std::process::Command;
 use std::str::FromStr;
 use std::{fmt, path};
 
-use crate::hook::parser::VersionAccessToken;
 use cocogitto_config::hook::HookType;
 use cocogitto_config::{BumpProfile, SETTINGS};
 use parser::Token;
+use parser::VersionAccessToken;
 
 use anyhow::{anyhow, ensure, Result};
 use cocogitto_tag::Tag;
@@ -48,12 +48,12 @@ pub struct VersionSpan {
 }
 
 #[derive(Debug)]
-pub(crate) struct HookVersion {
+pub struct HookVersion {
     pub prefixed_tag: Tag,
 }
 
 impl HookVersion {
-    pub(crate) fn new(tag: Tag) -> Self {
+    pub fn new(tag: Tag) -> Self {
         HookVersion { prefixed_tag: tag }
     }
 }
@@ -190,7 +190,7 @@ impl fmt::Display for Hook {
 }
 
 impl Hook {
-    pub(crate) fn insert_versions(
+    pub fn insert_versions(
         &mut self,
         current_version: Option<&HookVersion>,
         next_version: Option<&HookVersion>,
@@ -215,8 +215,7 @@ impl Hook {
 
 #[cfg(test)]
 mod test {
-    use crate::test_helpers::git_init_no_gpg;
-    use crate::Result;
+    use crate::{Hook, HookVersion, Result};
     use cmd_lib::run_cmd;
     use cocogitto_config::monorepo::MonoRepoPackage;
     use cocogitto_config::Settings;
@@ -224,7 +223,7 @@ mod test {
     use std::collections::HashMap;
     use std::str::FromStr;
 
-    use crate::hook::{Hook, HookVersion};
+    use cocogitto_test_helpers::git_init_no_gpg;
     use sealed_test::prelude::*;
     use semver::Version;
     use speculoos::prelude::*;

@@ -7,10 +7,10 @@ use crate::conventional::changelog::ReleaseType;
 
 use crate::conventional::bump::bump;
 use crate::git::tag::TagLookUpOptions;
-use crate::hook::HookVersion;
 use crate::CocoGitto;
 use anyhow::Result;
 use cocogitto_config::SETTINGS;
+use cocogitto_hook::HookVersion;
 use cocogitto_tag::Tag;
 use colored::*;
 use log::info;

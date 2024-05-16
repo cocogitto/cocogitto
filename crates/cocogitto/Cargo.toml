@@ -17,6 +17,7 @@ and semver specifications.
 [dependencies]
 cocogitto-config.workspace = true
 cocogitto-tag.workspace = true
+cocogitto-hook.workspace = true
 git2 = { version = "0.18.2", default-features = false, features = [] }
 # Do not bump anyhow, (see: https://github.com/dtolnay/anyhow/issues/353)
 anyhow.workspace = true
@@ -32,8 +33,6 @@ once_cell = "^1"
 # Don't bump yet (see https://github.com/cocogitto/cocogitto/issues/337)
 toml.workspace = true
 conventional_commit_parser = "0.9.4"
-pest = "2.7"
-pest_derive = "2.7"
 tera = "1.19.1"
 globset = "0.4.14"
 log = "0.4.21"
