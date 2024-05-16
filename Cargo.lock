@@ -395,7 +395,6 @@ dependencies = [
 name = "cocogitto-tag"
 version = "0.1.0"
 dependencies = [
- "cocogitto-config",
  "git2",
  "semver",
  "serde",

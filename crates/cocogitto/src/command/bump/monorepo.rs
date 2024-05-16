@@ -84,7 +84,10 @@ impl CocoGitto {
         let disable_bump_commit = opts.disable_bump_commit || SETTINGS.disable_bump_commit;
 
         self.repository.add_all()?;
-        self.unwrap_or_stash_and_exit(&Tag::default(), hook_result);
+        self.unwrap_or_stash_and_exit(
+            &Tag::create_default(SETTINGS.tag_prefix(), SETTINGS.monorepo_separator()),
+            hook_result,
+        );
         self.bump_packages(opts.pre_release, opts.build, opts.hooks_config, &bumps)?;
 
         if !disable_bump_commit {
@@ -166,7 +169,12 @@ impl CocoGitto {
             tag.version.build = BuildMetadata::new(build)?;
         }
 
-        let tag = Tag::create(tag.version, None);
+        let tag = Tag::create(
+            tag.version,
+            None,
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
+        );
 
         if opts.dry_run {
             for bump in bumps {
@@ -322,7 +330,12 @@ impl CocoGitto {
             tag.version.build = BuildMetadata::new(build)?;
         }
 
-        let tag = Tag::create(tag.version, None);
+        let tag = Tag::create(
+            tag.version,
+            None,
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
+        );
 
         if opts.dry_run {
             print!("{tag}");
@@ -377,7 +390,10 @@ impl CocoGitto {
         );
 
         self.repository.add_all()?;
-        self.unwrap_or_stash_and_exit(&Tag::default(), hook_result);
+        self.unwrap_or_stash_and_exit(
+            &Tag::create_default(SETTINGS.tag_prefix(), SETTINGS.monorepo_separator()),
+            hook_result,
+        );
 
         let disable_bump_commit = opts.disable_bump_commit || SETTINGS.disable_bump_commit;
 
@@ -475,7 +491,12 @@ impl CocoGitto {
                 next_version.version.build = BuildMetadata::new(build)?;
             }
 
-            let tag = Tag::create(next_version.version, Some(package_name.to_string()));
+            let tag = Tag::create(
+                next_version.version,
+                Some(package_name.to_string()),
+                SETTINGS.tag_prefix(),
+                SETTINGS.monorepo_separator(),
+            );
             let increment = tag.get_increment_from(&old);
 
             if let Some(increment) = increment {
@@ -534,7 +555,12 @@ impl CocoGitto {
                 next_version.version.build = BuildMetadata::new(build)?;
             }
 
-            let tag = Tag::create(next_version.version, Some(package_name.to_string()));
+            let tag = Tag::create(
+                next_version.version,
+                Some(package_name.to_string()),
+                SETTINGS.tag_prefix(),
+                SETTINGS.monorepo_separator(),
+            );
             let pattern = self.get_bump_revspec(&old);
 
             let package = SETTINGS

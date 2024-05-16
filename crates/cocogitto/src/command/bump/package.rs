@@ -42,6 +42,8 @@ impl CocoGitto {
         let tag = Tag::create(
             next_version.version.clone(),
             Some(opts.package_name.to_string()),
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
         );
 
         if opts.dry_run {
@@ -76,6 +78,8 @@ impl CocoGitto {
         let next_version = HookVersion::new(Tag::create(
             next_version.version,
             Some(opts.package_name.to_string()),
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
         ));
 
         let hook_result = self.run_hooks(
@@ -87,7 +91,10 @@ impl CocoGitto {
         );
 
         self.repository.add_all()?;
-        self.unwrap_or_stash_and_exit(&Tag::default(), hook_result);
+        self.unwrap_or_stash_and_exit(
+            &Tag::create_default(SETTINGS.tag_prefix(), SETTINGS.monorepo_separator()),
+            hook_result,
+        );
 
         let disable_bump_commit = opts.disable_bump_commit || SETTINGS.disable_bump_commit;
 

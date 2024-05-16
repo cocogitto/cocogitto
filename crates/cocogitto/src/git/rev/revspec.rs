@@ -2,6 +2,7 @@ use crate::git::error::Git2Error;
 use crate::git::oid::OidOf;
 use crate::git::repository::Repository;
 use crate::git::rev::cache::get_cache;
+use cocogitto_config::SETTINGS;
 use cocogitto_tag::Tag;
 use git2::Oid;
 use std::fmt;
@@ -43,7 +44,14 @@ impl Repository {
             };
 
             Ok(RevSpecPattern2::Range { from, to })
-        } else if let Ok(tag) = Tag::from_str(s, None, None) {
+        } else if let Ok(tag) = Tag::from_str(
+            s,
+            None,
+            None,
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
+            SETTINGS.package_names(),
+        ) {
             let previous = self.get_previous_tag(&tag)?.map(OidOf::Tag);
 
             let previous = match previous {
@@ -116,6 +124,7 @@ mod test {
         assert_that!(oid).is_equal_to(OidOf::Tag(Tag {
             package: None,
             prefix: None,
+            monorepo_separator: None,
             version: Version::new(1, 0, 0),
             oid: Some(Oid::from_str(&commit_oid)?),
             target: None,

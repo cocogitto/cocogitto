@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 use anyhow::anyhow;
 use anyhow::Result;
 use cocogitto_config::monorepo::MonoRepoPackage;
-use cocogitto_config::{Settings, CONFIG_PATH};
+use cocogitto_config::{Settings, CONFIG_PATH, SETTINGS};
 use speculoos::assert_that;
 use speculoos::iter::ContainingIntoIterAssertions;
 use speculoos::option::OptionAssertions;
@@ -143,10 +143,27 @@ pub fn assert_tag_does_not_exist(tag: &str) -> Result<()> {
 /// Assert the latest tag in the repository is the one provided
 pub fn assert_latest_tag(tag: &str) -> Result<()> {
     let tags = run_fun!(git --no-pager tag)?;
-    let tag = Tag::from_str(tag, None, None)?;
+    let tag = Tag::from_str(
+        tag,
+        None,
+        None,
+        SETTINGS.tag_prefix(),
+        SETTINGS.monorepo_separator(),
+        SETTINGS.package_names(),
+    )?;
     let mut tags: Vec<Tag> = tags
         .split('\n')
-        .filter_map(|tag| Tag::from_str(tag, None, None).ok())
+        .filter_map(|tag| {
+            Tag::from_str(
+                tag,
+                None,
+                None,
+                SETTINGS.tag_prefix(),
+                SETTINGS.monorepo_separator(),
+                SETTINGS.package_names(),
+            )
+            .ok()
+        })
         .collect();
 
     tags.sort();

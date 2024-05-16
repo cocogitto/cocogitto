@@ -1,6 +1,5 @@
 use crate::error::TagError;
 use crate::increment::Increment;
-use cocogitto_config::SETTINGS;
 use git2::Oid;
 use semver::{BuildMetadata, Prerelease, Version};
 use serde::{Serialize, Serializer};
@@ -14,7 +13,8 @@ pub mod increment;
 #[derive(Debug, Eq, Clone)]
 pub struct Tag {
     pub package: Option<String>,
-    pub prefix: Option<String>,
+    pub prefix: Option<&'static str>,
+    pub monorepo_separator: Option<&'static str>,
     pub version: Version,
     pub oid: Option<Oid>,
     pub target: Option<Oid>,
@@ -75,10 +75,23 @@ impl Tag {
         self.oid.as_ref().unwrap()
     }
 
-    pub fn create(version: Version, package: Option<String>) -> Self {
+    pub fn create_default(
+        prefix: Option<&'static str>,
+        monorepo_separator: Option<&'static str>,
+    ) -> Self {
+        Tag::create(Version::new(0, 0, 0), None, prefix, monorepo_separator)
+    }
+
+    pub fn create(
+        version: Version,
+        package: Option<String>,
+        prefix: Option<&'static str>,
+        monorepo_separator: Option<&'static str>,
+    ) -> Self {
         Tag {
             package,
-            prefix: SETTINGS.tag_prefix.clone(),
+            prefix,
+            monorepo_separator,
             version,
             oid: None,
             target: None,
@@ -89,27 +102,29 @@ impl Tag {
         self.oid.as_ref()
     }
 
-    pub fn from_str(raw: &str, oid: Option<Oid>, target: Option<Oid>) -> Result<Tag, TagError> {
-        let prefix = SETTINGS.tag_prefix.as_ref();
-
-        let package_tag: Option<Tag> = SETTINGS
-            .packages
-            .keys()
+    pub fn from_str(
+        raw: &str,
+        oid: Option<Oid>,
+        target: Option<Oid>,
+        prefix: Option<&'static str>,
+        monorepo_separator: Option<&'static str>,
+        packages: impl Iterator<Item = &'static str>,
+    ) -> Result<Tag, TagError> {
+        let package_tag: Option<Tag> = packages
             .filter_map(|package_name| {
                 raw.strip_prefix(package_name)
-                    .zip(SETTINGS.monorepo_separator())
+                    .zip(monorepo_separator)
                     .and_then(|(remains, prefix)| remains.strip_prefix(prefix))
                     .map(|remains| {
-                        SETTINGS
-                            .tag_prefix
-                            .as_ref()
+                        prefix
                             .and_then(|prefix| remains.strip_prefix(prefix))
                             .unwrap_or(remains)
                     })
                     .and_then(|version| Version::parse(version).ok())
                     .map(|version| Tag {
                         package: Some(package_name.to_string()),
-                        prefix: SETTINGS.tag_prefix.clone(),
+                        prefix,
+                        monorepo_separator,
                         version,
                         oid,
                         target,
@@ -128,7 +143,8 @@ impl Tag {
 
             Ok(Tag {
                 package: None,
-                prefix: prefix.cloned(),
+                prefix,
+                monorepo_separator: None,
                 version,
                 oid,
                 target,
@@ -173,22 +189,16 @@ impl PartialOrd<Tag> for Tag {
     }
 }
 
-impl Default for Tag {
-    fn default() -> Self {
-        Tag::create(Version::new(0, 0, 0), None)
-    }
-}
-
 impl fmt::Display for Tag {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let version = self.version.to_string();
         if let Some((package, prefix)) = self.package.as_ref().zip(self.prefix.as_ref()) {
-            let separator = SETTINGS.monorepo_separator().unwrap_or_else(||
+            let separator = self.monorepo_separator.unwrap_or_else(||
                 panic!("Found a tag with monorepo package prefix but there are no packages in cog.toml")
             );
             write!(f, "{package}{separator}{prefix}{version}")
         } else if let Some(package) = self.package.as_ref() {
-            let separator = SETTINGS.monorepo_separator().unwrap_or_else(||
+            let separator = self.monorepo_separator.unwrap_or_else(||
                 panic!("Found a tag with monorepo package prefix but there are no packages in cog.toml")
             );
 

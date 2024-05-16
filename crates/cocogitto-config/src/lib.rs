@@ -206,12 +206,20 @@ impl Settings {
         default_types
     }
 
+    pub fn tag_prefix(&self) -> Option<&str> {
+        self.tag_prefix.as_deref()
+    }
+
     pub fn monorepo_separator(&self) -> Option<&str> {
         if self.packages.is_empty() {
             None
         } else {
             self.monorepo_version_separator.as_deref().or(Some("-"))
         }
+    }
+
+    pub fn package_names(&self) -> impl Iterator<Item = &str> {
+        self.packages.keys().map(move |n| n.as_str())
     }
 
     pub fn package_paths(&self) -> impl Iterator<Item = &Path> {

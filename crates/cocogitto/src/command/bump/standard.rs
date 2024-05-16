@@ -39,7 +39,12 @@ impl CocoGitto {
             tag.version.build = BuildMetadata::new(build)?;
         }
 
-        let tag = Tag::create(tag.version, None);
+        let tag = Tag::create(
+            tag.version,
+            None,
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
+        );
 
         if opts.dry_run {
             print!("{tag}");
@@ -74,7 +79,10 @@ impl CocoGitto {
         );
 
         self.repository.add_all()?;
-        self.unwrap_or_stash_and_exit(&Tag::default(), hook_result);
+        self.unwrap_or_stash_and_exit(
+            &Tag::create_default(SETTINGS.tag_prefix(), SETTINGS.monorepo_separator()),
+            hook_result,
+        );
 
         let disable_bump_commit = opts.disable_bump_commit || SETTINGS.disable_bump_commit;
 

@@ -180,7 +180,7 @@ fn get_monorepo_global_version_from_commit_history(
 mod test {
     use cocogitto_config::commit::CommitConfig;
     use cocogitto_config::monorepo::MonoRepoPackage;
-    use cocogitto_config::CommitConfigOrNull;
+    use cocogitto_config::{CommitConfigOrNull, SETTINGS};
     use cocogitto_test_helpers::git_tag;
     use std::collections::HashMap;
     use std::fs;
@@ -230,7 +230,14 @@ mod test {
     fn major_bump() -> Result<()> {
         // Arrange
         let repository = git_init_no_gpg()?;
-        let base_version = Tag::from_str("1.0.0", None, None)?;
+        let base_version = Tag::from_str(
+            "1.0.0",
+            None,
+            None,
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
+            SETTINGS.package_names(),
+        )?;
 
         // Act
         let tag = bump(&base_version, IncrementCommand::Major, &repository)?;
@@ -244,7 +251,14 @@ mod test {
     fn minor_bump() -> Result<()> {
         // Arrange
         let repository = git_init_no_gpg()?;
-        let base_version = Tag::from_str("1.0.0", None, None)?;
+        let base_version = Tag::from_str(
+            "1.0.0",
+            None,
+            None,
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
+            SETTINGS.package_names(),
+        )?;
 
         // Act
         let tag = bump(&base_version, IncrementCommand::Minor, &repository)?;
@@ -258,7 +272,14 @@ mod test {
     fn patch_bump() -> Result<()> {
         // Arrange
         let repository = git_init_no_gpg()?;
-        let base_version = Tag::from_str("1.0.0", None, None)?;
+        let base_version = Tag::from_str(
+            "1.0.0",
+            None,
+            None,
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
+            SETTINGS.package_names(),
+        )?;
 
         // Act
         let tag = bump(&base_version, IncrementCommand::Patch, &repository)?;
@@ -272,7 +293,14 @@ mod test {
     fn no_bump() -> Result<()> {
         // Arrange
         let repository = git_init_no_gpg()?;
-        let base_version = Tag::from_str("1.0.0", None, None)?;
+        let base_version = Tag::from_str(
+            "1.0.0",
+            None,
+            None,
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
+            SETTINGS.package_names(),
+        )?;
 
         // Act
         let tag = bump(&base_version, IncrementCommand::NoBump, &repository)?;
@@ -286,7 +314,14 @@ mod test {
     fn should_get_next_auto_version_patch() -> Result<()> {
         // Arrange
         let patch = Commit::commit_fixture(CommitType::BugFix, false);
-        let base_version = Tag::from_str("1.0.0", None, None)?;
+        let base_version = Tag::from_str(
+            "1.0.0",
+            None,
+            None,
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
+            SETTINGS.package_names(),
+        )?;
 
         // Act
         let increment = version_increment_from_commit_history(&base_version, &[patch]);
@@ -312,7 +347,14 @@ mod test {
         let build = Commit::commit_fixture(CommitType::Build, false);
         let ci = Commit::commit_fixture(CommitType::Ci, false);
 
-        let base_version = Tag::from_str("1.0.0", None, None)?;
+        let base_version = Tag::from_str(
+            "1.0.0",
+            None,
+            None,
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
+            SETTINGS.package_names(),
+        )?;
 
         // Act
         let increment = version_increment_from_commit_history(
@@ -342,7 +384,14 @@ mod test {
     fn increment_minor_version_should_set_patch_to_zero() -> Result<()> {
         // Arrange
         let repository = git_init_no_gpg()?;
-        let version = Tag::from_str("1.1.1", None, None)?;
+        let version = Tag::from_str(
+            "1.1.1",
+            None,
+            None,
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
+            SETTINGS.package_names(),
+        )?;
 
         // Act
         let tag = bump(&version, IncrementCommand::Minor, &repository)?;
@@ -357,7 +406,14 @@ mod test {
     fn increment_major_version_should_set_minor_and_patch_to_zero() -> Result<()> {
         // Arrange
         let repository = git_init_no_gpg()?;
-        let version = Tag::from_str("1.1.1", None, None)?;
+        let version = Tag::from_str(
+            "1.1.1",
+            None,
+            None,
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
+            SETTINGS.package_names(),
+        )?;
 
         // Act
         let tag = bump(&version, IncrementCommand::Major, &repository)?;
@@ -372,7 +428,14 @@ mod test {
     fn increment_should_strip_metadata() -> Result<()> {
         // Arrange
         let repository = git_init_no_gpg()?;
-        let version = Tag::from_str("1.1.1-pre+10.1", None, None)?;
+        let version = Tag::from_str(
+            "1.1.1-pre+10.1",
+            None,
+            None,
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
+            SETTINGS.package_names(),
+        )?;
 
         // Act
         let tag = bump(&version, IncrementCommand::Patch, &repository)?;
@@ -388,7 +451,14 @@ mod test {
         // Arrange
         let feature = Commit::commit_fixture(CommitType::Feature, false);
         let breaking_change = Commit::commit_fixture(CommitType::Feature, true);
-        let base_version = Tag::from_str("1.0.0", None, None)?;
+        let base_version = Tag::from_str(
+            "1.0.0",
+            None,
+            None,
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
+            SETTINGS.package_names(),
+        )?;
 
         // Act
         let version =
@@ -405,7 +475,14 @@ mod test {
         // Arrange
         let feature = Commit::commit_fixture(CommitType::Feature, false);
         let breaking_change = Commit::commit_fixture(CommitType::Feature, true);
-        let base_version = Tag::from_str("0.1.0", None, None)?;
+        let base_version = Tag::from_str(
+            "0.1.0",
+            None,
+            None,
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
+            SETTINGS.package_names(),
+        )?;
 
         // Act
         let version =
@@ -422,7 +499,14 @@ mod test {
         // Arrange
         let patch = Commit::commit_fixture(CommitType::BugFix, false);
         let feature = Commit::commit_fixture(CommitType::Feature, false);
-        let base_version = Tag::from_str("0.1.0", None, None)?;
+        let base_version = Tag::from_str(
+            "0.1.0",
+            None,
+            None,
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
+            SETTINGS.package_names(),
+        )?;
 
         // Act
         let version = version_increment_from_commit_history(&base_version, &[patch, feature]);
@@ -452,7 +536,14 @@ mod test {
 
         let patch = Commit::commit_fixture(CommitType::BugFix, false);
         let feature = Commit::commit_fixture(CommitType::Custom("ex".to_string()), false);
-        let base_version = Tag::from_str("0.1.0", None, None)?;
+        let base_version = Tag::from_str(
+            "0.1.0",
+            None,
+            None,
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
+            SETTINGS.package_names(),
+        )?;
 
         // Act
         let version = version_increment_from_commit_history(&base_version, &[patch, feature]);
@@ -482,7 +573,14 @@ mod test {
 
         let patch = Commit::commit_fixture(CommitType::Chore, false);
         let feature = Commit::commit_fixture(CommitType::Custom("ex".to_string()), false);
-        let base_version = Tag::from_str("0.1.0", None, None)?;
+        let base_version = Tag::from_str(
+            "0.1.0",
+            None,
+            None,
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
+            SETTINGS.package_names(),
+        )?;
 
         // Act
         let version = version_increment_from_commit_history(&base_version, &[patch, feature]);
@@ -512,7 +610,14 @@ mod test {
 
         let patch = Commit::commit_fixture(CommitType::Chore, false);
         let feature = Commit::commit_fixture(CommitType::Performances, false);
-        let base_version = Tag::from_str("0.1.0", None, None)?;
+        let base_version = Tag::from_str(
+            "0.1.0",
+            None,
+            None,
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
+            SETTINGS.package_names(),
+        )?;
 
         // Act
         let version = version_increment_from_commit_history(&base_version, &[patch, feature]);
@@ -528,7 +633,14 @@ mod test {
         // Arrange
         let chore = Commit::commit_fixture(CommitType::Chore, false);
         let docs = Commit::commit_fixture(CommitType::Documentation, false);
-        let base_version = Tag::from_str("0.1.0", None, None)?;
+        let base_version = Tag::from_str(
+            "0.1.0",
+            None,
+            None,
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
+            SETTINGS.package_names(),
+        )?;
 
         // Act
         let version = version_increment_from_commit_history(&base_version, &[chore, docs]);
@@ -551,7 +663,14 @@ mod test {
         )?;
         git_tag("1.0.0")?;
 
-        let base_version = Tag::from_str("1.0.0", None, None)?;
+        let base_version = Tag::from_str(
+            "1.0.0",
+            None,
+            None,
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
+            SETTINGS.package_names(),
+        )?;
 
         // Act
         let tag = get_monorepo_global_version_from_commit_history(&base_version, &repository);
@@ -573,7 +692,14 @@ mod test {
             git add .;
             git commit -m "feat: feature package one";
         )?;
-        let base_version = Tag::from_str("0.1.0", None, None)?;
+        let base_version = Tag::from_str(
+            "0.1.0",
+            None,
+            None,
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
+            SETTINGS.package_names(),
+        )?;
 
         // Act
         let tag = auto_global_bump(&base_version, &repository, Some(Increment::Minor))?;
@@ -596,7 +722,11 @@ mod test {
         )?;
 
         // Act
-        let tag = auto_global_bump(&Tag::default(), &repository, None)?;
+        let tag = auto_global_bump(
+            &Tag::create_default(SETTINGS.tag_prefix(), SETTINGS.monorepo_separator()),
+            &repository,
+            None,
+        )?;
 
         // Assert
         assert_that!(tag.version).is_equal_to(Version::new(0, 1, 0));
@@ -621,7 +751,11 @@ mod test {
         )?;
 
         // Act
-        let tag = auto_global_bump(&Tag::default(), &repository, Some(Increment::Minor))?;
+        let tag = auto_global_bump(
+            &Tag::create_default(SETTINGS.tag_prefix(), SETTINGS.monorepo_separator()),
+            &repository,
+            Some(Increment::Minor),
+        )?;
 
         // Assert
         assert_that!(tag.version).is_equal_to(Version::new(0, 1, 0));
@@ -646,7 +780,11 @@ mod test {
         )?;
 
         // Act
-        let tag = auto_global_bump(&Tag::default(), &repository, Some(Increment::Patch))?;
+        let tag = auto_global_bump(
+            &Tag::create_default(SETTINGS.tag_prefix(), SETTINGS.monorepo_separator()),
+            &repository,
+            Some(Increment::Patch),
+        )?;
 
         // Assert
         assert_that!(tag.version).is_equal_to(Version::new(0, 1, 0));
@@ -671,7 +809,11 @@ mod test {
         )?;
 
         // Act
-        let tag = auto_global_bump(&Tag::default(), &repository, Some(Increment::Minor))?;
+        let tag = auto_global_bump(
+            &Tag::create_default(SETTINGS.tag_prefix(), SETTINGS.monorepo_separator()),
+            &repository,
+            Some(Increment::Minor),
+        )?;
 
         // Assert
         assert_that!(tag.version).is_equal_to(Version::new(0, 1, 0));
@@ -700,7 +842,14 @@ mod test {
 
         // Act
         let tag = auto_global_bump(
-            &Tag::from_str("0.1.0", None, None)?,
+            &Tag::from_str(
+                "0.1.0",
+                None,
+                None,
+                SETTINGS.tag_prefix(),
+                SETTINGS.monorepo_separator(),
+                SETTINGS.package_names(),
+            )?,
             &repository,
             Some(Increment::Minor),
         )?;

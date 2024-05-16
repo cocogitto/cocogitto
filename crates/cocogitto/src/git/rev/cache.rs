@@ -1,5 +1,6 @@
 use crate::git::oid::OidOf;
 use crate::git::repository::Repository;
+use cocogitto_config::SETTINGS;
 use cocogitto_tag::error::TagError;
 use cocogitto_tag::Tag;
 use once_cell::sync::{Lazy, OnceCell};
@@ -58,9 +59,23 @@ impl Repository {
             .map(|reference| reference.target().unwrap())
             .map(|commit_oid| {
                 if let Ok(annotated_tag) = self.0.find_tag(commit_oid) {
-                    Tag::from_str(tag, Some(commit_oid), Some(annotated_tag.target_id()))
+                    Tag::from_str(
+                        tag,
+                        Some(commit_oid),
+                        Some(annotated_tag.target_id()),
+                        SETTINGS.tag_prefix(),
+                        SETTINGS.monorepo_separator(),
+                        SETTINGS.package_names(),
+                    )
                 } else {
-                    Tag::from_str(tag, Some(commit_oid), None)
+                    Tag::from_str(
+                        tag,
+                        Some(commit_oid),
+                        None,
+                        SETTINGS.tag_prefix(),
+                        SETTINGS.monorepo_separator(),
+                        SETTINGS.package_names(),
+                    )
                 }
             })?
     }

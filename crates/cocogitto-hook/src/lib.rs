@@ -64,12 +64,13 @@ impl VersionSpan {
         version: Option<&HookVersion>,
         latest: Option<&HookVersion>,
     ) -> Result<String> {
-        let default_tag = self.default_version.clone().map(|version| Tag {
-            package: None,
-            prefix: SETTINGS.tag_prefix.clone(),
-            version,
-            oid: None,
-            target: None,
+        let default_tag = self.default_version.clone().map(|version| {
+            Tag::create(
+                version,
+                None,
+                SETTINGS.tag_prefix(),
+                SETTINGS.monorepo_separator(),
+            )
         });
 
         // According to the pest grammar, a `version` or `latest_version` token is expected first
@@ -218,7 +219,7 @@ mod test {
     use crate::{Hook, HookVersion, Result};
     use cmd_lib::run_cmd;
     use cocogitto_config::monorepo::MonoRepoPackage;
-    use cocogitto_config::Settings;
+    use cocogitto_config::{Settings, SETTINGS};
     use cocogitto_tag::Tag;
     use std::collections::HashMap;
     use std::str::FromStr;
@@ -260,7 +261,14 @@ mod test {
         let mut hook = Hook::from_str("cargo bump {{version}}")?;
         hook.insert_versions(
             None,
-            Some(&HookVersion::new(Tag::from_str("1.0.0", None, None)?)),
+            Some(&HookVersion::new(Tag::from_str(
+                "1.0.0",
+                None,
+                None,
+                SETTINGS.tag_prefix(),
+                SETTINGS.monorepo_separator(),
+                SETTINGS.package_names(),
+            )?)),
         )
         .unwrap();
 
@@ -273,7 +281,8 @@ mod test {
         let mut hook = Hook::from_str("cargo bump {{version_tag}}")?;
         let tag = Tag {
             package: None,
-            prefix: Some("v".to_string()),
+            prefix: Some("v"),
+            monorepo_separator: None,
             version: Version::new(1, 0, 0),
             oid: None,
             target: None,
@@ -292,6 +301,7 @@ mod test {
         packages.insert("cog".to_string(), MonoRepoPackage::default());
         let settings = Settings {
             packages,
+            tag_prefix: Some("v".to_string()),
             ..Default::default()
         };
 
@@ -309,7 +319,8 @@ mod test {
 
         let tag = Tag {
             package: Some("cog".to_string()),
-            prefix: Some("v".to_string()),
+            prefix: SETTINGS.tag_prefix(),
+            monorepo_separator: SETTINGS.monorepo_separator(),
             version: Version::new(1, 0, 0),
             oid: None,
             target: None,
@@ -327,7 +338,8 @@ mod test {
         let mut hook = Hook::from_str("echo {{latest_tag}}")?;
         let tag = Tag {
             package: None,
-            prefix: Some("v".to_string()),
+            prefix: Some("v"),
+            monorepo_separator: None,
             version: Version::new(1, 0, 0),
             oid: None,
             target: None,
@@ -345,7 +357,14 @@ mod test {
         let mut hook = Hook::from_str("mvn versions:set -DnewVersion={{version}}")?;
         hook.insert_versions(
             None,
-            Some(&HookVersion::new(Tag::from_str("1.0.0", None, None)?)),
+            Some(&HookVersion::new(Tag::from_str(
+                "1.0.0",
+                None,
+                None,
+                SETTINGS.tag_prefix(),
+                SETTINGS.monorepo_separator(),
+                SETTINGS.package_names(),
+            )?)),
         )
         .unwrap();
 
@@ -358,7 +377,14 @@ mod test {
         let mut hook = Hook::from_str("mvn versions:set -DnewVersion={{version+1minor-SNAPSHOT}}")?;
         hook.insert_versions(
             None,
-            Some(&HookVersion::new(Tag::from_str("1.0.0", None, None)?)),
+            Some(&HookVersion::new(Tag::from_str(
+                "1.0.0",
+                None,
+                None,
+                SETTINGS.tag_prefix(),
+                SETTINGS.monorepo_separator(),
+                SETTINGS.package_names(),
+            )?)),
         )
         .unwrap();
 
@@ -372,7 +398,8 @@ mod test {
             Hook::from_str("mvn versions:set -DnewVersion={{version_tag+1minor-SNAPSHOT}}")?;
         let tag = Tag {
             package: None,
-            prefix: Some("v".to_string()),
+            prefix: Some("v"),
+            monorepo_separator: None,
             version: Version::new(1, 0, 0),
             oid: None,
             target: None,
@@ -391,6 +418,7 @@ mod test {
         packages.insert("cog".to_string(), MonoRepoPackage::default());
         let settings = Settings {
             packages,
+            tag_prefix: Some("v".to_string()),
             ..Default::default()
         };
 
@@ -409,7 +437,8 @@ mod test {
 
         let tag = Tag {
             package: Some("cog".to_string()),
-            prefix: Some("v".to_string()),
+            prefix: SETTINGS.tag_prefix(),
+            monorepo_separator: SETTINGS.monorepo_separator(),
             version: Version::new(1, 0, 0),
             oid: None,
             target: None,
@@ -428,7 +457,14 @@ mod test {
         let mut hook = Hook::from_str("echo \"Hello World\"")?;
         hook.insert_versions(
             None,
-            Some(&HookVersion::new(Tag::from_str("1.0.0", None, None)?)),
+            Some(&HookVersion::new(Tag::from_str(
+                "1.0.0",
+                None,
+                None,
+                SETTINGS.tag_prefix(),
+                SETTINGS.monorepo_separator(),
+                SETTINGS.package_names(),
+            )?)),
         )
         .unwrap();
 
@@ -441,7 +477,14 @@ mod test {
         let mut hook = Hook::from_str("echo \"{{version}}\"")?;
         hook.insert_versions(
             None,
-            Some(&HookVersion::new(Tag::from_str("1.0.0", None, None)?)),
+            Some(&HookVersion::new(Tag::from_str(
+                "1.0.0",
+                None,
+                None,
+                SETTINGS.tag_prefix(),
+                SETTINGS.monorepo_separator(),
+                SETTINGS.package_names(),
+            )?)),
         )
         .unwrap();
 
@@ -455,7 +498,14 @@ mod test {
             Hook::from_str("cog commit chore 'bump snapshot to {{version+1minor-pre}}'")?;
         hook.insert_versions(
             None,
-            Some(&HookVersion::new(Tag::from_str("1.0.0", None, None)?)),
+            Some(&HookVersion::new(Tag::from_str(
+                "1.0.0",
+                None,
+                None,
+                SETTINGS.tag_prefix(),
+                SETTINGS.monorepo_separator(),
+                SETTINGS.package_names(),
+            )?)),
         )
         .unwrap();
 
@@ -469,7 +519,14 @@ mod test {
             Hook::from_str("cog commit chore \"bump snapshot to {{version+1minor-pre}}\"")?;
         hook.insert_versions(
             None,
-            Some(&HookVersion::new(Tag::from_str("1.0.0", None, None)?)),
+            Some(&HookVersion::new(Tag::from_str(
+                "1.0.0",
+                None,
+                None,
+                SETTINGS.tag_prefix(),
+                SETTINGS.monorepo_separator(),
+                SETTINGS.package_names(),
+            )?)),
         )
         .unwrap();
 
@@ -482,8 +539,22 @@ mod test {
     fn replace_version_with_multiple_placeholders() -> Result<()> {
         let mut hook = Hook::from_str("echo \"the latest {{latest}}, the greatest {{version}}\"")?;
         hook.insert_versions(
-            Some(&HookVersion::new(Tag::from_str("0.5.9", None, None)?)),
-            Some(&HookVersion::new(Tag::from_str("1.0.0", None, None)?)),
+            Some(&HookVersion::new(Tag::from_str(
+                "0.5.9",
+                None,
+                None,
+                SETTINGS.tag_prefix(),
+                SETTINGS.monorepo_separator(),
+                SETTINGS.package_names(),
+            )?)),
+            Some(&HookVersion::new(Tag::from_str(
+                "1.0.0",
+                None,
+                None,
+                SETTINGS.tag_prefix(),
+                SETTINGS.monorepo_separator(),
+                SETTINGS.package_names(),
+            )?)),
         )
         .unwrap();
 
@@ -497,8 +568,22 @@ mod test {
             "echo \"the latest {{latest+3major+1minor}}, the greatest {{version+2patch}}\"",
         )?;
         hook.insert_versions(
-            Some(&HookVersion::new(Tag::from_str("0.5.9", None, None)?)),
-            Some(&HookVersion::new(Tag::from_str("1.0.0", None, None)?)),
+            Some(&HookVersion::new(Tag::from_str(
+                "0.5.9",
+                None,
+                None,
+                SETTINGS.tag_prefix(),
+                SETTINGS.monorepo_separator(),
+                SETTINGS.package_names(),
+            )?)),
+            Some(&HookVersion::new(Tag::from_str(
+                "1.0.0",
+                None,
+                None,
+                SETTINGS.tag_prefix(),
+                SETTINGS.monorepo_separator(),
+                SETTINGS.package_names(),
+            )?)),
         )
         .unwrap();
 
@@ -512,7 +597,14 @@ mod test {
             Hook::from_str("echo \"the latest {{version+1major-pre.alpha-bravo+build.42}}\"")?;
         hook.insert_versions(
             None,
-            Some(&HookVersion::new(Tag::from_str("1.0.0", None, None)?)),
+            Some(&HookVersion::new(Tag::from_str(
+                "1.0.0",
+                None,
+                None,
+                SETTINGS.tag_prefix(),
+                SETTINGS.monorepo_separator(),
+                SETTINGS.package_names(),
+            )?)),
         )
         .unwrap();
 
@@ -570,7 +662,8 @@ mod test {
 
         let tag = Tag {
             package: None,
-            prefix: Some("v".to_string()),
+            prefix: Some("v"),
+            monorepo_separator: None,
             version: Version::new(1, 0, 0),
             oid: None,
             target: None,
@@ -593,7 +686,14 @@ mod test {
 
         hook.insert_versions(
             None,
-            Some(&HookVersion::new(Tag::from_str("1.0.0", None, None)?)),
+            Some(&HookVersion::new(Tag::from_str(
+                "1.0.0",
+                None,
+                None,
+                SETTINGS.tag_prefix(),
+                SETTINGS.monorepo_separator(),
+                SETTINGS.package_names(),
+            )?)),
         )
         .unwrap();
 
@@ -610,11 +710,11 @@ mod test {
         packages.insert("cog".to_string(), MonoRepoPackage::default());
         let settings = Settings {
             packages,
+            tag_prefix: Some("v".to_string()),
             ..Default::default()
         };
 
         let settings = toml::to_string(&settings)?;
-
         let _ = git_init_no_gpg();
         run_cmd!(
             echo $settings > cog.toml;
@@ -628,7 +728,8 @@ mod test {
 
         let current = Tag {
             package: Some("cog".to_string()),
-            prefix: Some("v".to_string()),
+            prefix: SETTINGS.tag_prefix(),
+            monorepo_separator: SETTINGS.monorepo_separator(),
             version: Version::new(1, 0, 0),
             oid: None,
             target: None,
@@ -636,7 +737,8 @@ mod test {
 
         let tag = Tag {
             package: Some("cog".to_string()),
-            prefix: Some("v".to_string()),
+            prefix: SETTINGS.tag_prefix(),
+            monorepo_separator: SETTINGS.monorepo_separator(),
             version: Version::new(1, 1, 0),
             oid: None,
             target: None,
@@ -678,7 +780,8 @@ mod test {
 
         let current = Tag {
             package: Some("cog".to_string()),
-            prefix: Some("v".to_string()),
+            prefix: Some("v"),
+            monorepo_separator: None,
             version: Version::new(1, 0, 0),
             oid: None,
             target: None,
@@ -686,7 +789,8 @@ mod test {
 
         let tag = Tag {
             package: Some("cog".to_string()),
-            prefix: Some("v".to_string()),
+            prefix: Some("v"),
+            monorepo_separator: None,
             version: Version::new(1, 2, 3),
             oid: None,
             target: None,

@@ -137,7 +137,10 @@ fn ensure_tag_is_greater_than_previous(current: &Tag, next: &Tag) -> Result<()> 
 fn tag_or_fallback_to_zero(tag: Result<Tag, TagError>) -> Result<Tag> {
     match tag {
         Ok(ref tag) => Ok(tag.clone()),
-        Err(TagError::NoTag) => Ok(Tag::default()),
+        Err(TagError::NoTag) => Ok(Tag::create_default(
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
+        )),
         Err(err) => Err(anyhow!(err)),
     }
 }

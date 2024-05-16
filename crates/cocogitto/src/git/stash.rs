@@ -18,6 +18,7 @@ mod test {
     use crate::test_helpers::git_init_no_gpg;
     use anyhow::Result;
     use cmd_lib::run_cmd;
+    use cocogitto_config::SETTINGS;
     use cocogitto_tag::Tag;
     use sealed_test::prelude::*;
     use speculoos::prelude::*;
@@ -37,7 +38,14 @@ mod test {
         let statuses = repo.get_statuses()?.0;
 
         assert_that!(statuses).has_length(1);
-        repo.stash_failed_version(Tag::from_str("1.0.0", None, None)?)?;
+        repo.stash_failed_version(Tag::from_str(
+            "1.0.0",
+            None,
+            None,
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
+            SETTINGS.package_names(),
+        )?)?;
 
         let statuses = repo.get_statuses()?.0;
         assert_that!(statuses).is_empty();

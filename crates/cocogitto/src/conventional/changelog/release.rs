@@ -114,6 +114,7 @@ impl<'a> From<&'a Footer> for ChangelogFooter<'a> {
 mod test {
     use anyhow::Result;
     use chrono::NaiveDateTime;
+    use cocogitto_config::SETTINGS;
     use conventional_commit_parser::commit::{CommitType, ConventionalCommit, Footer};
     use git2::Oid;
     use indoc::indoc;
@@ -556,12 +557,18 @@ mod test {
                 "1.0.0",
                 Some(Oid::from_str("9bb5facac5724bc81385fdd740fedbb49056da00").unwrap()),
                 None,
+                SETTINGS.tag_prefix(),
+                SETTINGS.monorepo_separator(),
+                SETTINGS.package_names(),
             )
             .unwrap();
             let from = Tag::from_str(
                 "0.1.0",
                 Some(Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap()),
                 None,
+                SETTINGS.tag_prefix(),
+                SETTINGS.monorepo_separator(),
+                SETTINGS.package_names(),
             )
             .unwrap();
             Release {
@@ -646,11 +653,17 @@ mod test {
                         "0.1.0",
                         Some(Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap()),
                         None,
+                        SETTINGS.tag_prefix(),
+                        SETTINGS.monorepo_separator(),
+                        SETTINGS.package_names(),
                     )?),
                     from: Some(OidOf::Tag(Tag::from_str(
                         "0.2.0",
                         Some(Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap()),
                         None,
+                        SETTINGS.tag_prefix(),
+                        SETTINGS.monorepo_separator(),
+                        SETTINGS.package_names(),
                     )?)),
                 },
                 PackageBumpContext {
@@ -660,11 +673,17 @@ mod test {
                         "0.2.0",
                         Some(Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap()),
                         None,
+                        SETTINGS.tag_prefix(),
+                        SETTINGS.monorepo_separator(),
+                        SETTINGS.package_names(),
                     )?),
                     from: Some(OidOf::Tag(Tag::from_str(
                         "0.3.0",
                         Some(Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap()),
                         None,
+                        SETTINGS.tag_prefix(),
+                        SETTINGS.monorepo_separator(),
+                        SETTINGS.package_names(),
                     )?)),
                 },
             ],
@@ -684,6 +703,9 @@ mod test {
                         "0.1.0",
                         Some(Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap()),
                         None,
+                        SETTINGS.tag_prefix(),
+                        SETTINGS.monorepo_separator(),
+                        SETTINGS.package_names(),
                     )?),
                     from: None,
                 },
@@ -694,6 +716,9 @@ mod test {
                         "0.2.0",
                         Some(Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap()),
                         None,
+                        SETTINGS.tag_prefix(),
+                        SETTINGS.monorepo_separator(),
+                        SETTINGS.package_names(),
                     )?),
                     from: None,
                 },

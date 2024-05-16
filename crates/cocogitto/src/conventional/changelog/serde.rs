@@ -67,6 +67,7 @@ impl Serialize for OidOf {
 #[cfg(test)]
 mod test {
     use chrono::Utc;
+    use cocogitto_config::SETTINGS;
     use conventional_commit_parser::commit::{CommitType, ConventionalCommit, Footer};
     use git2::Oid;
     use speculoos::prelude::*;
@@ -78,7 +79,15 @@ mod test {
     #[test]
     fn should_serialize_tag() {
         let oid = Oid::from_str("1234567890").unwrap();
-        let tag = Tag::from_str("1.0.0", Some(oid), None).unwrap();
+        let tag = Tag::from_str(
+            "1.0.0",
+            Some(oid),
+            None,
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
+            SETTINGS.package_names(),
+        )
+        .unwrap();
 
         let result = toml::to_string(&tag);
 
