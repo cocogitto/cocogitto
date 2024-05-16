@@ -1,22 +1,6 @@
 use cmd_lib::{run_cmd, run_fun};
 use cocogitto::git::repository::Repository;
 
-pub fn git_init_no_gpg() -> anyhow::Result<Repository> {
-    run_cmd!(
-        git init -b master;
-        git config --local commit.gpgsign false;
-    )?;
-
-    Ok(Repository::open(".")?)
-}
-
-pub fn commit(message: &str) -> anyhow::Result<String> {
-    Ok(run_fun!(
-        git commit --allow-empty -q -m $message;
-        git log --format=%H -n 1;
-    )?)
-}
-
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
@@ -30,6 +14,25 @@ use speculoos::option::OptionAssertions;
 
 use cocogitto::git::tag::Tag;
 
+/// Init a new repository on branch master and disable gpg signing
+pub fn git_init_no_gpg() -> anyhow::Result<Repository> {
+    run_cmd!(
+        git init -b master;
+        git config --local commit.gpgsign false;
+    )?;
+
+    Ok(Repository::open(".")?)
+}
+
+/// TODO: Remove this (duplicates with `git_commit`)
+pub fn commit(message: &str) -> anyhow::Result<String> {
+    Ok(run_fun!(
+        git commit --allow-empty -q -m $message;
+        git log --format=%H -n 1;
+    )?)
+}
+
+/// Init a repository with a cog.toml fixture containing a single package named 'one'
 pub fn init_monorepo(settings: &mut Settings) -> Result<()> {
     let mut packages = HashMap::new();
     packages.insert(
@@ -103,7 +106,8 @@ where
     .map_err(|e| anyhow!(e))
 }
 
-/// Create an empty git commit and return its sha1
+/// Create an empty git commit and return its sha1.
+/// Note that empty commits allowed
 pub fn git_commit(message: &str) -> Result<String> {
     run_fun!(
         git commit --allow-empty -q -m $message;
@@ -112,6 +116,7 @@ pub fn git_commit(message: &str) -> Result<String> {
     .map_err(|e| anyhow!(e))
 }
 
+/// Create a git tag on the current repository
 pub fn git_tag(tag: &str) -> Result<()> {
     run_cmd!(
         git tag $tag;
@@ -119,6 +124,7 @@ pub fn git_tag(tag: &str) -> Result<()> {
     .map_err(|e| anyhow!(e))
 }
 
+/// Assert a tag exists in the repository
 pub fn assert_tag_exists(tag: &str) -> Result<()> {
     let tags = run_fun!(git --no-pager tag)?;
     let tags: Vec<&str> = tags.split('\n').collect();
@@ -126,6 +132,7 @@ pub fn assert_tag_exists(tag: &str) -> Result<()> {
     Ok(())
 }
 
+/// Assert a tag does not exist in the repository
 pub fn assert_tag_does_not_exist(tag: &str) -> Result<()> {
     let tags = run_fun!(git --no-pager tag)?;
     let tags: Vec<&str> = tags.split('\n').collect();
@@ -133,6 +140,7 @@ pub fn assert_tag_does_not_exist(tag: &str) -> Result<()> {
     Ok(())
 }
 
+/// Assert the latest tag in the repository is the one provided
 pub fn assert_latest_tag(tag: &str) -> Result<()> {
     let tags = run_fun!(git --no-pager tag)?;
     let tag = Tag::from_str(tag, None, None)?;
@@ -147,6 +155,7 @@ pub fn assert_latest_tag(tag: &str) -> Result<()> {
     Ok(())
 }
 
+/// Ensure the given tag is an annotated annotated tag
 pub fn assert_tag_is_annotated(tag: &str) -> Result<()> {
     let objtype = run_fun!(git for-each-ref --format="%(objecttype)" refs/tags/$tag)?;
     let objtype: Vec<&str> = objtype.split('\n').collect();
