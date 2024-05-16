@@ -17,6 +17,7 @@ use anyhow::Result;
 use cocogitto_config::SETTINGS;
 use colored::*;
 
+use crate::conventional::bump::bump;
 use log::{info, warn};
 use semver::{BuildMetadata, Prerelease};
 use tera::Tera;
@@ -147,7 +148,8 @@ impl CocoGitto {
             .repository
             .get_latest_tag(TagLookUpOptions::default().include_pre_release());
         let old = tag_or_fallback_to_zero(old)?;
-        let mut tag = old.bump(
+        let mut tag = bump(
+            &old,
             IncrementCommand::AutoMonoRepoGlobal(increment_from_package_bumps),
             &self.repository,
         )?;
@@ -307,7 +309,7 @@ impl CocoGitto {
         // Get current global tag
         let old = self.repository.get_latest_tag(TagLookUpOptions::default());
         let old = tag_or_fallback_to_zero(old)?;
-        let mut tag = old.bump(opts.increment, &self.repository)?;
+        let mut tag = bump(&old, opts.increment, &self.repository)?;
         ensure_tag_is_greater_than_previous(&old, &tag)?;
 
         if let Some(pre_release) = opts.pre_release {
@@ -447,7 +449,8 @@ impl CocoGitto {
             let old = self.repository.get_latest_package_tag(package_name);
             let old = tag_or_fallback_to_zero(old)?;
 
-            let next_version = old.bump(
+            let next_version = bump(
+                &old,
                 IncrementCommand::AutoPackage(package_name.to_string()),
                 &self.repository,
             );
@@ -502,8 +505,8 @@ impl CocoGitto {
         hooks_config: Option<&str>,
         package_bumps: &Vec<PackageBumpData>,
     ) -> Result<()> {
-        for bump in package_bumps {
-            let package_name = &bump.package_name;
+        for package_bump in package_bumps {
+            let package_name = &package_bump.package_name;
             let old = self.repository.get_latest_package_tag(package_name);
             let old = tag_or_fallback_to_zero(old)?;
             let msg = format!(
@@ -514,7 +517,8 @@ impl CocoGitto {
 
             info!("{msg}");
 
-            let mut next_version = old.bump(
+            let mut next_version = bump(
+                &old,
                 IncrementCommand::AutoPackage(package_name.to_string()),
                 &self.repository,
             )?;

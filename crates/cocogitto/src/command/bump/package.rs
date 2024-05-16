@@ -2,6 +2,7 @@ use crate::command::bump::{
     ensure_tag_is_greater_than_previous, tag_or_fallback_to_zero, HookRunOptions,
     PackageBumpOptions,
 };
+use crate::conventional::bump::bump;
 use crate::conventional::changelog::template::{get_package_changelog_template, PackageContext};
 use crate::conventional::changelog::ReleaseType;
 use crate::git::tag::Tag;
@@ -20,7 +21,7 @@ impl CocoGitto {
 
         let current_tag = self.repository.get_latest_package_tag(opts.package_name);
         let current_tag = tag_or_fallback_to_zero(current_tag)?;
-        let mut next_version = current_tag.bump(opts.increment, &self.repository)?;
+        let mut next_version = bump(&current_tag, opts.increment, &self.repository)?;
         if current_tag == next_version {
             print!("No conventional commits found for {} that required a bump. Changelog will be updated on the next bump.\nPre-Hooks and Post-Hooks have been skipped.\n",
                    opts.package_name
