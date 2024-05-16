@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-cocogitto-config.workspace = true
 cocogitto-tag.workspace = true
 serde.workspace = true
 semver.workspace = true
@@ -13,6 +12,7 @@ pest_derive.workspace = true
 anyhow.workspace = true
 
 [dev-dependencies]
+cocogitto-config.workspace = true
 toml.workspace = true
 speculoos.workspace = true
 cmd_lib.workspace = true

@@ -334,7 +334,12 @@ impl CocoGitto {
         }
 
         for mut hook in hooks {
-            hook.insert_versions(options.current_tag, options.next_version)?;
+            hook.insert_versions(
+                options.current_tag,
+                options.next_version,
+                SETTINGS.tag_prefix(),
+                SETTINGS.monorepo_separator(),
+            )?;
             let command = hook.to_string();
             let command = if command.chars().count() > 78 {
                 &command[0..command.len()]

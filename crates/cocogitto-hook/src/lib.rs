@@ -1,44 +1,18 @@
 mod error;
 mod parser;
 
-use std::collections::{HashMap, VecDeque};
+use std::collections::VecDeque;
 use std::ops::Range;
 use std::process::Command;
 use std::str::FromStr;
 use std::{fmt, path};
 
-use cocogitto_config::hook::HookType;
-use cocogitto_config::{BumpProfile, SETTINGS};
 use parser::Token;
 use parser::VersionAccessToken;
 
 use anyhow::{anyhow, ensure, Result};
 use cocogitto_tag::Tag;
 use semver::Version;
-
-pub trait Hooks {
-    fn bump_profiles(&self) -> &HashMap<String, BumpProfile>;
-    fn pre_bump_hooks(&self) -> &Vec<String>;
-    fn post_bump_hooks(&self) -> &Vec<String>;
-
-    fn get_hooks(&self, hook_type: HookType) -> &Vec<String> {
-        match hook_type {
-            HookType::PreBump => self.pre_bump_hooks(),
-            HookType::PostBump => self.post_bump_hooks(),
-        }
-    }
-
-    fn get_profile_hooks(&self, profile: &str, hook_type: HookType) -> &Vec<String> {
-        let profile = self
-            .bump_profiles()
-            .get(profile)
-            .expect("Bump profile not found");
-        match hook_type {
-            HookType::PreBump => &profile.pre_bump_hooks,
-            HookType::PostBump => &profile.post_bump_hooks,
-        }
-    }
-}
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct VersionSpan {
@@ -63,15 +37,13 @@ impl VersionSpan {
         &mut self,
         version: Option<&HookVersion>,
         latest: Option<&HookVersion>,
+        tag_prefix: Option<&'static str>,
+        monorepo_separator: Option<&'static str>,
     ) -> Result<String> {
-        let default_tag = self.default_version.clone().map(|version| {
-            Tag::create(
-                version,
-                None,
-                SETTINGS.tag_prefix(),
-                SETTINGS.monorepo_separator(),
-            )
-        });
+        let default_tag = self
+            .default_version
+            .clone()
+            .map(|version| Tag::create(version, None, tag_prefix, monorepo_separator));
 
         // According to the pest grammar, a `version` or `latest_version` token is expected first
         let mut tag = match self.tokens.pop_front() {
@@ -159,13 +131,21 @@ impl HookSpan {
         &mut self,
         version: Option<&HookVersion>,
         latest: Option<&HookVersion>,
+        tag_prefix: Option<&'static str>,
+        monorepo_separator: Option<&'static str>,
     ) -> Result<String> {
         let mut output = self.content.clone();
         if let Some(mut span) = self.version_spans.pop() {
-            let version_str = span.build_version_str(version, latest)?;
+            let version_str =
+                span.build_version_str(version, latest, tag_prefix, monorepo_separator)?;
             let version_str = version_str.as_str();
             output.replace_range(span.range.clone(), version_str);
-            output = parser::parse(&output)?.replace_versions(version, latest)?;
+            output = parser::parse(&output)?.replace_versions(
+                version,
+                latest,
+                tag_prefix,
+                monorepo_separator,
+            )?;
         }
 
         Ok(output)
@@ -195,9 +175,16 @@ impl Hook {
         &mut self,
         current_version: Option<&HookVersion>,
         next_version: Option<&HookVersion>,
+        tag_prefix: Option<&'static str>,
+        monorepo_separator: Option<&'static str>,
     ) -> Result<()> {
         let mut parts = parser::parse(&self.0)?;
-        self.0 = parts.replace_versions(next_version, current_version)?;
+        self.0 = parts.replace_versions(
+            next_version,
+            current_version,
+            tag_prefix,
+            monorepo_separator,
+        )?;
 
         Ok(())
     }
@@ -269,6 +256,8 @@ mod test {
                 SETTINGS.monorepo_separator(),
                 SETTINGS.package_names(),
             )?)),
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
         )
         .unwrap();
 
@@ -288,8 +277,13 @@ mod test {
             target: None,
         };
 
-        hook.insert_versions(None, Some(&HookVersion::new(tag)))
-            .unwrap();
+        hook.insert_versions(
+            None,
+            Some(&HookVersion::new(tag)),
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
+        )
+        .unwrap();
 
         assert_that!(hook.0.as_str()).is_equal_to("cargo bump v1.0.0");
         Ok(())
@@ -326,8 +320,13 @@ mod test {
             target: None,
         };
 
-        hook.insert_versions(None, Some(&HookVersion::new(tag)))
-            .unwrap();
+        hook.insert_versions(
+            None,
+            Some(&HookVersion::new(tag)),
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
+        )
+        .unwrap();
 
         assert_that!(hook.0.as_str()).is_equal_to("echo cog-v1.0.0");
         Ok(())
@@ -345,8 +344,13 @@ mod test {
             target: None,
         };
 
-        hook.insert_versions(Some(&HookVersion::new(tag)), None)
-            .unwrap();
+        hook.insert_versions(
+            Some(&HookVersion::new(tag)),
+            None,
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
+        )
+        .unwrap();
 
         assert_that!(hook.0.as_str()).is_equal_to("echo v1.0.0");
         Ok(())
@@ -365,6 +369,8 @@ mod test {
                 SETTINGS.monorepo_separator(),
                 SETTINGS.package_names(),
             )?)),
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
         )
         .unwrap();
 
@@ -385,6 +391,8 @@ mod test {
                 SETTINGS.monorepo_separator(),
                 SETTINGS.package_names(),
             )?)),
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
         )
         .unwrap();
 
@@ -405,8 +413,13 @@ mod test {
             target: None,
         };
 
-        hook.insert_versions(None, Some(&HookVersion::new(tag)))
-            .unwrap();
+        hook.insert_versions(
+            None,
+            Some(&HookVersion::new(tag)),
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
+        )
+        .unwrap();
 
         assert_that!(hook.0.as_str()).is_equal_to("mvn versions:set -DnewVersion=v1.1.0-SNAPSHOT");
         Ok(())
@@ -444,8 +457,13 @@ mod test {
             target: None,
         };
 
-        hook.insert_versions(None, Some(&HookVersion::new(tag)))
-            .unwrap();
+        hook.insert_versions(
+            None,
+            Some(&HookVersion::new(tag)),
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
+        )
+        .unwrap();
 
         assert_that!(hook.0.as_str())
             .is_equal_to("mvn versions:set -DnewVersion=cog-v1.1.0-SNAPSHOT");
@@ -465,6 +483,8 @@ mod test {
                 SETTINGS.monorepo_separator(),
                 SETTINGS.package_names(),
             )?)),
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
         )
         .unwrap();
 
@@ -485,6 +505,8 @@ mod test {
                 SETTINGS.monorepo_separator(),
                 SETTINGS.package_names(),
             )?)),
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
         )
         .unwrap();
 
@@ -506,6 +528,8 @@ mod test {
                 SETTINGS.monorepo_separator(),
                 SETTINGS.package_names(),
             )?)),
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
         )
         .unwrap();
 
@@ -527,6 +551,8 @@ mod test {
                 SETTINGS.monorepo_separator(),
                 SETTINGS.package_names(),
             )?)),
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
         )
         .unwrap();
 
@@ -555,6 +581,8 @@ mod test {
                 SETTINGS.monorepo_separator(),
                 SETTINGS.package_names(),
             )?)),
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
         )
         .unwrap();
 
@@ -584,6 +612,8 @@ mod test {
                 SETTINGS.monorepo_separator(),
                 SETTINGS.package_names(),
             )?)),
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
         )
         .unwrap();
 
@@ -605,6 +635,8 @@ mod test {
                 SETTINGS.monorepo_separator(),
                 SETTINGS.package_names(),
             )?)),
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
         )
         .unwrap();
 
@@ -616,7 +648,13 @@ mod test {
     #[test]
     fn replaces_version_with_default_when_no_version_available() -> Result<()> {
         let mut hook = Hook::from_str("echo \"the latest {{version|1.0.0}}\"")?;
-        hook.insert_versions(None, None).unwrap();
+        hook.insert_versions(
+            None,
+            None,
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
+        )
+        .unwrap();
 
         assert_that!(hook.0.as_str()).is_equal_to("echo \"the latest 1.0.0\"");
         Ok(())
@@ -627,7 +665,13 @@ mod test {
         let mut hook = Hook::from_str(
             "echo \"the latest {{version|1.0.0+1major-pre.alpha-bravo+build.42}}\"",
         )?;
-        hook.insert_versions(None, None).unwrap();
+        hook.insert_versions(
+            None,
+            None,
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
+        )
+        .unwrap();
 
         assert_that!(hook.0.as_str())
             .is_equal_to("echo \"the latest 2.0.0-pre.alpha-bravo+build.42\"");
@@ -649,7 +693,13 @@ mod test {
         )?;
 
         let mut hook = Hook::from_str("echo \"the latest {{version_tag|1.0.0}}\"")?;
-        hook.insert_versions(None, None).unwrap();
+        hook.insert_versions(
+            None,
+            None,
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
+        )
+        .unwrap();
 
         assert_that!(hook.0.as_str()).is_equal_to("echo \"the latest v1.0.0\"");
         Ok(())
@@ -669,8 +719,13 @@ mod test {
             target: None,
         };
 
-        hook.insert_versions(None, Some(&HookVersion::new(tag)))
-            .unwrap();
+        hook.insert_versions(
+            None,
+            Some(&HookVersion::new(tag)),
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
+        )
+        .unwrap();
 
         assert_that!(hook.0.as_str())
             .is_equal_to("echo \"the latest v2.0.0-pre.alpha-bravo+build.42\"");
@@ -694,6 +749,8 @@ mod test {
                 SETTINGS.monorepo_separator(),
                 SETTINGS.package_names(),
             )?)),
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
         )
         .unwrap();
 
@@ -747,6 +804,8 @@ mod test {
         hook.insert_versions(
             Some(&HookVersion::new(current)),
             Some(&HookVersion::new(tag)),
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
         )
         .unwrap();
 
@@ -799,6 +858,8 @@ mod test {
         hook.insert_versions(
             Some(&HookVersion::new(current)),
             Some(&HookVersion::new(tag)),
+            SETTINGS.tag_prefix(),
+            SETTINGS.monorepo_separator(),
         )
         .unwrap();
 
