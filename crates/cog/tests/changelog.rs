@@ -424,7 +424,7 @@ fn get_changelog_is_unaffected_by_disable_changelog() -> Result<()> {
 fn get_changelog_with_custom_template() -> Result<()> {
     // Arrange
     let crate_dir = env!("CARGO_MANIFEST_DIR");
-    let template = PathBuf::from(crate_dir).join("tests/cog_tests/template.md");
+    let template = PathBuf::from(crate_dir).join("tests/template.md");
 
     git_init()?;
 

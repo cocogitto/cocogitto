@@ -266,10 +266,8 @@ impl CocoGitto {
     }
 
     fn run_hooks(&self, options: HookRunOptions) -> Result<()> {
-        let settings = Settings::get(self.repository.0.path())?;
-
         let hooks: Vec<Hook> = match (options.package, options.hook_profile) {
-            (None, Some(profile)) => settings
+            (None, Some(profile)) => SETTINGS
                 .get_profile_hooks(profile, options.hook_type)
                 .iter()
                 .map(|s| s.parse())
@@ -302,7 +300,7 @@ impl CocoGitto {
                 .enumerate()
                 .map(|(idx, result)| result.context(format!("Cannot parse hook at index {idx}")))
                 .try_collect()?,
-            (None, None) => settings
+            (None, None) => SETTINGS
                 .get_hooks(options.hook_type)
                 .iter()
                 .map(|s| s.parse())

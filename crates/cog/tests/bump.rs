@@ -325,6 +325,7 @@ fn bump_with_hook() -> Result<()> {
     git_init()?;
     git_add(r#"pre_bump_hooks = ["touch {{version}}"]"#, "cog.toml")?;
     git_commit("chore: init")?;
+    run_cmd!(git --no-pager show)?;
     git_tag("1.0.0")?;
     git_commit("feat: feature")?;
 
@@ -336,6 +337,7 @@ fn bump_with_hook() -> Result<()> {
         .assert()
         .success();
 
+    run_cmd!(git tag)?;
     assert_that!(Path::new("2.0.0")).exists();
     assert_tag_exists("2.0.0")?;
     Ok(())

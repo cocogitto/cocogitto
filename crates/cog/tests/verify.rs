@@ -149,7 +149,7 @@ fn should_ignore_merge_commit_via_config() -> Result<()> {
     Ok(())
 }
 
-#[sealed_test(files = ["tests/assets/commit_message.txt"])]
+#[sealed_test(files = ["tests/data/commit_message.txt"])]
 fn verify_file_ok() -> Result<()> {
     // Arrange
     git_init()?;
@@ -190,7 +190,7 @@ fn verify_with_not_existing_file_fails() -> Result<()> {
 }
 
 #[cfg(target_family = "unix")]
-#[sealed_test(files = ["tests/assets/commit_message.txt"])]
+#[sealed_test(files = ["tests/data/commit_message.txt"])]
 fn verify_with_unreadable_file_fails() -> Result<()> {
     use std::fs;
     use std::os::unix::fs::PermissionsExt;
