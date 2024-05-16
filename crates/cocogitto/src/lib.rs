@@ -13,10 +13,8 @@ use conventional::version::IncrementCommand;
 use error::BumpError;
 use git::repository::Repository;
 
-use crate::git::error::{Git2Error, TagError};
+use crate::git::error::Git2Error;
 use crate::git::rev::cache::get_cache;
-
-use crate::git::tag::Tag;
 
 pub mod command;
 pub mod conventional;

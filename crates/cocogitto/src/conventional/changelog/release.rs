@@ -128,8 +128,8 @@ mod test {
     use crate::conventional::commit::Commit;
     use crate::git::oid::OidOf;
 
-    use crate::git::tag::Tag;
     use crate::test_helpers::open_cocogitto_repo;
+    use cocogitto_tag::Tag;
 
     #[test]
     fn should_get_a_release() -> anyhow::Result<()> {

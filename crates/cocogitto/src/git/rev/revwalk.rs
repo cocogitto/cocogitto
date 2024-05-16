@@ -163,8 +163,9 @@ mod test {
     use crate::conventional::changelog::release::Release;
     use crate::git::oid::OidOf;
     use crate::git::repository::Repository;
-    use crate::git::tag::{Tag, TagLookUpOptions};
+    use crate::git::tag::TagLookUpOptions;
     use crate::test_helpers::{git_init_no_gpg, open_cocogitto_repo};
+    use cocogitto_tag::Tag;
 
     #[test]
     fn all_commits() -> Result<()> {

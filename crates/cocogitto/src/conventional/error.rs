@@ -1,5 +1,6 @@
-use crate::git::error::{Git2Error, TagError};
+use crate::git::error::Git2Error;
 use anyhow::anyhow;
+use cocogitto_tag::error::TagError;
 use colored::Colorize;
 use conventional_commit_parser::error::ParseError;
 use serde::de::StdError;

@@ -1,7 +1,8 @@
 use crate::git::repository::Repository;
+use cocogitto_tag::error::TagError;
+use cocogitto_tag::Tag;
 
 use crate::git::tag::TagLookUpOptions;
-use crate::{Tag, TagError};
 
 impl Repository {
     /// Get the latest SemVer tag for a given monorepo package.

@@ -4,11 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+cocogitto-tag.workspace = true
+cocogitto-config.workspace = true
 git2.workspace = true
 cmd_lib.workspace = true
 cocogitto.workspace = true
 anyhow.workspace = true
-cocogitto-config.workspace = true
 speculoos.workspace = true
 toml.workspace = true
 

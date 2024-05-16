@@ -1,7 +1,7 @@
-use crate::git::error::TagError;
 use crate::git::oid::OidOf;
 use crate::git::repository::Repository;
-use crate::git::tag::Tag;
+use cocogitto_tag::error::TagError;
+use cocogitto_tag::Tag;
 use once_cell::sync::{Lazy, OnceCell};
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex, MutexGuard};

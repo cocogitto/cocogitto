@@ -10,6 +10,7 @@ panic = "abort"
 
 [workspace.dependencies]
 cocogitto-config = { path = "crates/cocogitto-config" }
+cocogitto-tag = { path = "crates/cocogitto-tag" }
 cocogitto-test-helpers = { path = "crates/cocogitto-test-helpers" }
 cocogitto = { path = "crates/cocogitto" }
 semver = "1.0.23"

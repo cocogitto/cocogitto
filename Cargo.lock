@@ -331,6 +331,7 @@ dependencies = [
  "chrono",
  "cmd_lib",
  "cocogitto-config",
+ "cocogitto-tag",
  "cocogitto-test-helpers",
  "colored",
  "config",
@@ -374,6 +375,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "cocogitto-tag"
+version = "0.1.0"
+dependencies = [
+ "cocogitto-config",
+ "git2",
+ "semver",
+ "serde",
+]
+
+[[package]]
 name = "cocogitto-test-helpers"
 version = "0.1.0"
 dependencies = [
@@ -381,6 +392,7 @@ dependencies = [
  "cmd_lib",
  "cocogitto",
  "cocogitto-config",
+ "cocogitto-tag",
  "cocogitto-test-helpers",
  "git2",
  "sealed_test",

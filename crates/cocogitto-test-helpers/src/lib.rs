@@ -12,7 +12,7 @@ use speculoos::assert_that;
 use speculoos::iter::ContainingIntoIterAssertions;
 use speculoos::option::OptionAssertions;
 
-use cocogitto::git::tag::Tag;
+use cocogitto_tag::Tag;
 
 /// Init a new repository on branch master and disable gpg signing
 pub fn git_init_no_gpg() -> anyhow::Result<Repository> {

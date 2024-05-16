@@ -1,13 +1,10 @@
-use std::cmp::Ordering;
-use std::fmt;
-use std::fmt::Formatter;
+use git2::Oid;
 
 use cocogitto_config::SETTINGS;
-use git2::Oid;
-use semver::Version;
+use cocogitto_tag::error::TagError;
+use cocogitto_tag::Tag;
 
-use crate::conventional::version::Increment;
-use crate::git::error::{Git2Error, TagError};
+use crate::git::error::Git2Error;
 use crate::git::oid::OidOf;
 use crate::git::repository::Repository;
 
@@ -154,164 +151,8 @@ impl Repository {
     }
 }
 
-#[derive(Debug, Eq, Clone)]
-pub struct Tag {
-    pub package: Option<String>,
-    pub prefix: Option<String>,
-    pub version: Version,
-    pub oid: Option<Oid>,
-    pub target: Option<Oid>,
-}
-
-impl Ord for Tag {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.version.cmp(&other.version)
-    }
-}
-
-impl PartialEq for Tag {
-    fn eq(&self, other: &Self) -> bool {
-        self.package == other.package
-            && self.version == other.version
-            && self.prefix == other.prefix
-    }
-}
-
-impl PartialOrd<Tag> for Tag {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Default for Tag {
-    fn default() -> Self {
-        Tag::create(Version::new(0, 0, 0), None)
-    }
-}
-
-impl Tag {
-    pub(crate) fn strip_metadata(&self) -> Self {
-        let mut copy_without_prefix = self.clone();
-        copy_without_prefix.package = None;
-        copy_without_prefix.prefix = None;
-        copy_without_prefix
-    }
-
-    // Tag always contains an oid unless it was created before the tag exist.
-    // The only case where we do that is while creating the changelog during `cog bump`.
-    // In this situation we need a tag to generate the changelog but this tag does not exist in the
-    // repo yet.
-    pub(crate) fn oid_unchecked(&self) -> &Oid {
-        self.oid.as_ref().unwrap()
-    }
-
-    pub(crate) fn create(version: Version, package: Option<String>) -> Self {
-        Tag {
-            package,
-            prefix: SETTINGS.tag_prefix.clone(),
-            version,
-            oid: None,
-            target: None,
-        }
-    }
-
-    pub(crate) fn oid(&self) -> Option<&Oid> {
-        self.oid.as_ref()
-    }
-
-    pub fn from_str(raw: &str, oid: Option<Oid>, target: Option<Oid>) -> Result<Tag, TagError> {
-        let prefix = SETTINGS.tag_prefix.as_ref();
-
-        let package_tag: Option<Tag> = SETTINGS
-            .packages
-            .keys()
-            .filter_map(|package_name| {
-                raw.strip_prefix(package_name)
-                    .zip(SETTINGS.monorepo_separator())
-                    .and_then(|(remains, prefix)| remains.strip_prefix(prefix))
-                    .map(|remains| {
-                        SETTINGS
-                            .tag_prefix
-                            .as_ref()
-                            .and_then(|prefix| remains.strip_prefix(prefix))
-                            .unwrap_or(remains)
-                    })
-                    .and_then(|version| Version::parse(version).ok())
-                    .map(|version| Tag {
-                        package: Some(package_name.to_string()),
-                        prefix: SETTINGS.tag_prefix.clone(),
-                        version,
-                        oid,
-                        target,
-                    })
-            })
-            .next();
-
-        if let Some(tag) = package_tag {
-            Ok(tag)
-        } else {
-            let version = prefix
-                .and_then(|prefix| raw.strip_prefix(prefix))
-                .unwrap_or(raw);
-
-            let version = Version::parse(version).map_err(|err| TagError::semver(raw, err))?;
-
-            Ok(Tag {
-                package: None,
-                prefix: prefix.cloned(),
-                version,
-                oid,
-                target,
-            })
-        }
-    }
-
-    pub(crate) fn is_zero(&self) -> bool {
-        self.version == Version::new(0, 0, 0)
-    }
-
-    pub(crate) fn get_increment_from(&self, other: &Tag) -> Option<Increment> {
-        if self.version.major > other.version.major {
-            Some(Increment::Major)
-        } else if self.version.minor > other.version.minor {
-            Some(Increment::Minor)
-        } else if self.version.patch > other.version.patch {
-            Some(Increment::Patch)
-        } else {
-            None
-        }
-    }
-}
-
-impl fmt::Display for Tag {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let version = self.version.to_string();
-        if let Some((package, prefix)) = self.package.as_ref().zip(self.prefix.as_ref()) {
-            let separator = SETTINGS.monorepo_separator().unwrap_or_else(||
-                panic!("Found a tag with monorepo package prefix but there are no packages in cog.toml")
-            );
-            write!(f, "{package}{separator}{prefix}{version}")
-        } else if let Some(package) = self.package.as_ref() {
-            let separator = SETTINGS.monorepo_separator().unwrap_or_else(||
-                panic!("Found a tag with monorepo package prefix but there are no packages in cog.toml")
-            );
-
-            write!(f, "{package}{separator}{version}")
-        } else if let Some(prefix) = self.prefix.as_ref() {
-            write!(f, "{prefix}{version}")
-        } else {
-            write!(f, "{version}")
-        }
-    }
-}
-
 #[cfg(test)]
 mod test {
-    use crate::test_helpers::git_init_no_gpg;
-    use cocogitto_config::monorepo::MonoRepoPackage;
-    use cocogitto_config::Settings;
-    use cocogitto_test_helpers::commit;
-    use cocogitto_test_helpers::git_tag;
     use std::collections::HashMap;
     use std::fs;
     use std::path::PathBuf;
@@ -322,7 +163,13 @@ mod test {
     use semver::Version;
     use speculoos::prelude::*;
 
+    use cocogitto_config::monorepo::MonoRepoPackage;
+    use cocogitto_config::Settings;
+    use cocogitto_test_helpers::commit;
+    use cocogitto_test_helpers::git_tag;
+
     use crate::git::tag::{Tag, TagLookUpOptions};
+    use crate::test_helpers::git_init_no_gpg;
 
     #[test]
     fn should_compare_tags() -> Result<()> {

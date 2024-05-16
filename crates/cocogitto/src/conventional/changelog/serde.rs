@@ -4,16 +4,6 @@ use serde::{Serialize, Serializer};
 
 use crate::conventional::changelog::release::{ChangelogCommit, ChangelogFooter};
 use crate::git::oid::OidOf;
-use crate::git::tag::Tag;
-
-impl Serialize for Tag {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_str(&self.to_string())
-    }
-}
 
 impl Serialize for ChangelogCommit<'_> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -83,7 +73,7 @@ mod test {
 
     use crate::conventional::changelog::release::ChangelogCommit;
     use crate::conventional::commit::Commit;
-    use crate::git::tag::Tag;
+    use cocogitto_tag::Tag;
 
     #[test]
     fn should_serialize_tag() {

@@ -2,7 +2,7 @@ use crate::git::error::Git2Error;
 use crate::git::oid::OidOf;
 use crate::git::repository::Repository;
 use crate::git::rev::cache::get_cache;
-use crate::git::tag::Tag;
+use cocogitto_tag::Tag;
 use git2::Oid;
 use std::fmt;
 use std::fmt::Formatter;
@@ -95,9 +95,9 @@ impl fmt::Display for RevSpecPattern2 {
 mod test {
     use crate::git::oid::OidOf;
     use crate::git::rev::revspec::RevSpecPattern2;
-    use crate::git::tag::Tag;
     use crate::test_helpers::git_init_no_gpg;
     use anyhow::Result;
+    use cocogitto_tag::Tag;
     use cocogitto_test_helpers::{commit, git_tag};
     use git2::Oid;
     use sealed_test::prelude::*;

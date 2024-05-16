@@ -1,12 +1,12 @@
 use cocogitto_config::SETTINGS;
+use cocogitto_tag::increment::Increment;
+use cocogitto_tag::Tag;
 use git2::Commit as Git2Commit;
 use once_cell::sync::Lazy;
-use semver::{BuildMetadata, Prerelease, Version};
 
 use crate::conventional::error::BumpError;
-use crate::conventional::version::Increment;
 use crate::git::tag::TagLookUpOptions;
-use crate::{Commit, IncrementCommand, Repository, Tag};
+use crate::{Commit, IncrementCommand, Repository};
 
 static FILTER_MERGE_COMMITS: Lazy<fn(&&git2::Commit) -> bool> = Lazy::new(|| {
     |commit| {
@@ -17,40 +17,6 @@ static FILTER_MERGE_COMMITS: Lazy<fn(&&git2::Commit) -> bool> = Lazy::new(|| {
         }
     }
 });
-
-impl Tag {
-    fn manual_bump(&self, version: &str) -> Result<Self, semver::Error> {
-        let mut next = self.clone();
-        next.version = Version::parse(version)?;
-        Ok(next)
-    }
-
-    fn major_bump(&self) -> Self {
-        let mut next = self.clone();
-        next.version.major += 1;
-        next.version.minor = 0;
-        next.version.patch = 0;
-        next.reset_metadata()
-    }
-
-    fn minor_bump(&self) -> Self {
-        let mut next = self.clone();
-        next.version.minor += 1;
-        next.version.patch = 0;
-        next.reset_metadata()
-    }
-
-    fn patch_bump(&self) -> Self {
-        let mut next = self.clone();
-        next.version.patch += 1;
-        next.reset_metadata()
-    }
-
-    fn no_bump(&self) -> Self {
-        let next = self.clone();
-        next.reset_metadata()
-    }
-}
 
 pub fn bump(
     tag: &Tag,
@@ -68,15 +34,6 @@ pub fn bump(
             auto_global_bump(tag, repository, package_increment)
         }
         IncrementCommand::Manual(version) => tag.manual_bump(&version).map_err(Into::into),
-    }
-}
-
-impl Tag {
-    fn reset_metadata(mut self) -> Self {
-        self.version.build = BuildMetadata::EMPTY;
-        self.version.pre = Prerelease::EMPTY;
-        self.oid = None;
-        self
     }
 }
 
@@ -99,7 +56,7 @@ fn auto_bump(tag: &Tag, repository: &Repository) -> Result<Tag, BumpError> {
         .filter_map(Result::ok)
         .collect();
 
-    let increment_type = version_increment_from_commit_history(&tag, &conventional_commits)?;
+    let increment_type = version_increment_from_commit_history(tag, &conventional_commits)?;
 
     Ok(match increment_type {
         Increment::Major => tag.major_bump(),
@@ -149,7 +106,7 @@ fn auto_package_bump(tag: &Tag, package: &str, repository: &Repository) -> Resul
         .filter_map(Result::ok)
         .collect();
 
-    let increment_type = version_increment_from_commit_history(&tag, &conventional_commits)?;
+    let increment_type = version_increment_from_commit_history(tag, &conventional_commits)?;
 
     Ok(match increment_type {
         Increment::Major => tag.major_bump(),
@@ -209,7 +166,7 @@ fn get_monorepo_global_version_from_commit_history(
         .filter_map(Result::ok)
         .collect();
 
-    let increment_type = version_increment_from_commit_history(&tag, &conventional_commits)?;
+    let increment_type = version_increment_from_commit_history(tag, &conventional_commits)?;
 
     Ok(match increment_type {
         Increment::Major => tag.major_bump(),
@@ -245,10 +202,11 @@ mod test {
     use crate::conventional::bump::version_increment_from_commit_history;
     use crate::conventional::commit::Commit;
     use crate::conventional::error::BumpError;
-    use crate::conventional::version::{Increment, IncrementCommand};
+    use crate::conventional::version::IncrementCommand;
     use crate::git::repository::Repository;
-    use crate::git::tag::Tag;
     use crate::test_helpers::git_init_no_gpg;
+    use cocogitto_tag::increment::Increment;
+    use cocogitto_tag::Tag;
 
     impl Commit {
         fn commit_fixture(commit_type: CommitType, is_breaking_change: bool) -> Self {

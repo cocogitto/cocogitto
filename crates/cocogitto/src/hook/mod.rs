@@ -8,12 +8,12 @@ use std::str::FromStr;
 use std::{fmt, path};
 
 use crate::hook::parser::VersionAccessToken;
-use crate::Tag;
 use cocogitto_config::hook::HookType;
 use cocogitto_config::{BumpProfile, SETTINGS};
 use parser::Token;
 
 use anyhow::{anyhow, ensure, Result};
+use cocogitto_tag::Tag;
 use semver::Version;
 
 pub trait Hooks {
@@ -99,7 +99,7 @@ impl VersionSpan {
             Some(Token::Package) => {
                 return version
                     .and_then(|version| version.prefixed_tag.package.clone())
-                    .ok_or_else(|| anyhow!("Current tag as no {{{{package}}}} info"))
+                    .ok_or_else(|| anyhow!("Current tag as no {{{{package}}}} info"));
             }
 
             _ => unreachable!("Unexpected parsing error"),
@@ -216,13 +216,13 @@ impl Hook {
 #[cfg(test)]
 mod test {
     use crate::test_helpers::git_init_no_gpg;
+    use crate::Result;
     use cmd_lib::run_cmd;
     use cocogitto_config::monorepo::MonoRepoPackage;
     use cocogitto_config::Settings;
+    use cocogitto_tag::Tag;
     use std::collections::HashMap;
     use std::str::FromStr;
-
-    use crate::{Result, Tag};
 
     use crate::hook::{Hook, HookVersion};
     use sealed_test::prelude::*;

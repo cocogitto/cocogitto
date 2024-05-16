@@ -2,7 +2,7 @@ use std::fmt::{Display, Formatter};
 
 use git2::Oid;
 
-use crate::git::tag::Tag;
+use cocogitto_tag::Tag;
 
 /// A wrapper for git2 oid including tags and HEAD ref
 #[derive(Debug, PartialEq, Eq, Clone)]

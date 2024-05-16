@@ -8,9 +8,9 @@ use crate::conventional::changelog::template::{
 };
 use crate::conventional::changelog::ReleaseType;
 
-use crate::conventional::version::{Increment, IncrementCommand};
+use crate::conventional::version::IncrementCommand;
 
-use crate::git::tag::{Tag, TagLookUpOptions};
+use crate::git::tag::TagLookUpOptions;
 use crate::hook::HookVersion;
 use crate::CocoGitto;
 use anyhow::Result;
@@ -18,6 +18,8 @@ use cocogitto_config::SETTINGS;
 use colored::*;
 
 use crate::conventional::bump::bump;
+use cocogitto_tag::increment::Increment;
+use cocogitto_tag::Tag;
 use log::{info, warn};
 use semver::{BuildMetadata, Prerelease};
 use tera::Tera;

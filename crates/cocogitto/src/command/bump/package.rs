@@ -5,11 +5,11 @@ use crate::command::bump::{
 use crate::conventional::bump::bump;
 use crate::conventional::changelog::template::{get_package_changelog_template, PackageContext};
 use crate::conventional::changelog::ReleaseType;
-use crate::git::tag::Tag;
 use crate::hook::HookVersion;
 use crate::CocoGitto;
 use anyhow::Result;
 use cocogitto_config::SETTINGS;
+use cocogitto_tag::Tag;
 use colored::*;
 use log::info;
 use semver::{BuildMetadata, Prerelease};
