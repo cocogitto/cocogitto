@@ -11,12 +11,15 @@ panic = "abort"
 [workspace.dependencies]
 cocogitto-config = { path = "crates/cocogitto-config" }
 cocogitto-tag = { path = "crates/cocogitto-tag" }
+cocogitto-oid = { path = "crates/cocogitto-oid" }
 cocogitto-hook = { path = "crates/cocogitto-hook" }
+cocogitto-changelog = { path = "crates/cocogitto-changelog" }
+cocogitto-commit = { path = "crates/cocogitto-commit" }
 cocogitto-test-helpers = { path = "crates/cocogitto-test-helpers" }
 cocogitto = { path = "crates/cocogitto" }
 semver = "1.0.23"
 # TODO: DELETE ME
-
+colored = "^2"
 toml = "0.5.11"
 edit = "^0"
 stderrlog = "0.6.0"

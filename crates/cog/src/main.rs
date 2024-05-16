@@ -5,7 +5,6 @@ use std::fs;
 use std::path::PathBuf;
 
 use cocogitto::conventional::changelog::template::{get_template_context, RemoteContext, Template};
-use cocogitto::conventional::commit as conv_commit;
 use cocogitto::conventional::version::IncrementCommand;
 
 use cocogitto::log::filter::{CommitFilter, CommitFilters};
@@ -508,7 +507,7 @@ fn main() -> Result<()> {
                 (Some(_), Some(_)) => unreachable!(),
             };
 
-            conv_commit::verify(author, &commit_message, ignore_merge_commits)?;
+            cocogitto::conventional::verify(author, &commit_message, ignore_merge_commits)?;
         }
         Command::Check {
             from_latest_tag,
@@ -695,6 +694,7 @@ fn init_logs(verbose: u8, quiet: bool) {
     let verbosity = if verbose == 0 { 2 } else { verbose - 1 };
     stderrlog::new()
         .module(module_path!())
+        .module("cocogitto_commit")
         .modules(vec!["cocogitto"])
         .quiet(quiet)
         .verbosity(verbosity as usize)

@@ -1,13 +1,12 @@
 use chrono::{NaiveDateTime, Utc};
-use conventional_commit_parser::commit::Footer;
 use serde::Serialize;
 
-use crate::conventional::commit::Commit;
-use crate::git::oid::OidOf;
 use crate::git::rev::CommitIter;
+use cocogitto_commit::{Commit, Footer};
 use colored::Colorize;
 
 use crate::conventional::changelog::error::ChangelogError;
+use cocogitto_oid::OidOf;
 use log::warn;
 
 #[derive(Debug, Serialize)]
@@ -115,7 +114,7 @@ mod test {
     use anyhow::Result;
     use chrono::NaiveDateTime;
     use cocogitto_config::SETTINGS;
-    use conventional_commit_parser::commit::{CommitType, ConventionalCommit, Footer};
+    use cocogitto_oid::OidOf;
     use git2::Oid;
     use indoc::indoc;
     use pretty_assertions::assert_eq;
@@ -126,8 +125,7 @@ mod test {
     use crate::conventional::changelog::template::{
         MonoRepoContext, PackageBumpContext, PackageContext, RemoteContext, Template, TemplateKind,
     };
-    use crate::conventional::commit::Commit;
-    use crate::git::oid::OidOf;
+    use cocogitto_commit::{Commit, CommitType, ConventionalCommit, Footer};
 
     use crate::test_helpers::open_cocogitto_repo;
     use cocogitto_tag::Tag;

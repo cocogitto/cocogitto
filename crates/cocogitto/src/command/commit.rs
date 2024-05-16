@@ -1,9 +1,7 @@
-use crate::conventional::commit::Commit;
 use crate::CocoGitto;
 use crate::CommitHook::CommitMessage;
 use anyhow::Result;
-use conventional_commit_parser::commit::{CommitType, ConventionalCommit};
-use conventional_commit_parser::parse_footers;
+use cocogitto_commit::{validate_and_get_message, Commit};
 use log::info;
 use std::fs;
 
@@ -22,27 +20,14 @@ pub struct CommitOptions<'a> {
 
 impl CocoGitto {
     pub fn conventional_commit(&self, opts: CommitOptions) -> Result<()> {
-        // Ensure commit type is known
-        let commit_type = CommitType::from(opts.commit_type);
-
-        // Ensure footers are correctly formatted
-        let footers = match opts.footer {
-            Some(footers) => parse_footers(&footers)?,
-            None => Vec::with_capacity(0),
-        };
-
-        let conventional_message = ConventionalCommit {
-            commit_type,
-            scope: opts.scope,
-            body: opts.body,
-            footers,
-            summary: opts.summary,
-            is_breaking_change: opts.breaking,
-        }
-        .to_string();
-
-        // Validate the message
-        conventional_commit_parser::parse(&conventional_message)?;
+        let conventional_message = validate_and_get_message(
+            opts.commit_type,
+            opts.scope,
+            opts.summary,
+            opts.body,
+            opts.footer,
+            opts.breaking,
+        )?;
 
         if opts.add_files {
             self.repository.add_all()?;

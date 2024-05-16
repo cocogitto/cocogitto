@@ -1,10 +1,10 @@
-use crate::conventional::commit::Commit;
 use crate::error::CogCheckReport;
 
 use crate::git::tag::TagLookUpOptions;
 use crate::CocoGitto;
 use anyhow::anyhow;
 use anyhow::Result;
+use cocogitto_commit::Commit;
 use colored::*;
 use log::info;
 

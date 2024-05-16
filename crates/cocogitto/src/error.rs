@@ -1,8 +1,7 @@
 use std::fmt::{self, Debug, Display, Formatter};
 
-use crate::git::oid::OidOf;
-
-use crate::conventional::error::ConventionalCommitError;
+use cocogitto_commit::error::ConventionalCommitError;
+use cocogitto_oid::OidOf;
 use colored::*;
 
 #[derive(Debug)]

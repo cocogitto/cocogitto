@@ -18,6 +18,7 @@ use colored::*;
 
 use crate::conventional::bump::bump;
 use cocogitto_hook::HookVersion;
+use cocogitto_oid::OidOf;
 use cocogitto_tag::increment::Increment;
 use cocogitto_tag::Tag;
 use log::{info, warn};
@@ -25,7 +26,6 @@ use semver::{BuildMetadata, Prerelease};
 use tera::Tera;
 
 use crate::conventional::error::BumpError;
-use crate::git::oid::OidOf;
 
 #[derive(Debug)]
 struct PackageBumpData {

@@ -5,10 +5,6 @@ use std::process::{Command, Stdio};
 use anyhow::Result;
 
 use cocogitto_config::Settings;
-use conventional_commit_parser::commit::{CommitType, ConventionalCommit};
-use conventional_commit_parser::parse_footers;
-
-use conventional::commit::Commit;
 use conventional::version::IncrementCommand;
 use error::BumpError;
 use git::repository::Repository;
@@ -46,41 +42,6 @@ impl CocoGitto {
 
     pub fn get_committer(&self) -> Result<String, Git2Error> {
         self.repository.get_author()
-    }
-
-    /// Tries to get a commit message conforming to the Conventional Commit spec.
-    /// If the commit message does _not_ conform, `None` is returned instead.
-    pub fn get_conventional_message(
-        commit_type: &str,
-        scope: Option<String>,
-        summary: String,
-        body: Option<String>,
-        footer: Option<String>,
-        is_breaking_change: bool,
-    ) -> Result<String> {
-        // Ensure commit type is known
-        let commit_type = CommitType::from(commit_type);
-
-        // Ensure footers are correctly formatted
-        let footers = match footer {
-            Some(footers) => parse_footers(&footers)?,
-            None => Vec::with_capacity(0),
-        };
-
-        let conventional_message = ConventionalCommit {
-            commit_type,
-            scope,
-            body,
-            footers,
-            summary,
-            is_breaking_change,
-        }
-        .to_string();
-
-        // Validate the message
-        conventional_commit_parser::parse(&conventional_message)?;
-
-        Ok(conventional_message)
     }
 
     pub fn run_commit_hook(&self, hook: CommitHook) -> Result<(), Git2Error> {

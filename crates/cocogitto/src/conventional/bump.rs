@@ -1,3 +1,4 @@
+use cocogitto_commit::Commit;
 use cocogitto_config::SETTINGS;
 use cocogitto_tag::increment::Increment;
 use cocogitto_tag::Tag;
@@ -6,7 +7,7 @@ use once_cell::sync::Lazy;
 
 use crate::conventional::error::BumpError;
 use crate::git::tag::TagLookUpOptions;
-use crate::{Commit, IncrementCommand, Repository};
+use crate::{IncrementCommand, Repository};
 
 static FILTER_MERGE_COMMITS: Lazy<fn(&&git2::Commit) -> bool> = Lazy::new(|| {
     |commit| {
@@ -188,10 +189,9 @@ mod test {
     use std::str::FromStr;
 
     use anyhow::Result;
-    use chrono::Utc;
+
     use cmd_lib::run_cmd;
     use cocogitto_config::Settings;
-    use conventional_commit_parser::commit::{CommitType, ConventionalCommit};
     use sealed_test::prelude::*;
     use semver::Version;
     use speculoos::prelude::*;
@@ -200,31 +200,13 @@ mod test {
     use crate::conventional::bump::bump;
     use crate::conventional::bump::get_monorepo_global_version_from_commit_history;
     use crate::conventional::bump::version_increment_from_commit_history;
-    use crate::conventional::commit::Commit;
     use crate::conventional::error::BumpError;
     use crate::conventional::version::IncrementCommand;
     use crate::git::repository::Repository;
     use crate::test_helpers::git_init_no_gpg;
+    use cocogitto_commit::{Commit, CommitType};
     use cocogitto_tag::increment::Increment;
     use cocogitto_tag::Tag;
-
-    impl Commit {
-        fn commit_fixture(commit_type: CommitType, is_breaking_change: bool) -> Self {
-            Commit {
-                oid: "1234".to_string(),
-                conventional: ConventionalCommit {
-                    commit_type,
-                    scope: None,
-                    body: None,
-                    summary: "message".to_string(),
-                    is_breaking_change,
-                    footers: vec![],
-                },
-                author: "".to_string(),
-                date: Utc::now().naive_local(),
-            }
-        }
-    }
 
     #[sealed_test]
     fn major_bump() -> Result<()> {

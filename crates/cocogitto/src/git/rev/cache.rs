@@ -1,6 +1,6 @@
-use crate::git::oid::OidOf;
 use crate::git::repository::Repository;
 use cocogitto_config::SETTINGS;
+use cocogitto_oid::OidOf;
 use cocogitto_tag::error::TagError;
 use cocogitto_tag::Tag;
 use once_cell::sync::{Lazy, OnceCell};

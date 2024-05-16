@@ -1,11 +1,11 @@
 use git2::Oid;
 
 use cocogitto_config::SETTINGS;
+use cocogitto_oid::OidOf;
 use cocogitto_tag::error::TagError;
 use cocogitto_tag::Tag;
 
 use crate::git::error::Git2Error;
-use crate::git::oid::OidOf;
 use crate::git::repository::Repository;
 
 #[derive(Debug, Default)]

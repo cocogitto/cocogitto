@@ -1,6 +1,4 @@
-use crate::conventional::commit::Commit;
-
-use conventional_commit_parser::commit::CommitType;
+use cocogitto_commit::{Commit, CommitType};
 use git2::Commit as Git2Commit;
 
 #[derive(Eq, PartialEq)]

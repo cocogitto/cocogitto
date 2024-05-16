@@ -1,4 +1,4 @@
-use crate::conventional::commit::{verify, Commit};
+use cocogitto_commit::{verify, Commit};
 
 use crate::git::tag::TagLookUpOptions;
 use crate::CocoGitto;

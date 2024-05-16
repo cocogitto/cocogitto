@@ -1,0 +1,20 @@
+[package]
+name = "cocogitto-commit"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+cocogitto-config.workspace = true
+chrono.workspace = true
+colored.workspace = true
+git2.workspace = true
+log.workspace = true
+anyhow.workspace = true
+conventional_commit_parser.workspace = true
+
+[dev-dependencies]
+cocogitto-config.workspace = true
+cocogitto-test-helpers.workspace = true
+indoc.workspace = true
+sealed_test.workspace = true
+speculoos.workspace = true

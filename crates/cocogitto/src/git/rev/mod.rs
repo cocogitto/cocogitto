@@ -1,6 +1,5 @@
+use cocogitto_oid::OidOf;
 use git2::Commit;
-
-use crate::git::oid::OidOf;
 
 pub mod cache;
 pub mod filters;

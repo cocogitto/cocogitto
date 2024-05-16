@@ -3,7 +3,7 @@ use crate::conventional::changelog::error::ChangelogError;
 use cocogitto_config::SETTINGS;
 use serde::Serialize;
 
-use crate::git::oid::OidOf;
+use cocogitto_oid::OidOf;
 use std::io;
 use std::path::PathBuf;
 use tera::Context;

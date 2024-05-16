@@ -1,6 +1,4 @@
 use crate::conventional::changelog::release::Release;
-use crate::conventional::commit::Commit;
-use crate::git::oid::OidOf;
 use cocogitto_tag::error::TagError;
 
 use crate::conventional::version::IncrementCommand;
@@ -8,13 +6,14 @@ use crate::BumpError;
 use crate::CocoGitto;
 use anyhow::{anyhow, bail, Context};
 use anyhow::{ensure, Result};
+use cocogitto_commit::{Commit, CommitType};
 use cocogitto_config::hook::{HookType, Hooks};
 use cocogitto_config::monorepo::MonoRepoPackage;
 use cocogitto_config::{Settings, COMMITS_METADATA, SETTINGS};
 use cocogitto_hook::{Hook, HookVersion};
+use cocogitto_oid::OidOf;
 use cocogitto_tag::Tag;
 use colored::Colorize;
-use conventional_commit_parser::commit::CommitType;
 use globset::Glob;
 use itertools::Itertools;
 use log::{error, info, warn};

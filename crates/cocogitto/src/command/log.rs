@@ -1,8 +1,8 @@
-use crate::conventional::commit::Commit;
 use crate::git::tag::TagLookUpOptions;
 use crate::log::filter::CommitFilters;
 use crate::CocoGitto;
 use anyhow::Result;
+use cocogitto_commit::Commit;
 use std::fmt::Write;
 
 impl CocoGitto {

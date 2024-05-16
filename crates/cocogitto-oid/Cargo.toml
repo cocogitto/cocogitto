@@ -1,0 +1,9 @@
+[package]
+name = "cocogitto-oid"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde.workspace = true
+git2.workspace = true
+cocogitto-tag.workspace = true

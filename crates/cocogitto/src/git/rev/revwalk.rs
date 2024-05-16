@@ -1,8 +1,8 @@
 use cocogitto_config::SETTINGS;
+use cocogitto_oid::OidOf;
 use git2::Commit;
 
 use crate::git::error::Git2Error;
-use crate::git::oid::OidOf;
 use crate::git::repository::Repository;
 use crate::git::rev::filters::PackagePathFilter;
 use crate::git::rev::CommitIter;
@@ -148,6 +148,7 @@ impl Repository {
 mod test {
     use cocogitto_config::monorepo::MonoRepoPackage;
     use cocogitto_config::{Settings, SETTINGS};
+    use cocogitto_oid::OidOf;
     use cocogitto_test_helpers::commit;
     use cocogitto_test_helpers::git_tag;
     use std::collections::HashMap;
@@ -161,7 +162,6 @@ mod test {
     use speculoos::prelude::*;
 
     use crate::conventional::changelog::release::Release;
-    use crate::git::oid::OidOf;
     use crate::git::repository::Repository;
     use crate::git::tag::TagLookUpOptions;
     use crate::test_helpers::{git_init_no_gpg, open_cocogitto_repo};
