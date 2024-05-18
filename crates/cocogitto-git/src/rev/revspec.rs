@@ -1,6 +1,6 @@
-use crate::git::error::Git2Error;
-use crate::git::repository::Repository;
-use crate::git::rev::cache::get_cache;
+use crate::error::Git2Error;
+use crate::rev::cache::get_cache;
+use crate::Repository;
 use cocogitto_config::SETTINGS;
 use cocogitto_oid::OidOf;
 use cocogitto_tag::Tag;
@@ -29,7 +29,7 @@ impl RevSpecPattern2 {
 }
 
 impl Repository {
-    pub(super) fn revspec_from_str(&self, s: &str) -> Result<RevSpecPattern2, Git2Error> {
+    pub fn revspec_from_str(&self, s: &str) -> Result<RevSpecPattern2, Git2Error> {
         if let Some((from, to)) = s.split_once("..") {
             let from = if from.is_empty() {
                 OidOf::Other(self.get_first_commit()?)
@@ -68,7 +68,7 @@ impl Repository {
         }
     }
 
-    pub(super) fn resolve_oid_of(&self, from: &str) -> Result<OidOf, Git2Error> {
+    pub fn resolve_oid_of(&self, from: &str) -> Result<OidOf, Git2Error> {
         let cache = get_cache(self);
 
         let oid = cache
@@ -101,12 +101,12 @@ impl fmt::Display for RevSpecPattern2 {
 
 #[cfg(test)]
 mod test {
-    use crate::git::rev::revspec::RevSpecPattern2;
-    use crate::test_helpers::git_init_no_gpg;
+    use crate::rev::revspec::RevSpecPattern2;
+    use crate::test::git_init_no_gpg;
+    use crate::test::{commit, git_tag};
     use anyhow::Result;
     use cocogitto_oid::OidOf;
     use cocogitto_tag::Tag;
-    use cocogitto_test_helpers::{commit, git_tag};
     use git2::Oid;
     use sealed_test::prelude::*;
     use semver::Version;

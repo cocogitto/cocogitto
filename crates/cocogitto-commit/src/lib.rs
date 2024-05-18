@@ -583,7 +583,6 @@ mod test {
         let repo = git_init_no_gpg()?;
         let oid = commit("feat: a commit")?;
         let oid = Oid::from_str(&oid).unwrap();
-        let repo = Repository::open(".")?;
         let commit = repo.find_commit(oid).expect("Unable to find commit");
 
         // Act
@@ -600,7 +599,6 @@ mod test {
         let repo = git_init_no_gpg()?;
         let oid_str = commit("toto: a commit")?;
         let oid = Oid::from_str(&oid_str).unwrap();
-        let repo = Repository::discover(".")?;
         let commit = repo.find_commit(oid).expect("Unable to find commit");
 
         // Act

@@ -76,7 +76,7 @@ Example:
 // mod commit ... 
 #[cfg(test)]
 mod test {
-  use crate::git::repository::Repository;
+  use cocogitto_git::Repository::Repository;
   use anyhow::Result;
   use cmd_lib::run_cmd;
   use sealed_test::prelude::*;

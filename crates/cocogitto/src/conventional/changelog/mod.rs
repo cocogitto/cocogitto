@@ -72,3 +72,210 @@ impl Release<'_> {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use crate::conventional::changelog::Release;
+    use cocogitto_git::tag::TagLookUpOptions;
+    use cocogitto_git::Repository;
+    use cocogitto_oid::OidOf;
+    use cocogitto_test_helpers::*;
+    use git2::Oid;
+    use sealed_test::prelude::sealed_test;
+    use sealed_test::prelude::*;
+    use speculoos::prelude::*;
+
+    #[sealed_test]
+    fn shoud_get_range_for_a_single_release() -> anyhow::Result<()> {
+        // Arrange
+        let repo = git_init_no_gpg()?;
+        let one = commit("chore: first commit")?;
+        let two = commit("feat: feature 1")?;
+        let three = commit("feat: feature 2")?;
+        git_tag("0.1.0")?;
+
+        let range = repo.revwalk("0.1.0");
+
+        let range = range?;
+
+        // Act
+        let release = Release::try_from(range)?;
+
+        // Assert
+        assert_that!(release.previous).is_none();
+        assert_that!(release.version.oid()).is_equal_to(&Oid::from_str(&three)?);
+        assert_that!(release.from).is_equal_to(OidOf::FirstCommit(Oid::from_str(&one)?));
+
+        let expected_commits: Vec<String> = release
+            .commits
+            .into_iter()
+            .map(|commit| commit.commit.oid)
+            .collect();
+
+        assert_that!(expected_commits).is_equal_to(vec![three, two, one]);
+
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn shoud_get_range_for_a_multiple_release() -> anyhow::Result<()> {
+        // Arrange
+        let repo = git_init_no_gpg()?;
+        let one = commit("chore: first commit")?;
+        let two = commit("feat: feature 1")?;
+        let three = commit("feat: feature 2")?;
+        git_tag("0.1.0")?;
+        let four = commit("feat: feature 3")?;
+        let five = commit("feat: feature 4")?;
+        git_tag("0.2.0")?;
+
+        let range = repo.revwalk("..0.2.0")?;
+
+        // Act
+        let release = Release::try_from(range)?;
+
+        // Assert
+        assert_that!(release.previous).is_some().matches(|_child| {
+            let commits: Vec<String> = release
+                .previous
+                .as_ref()
+                .unwrap()
+                .commits
+                .iter()
+                .map(|commit| commit.commit.oid.clone())
+                .collect();
+
+            commits == [three.clone(), two.clone(), one.clone()]
+        });
+
+        assert_that!(release.version.to_string()).is_equal_to("0.2.0".to_string());
+        assert_that!(release.from.to_string()).is_equal_to("0.1.0".to_string());
+
+        let expected_commits: Vec<String> = release
+            .commits
+            .into_iter()
+            .map(|commit| commit.commit.oid)
+            .collect();
+
+        assert_that!(expected_commits).is_equal_to(vec![five, four]);
+
+        Ok(())
+    }
+
+    #[test]
+    fn get_release_range_integration_test() -> anyhow::Result<()> {
+        // Arrange
+        let repo = open_cocogitto_repo()?;
+        let range = repo.revwalk("0.32.1..0.32.3")?;
+
+        // Act
+        let release = Release::try_from(range)?;
+
+        // Assert
+        assert_that!(release.version.to_string()).is_equal_to("0.32.3".to_string());
+
+        let release = *release.previous.unwrap();
+        assert_that!(release.version.to_string()).is_equal_to("0.32.2".to_string());
+
+        assert_that!(release.previous).is_none();
+        Ok(())
+    }
+
+    #[test]
+    fn recursive_from_origin_to_head() -> anyhow::Result<()> {
+        // Arrange
+        let repo = Repository::open(&get_workspace_root())?;
+        let mut tag_count = repo.tag_names(None)?.len();
+        let head = repo.get_head_commit_oid()?;
+        let latest = repo.get_latest_tag(TagLookUpOptions::default())?;
+        let latest = latest.oid();
+        if latest == Some(&head) {
+            tag_count -= 1;
+        };
+
+        let range = repo.revwalk("..")?;
+
+        // Act
+        let mut release = Release::try_from(range)?;
+        let mut count = 0;
+
+        while let Some(previous) = release.previous {
+            release = *previous;
+            count += 1;
+        }
+
+        // Assert
+        assert_that!(count).is_equal_to(tag_count);
+
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn from_commit_to_head() -> anyhow::Result<()> {
+        // Arrange
+        let repo = git_init_no_gpg()?;
+
+        commit("chore: init")?;
+        commit("feat: a commit")?;
+        let one = commit("chore: another commit")?;
+        let two = commit("feat: a feature")?;
+        let three = commit("chore: 1.0.0")?;
+        let four = commit("fix: the bug")?;
+
+        let range = repo.revwalk(&format!("{}..", &one[0..7]))?;
+
+        // Act
+        let release = Release::try_from(range)?;
+
+        // Assert
+        let actual_oids: Vec<String> = release
+            .commits
+            .iter()
+            .map(|commit| commit.commit.oid.to_string())
+            .collect();
+
+        assert_that!(actual_oids).is_equal_to(vec![four, three, two]);
+
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn from_commit_to_head_with_overlapping_tag() -> anyhow::Result<()> {
+        // Arrange
+        let repo = git_init_no_gpg()?;
+
+        commit("chore: init")?;
+        commit("feat: a commit")?;
+
+        let from = commit("chore: another commit")?;
+        let one = commit("feat: a feature")?;
+        let two = commit("chore: 1.0.0")?;
+        git_tag("1.0.0")?;
+        let three = commit("fix: the bug")?;
+
+        let range = repo.revwalk(&format!("{}..", &from[0..7]))?;
+
+        // Act
+        let release = Release::try_from(range)?;
+
+        // Assert
+        let head_to_v1: Vec<String> = release
+            .commits
+            .iter()
+            .map(|commit| commit.commit.oid.to_string())
+            .collect();
+
+        let commit_before_v1: Vec<String> = release
+            .previous
+            .unwrap()
+            .commits
+            .iter()
+            .map(|commit| commit.commit.oid.to_string())
+            .collect();
+
+        assert_that!(head_to_v1).is_equal_to(vec![three]);
+        assert_that!(commit_before_v1).is_equal_to(vec![two, one]);
+
+        Ok(())
+    }
+}

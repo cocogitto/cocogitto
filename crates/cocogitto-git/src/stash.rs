@@ -1,9 +1,9 @@
-use crate::git::error::Git2Error;
-use crate::git::repository::Repository;
+use crate::error::Git2Error;
+use crate::Repository;
 use cocogitto_tag::Tag;
 
 impl Repository {
-    pub(crate) fn stash_failed_version(&mut self, tag: Tag) -> Result<(), Git2Error> {
+    pub fn stash_failed_version(&mut self, tag: Tag) -> Result<(), Git2Error> {
         let sig = self.0.signature()?;
         let message = &format!("cog_bump_{tag}");
         self.0
@@ -15,7 +15,7 @@ impl Repository {
 
 #[cfg(test)]
 mod test {
-    use crate::test_helpers::git_init_no_gpg;
+    use crate::test::git_init_no_gpg;
     use anyhow::Result;
     use cmd_lib::run_cmd;
     use cocogitto_config::SETTINGS;

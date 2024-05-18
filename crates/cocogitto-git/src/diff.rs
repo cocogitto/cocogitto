@@ -1,8 +1,8 @@
-use crate::git::repository::Repository;
+use crate::Repository;
 use git2::{Diff, DiffOptions, Object};
 
 impl Repository {
-    pub(crate) fn get_diff(&self, include_untracked: bool) -> Option<Diff> {
+    pub fn get_diff(&self, include_untracked: bool) -> Option<Diff> {
         let mut options = DiffOptions::new();
         options.include_untracked(include_untracked);
 
@@ -27,7 +27,7 @@ impl Repository {
         }
     }
 
-    fn get_head(&self) -> Option<Object> {
+    pub fn get_head(&self) -> Option<Object> {
         self.tree_to_treeish(Some(&"HEAD".to_string()))
             .ok()
             .flatten()
@@ -36,7 +36,7 @@ impl Repository {
 
 #[cfg(test)]
 mod test {
-    use crate::test_helpers::git_init_no_gpg;
+    use crate::test::git_init_no_gpg;
     use anyhow::Result;
     use cmd_lib::run_cmd;
     use sealed_test::prelude::*;

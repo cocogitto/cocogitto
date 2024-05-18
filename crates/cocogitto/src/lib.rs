@@ -5,17 +5,15 @@ use std::process::{Command, Stdio};
 use anyhow::Result;
 
 use cocogitto_config::Settings;
+use cocogitto_git::error::Git2Error;
+use cocogitto_git::rev::cache::get_cache;
+use cocogitto_git::Repository;
 use conventional::version::IncrementCommand;
 use error::BumpError;
-use git::repository::Repository;
-
-use crate::git::error::Git2Error;
-use crate::git::rev::cache::get_cache;
 
 pub mod command;
 pub mod conventional;
 pub mod error;
-pub mod git;
 pub mod log;
 
 #[derive(Debug)]
@@ -90,32 +88,5 @@ impl CocoGitto {
     pub fn clear_cache(&self) {
         let mut cache = get_cache(&self.repository);
         *cache = BTreeMap::new();
-    }
-}
-
-#[cfg(test)]
-pub mod test_helpers {
-    use cargo_metadata::MetadataCommand;
-    use cmd_lib::run_cmd;
-
-    use crate::git::repository::Repository;
-
-    pub fn git_init_no_gpg() -> anyhow::Result<Repository> {
-        run_cmd!(
-            git init -b master;
-            git config --local commit.gpgsign false;
-        )?;
-
-        Ok(Repository::open(".")?)
-    }
-
-    pub fn open_cocogitto_repo() -> anyhow::Result<Repository> {
-        let metadata = MetadataCommand::new()
-            .exec()
-            .expect("Failed to get cargo metadata");
-        let workspace = metadata.workspace_root;
-
-        let repo = Repository::open(&workspace)?;
-        Ok(repo)
     }
 }

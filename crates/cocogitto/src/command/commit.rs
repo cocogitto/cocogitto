@@ -44,7 +44,7 @@ impl CocoGitto {
         let oid = self.repository.commit(&conventional_message, sign, false)?;
 
         // Pretty print a conventional commit summary
-        let commit = self.repository.0.find_commit(oid)?;
+        let commit = self.repository.find_commit(oid)?;
         let commit = Commit::from_git_commit(&commit)?;
         info!("{}", commit);
 

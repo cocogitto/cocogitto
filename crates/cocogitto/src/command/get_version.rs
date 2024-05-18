@@ -1,9 +1,9 @@
 use anyhow::bail;
 use anyhow::Result;
+use cocogitto_git::tag::TagLookUpOptions;
 use log::warn;
 use semver::Version;
 
-use crate::git::tag::TagLookUpOptions;
 use crate::CocoGitto;
 use cocogitto_tag::error::TagError;
 

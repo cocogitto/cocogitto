@@ -1,12 +1,12 @@
-use crate::git::error::Git2Error;
-use crate::git::repository::Repository;
+use crate::error::Git2Error;
+use crate::Repository;
 use git2::{Commit, ObjectType, Oid, ResetType, Signature, Tree};
 use std::fs;
 use std::io::{Read, Write};
 use std::process::{Command, Stdio};
 
 impl Repository {
-    pub(crate) fn commit(
+    pub fn commit(
         &self,
         message: &str,
         sign: bool,
@@ -192,8 +192,8 @@ fn ssh_sign_string(
 
 #[cfg(test)]
 mod test {
-    use crate::git::repository::Repository;
-    use crate::test_helpers::git_init_no_gpg;
+    use crate::test::git_init_no_gpg;
+    use crate::Repository;
     use anyhow::Result;
     use cmd_lib::{run_cmd, run_fun};
     use sealed_test::prelude::*;

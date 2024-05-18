@@ -1,4 +1,4 @@
-use crate::git::error::Git2Error;
+use cocogitto_git::error::Git2Error;
 use cocogitto_tag::error::TagError;
 use std::fmt;
 use std::fmt::{Display, Formatter};

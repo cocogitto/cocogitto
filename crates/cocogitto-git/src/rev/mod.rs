@@ -7,7 +7,7 @@ pub mod revspec;
 pub mod revwalk;
 
 #[derive(Debug)]
-pub struct CommitIter<'repo>(Vec<(OidOf, Commit<'repo>)>);
+pub struct CommitIter<'repo>(pub Vec<(OidOf, Commit<'repo>)>);
 
 impl<'repo> CommitIter<'repo> {
     pub fn from_oid(&self) -> OidOf {

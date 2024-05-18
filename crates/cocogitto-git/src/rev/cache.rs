@@ -1,4 +1,4 @@
-use crate::git::repository::Repository;
+use crate::Repository;
 use cocogitto_config::SETTINGS;
 use cocogitto_oid::OidOf;
 use cocogitto_tag::error::TagError;
@@ -12,7 +12,7 @@ static REPO_CACHE: Lazy<Arc<Mutex<BTreeMap<String, OidOf>>>> =
 
 static FIRST_COMMIT: OnceCell<OidOf> = OnceCell::new();
 
-pub(crate) fn get_cache(repository: &Repository) -> MutexGuard<'_, BTreeMap<String, OidOf>> {
+pub fn get_cache(repository: &Repository) -> MutexGuard<'_, BTreeMap<String, OidOf>> {
     let mut cache = REPO_CACHE.lock().unwrap();
     if cache.is_empty() {
         let head = repository.get_head_commit().expect("HEAD");
@@ -52,7 +52,7 @@ pub(crate) fn get_cache(repository: &Repository) -> MutexGuard<'_, BTreeMap<Stri
 }
 
 impl Repository {
-    fn resolve_tag(&self, tag: &str) -> Result<Tag, TagError> {
+    pub fn resolve_tag(&self, tag: &str) -> Result<Tag, TagError> {
         self.0
             .resolve_reference_from_short_name(tag)
             .map_err(|err| TagError::not_found(tag, err))
@@ -84,22 +84,17 @@ impl Repository {
 #[cfg(test)]
 mod test {
 
-    use crate::git::repository::Repository;
-    use crate::git::rev::cache::get_cache;
-    use crate::test_helpers::git_init_no_gpg;
-    use cargo_metadata::MetadataCommand;
+    use crate::rev::cache::get_cache;
+    use crate::test::{get_workspace_root, git_init_no_gpg};
+    use crate::Repository;
     use cmd_lib::run_cmd;
     use sealed_test::prelude::*;
     use speculoos::prelude::*;
 
     #[test]
     fn init_cache_ok() -> anyhow::Result<()> {
-        let metadata = MetadataCommand::new()
-            .exec()
-            .expect("Failed to get cargo metadata");
-        let workspace = metadata.workspace_root;
-
-        let repo = Repository::open(&workspace)?;
+        let ws = get_workspace_root();
+        let repo = Repository::open(&ws)?;
         let cache = get_cache(&repo);
         assert_that!(cache.is_empty()).is_false();
         Ok(())

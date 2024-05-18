@@ -1,11 +1,11 @@
 use chrono::{NaiveDateTime, Utc};
 use serde::Serialize;
 
-use crate::git::rev::CommitIter;
 use cocogitto_commit::{Commit, Footer};
 use colored::Colorize;
 
 use crate::conventional::changelog::error::ChangelogError;
+use cocogitto_git::rev::CommitIter;
 use cocogitto_oid::OidOf;
 use log::warn;
 
@@ -127,8 +127,8 @@ mod test {
     };
     use cocogitto_commit::{Commit, CommitType, ConventionalCommit, Footer};
 
-    use crate::test_helpers::open_cocogitto_repo;
     use cocogitto_tag::Tag;
+    use cocogitto_test_helpers::open_cocogitto_repo;
 
     #[test]
     fn should_get_a_release() -> anyhow::Result<()> {

@@ -15,10 +15,10 @@ cocogitto-oid = { path = "crates/cocogitto-oid" }
 cocogitto-hook = { path = "crates/cocogitto-hook" }
 cocogitto-changelog = { path = "crates/cocogitto-changelog" }
 cocogitto-commit = { path = "crates/cocogitto-commit" }
+cocogitto-git = { path = "crates/cocogitto-git" }
 cocogitto-test-helpers = { path = "crates/cocogitto-test-helpers" }
 cocogitto = { path = "crates/cocogitto" }
 semver = "1.0.23"
-# TODO: DELETE ME
 colored = "^2"
 toml = "0.5.11"
 edit = "^0"
@@ -31,6 +31,8 @@ once_cell = "^1"
 log = "0.4.21"
 anyhow = "1.0.75"
 chrono = { version = "0.4.35", features = ["serde"] }
+tempfile = "^3"
+globset = "0.4.14"
 
 # Gix
 git2 = { version = "0.18.2", default-features = false, features = [] }

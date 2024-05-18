@@ -1,9 +1,9 @@
 use cocogitto_commit::{verify, Commit};
 
-use crate::git::tag::TagLookUpOptions;
 use crate::CocoGitto;
 use anyhow::{anyhow, Result};
 use cocogitto_config::SETTINGS;
+use cocogitto_git::tag::TagLookUpOptions;
 use colored::*;
 use git2::{Oid, RebaseOptions};
 use log::{error, info, warn};
@@ -43,7 +43,6 @@ impl CocoGitto {
         if let Some(last_errored_commit) = last_errored_commit {
             let commit = self
                 .repository
-                .0
                 .find_commit(last_errored_commit.to_owned())?;
 
             let rebase_start = if commit.parent_count() == 0 {
@@ -52,12 +51,11 @@ impl CocoGitto {
                 commit.parent_id(0)?
             };
 
-            let commit = self.repository.0.find_annotated_commit(rebase_start)?;
+            let commit = self.repository.find_annotated_commit(rebase_start)?;
             let mut options = RebaseOptions::new();
 
             let mut rebase =
                 self.repository
-                    .0
                     .rebase(None, Some(&commit), None, Some(&mut options))?;
 
             let editor = &editor;
@@ -65,7 +63,7 @@ impl CocoGitto {
             while let Some(op) = rebase.next() {
                 if let Ok(rebase_operation) = op {
                     let oid = rebase_operation.id();
-                    let original_commit = self.repository.0.find_commit(oid)?;
+                    let original_commit = self.repository.find_commit(oid)?;
                     if errored_commits.contains(&oid) {
                         warn!("Found errored commits:{}", &oid.to_string()[0..7]);
                         let file_path = dir.path().join(commit.id().to_string());

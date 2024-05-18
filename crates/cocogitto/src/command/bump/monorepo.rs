@@ -10,13 +10,13 @@ use crate::conventional::changelog::ReleaseType;
 
 use crate::conventional::version::IncrementCommand;
 
-use crate::git::tag::TagLookUpOptions;
 use crate::CocoGitto;
 use anyhow::Result;
 use cocogitto_config::SETTINGS;
 use colored::*;
 
 use crate::conventional::bump::bump;
+use cocogitto_git::tag::TagLookUpOptions;
 use cocogitto_hook::HookVersion;
 use cocogitto_oid::OidOf;
 use cocogitto_tag::increment::Increment;

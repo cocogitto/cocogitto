@@ -6,10 +6,10 @@ use crate::conventional::changelog::template::get_changelog_template;
 use crate::conventional::changelog::ReleaseType;
 
 use crate::conventional::bump::bump;
-use crate::git::tag::TagLookUpOptions;
 use crate::CocoGitto;
 use anyhow::Result;
 use cocogitto_config::SETTINGS;
+use cocogitto_git::tag::TagLookUpOptions;
 use cocogitto_hook::HookVersion;
 use cocogitto_tag::Tag;
 use colored::*;

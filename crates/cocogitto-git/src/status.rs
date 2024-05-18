@@ -1,15 +1,14 @@
 use std::fmt::{self, Display, Formatter};
 
-use crate::git::status::Changes::{Deleted, Modified, New, Renamed, TypeChange};
-
-use crate::git::error::Git2Error;
-use crate::git::repository::Repository;
+use crate::error::Git2Error;
+use crate::status::Changes::{Deleted, Modified, New, Renamed, TypeChange};
+use crate::Repository;
 use colored::*;
 use git2::Statuses as Git2Statuses;
 use git2::{StatusEntry as Git2StatusEntry, StatusOptions};
 
 impl Repository {
-    pub(crate) fn get_statuses(&self) -> Result<Statuses, Git2Error> {
+    pub fn get_statuses(&self) -> Result<Statuses, Git2Error> {
         let mut options = StatusOptions::new();
         options.include_untracked(true);
         options.exclude_submodules(true);
@@ -128,9 +127,9 @@ impl<'a, 'b: 'a> From<Git2StatusEntry<'b>> for Status {
 mod test {
     use std::fs;
 
-    use crate::git::status::{Changes, Statuses};
+    use crate::status::{Changes, Statuses};
 
-    use crate::test_helpers::git_init_no_gpg;
+    use crate::test::git_init_no_gpg;
     use anyhow::{anyhow, Result};
     use git2::StatusOptions;
     use sealed_test::prelude::*;

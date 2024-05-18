@@ -20,13 +20,15 @@ cocogitto-tag.workspace = true
 cocogitto-hook.workspace = true
 cocogitto-oid.workspace = true
 cocogitto-commit.workspace = true
+cocogitto-git.workspace = true
 git2 = { version = "0.18.2", default-features = false, features = [] }
 # Do not bump anyhow, (see: https://github.com/dtolnay/anyhow/issues/353)
 anyhow.workspace = true
 colored.workspace = true
 chrono.workspace = true
+tempfile.workspace = true
+globset.workspace = true
 serde = { version = "^1", features = ["derive"] }
-tempfile = "^3"
 semver = "^1"
 shell-words = "^1"
 which = "6.0.0"
@@ -34,7 +36,6 @@ once_cell = "^1"
 # Don't bump yet (see https://github.com/cocogitto/cocogitto/issues/337)
 toml.workspace = true
 tera = "1.19.1"
-globset = "0.4.14"
 log = "0.4.21"
 itertools.workspace = true
 
@@ -48,4 +49,3 @@ speculoos = "0.11.0"
 pretty_assertions = "1.4.0"
 sealed_test = "1.0.0"
 cmd_lib = "1.9.3"
-cargo_metadata.workspace = true

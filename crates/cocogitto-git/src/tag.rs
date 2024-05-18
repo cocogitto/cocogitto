@@ -1,12 +1,12 @@
 use git2::Oid;
 
+use crate::error::Git2Error;
+use crate::rev::cache::get_cache;
+use crate::Repository;
 use cocogitto_config::SETTINGS;
 use cocogitto_oid::OidOf;
 use cocogitto_tag::error::TagError;
 use cocogitto_tag::Tag;
-
-use crate::git::error::Git2Error;
-use crate::git::repository::Repository;
 
 #[derive(Debug, Default)]
 pub struct TagLookUpOptions<'a> {
@@ -47,7 +47,7 @@ impl<'a> TagLookUpOptions<'a> {
 }
 
 impl Repository {
-    pub(crate) fn create_tag(&self, tag: &Tag, disable_bump_commit: bool) -> Result<(), Git2Error> {
+    pub fn create_tag(&self, tag: &Tag, disable_bump_commit: bool) -> Result<(), Git2Error> {
         if !disable_bump_commit && self.get_diff(true).is_some() {
             let statuses = self.get_statuses()?;
             return Err(Git2Error::ChangesNeedToBeCommitted(statuses));
@@ -60,7 +60,7 @@ impl Repository {
             .map_err(Git2Error::from)
     }
 
-    pub(crate) fn create_annotated_tag(
+    pub fn create_annotated_tag(
         &self,
         tag: &Tag,
         msg: &str,
@@ -80,7 +80,7 @@ impl Repository {
     }
 
     /// Get the latest tag, will ignore package tag if on a monorepo
-    pub(crate) fn get_latest_tag(&self, options: TagLookUpOptions) -> Result<Tag, TagError> {
+    pub fn get_latest_tag(&self, options: TagLookUpOptions) -> Result<Tag, TagError> {
         let tags: Vec<Tag> = self.tag_lookup(options)?;
         tags.into_iter().max().ok_or(TagError::NoTag)
     }
@@ -119,14 +119,14 @@ impl Repository {
         Ok(tags.get(current_idx - 1).cloned())
     }
 
-    pub(crate) fn get_latest_tag_oid(&self, options: TagLookUpOptions) -> Result<Oid, TagError> {
+    pub fn get_latest_tag_oid(&self, options: TagLookUpOptions) -> Result<Oid, TagError> {
         self.get_latest_tag(options)
             .map(|tag| tag.oid_unchecked().to_owned())
     }
 
     pub fn tag_lookup(&self, option: TagLookUpOptions) -> Result<Vec<Tag>, TagError> {
         let prefix = SETTINGS.tag_prefix.as_ref();
-        let repo_cache = crate::git::rev::cache::get_cache(self);
+        let repo_cache = get_cache(self);
         let include_pre_release = option.include_pre_release;
 
         let tag_filter = |tag: &Tag| {
@@ -163,13 +163,13 @@ mod test {
     use semver::Version;
     use speculoos::prelude::*;
 
+    use crate::test::commit;
+    use crate::test::git_tag;
     use cocogitto_config::monorepo::MonoRepoPackage;
     use cocogitto_config::{Settings, SETTINGS};
-    use cocogitto_test_helpers::commit;
-    use cocogitto_test_helpers::git_tag;
 
-    use crate::git::tag::{Tag, TagLookUpOptions};
-    use crate::test_helpers::git_init_no_gpg;
+    use crate::tag::{Tag, TagLookUpOptions};
+    use crate::test::git_init_no_gpg;
 
     #[test]
     fn should_compare_tags() -> Result<()> {

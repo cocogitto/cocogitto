@@ -1,18 +1,31 @@
 use cmd_lib::{run_cmd, run_fun};
-use cocogitto::git::repository::Repository;
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 use anyhow::anyhow;
 use anyhow::Result;
+use cargo_metadata::MetadataCommand;
 use cocogitto_config::monorepo::MonoRepoPackage;
 use cocogitto_config::{Settings, CONFIG_PATH, SETTINGS};
+use cocogitto_git::Repository;
 use speculoos::assert_that;
 use speculoos::iter::ContainingIntoIterAssertions;
 use speculoos::option::OptionAssertions;
 
 use cocogitto_tag::Tag;
+
+pub fn get_workspace_root() -> PathBuf {
+    let metadata = MetadataCommand::new()
+        .exec()
+        .expect("Failed to get cargo metadata");
+
+    metadata.workspace_root.into()
+}
+pub fn open_cocogitto_repo() -> anyhow::Result<Repository> {
+    let repo = Repository::open(&get_workspace_root())?;
+    Ok(repo)
+}
 
 /// Init a new repository on branch master and disable gpg signing
 pub fn git_init_no_gpg() -> anyhow::Result<Repository> {

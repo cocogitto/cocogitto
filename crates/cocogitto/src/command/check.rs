@@ -1,10 +1,10 @@
 use crate::error::CogCheckReport;
 
-use crate::git::tag::TagLookUpOptions;
 use crate::CocoGitto;
 use anyhow::anyhow;
 use anyhow::Result;
 use cocogitto_commit::Commit;
+use cocogitto_git::tag::TagLookUpOptions;
 use colored::*;
 use log::info;
 

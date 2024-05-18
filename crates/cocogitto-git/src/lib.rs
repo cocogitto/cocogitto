@@ -1,10 +1,21 @@
 use std::fmt::{Debug, Formatter};
 use std::path::Path;
 
-use crate::git::error::Git2Error;
+use error::Git2Error;
 use git2::{
-    Commit as Git2Commit, IndexAddOption, Object, ObjectType, Oid, Repository as Git2Repository,
+    AnnotatedCommit, Commit as Git2Commit, Commit, IndexAddOption, Object, ObjectType, Oid, Rebase,
+    RebaseOptions, Repository as Git2Repository,
 };
+
+pub mod commit;
+pub mod diff;
+pub mod error;
+pub mod hook;
+pub mod monorepo;
+pub mod rev;
+pub mod stash;
+pub mod status;
+pub mod tag;
 
 pub struct Repository(pub(crate) Git2Repository);
 
@@ -14,7 +25,7 @@ impl Repository {
         config.get_string("user.signingKey").map_err(Into::into)
     }
 
-    pub(crate) fn gpg_sign(&self) -> bool {
+    pub fn gpg_sign(&self) -> bool {
         let config = self.0.config().expect("failed to retrieve gitconfig");
         config.get_bool("commit.gpgSign").unwrap_or(false)
     }
@@ -62,7 +73,7 @@ impl Repository {
             .is_ok_and(|s| s.to_lowercase() == "x509")
     }
 
-    pub(crate) fn init<S: AsRef<Path> + ?Sized>(path: &S) -> Result<Repository, Git2Error> {
+    pub fn init<S: AsRef<Path> + ?Sized>(path: &S) -> Result<Repository, Git2Error> {
         let repository =
             Git2Repository::init(path).map_err(Git2Error::FailedToInitializeRepository)?;
         Ok(Repository(repository))
@@ -73,27 +84,40 @@ impl Repository {
         Ok(Repository(repo))
     }
 
-    pub(crate) fn get_repo_dir(&self) -> Option<&Path> {
+    pub fn get_repo_dir(&self) -> Option<&Path> {
         self.0.workdir()
     }
 
-    pub(crate) fn add_all(&self) -> Result<(), Git2Error> {
+    pub fn add_all(&self) -> Result<(), Git2Error> {
         let mut index = self.0.index()?;
         index.add_all(["."], IndexAddOption::DEFAULT, None)?;
         index.write().map_err(Git2Error::GitAddError)
     }
 
-    pub(crate) fn update_all(&self) -> Result<(), Git2Error> {
+    pub fn update_all(&self) -> Result<(), Git2Error> {
         let mut index = self.0.index()?;
         index.update_all(["."], None)?;
         index.write().map_err(Git2Error::GitAddError)
     }
 
-    pub(crate) fn get_head_commit_oid(&self) -> Result<Oid, Git2Error> {
+    pub fn tag_names(&self, pattern: Option<&str>) -> Result<Vec<String>, Git2Error> {
+        self.0
+            .tag_names(pattern)
+            .map(|array| {
+                array
+                    .iter()
+                    .flatten()
+                    .map(ToString::to_string)
+                    .collect::<Vec<String>>()
+            })
+            .map_err(Git2Error::from)
+    }
+
+    pub fn get_head_commit_oid(&self) -> Result<Oid, Git2Error> {
         self.get_head_commit().map(|commit| commit.id())
     }
 
-    pub(crate) fn get_head_commit(&self) -> Result<Git2Commit, Git2Error> {
+    pub fn get_head_commit(&self) -> Result<Git2Commit, Git2Error> {
         let head_ref = self.0.head();
         match head_ref {
             Ok(head) => head.peel_to_commit().map_err(Git2Error::PeelToCommitError),
@@ -101,7 +125,28 @@ impl Repository {
         }
     }
 
-    pub(crate) fn get_first_commit(&self) -> Result<Oid, Git2Error> {
+    pub fn rebase(
+        &self,
+        branch: Option<&AnnotatedCommit<'_>>,
+        upstream: Option<&AnnotatedCommit<'_>>,
+        onto: Option<&AnnotatedCommit<'_>>,
+        opts: Option<&mut RebaseOptions<'_>>,
+    ) -> Result<Rebase, Git2Error> {
+        let rebase = self.0.rebase(branch, upstream, onto, opts)?;
+        Ok(rebase)
+    }
+
+    pub fn find_annotated_commit(&self, oid: Oid) -> Result<AnnotatedCommit, Git2Error> {
+        let commit = self.0.find_annotated_commit(oid)?;
+        Ok(commit)
+    }
+
+    pub fn find_commit(&self, oid: Oid) -> Result<Commit, Git2Error> {
+        let commit = self.0.find_commit(oid)?;
+        Ok(commit)
+    }
+
+    pub fn get_first_commit(&self) -> Result<Oid, Git2Error> {
         let mut revwalk = self.0.revwalk()?;
         revwalk.push_head()?;
         revwalk
@@ -110,14 +155,14 @@ impl Repository {
             .map_err(Git2Error::CommitNotFound)
     }
 
-    pub(crate) fn get_branch_shorthand(&self) -> Option<String> {
+    pub fn get_branch_shorthand(&self) -> Option<String> {
         self.0
             .head()
             .ok()
             .and_then(|head| head.shorthand().map(|shorthand| shorthand.to_string()))
     }
 
-    pub(crate) fn get_author(&self) -> Result<String, Git2Error> {
+    pub fn get_author(&self) -> Result<String, Git2Error> {
         self.0
             .signature()?
             .name()
@@ -150,13 +195,47 @@ mod test {
     use std::path::PathBuf;
     use std::str::FromStr;
 
-    use anyhow::Result;
-    use cmd_lib::run_cmd;
+    use anyhow::{anyhow, Result};
+    use cargo_metadata::MetadataCommand;
+    use cmd_lib::{run_cmd, run_fun};
     use sealed_test::prelude::*;
     use speculoos::prelude::*;
 
-    use crate::git::repository::Repository;
-    use crate::test_helpers::git_init_no_gpg;
+    use crate::Repository;
+
+    /// FIXME: WE need to duplicate this here to avoid cyclic dependencies
+    ///  Maybe the solution is to move test-helper to the git crate (hid it behind a feature flag
+    pub fn git_init_no_gpg() -> anyhow::Result<Repository> {
+        run_cmd!(
+            git init -b master;
+            git config --local commit.gpgsign false;
+        )?;
+
+        Ok(Repository::open(".")?)
+    }
+
+    pub fn get_workspace_root() -> PathBuf {
+        let metadata = MetadataCommand::new()
+            .exec()
+            .expect("Failed to get cargo metadata");
+
+        metadata.workspace_root.into()
+    }
+
+    pub fn commit(message: &str) -> anyhow::Result<String> {
+        Ok(run_fun!(
+        git commit --allow-empty -q -m $message;
+        git log --format=%H -n 1;
+        )?)
+    }
+
+    /// Create a git tag on the current repository
+    pub fn git_tag(tag: &str) -> Result<()> {
+        run_cmd!(
+            git tag $tag;
+        )
+        .map_err(|e| anyhow!(e))
+    }
 
     #[sealed_test]
     fn init_repo() -> Result<()> {

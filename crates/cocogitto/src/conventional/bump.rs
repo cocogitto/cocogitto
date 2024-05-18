@@ -1,12 +1,12 @@
 use cocogitto_commit::Commit;
 use cocogitto_config::SETTINGS;
+use cocogitto_git::tag::TagLookUpOptions;
 use cocogitto_tag::increment::Increment;
 use cocogitto_tag::Tag;
 use git2::Commit as Git2Commit;
 use once_cell::sync::Lazy;
 
 use crate::conventional::error::BumpError;
-use crate::git::tag::TagLookUpOptions;
 use crate::{IncrementCommand, Repository};
 
 static FILTER_MERGE_COMMITS: Lazy<fn(&&git2::Commit) -> bool> = Lazy::new(|| {
@@ -202,11 +202,11 @@ mod test {
     use crate::conventional::bump::version_increment_from_commit_history;
     use crate::conventional::error::BumpError;
     use crate::conventional::version::IncrementCommand;
-    use crate::git::repository::Repository;
-    use crate::test_helpers::git_init_no_gpg;
     use cocogitto_commit::{Commit, CommitType};
+    use cocogitto_git::Repository;
     use cocogitto_tag::increment::Increment;
     use cocogitto_tag::Tag;
+    use cocogitto_test_helpers::git_init_no_gpg;
 
     #[sealed_test]
     fn major_bump() -> Result<()> {
