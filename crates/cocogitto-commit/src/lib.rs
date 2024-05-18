@@ -3,7 +3,6 @@ use std::fmt::{self, Formatter};
 
 pub use crate::error::ConventionalCommitError;
 use chrono::{DateTime, NaiveDateTime, Utc};
-use cocogitto_config::SETTINGS;
 use colored::*;
 use conventional_commit_parser::parse_footers;
 use git2::Commit as Git2Commit;
@@ -54,7 +53,10 @@ pub struct Commit {
 }
 
 impl Commit {
-    pub fn from_git_commit(commit: &Git2Commit) -> Result<Self, Box<ConventionalCommitError>> {
+    pub fn from_git_commit(
+        commit: &Git2Commit,
+        allowed: &[CommitType],
+    ) -> Result<Self, Box<ConventionalCommitError>> {
         let oid = commit.id().to_string();
 
         let commit = commit.to_owned();
@@ -77,18 +79,16 @@ impl Commit {
                     date,
                 };
 
-                match &SETTINGS
-                    .commit_types()
-                    .get(&commit.conventional.commit_type)
-                {
-                    Some(_) => Ok(commit),
-                    None => Err(Box::new(ConventionalCommitError::CommitTypeNotAllowed {
-                        oid: commit.oid.to_string(),
-                        summary: format_summary(&commit.conventional),
-                        commit_type: commit.conventional.commit_type.to_string(),
-                        author: commit.author,
-                    })),
-                }
+                if allowed.contains(&commit.conventional.commit_type) {
+                    return Ok(commit);
+                };
+
+                Err(Box::new(ConventionalCommitError::CommitTypeNotAllowed {
+                    oid: commit.oid.to_string(),
+                    summary: format_summary(&commit.conventional),
+                    commit_type: commit.conventional.commit_type.to_string(),
+                    author: commit.author,
+                }))
             }
             Err(cause) => {
                 let message = git2_message.trim_end();
@@ -111,33 +111,8 @@ impl Commit {
         }
     }
 
-    pub fn should_omit(&self) -> bool {
-        SETTINGS
-            .commit_types()
-            .get(&self.conventional.commit_type)
-            .map_or(false, |config| config.omit_from_changelog)
-    }
-
     pub fn is_major_bump(&self) -> bool {
         self.conventional.is_breaking_change
-    }
-
-    pub fn is_minor_bump(&self) -> bool {
-        let commit_settings = SETTINGS.commit_types();
-        let Some(commit_config) = commit_settings.get(&self.conventional.commit_type) else {
-            return false;
-        };
-
-        commit_config.bump_minor
-    }
-
-    pub fn is_patch_bump(&self) -> bool {
-        let commit_settings = SETTINGS.commit_types();
-        let Some(commit_config) = commit_settings.get(&self.conventional.commit_type) else {
-            return false;
-        };
-
-        commit_config.bump_patch
     }
 
     pub fn get_log(&self) -> String {
@@ -244,6 +219,7 @@ pub fn verify(
     author: Option<String>,
     message: &str,
     ignore_merge_commit: bool,
+    allowed_types: &[CommitType],
 ) -> Result<(), Box<ConventionalCommitError>> {
     // Strip away comments from git message before parsing
     let msg: String = message
@@ -262,8 +238,8 @@ pub fn verify(
     let commit = conventional_commit_parser::parse(msg);
 
     match commit {
-        Ok(commit) => match &SETTINGS.commit_types().get(&commit.commit_type) {
-            Some(_) => {
+        Ok(commit) => {
+            if allowed_types.contains(&commit.commit_type) {
                 info!(
                     "{}",
                     Commit {
@@ -274,14 +250,16 @@ pub fn verify(
                     }
                 );
                 Ok(())
+            } else {
+                Err(Box::new(ConventionalCommitError::CommitTypeNotAllowed {
+                    oid: "not committed".to_string(),
+                    summary: format_summary(&commit),
+                    commit_type: commit.commit_type.to_string(),
+                    author: author.unwrap_or_else(|| "Unknown".to_string()),
+                }))
             }
-            None => Err(Box::new(ConventionalCommitError::CommitTypeNotAllowed {
-                oid: "not committed".to_string(),
-                summary: format_summary(&commit),
-                commit_type: commit.commit_type.to_string(),
-                author: author.unwrap_or_else(|| "Unknown".to_string()),
-            })),
-        },
+        }
+
         Err(err) => Err(Box::new(ConventionalCommitError::ParseError(err))),
     }
 }
@@ -356,6 +334,7 @@ mod test {
     use anyhow::Result;
     use chrono::DateTime;
     use cocogitto_config::commit::CommitConfig;
+    use cocogitto_config::SETTINGS;
     use cocogitto_test_helpers::commit;
     use cocogitto_test_helpers::git_init_no_gpg;
     use conventional_commit_parser::commit::{CommitType, ConventionalCommit, Footer, Separator};
@@ -428,7 +407,12 @@ mod test {
         let message = "feat(database): add postgresql driver";
 
         // Act
-        let result = verify(Some("toml".into()), message, false);
+        let result = verify(
+            Some("toml".into()),
+            message,
+            false,
+            &SETTINGS.allowed_commit_types(),
+        );
 
         // Assert
         assert_that!(result).is_ok();
@@ -446,7 +430,12 @@ mod test {
         );
 
         // Act
-        let result = verify(Some("toml".into()), message, false);
+        let result = verify(
+            Some("toml".into()),
+            message,
+            false,
+            &SETTINGS.allowed_commit_types(),
+        );
 
         // Assert
         assert_that!(result).is_ok();
@@ -458,7 +447,12 @@ mod test {
         let message = "feat add postgresql driver";
 
         // Act
-        let result = verify(Some("toml".into()), message, false);
+        let result = verify(
+            Some("toml".into()),
+            message,
+            false,
+            &SETTINGS.allowed_commit_types(),
+        );
 
         // Assert
         assert_that!(result).is_err();
@@ -470,7 +464,12 @@ mod test {
         let message = "post: add postgresql driver";
 
         // Act
-        let result = verify(Some("toml".into()), message, false);
+        let result = verify(
+            Some("toml".into()),
+            message,
+            false,
+            &SETTINGS.allowed_commit_types(),
+        );
 
         // Assert
         assert_that!(result).is_err();
@@ -491,7 +490,7 @@ mod test {
             "
         );
 
-        let outcome = verify(None, message, false);
+        let outcome = verify(None, message, false, &SETTINGS.allowed_commit_types());
 
         assert_that!(outcome).is_ok();
         Ok(())
@@ -586,7 +585,7 @@ mod test {
         let commit = repo.find_commit(oid).expect("Unable to find commit");
 
         // Act
-        let commit = Commit::from_git_commit(&commit);
+        let commit = Commit::from_git_commit(&commit, &SETTINGS.allowed_commit_types());
 
         // Assert
         assert_that!(commit).is_ok();
@@ -602,7 +601,7 @@ mod test {
         let commit = repo.find_commit(oid).expect("Unable to find commit");
 
         // Act
-        let commit = Commit::from_git_commit(&commit);
+        let commit = Commit::from_git_commit(&commit, &SETTINGS.allowed_commit_types());
 
         // Assert
         assert_that!(commit).is_err();
@@ -619,7 +618,7 @@ mod test {
         let commit = repo.find_commit(oid).expect("Unable to find commit");
 
         // Act
-        let commit = Commit::from_git_commit(&commit);
+        let commit = Commit::from_git_commit(&commit, &SETTINGS.allowed_commit_types());
 
         // Assert
         assert_that!(commit).is_err();

@@ -2,6 +2,7 @@ use crate::CocoGitto;
 use crate::CommitHook::CommitMessage;
 use anyhow::Result;
 use cocogitto_commit::{validate_and_get_message, Commit};
+use cocogitto_config::SETTINGS;
 use log::info;
 use std::fs;
 
@@ -45,7 +46,7 @@ impl CocoGitto {
 
         // Pretty print a conventional commit summary
         let commit = self.repository.find_commit(oid)?;
-        let commit = Commit::from_git_commit(&commit)?;
+        let commit = Commit::from_git_commit(&commit, &SETTINGS.allowed_commit_types())?;
         info!("{}", commit);
 
         Ok(())

@@ -1,3 +1,5 @@
+use crate::Settings;
+use conventional_commit_parser::commit::CommitType;
 use serde::{Deserialize, Serialize};
 
 /// Configurations to create new conventional commit types or override behaviors of the existing ones.
@@ -14,6 +16,36 @@ pub struct CommitConfig {
     /// Allow for this commit type to bump the patch version.
     #[serde(default)]
     pub bump_patch: bool,
+}
+
+impl Settings {
+    pub fn allowed_commit_types(&self) -> Vec<CommitType> {
+        self.commit_types().keys().cloned().collect()
+    }
+
+    pub fn should_omit_commit(&self, r#type: &CommitType) -> bool {
+        self.commit_types()
+            .get(r#type)
+            .map_or(false, |config| config.omit_from_changelog)
+    }
+
+    pub fn is_minor_bump(&self, r#type: &CommitType) -> bool {
+        let commit_settings = self.commit_types();
+        let Some(commit_config) = commit_settings.get(r#type) else {
+            return false;
+        };
+
+        commit_config.bump_minor
+    }
+
+    pub fn is_patch_bump(&self, r#type: &CommitType) -> bool {
+        let commit_settings = self.commit_types();
+        let Some(commit_config) = commit_settings.get(r#type) else {
+            return false;
+        };
+
+        commit_config.bump_patch
+    }
 }
 
 impl CommitConfig {

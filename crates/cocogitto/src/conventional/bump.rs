@@ -53,7 +53,7 @@ fn auto_bump(tag: &Tag, repository: &Repository) -> Result<Tag, BumpError> {
 
     let conventional_commits: Vec<Commit> = commits
         .iter()
-        .map(|commit| Commit::from_git_commit(commit))
+        .map(|commit| Commit::from_git_commit(commit, &SETTINGS.allowed_commit_types()))
         .filter_map(Result::ok)
         .collect();
 
@@ -103,7 +103,7 @@ fn auto_package_bump(tag: &Tag, package: &str, repository: &Repository) -> Resul
 
     let conventional_commits: Vec<Commit> = commits
         .iter()
-        .map(|commit| Commit::from_git_commit(commit))
+        .map(|commit| Commit::from_git_commit(commit, &SETTINGS.allowed_commit_types()))
         .filter_map(Result::ok)
         .collect();
 
@@ -123,9 +123,17 @@ pub fn version_increment_from_commit_history(
 ) -> Result<Increment, BumpError> {
     let is_major_bump = || tag.version.major != 0 && commits.iter().any(Commit::is_major_bump);
 
-    let is_minor_bump = || commits.iter().any(Commit::is_minor_bump);
+    let is_minor_bump = || {
+        commits
+            .iter()
+            .any(|c| SETTINGS.is_minor_bump(&c.conventional.commit_type))
+    };
 
-    let is_patch_bump = || commits.iter().any(Commit::is_patch_bump);
+    let is_patch_bump = || {
+        commits
+            .iter()
+            .any(|c| SETTINGS.is_patch_bump(&c.conventional.commit_type))
+    };
 
     // At this point, it is not a major, minor or patch bump, but we might have found conventional commits
     // -> Must be only chore, docs, refactor ... which means commits that don't require bump but shouldn't throw error
@@ -163,7 +171,7 @@ fn get_monorepo_global_version_from_commit_history(
 
     let conventional_commits: Vec<Commit> = commits
         .iter()
-        .map(|commit| Commit::from_git_commit(commit))
+        .map(|commit| Commit::from_git_commit(commit, &SETTINGS.allowed_commit_types()))
         .filter_map(Result::ok)
         .collect();
 

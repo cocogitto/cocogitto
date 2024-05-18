@@ -507,7 +507,12 @@ fn main() -> Result<()> {
                 (Some(_), Some(_)) => unreachable!(),
             };
 
-            cocogitto::conventional::verify(author, &commit_message, ignore_merge_commits)?;
+            cocogitto::conventional::verify(
+                author,
+                &commit_message,
+                ignore_merge_commits,
+                &SETTINGS.allowed_commit_types(),
+            )?;
         }
         Command::Check {
             from_latest_tag,

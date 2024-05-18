@@ -2,6 +2,7 @@ use crate::log::filter::CommitFilters;
 use crate::CocoGitto;
 use anyhow::Result;
 use cocogitto_commit::Commit;
+use cocogitto_config::SETTINGS;
 use cocogitto_git::tag::TagLookUpOptions;
 use std::fmt::Write;
 
@@ -13,7 +14,7 @@ impl CocoGitto {
             // Remove merge commits
             .filter(|commit| !commit.message().unwrap_or("").starts_with("Merge"))
             .filter(|commit| filters.filter_git2_commit(commit))
-            .map(|commit| Commit::from_git_commit(commit))
+            .map(|commit| Commit::from_git_commit(commit, &SETTINGS.allowed_commit_types()))
             // Apply filters
             .filter(|commit| match commit {
                 Ok(commit) => filters.filters(commit),

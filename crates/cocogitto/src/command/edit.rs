@@ -31,7 +31,7 @@ impl CocoGitto {
         let errored_commits: Vec<Oid> = commits
             .iter_commits()
             .map(|commit| {
-                let conv_commit = Commit::from_git_commit(commit);
+                let conv_commit = Commit::from_git_commit(commit, &SETTINGS.allowed_commit_types());
                 (commit.id(), conv_commit)
             })
             .filter(|commit| commit.1.is_err())
@@ -99,6 +99,7 @@ impl CocoGitto {
                             self.repository.get_author().ok(),
                             &new_message,
                             ignore_merge_commit,
+                            &SETTINGS.allowed_commit_types(),
                         ) {
                             Ok(_) => {
                                 info!("Changed commit message to:\"{}\"", &new_message.trim_end())

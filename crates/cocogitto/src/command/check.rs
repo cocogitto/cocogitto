@@ -4,6 +4,7 @@ use crate::CocoGitto;
 use anyhow::anyhow;
 use anyhow::Result;
 use cocogitto_commit::Commit;
+use cocogitto_config::SETTINGS;
 use cocogitto_git::tag::TagLookUpOptions;
 use colored::*;
 use log::info;
@@ -30,13 +31,13 @@ impl CocoGitto {
             commit_range
                 .iter_commits()
                 .filter(|commit| commit.parent_count() <= 1)
-                .map(Commit::from_git_commit)
+                .map(|commit| Commit::from_git_commit(commit, &SETTINGS.allowed_commit_types()))
                 .filter_map(Result::err)
                 .collect()
         } else {
             commit_range
                 .iter_commits()
-                .map(Commit::from_git_commit)
+                .map(|commit| Commit::from_git_commit(commit, &SETTINGS.allowed_commit_types()))
                 .filter_map(Result::err)
                 .collect()
         };

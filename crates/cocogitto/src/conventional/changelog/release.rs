@@ -5,6 +5,7 @@ use cocogitto_commit::{Commit, Footer};
 use colored::Colorize;
 
 use crate::conventional::changelog::error::ChangelogError;
+use cocogitto_config::SETTINGS;
 use cocogitto_git::rev::CommitIter;
 use cocogitto_oid::OidOf;
 use log::warn;
@@ -52,18 +53,21 @@ impl TryFrom<CommitIter<'_>> for Release<'_> {
                 date: Utc::now().naive_local(),
                 commits: release
                     .iter()
-                    .filter_map(|(_, commit)| match Commit::from_git_commit(commit) {
-                        Ok(commit) => {
-                            if !commit.should_omit() {
-                                Some(ChangelogCommit::from(commit))
-                            } else {
+                    .filter_map(|(_, commit)| {
+                        match Commit::from_git_commit(commit, &SETTINGS.allowed_commit_types()) {
+                            Ok(commit) => {
+                                let commit_type = &commit.conventional.commit_type;
+                                if !SETTINGS.should_omit_commit(commit_type) {
+                                    Some(ChangelogCommit::from(commit))
+                                } else {
+                                    None
+                                }
+                            }
+                            Err(err) => {
+                                let err = err.to_string().red();
+                                warn!("{}", err);
                                 None
                             }
-                        }
-                        Err(err) => {
-                            let err = err.to_string().red();
-                            warn!("{}", err);
-                            None
                         }
                     })
                     .collect(),
