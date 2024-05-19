@@ -1,4 +1,3 @@
-use cocogitto_config::SETTINGS;
 use serde::Serialize;
 
 use crate::error::ChangelogError;
@@ -28,56 +27,6 @@ const MONOREPO_REMOTE_TEMPLATE_NAME: &str = "monorepo_remote";
 const MONOREPO_FULL_HASH_TEMPLATE: &[u8] = include_bytes!("template/monorepo_full_hash");
 const MONOREPO_FULL_HASH_TEMPLATE_NAME: &str = "monorepo_full_hash";
 
-pub fn get_template_context() -> Option<RemoteContext> {
-    let remote = SETTINGS.changelog.remote.as_ref().cloned();
-
-    let repository = SETTINGS.changelog.repository.as_ref().cloned();
-
-    let owner = SETTINGS.changelog.owner.as_ref().cloned();
-
-    RemoteContext::try_new(remote, repository, owner)
-}
-
-pub fn get_changelog_template() -> Result<Template, ChangelogError> {
-    let context = get_template_context();
-    let template = SETTINGS.changelog.template.as_deref().unwrap_or("default");
-
-    Template::from_arg(template, context)
-}
-
-pub fn get_package_changelog_template() -> Result<Template, ChangelogError> {
-    let context = get_template_context();
-    let template = SETTINGS
-        .changelog
-        .package_template
-        .as_deref()
-        .unwrap_or("package_default");
-
-    let template = match template {
-        "remote" => "package_remote",
-        "full_hash" => "package_full_hash",
-        template => template,
-    };
-
-    Template::from_arg(template, context)
-}
-
-pub fn get_monorepo_changelog_template() -> Result<Template, ChangelogError> {
-    let context = get_template_context();
-    let template = SETTINGS
-        .changelog
-        .template
-        .as_deref()
-        .unwrap_or("monorepo_default");
-
-    let template = match template {
-        "remote" => "monorepo_remote",
-        "full_hash" => "monorepo_full_hash",
-        template => template,
-    };
-
-    Template::from_arg(template, context)
-}
 #[derive(Debug, Default)]
 pub struct Template {
     pub remote_context: Option<RemoteContext>,

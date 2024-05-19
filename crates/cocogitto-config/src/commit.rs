@@ -46,6 +46,14 @@ impl Settings {
 
         commit_config.bump_patch
     }
+
+    pub fn get_changelog_title(&self, r#type: &CommitType) -> String {
+        self.commit_types()
+            .iter()
+            .find(|(commit_type, _config)| *commit_type == r#type)
+            .map(|meta| meta.1.changelog_title.to_string())
+            .unwrap_or_else(|| r#type.to_string())
+    }
 }
 
 impl CommitConfig {

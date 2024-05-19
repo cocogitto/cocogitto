@@ -4,7 +4,7 @@ mod mangen;
 use std::fs;
 use std::path::PathBuf;
 
-use cocogitto_changelog::template::{get_template_context, RemoteContext, Template};
+use cocogitto_changelog::template::{RemoteContext, Template};
 
 use cocogitto::log::filter::{CommitFilter, CommitFilters};
 use cocogitto::log::output::Output;
@@ -19,6 +19,7 @@ use clap::{ArgAction, ArgGroup, Args, CommandFactory, Parser, Subcommand, ValueE
 use clap_complete::{shells, Generator};
 use clap_complete_nushell::Nushell;
 use cocogitto::command::bump::{BumpOptions, PackageBumpOptions};
+use cocogitto::command::changelog::get_template_context;
 use cocogitto::command::commit::CommitOptions;
 use cocogitto_bump::increment::IncrementCommand;
 

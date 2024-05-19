@@ -1,5 +1,4 @@
 use crate::release::{ChangelogCommit, ChangelogFooter};
-use cocogitto_config::COMMITS_METADATA;
 use serde::ser::SerializeStruct;
 use serde::{Serialize, Serializer};
 
@@ -18,16 +17,10 @@ impl Serialize for ChangelogCommit<'_> {
             .map(ChangelogFooter::from)
             .collect::<Vec<ChangelogFooter>>();
 
-        let commit_type = &COMMITS_METADATA
-            .iter()
-            .find(|(commit_type, _config)| *commit_type == &self.commit.conventional.commit_type)
-            .map(|meta| meta.1.changelog_title.clone())
-            .unwrap_or_else(|| self.commit.conventional.commit_type.to_string());
-
         commit.serialize_field("id", &self.commit.oid)?;
         commit.serialize_field("author", &self.author_username)?;
         commit.serialize_field("signature", &self.commit.author)?;
-        commit.serialize_field("type", commit_type)?;
+        commit.serialize_field("type", &self.changelog_title)?;
         commit.serialize_field("date", &self.commit.date)?;
         commit.serialize_field("scope", &self.commit.conventional.scope)?;
         commit.serialize_field("summary", &self.commit.conventional.summary)?;
@@ -75,6 +68,7 @@ mod test {
     #[test]
     fn should_serialize_commit() {
         let commit = ChangelogCommit {
+            changelog_title: "BugFix".to_string(),
             author_username: Some("Jm Doudou"),
             commit: Commit {
                 oid: "1234567890".to_string(),

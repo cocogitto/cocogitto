@@ -3,9 +3,9 @@ use crate::command::bump::{
     BumpOptions, HookRunOptions,
 };
 
-use cocogitto_changelog::template::get_changelog_template;
 use cocogitto_changelog::ReleaseType;
 
+use crate::command::changelog::get_changelog_template;
 use crate::CocoGitto;
 use anyhow::Result;
 use cocogitto_bump::bump;

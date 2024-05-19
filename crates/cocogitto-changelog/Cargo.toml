@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-cocogitto-config.workspace = true
 cocogitto-commit.workspace = true
 cocogitto-git.workspace = true
 cocogitto-oid.workspace = true
@@ -31,3 +30,4 @@ git2.workspace = true
 toml.workspace = true
 indoc.workspace = true
 pretty_assertions.workspace = true
+cocogitto-config.workspace = true

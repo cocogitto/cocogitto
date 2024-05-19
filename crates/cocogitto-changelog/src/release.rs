@@ -1,14 +1,8 @@
-use chrono::{NaiveDateTime, Utc};
+use chrono::NaiveDateTime;
 use serde::Serialize;
 
 use cocogitto_commit::{Commit, Footer};
-use colored::Colorize;
-
-use crate::error::ChangelogError;
-use cocogitto_config::SETTINGS;
-use cocogitto_git::rev::CommitIter;
 use cocogitto_oid::OidOf;
-use log::warn;
 
 #[derive(Debug, Serialize)]
 pub struct Release<'a> {
@@ -19,79 +13,24 @@ pub struct Release<'a> {
     pub previous: Option<Box<Release<'a>>>,
 }
 
-impl TryFrom<CommitIter<'_>> for Release<'_> {
-    type Error = ChangelogError;
-
-    fn try_from(commits: CommitIter<'_>) -> Result<Self, Self::Error> {
-        let mut releases = vec![];
-        let mut commit_iter = commits.into_iter().rev().peekable();
-
-        while let Some((_oid, _commit)) = commit_iter.peek() {
-            let mut release_commits = vec![];
-
-            for (oid, commit) in commit_iter.by_ref() {
-                if matches!(oid, OidOf::Tag(_)) {
-                    release_commits.push((oid, commit));
-                    break;
-                }
-                release_commits.push((oid, commit));
-            }
-
-            release_commits.reverse();
-            releases.push(release_commits);
-        }
-
-        let mut current = None;
-
-        for release in releases {
-            let next = Release {
-                version: release.first().unwrap().0.clone(),
-                from: current
-                    .as_ref()
-                    .map(|current: &Release| current.version.clone())
-                    .unwrap_or(release.last().unwrap().0.clone()),
-                date: Utc::now().naive_local(),
-                commits: release
-                    .iter()
-                    .filter_map(|(_, commit)| {
-                        match Commit::from_git_commit(commit, &SETTINGS.allowed_commit_types()) {
-                            Ok(commit) => {
-                                let commit_type = &commit.conventional.commit_type;
-                                if !SETTINGS.should_omit_commit(commit_type) {
-                                    Some(ChangelogCommit::from(commit))
-                                } else {
-                                    None
-                                }
-                            }
-                            Err(err) => {
-                                let err = err.to_string().red();
-                                warn!("{}", err);
-                                None
-                            }
-                        }
-                    })
-                    .collect(),
-                previous: current.map(Box::new),
-            };
-
-            current = Some(next);
-        }
-
-        current.ok_or(ChangelogError::EmptyRelease)
-    }
-}
-
 #[derive(Debug)]
 pub struct ChangelogCommit<'a> {
+    pub changelog_title: String,
     pub author_username: Option<&'a str>,
     pub commit: Commit,
 }
 
-impl From<Commit> for ChangelogCommit<'_> {
-    fn from(commit: Commit) -> Self {
-        let author_username = cocogitto_config::commit_username(&commit.author);
-
+impl<'a, 'b> ChangelogCommit<'a>
+where
+    'b: 'a,
+{
+    pub fn from_commit(
+        commit: Commit,
+        author_username: Option<&'a str>,
+        changelog_title: String,
+    ) -> Self {
         ChangelogCommit {
+            changelog_title,
             author_username,
             commit,
         }
@@ -117,33 +56,20 @@ impl<'a> From<&'a Footer> for ChangelogFooter<'a> {
 mod test {
     use anyhow::Result;
     use chrono::NaiveDateTime;
-    use cocogitto_config::SETTINGS;
-    use cocogitto_oid::OidOf;
     use git2::Oid;
     use indoc::indoc;
     use pretty_assertions::assert_eq;
-    use speculoos::prelude::*;
+
+    use cocogitto_commit::{Commit, CommitType, ConventionalCommit, Footer};
+    use cocogitto_config::SETTINGS;
+    use cocogitto_oid::OidOf;
+    use cocogitto_tag::Tag;
 
     use crate::release::{ChangelogCommit, Release};
     use crate::renderer::Renderer;
     use crate::template::{
         MonoRepoContext, PackageBumpContext, PackageContext, RemoteContext, Template, TemplateKind,
     };
-    use cocogitto_commit::{Commit, CommitType, ConventionalCommit, Footer};
-
-    use cocogitto_tag::Tag;
-    use cocogitto_test_helpers::open_cocogitto_repo;
-
-    #[test]
-    fn should_get_a_release() -> anyhow::Result<()> {
-        let repo = open_cocogitto_repo()?;
-        let iter = repo.revwalk("..")?;
-        let release = Release::try_from(iter);
-        assert_that!(release)
-            .is_ok()
-            .matches(|r| !r.commits.is_empty());
-        Ok(())
-    }
 
     #[test]
     fn should_render_default_template() -> Result<()> {
@@ -579,6 +505,7 @@ mod test {
                 date,
                 commits: vec![
                     ChangelogCommit {
+                        changelog_title: "Bug Fixes".to_string(),
                         author_username: Some("oknozor"),
                         commit: Commit {
                             oid: a_commit_hash.to_string(),
@@ -599,6 +526,7 @@ mod test {
                         },
                     },
                     ChangelogCommit {
+                        changelog_title: "Features".to_string(),
                         author_username: None,
                         commit: Commit {
                             oid: a_commit_hash.to_string(),
@@ -619,6 +547,7 @@ mod test {
                         },
                     },
                     ChangelogCommit {
+                        changelog_title: "Features".to_string(),
                         author_username: Some("oknozor"),
                         commit: Commit {
                             oid: a_commit_hash.to_string(),
