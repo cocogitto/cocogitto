@@ -11,7 +11,6 @@ use cocogitto_git::Repository;
 use error::BumpError;
 
 pub mod command;
-pub mod conventional;
 pub mod error;
 pub mod log;
 
