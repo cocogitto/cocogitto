@@ -33,7 +33,7 @@ anyhow = "1.0.75"
 chrono = { version = "0.4.35", features = ["serde"] }
 tempfile = "^3"
 globset = "0.4.14"
-
+tera = "1.19.1"
 # Gix
 git2 = { version = "0.18.2", default-features = false, features = [] }
 gix-discover = "0.31.0"

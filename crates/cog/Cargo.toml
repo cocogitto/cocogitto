@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 cocogitto.workspace = true
 cocogitto-config.workspace = true
+cocogitto-changelog.workspace = true
 conventional_commit_parser.workspace = true
 itertools.workspace = true
 anyhow.workspace = true

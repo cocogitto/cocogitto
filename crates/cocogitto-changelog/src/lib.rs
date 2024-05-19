@@ -1,14 +1,12 @@
-use crate::conventional::changelog::release::Release;
-use crate::conventional::changelog::renderer::Renderer;
-
-use crate::conventional::changelog::error::ChangelogError;
-use crate::conventional::changelog::template::{MonoRepoContext, PackageContext, Template};
-
+use crate::error::ChangelogError;
+use crate::release::Release;
+use crate::renderer::Renderer;
+use crate::template::{MonoRepoContext, PackageContext, Template};
 use std::fs;
 use std::path::Path;
 
 pub mod error;
-pub(crate) mod release;
+pub mod release;
 pub(crate) mod renderer;
 pub(crate) mod serde;
 pub mod template;
@@ -75,7 +73,7 @@ impl Release<'_> {
 
 #[cfg(test)]
 mod test {
-    use crate::conventional::changelog::Release;
+    use crate::release::Release;
     use cocogitto_git::tag::TagLookUpOptions;
     use cocogitto_git::Repository;
     use cocogitto_oid::OidOf;

@@ -329,6 +329,7 @@ dependencies = [
  "assert_cmd",
  "chrono",
  "cmd_lib",
+ "cocogitto-changelog",
  "cocogitto-commit",
  "cocogitto-config",
  "cocogitto-git",
@@ -355,6 +356,30 @@ dependencies = [
  "tera",
  "toml 0.5.11",
  "which 6.0.1",
+]
+
+[[package]]
+name = "cocogitto-changelog"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "cocogitto-commit",
+ "cocogitto-config",
+ "cocogitto-git",
+ "cocogitto-oid",
+ "cocogitto-tag",
+ "cocogitto-test-helpers",
+ "colored",
+ "git2",
+ "indoc",
+ "log",
+ "pretty_assertions",
+ "sealed_test",
+ "serde",
+ "speculoos",
+ "tera",
+ "toml 0.5.11",
 ]
 
 [[package]]
@@ -479,6 +504,7 @@ dependencies = [
  "clap_mangen",
  "cmd_lib",
  "cocogitto",
+ "cocogitto-changelog",
  "cocogitto-config",
  "cocogitto-test-helpers",
  "conventional_commit_parser",

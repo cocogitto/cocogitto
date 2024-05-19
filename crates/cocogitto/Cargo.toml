@@ -21,6 +21,7 @@ cocogitto-hook.workspace = true
 cocogitto-oid.workspace = true
 cocogitto-commit.workspace = true
 cocogitto-git.workspace = true
+cocogitto-changelog.workspace = true
 git2 = { version = "0.18.2", default-features = false, features = [] }
 # Do not bump anyhow, (see: https://github.com/dtolnay/anyhow/issues/353)
 anyhow.workspace = true
@@ -35,9 +36,9 @@ which = "6.0.0"
 once_cell = "^1"
 # Don't bump yet (see https://github.com/cocogitto/cocogitto/issues/337)
 toml.workspace = true
-tera = "1.19.1"
 log = "0.4.21"
 itertools.workspace = true
+tera.workspace = true
 
 [dev-dependencies]
 cocogitto-test-helpers.workspace = true

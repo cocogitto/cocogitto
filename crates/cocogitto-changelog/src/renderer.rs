@@ -1,11 +1,8 @@
 use std::collections::HashMap;
 
+use crate::release::Release;
+use crate::template::{MonoRepoContext, PackageContext, RemoteContext, Template, ToContext};
 use tera::{dotted_pointer, to_value, try_get_value, Context, Tera, Value};
-
-use crate::conventional::changelog::release::Release;
-use crate::conventional::changelog::template::{
-    MonoRepoContext, PackageContext, RemoteContext, Template, ToContext,
-};
 
 #[derive(Debug)]
 pub struct Renderer {

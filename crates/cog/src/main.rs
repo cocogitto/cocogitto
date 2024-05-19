@@ -4,8 +4,8 @@ mod mangen;
 use std::fs;
 use std::path::PathBuf;
 
-use cocogitto::conventional::changelog::template::{get_template_context, RemoteContext, Template};
 use cocogitto::conventional::version::IncrementCommand;
+use cocogitto_changelog::template::{get_template_context, RemoteContext, Template};
 
 use cocogitto::log::filter::{CommitFilter, CommitFilters};
 use cocogitto::log::output::Output;

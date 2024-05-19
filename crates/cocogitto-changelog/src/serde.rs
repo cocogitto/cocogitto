@@ -1,8 +1,7 @@
+use crate::release::{ChangelogCommit, ChangelogFooter};
 use cocogitto_config::COMMITS_METADATA;
 use serde::ser::SerializeStruct;
 use serde::{Serialize, Serializer};
-
-use crate::conventional::changelog::release::{ChangelogCommit, ChangelogFooter};
 
 impl Serialize for ChangelogCommit<'_> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -49,7 +48,7 @@ mod test {
     use git2::Oid;
     use speculoos::prelude::*;
 
-    use crate::conventional::changelog::release::ChangelogCommit;
+    use crate::release::ChangelogCommit;
     use cocogitto_commit::{Commit, CommitType, ConventionalCommit, Footer};
     use cocogitto_tag::Tag;
 

@@ -1,12 +1,7 @@
 use crate::command::bump::{
-    ensure_tag_is_greater_than_previous, tag_or_fallback_to_zero, BumpOptions, HookRunOptions,
+    ensure_tag_is_greater_than_previous, pretty_print_bump_summary, tag_or_fallback_to_zero,
+    BumpOptions, HookRunOptions,
 };
-
-use crate::conventional::changelog::template::{
-    get_monorepo_changelog_template, get_package_changelog_template, MonoRepoContext,
-    PackageBumpContext, PackageContext,
-};
-use crate::conventional::changelog::ReleaseType;
 
 use crate::conventional::version::IncrementCommand;
 
@@ -16,6 +11,11 @@ use cocogitto_config::SETTINGS;
 use colored::*;
 
 use crate::conventional::bump::bump;
+use cocogitto_changelog::template::{
+    get_monorepo_changelog_template, get_package_changelog_template, MonoRepoContext,
+    PackageBumpContext, PackageContext,
+};
+use cocogitto_changelog::ReleaseType;
 use cocogitto_git::tag::TagLookUpOptions;
 use cocogitto_hook::HookVersion;
 use cocogitto_oid::OidOf;
@@ -213,7 +213,7 @@ impl CocoGitto {
                 tag.clone(),
             )?;
 
-            changelog.pretty_print_bump_summary()?;
+            pretty_print_bump_summary(&changelog)?;
 
             let path = cocogitto_config::changelog_path();
             let template = get_monorepo_changelog_template()?;
@@ -360,7 +360,7 @@ impl CocoGitto {
                 tag.clone(),
             )?;
 
-            changelog.pretty_print_bump_summary()?;
+            pretty_print_bump_summary(&changelog)?;
 
             let path = cocogitto_config::changelog_path();
             let template = get_monorepo_changelog_template()?;
@@ -574,7 +574,7 @@ impl CocoGitto {
                 package_name.as_str(),
             )?;
 
-            changelog.pretty_print_bump_summary()?;
+            pretty_print_bump_summary(&changelog)?;
 
             let path = package.changelog_path();
             let template = get_package_changelog_template()?;

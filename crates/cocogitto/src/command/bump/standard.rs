@@ -1,9 +1,10 @@
 use crate::command::bump::{
-    ensure_tag_is_greater_than_previous, tag_or_fallback_to_zero, BumpOptions, HookRunOptions,
+    ensure_tag_is_greater_than_previous, pretty_print_bump_summary, tag_or_fallback_to_zero,
+    BumpOptions, HookRunOptions,
 };
 
-use crate::conventional::changelog::template::get_changelog_template;
-use crate::conventional::changelog::ReleaseType;
+use cocogitto_changelog::template::get_changelog_template;
+use cocogitto_changelog::ReleaseType;
 
 use crate::conventional::bump::bump;
 use crate::CocoGitto;
@@ -55,7 +56,7 @@ impl CocoGitto {
 
         if !SETTINGS.disable_changelog {
             let changelog = self.get_changelog_with_target_version(&pattern, tag.clone())?;
-            changelog.pretty_print_bump_summary()?;
+            pretty_print_bump_summary(&changelog)?;
 
             let path = cocogitto_config::changelog_path();
             let template = get_changelog_template()?;

@@ -1,5 +1,5 @@
-use crate::conventional::changelog::release::Release;
-use crate::conventional::changelog::template::Template;
+use cocogitto_changelog::release::Release;
+use cocogitto_changelog::template::Template;
 
 use crate::CocoGitto;
 use anyhow::anyhow;

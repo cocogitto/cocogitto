@@ -1,12 +1,12 @@
 use crate::command::bump::{
-    ensure_tag_is_greater_than_previous, tag_or_fallback_to_zero, HookRunOptions,
-    PackageBumpOptions,
+    ensure_tag_is_greater_than_previous, pretty_print_bump_summary, tag_or_fallback_to_zero,
+    HookRunOptions, PackageBumpOptions,
 };
 use crate::conventional::bump::bump;
-use crate::conventional::changelog::template::{get_package_changelog_template, PackageContext};
-use crate::conventional::changelog::ReleaseType;
 use crate::CocoGitto;
 use anyhow::Result;
+use cocogitto_changelog::template::{get_package_changelog_template, PackageContext};
+use cocogitto_changelog::ReleaseType;
 use cocogitto_config::SETTINGS;
 use cocogitto_hook::HookVersion;
 use cocogitto_tag::Tag;
@@ -59,7 +59,7 @@ impl CocoGitto {
                 opts.package_name,
             )?;
 
-            changelog.pretty_print_bump_summary()?;
+            pretty_print_bump_summary(&changelog)?;
 
             let path = opts.package.changelog_path();
             let template = get_package_changelog_template()?;

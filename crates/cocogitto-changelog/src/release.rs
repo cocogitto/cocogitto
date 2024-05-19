@@ -4,7 +4,7 @@ use serde::Serialize;
 use cocogitto_commit::{Commit, Footer};
 use colored::Colorize;
 
-use crate::conventional::changelog::error::ChangelogError;
+use crate::error::ChangelogError;
 use cocogitto_config::SETTINGS;
 use cocogitto_git::rev::CommitIter;
 use cocogitto_oid::OidOf;
@@ -124,9 +124,9 @@ mod test {
     use pretty_assertions::assert_eq;
     use speculoos::prelude::*;
 
-    use crate::conventional::changelog::release::{ChangelogCommit, Release};
-    use crate::conventional::changelog::renderer::Renderer;
-    use crate::conventional::changelog::template::{
+    use crate::release::{ChangelogCommit, Release};
+    use crate::renderer::Renderer;
+    use crate::template::{
         MonoRepoContext, PackageBumpContext, PackageContext, RemoteContext, Template, TemplateKind,
     };
     use cocogitto_commit::{Commit, CommitType, ConventionalCommit, Footer};

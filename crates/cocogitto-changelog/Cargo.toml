@@ -1,0 +1,33 @@
+[package]
+name = "cocogitto-changelog"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+cocogitto-config.workspace = true
+cocogitto-commit.workspace = true
+cocogitto-git.workspace = true
+cocogitto-oid.workspace = true
+tera.workspace = true
+serde.workspace = true
+chrono.workspace = true
+colored.workspace = true
+log.workspace = true
+
+[dev-dependencies]
+cocogitto-git.workspace = true
+cocogitto-oid.workspace = true
+cocogitto-commit.workspace = true
+cocogitto-tag.workspace = true
+cocogitto-test-helpers.workspace = true
+serde.workspace = true
+colored.workspace = true
+log.workspace = true
+chrono.workspace = true
+anyhow.workspace = true
+speculoos.workspace = true
+sealed_test.workspace = true
+git2.workspace = true
+toml.workspace = true
+indoc.workspace = true
+pretty_assertions.workspace = true
