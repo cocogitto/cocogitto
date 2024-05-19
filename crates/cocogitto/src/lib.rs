@@ -8,7 +8,6 @@ use cocogitto_config::Settings;
 use cocogitto_git::error::Git2Error;
 use cocogitto_git::rev::cache::get_cache;
 use cocogitto_git::Repository;
-use conventional::version::IncrementCommand;
 use error::BumpError;
 
 pub mod command;

@@ -7,7 +7,6 @@ use std::fmt::{Display, Formatter};
 pub enum BumpError {
     Git2Error(Git2Error),
     TagError(TagError),
-    SemVerError(semver::Error),
     FmtError(fmt::Error),
     NoCommitFound,
 }
@@ -18,7 +17,6 @@ impl Display for BumpError {
         match self {
             BumpError::Git2Error(err) => writeln!(f, "\t{err}"),
             BumpError::TagError(err) => writeln!(f, "\t{err}"),
-            BumpError::SemVerError(err) => writeln!(f, "\t{err}"),
             BumpError::FmtError(err) => writeln!(f, "\t{err}"),
             BumpError::NoCommitFound => writeln!(
                 f,
@@ -42,12 +40,6 @@ impl From<Git2Error> for BumpError {
 impl From<TagError> for BumpError {
     fn from(err: TagError) -> Self {
         Self::TagError(err)
-    }
-}
-
-impl From<semver::Error> for BumpError {
-    fn from(err: semver::Error) -> Self {
-        Self::SemVerError(err)
     }
 }
 

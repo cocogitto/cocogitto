@@ -21,9 +21,9 @@ pub struct Tag {
 }
 
 impl Tag {
-    pub fn manual_bump(&self, version: &str) -> Result<Self, semver::Error> {
+    pub fn manual_bump(&self, version: &str) -> Result<Self, TagError> {
         let mut next = self.clone();
-        next.version = Version::parse(version)?;
+        next.version = Version::parse(version).map_err(|err| TagError::semver(version, err))?;
         Ok(next)
     }
 

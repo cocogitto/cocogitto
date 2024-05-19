@@ -1,10 +1,10 @@
 use cocogitto_tag::error::TagError;
 
-use crate::conventional::version::IncrementCommand;
 use crate::BumpError;
 use crate::CocoGitto;
 use anyhow::{anyhow, bail, Context};
 use anyhow::{ensure, Result};
+use cocogitto_bump::increment::IncrementCommand;
 use cocogitto_changelog::release::Release;
 use cocogitto_commit::{Commit, CommitType};
 use cocogitto_config::hook::{HookType, Hooks};

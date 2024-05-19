@@ -6,9 +6,9 @@ use crate::command::bump::{
 use cocogitto_changelog::template::get_changelog_template;
 use cocogitto_changelog::ReleaseType;
 
-use crate::conventional::bump::bump;
 use crate::CocoGitto;
 use anyhow::Result;
+use cocogitto_bump::bump;
 use cocogitto_config::SETTINGS;
 use cocogitto_git::tag::TagLookUpOptions;
 use cocogitto_hook::HookVersion;

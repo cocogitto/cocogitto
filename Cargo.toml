@@ -16,6 +16,7 @@ cocogitto-hook = { path = "crates/cocogitto-hook" }
 cocogitto-changelog = { path = "crates/cocogitto-changelog" }
 cocogitto-commit = { path = "crates/cocogitto-commit" }
 cocogitto-git = { path = "crates/cocogitto-git" }
+cocogitto-bump = { path = "crates/cocogitto-bump" }
 cocogitto-test-helpers = { path = "crates/cocogitto-test-helpers" }
 cocogitto = { path = "crates/cocogitto" }
 semver = "1.0.23"
@@ -34,6 +35,8 @@ chrono = { version = "0.4.35", features = ["serde"] }
 tempfile = "^3"
 globset = "0.4.14"
 tera = "1.19.1"
+shell-words = "^1"
+which = "6.0.0"
 # Gix
 git2 = { version = "0.18.2", default-features = false, features = [] }
 gix-discover = "0.31.0"
@@ -50,3 +53,4 @@ cmd_lib = "1.9.3"
 cargo_metadata = "0.18.1"
 pest = "2.7"
 pest_derive = "2.7"
+

@@ -1,0 +1,21 @@
+[package]
+name = "cocogitto-bump"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+cocogitto-commit.workspace = true
+cocogitto-config.workspace = true
+cocogitto-git.workspace = true
+cocogitto-tag.workspace = true
+git2.workspace = true
+once_cell.workspace = true
+
+[dev-dependencies]
+cocogitto-test-helpers.workspace = true
+anyhow.workspace = true
+cmd_lib.workspace = true
+sealed_test.workspace = true
+semver.workspace = true
+speculoos.workspace = true
+toml.workspace = true

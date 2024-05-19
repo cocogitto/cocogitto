@@ -4,7 +4,6 @@ mod mangen;
 use std::fs;
 use std::path::PathBuf;
 
-use cocogitto::conventional::version::IncrementCommand;
 use cocogitto_changelog::template::{get_template_context, RemoteContext, Template};
 
 use cocogitto::log::filter::{CommitFilter, CommitFilters};
@@ -21,6 +20,7 @@ use clap_complete::{shells, Generator};
 use clap_complete_nushell::Nushell;
 use cocogitto::command::bump::{BumpOptions, PackageBumpOptions};
 use cocogitto::command::commit::CommitOptions;
+use cocogitto_bump::increment::IncrementCommand;
 
 fn hook_profiles() -> PossibleValuesParser {
     let profiles = SETTINGS

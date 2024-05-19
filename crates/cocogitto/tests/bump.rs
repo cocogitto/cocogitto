@@ -10,7 +10,8 @@ use sealed_test::prelude::*;
 use speculoos::prelude::*;
 
 use cocogitto::command::bump::{BumpOptions, PackageBumpOptions};
-use cocogitto::{conventional::version::IncrementCommand, CocoGitto};
+use cocogitto::CocoGitto;
+use cocogitto_bump::increment::IncrementCommand;
 use cocogitto_test_helpers::*;
 
 #[sealed_test]

@@ -1,6 +1,7 @@
-use serde::de::StdError;
 use std::fmt;
 use std::fmt::{Display, Formatter};
+
+use serde::de::StdError;
 
 #[derive(Debug)]
 pub enum TagError {

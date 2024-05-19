@@ -329,6 +329,7 @@ dependencies = [
  "assert_cmd",
  "chrono",
  "cmd_lib",
+ "cocogitto-bump",
  "cocogitto-changelog",
  "cocogitto-commit",
  "cocogitto-config",
@@ -356,6 +357,25 @@ dependencies = [
  "tera",
  "toml 0.5.11",
  "which 6.0.1",
+]
+
+[[package]]
+name = "cocogitto-bump"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "cmd_lib",
+ "cocogitto-commit",
+ "cocogitto-config",
+ "cocogitto-git",
+ "cocogitto-tag",
+ "cocogitto-test-helpers",
+ "git2",
+ "once_cell",
+ "sealed_test",
+ "semver",
+ "speculoos",
+ "toml 0.5.11",
 ]
 
 [[package]]
@@ -470,6 +490,7 @@ name = "cocogitto-tag"
 version = "0.1.0"
 dependencies = [
  "git2",
+ "log",
  "semver",
  "serde",
 ]
@@ -504,6 +525,7 @@ dependencies = [
  "clap_mangen",
  "cmd_lib",
  "cocogitto",
+ "cocogitto-bump",
  "cocogitto-changelog",
  "cocogitto-config",
  "cocogitto-test-helpers",

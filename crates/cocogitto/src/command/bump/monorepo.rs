@@ -3,14 +3,14 @@ use crate::command::bump::{
     BumpOptions, HookRunOptions,
 };
 
-use crate::conventional::version::IncrementCommand;
-
 use crate::CocoGitto;
 use anyhow::Result;
 use cocogitto_config::SETTINGS;
 use colored::*;
 
-use crate::conventional::bump::bump;
+use cocogitto_bump::bump;
+use cocogitto_bump::error::BumpError;
+use cocogitto_bump::increment::IncrementCommand;
 use cocogitto_changelog::template::{
     get_monorepo_changelog_template, get_package_changelog_template, MonoRepoContext,
     PackageBumpContext, PackageContext,
@@ -24,8 +24,6 @@ use cocogitto_tag::Tag;
 use log::{info, warn};
 use semver::{BuildMetadata, Prerelease};
 use tera::Tera;
-
-use crate::conventional::error::BumpError;
 
 #[derive(Debug)]
 struct PackageBumpData {
