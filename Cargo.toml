@@ -18,6 +18,7 @@ cocogitto-commit = { path = "crates/cocogitto-commit" }
 cocogitto-git = { path = "crates/cocogitto-git" }
 cocogitto-bump = { path = "crates/cocogitto-bump" }
 cocogitto-test-helpers = { path = "crates/cocogitto-test-helpers" }
+cocogitto-schema = { path = "crates/cocogitto-schema" }
 cocogitto = { path = "crates/cocogitto" }
 cog-check = { path = "crates/cog-check" }
 cog-commit = { path = "crates/cog-commit" }
@@ -56,4 +57,3 @@ cmd_lib = "1.9.3"
 cargo_metadata = "0.18.1"
 pest = "2.7"
 pest_derive = "2.7"
-

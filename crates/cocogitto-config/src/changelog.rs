@@ -2,6 +2,7 @@ use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
+#[cfg_attr(feature = "json_schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Deserialize, Serialize, Clone, Eq, PartialEq)]
 #[serde(deny_unknown_fields, default)]
 pub struct Changelog {
@@ -28,6 +29,7 @@ impl Default for Changelog {
     }
 }
 
+#[cfg_attr(feature = "json_schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Deserialize, Serialize, Clone, Eq, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct AuthorSetting {

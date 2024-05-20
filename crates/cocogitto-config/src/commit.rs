@@ -3,6 +3,7 @@ use conventional_commit_parser::commit::CommitType;
 use serde::{Deserialize, Serialize};
 
 /// Configurations to create new conventional commit types or override behaviors of the existing ones.
+#[cfg_attr(feature = "json_schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Deserialize, Serialize, Clone, Eq, PartialEq)]
 pub struct CommitConfig {
     /// Define the title used in generated changelog for this commit type.

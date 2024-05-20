@@ -10,9 +10,13 @@ conventional_commit_parser.workspace = true
 once_cell.workspace = true
 gix-discover.workspace = true
 log.workspace = true
+schemars = { version = "0.8.20", optional = true }
 
 [dev-dependencies]
 speculoos.workspace = true
 sealed_test.workspace = true
 cocogitto-test-helpers.workspace = true
 anyhow.workspace = true
+
+[features]
+json_schema = ["schemars"]

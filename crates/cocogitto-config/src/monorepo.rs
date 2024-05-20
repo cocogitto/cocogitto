@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::BumpProfile;
 
+#[cfg_attr(feature = "json_schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Deserialize, Serialize, Eq, PartialEq)]
 #[serde(deny_unknown_fields, default)]
 pub struct MonoRepoPackage {

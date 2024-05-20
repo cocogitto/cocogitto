@@ -6,6 +6,9 @@ test:
     cargo install cargo-nextest
     cargo nextest run
 
+json-schema: 
+    cargo run -p cocogitto-schema > docs/website/.vuepress/public/cog-schema.json
+
 build-x86:
     cross build --target x86_64-unknown-linux-musl --release
     just clean-targets
