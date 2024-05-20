@@ -1,3 +1,5 @@
+#![deny(missing_docs)]
+
 use std::collections::HashMap;
 use std::path::PathBuf;
 
@@ -49,6 +51,7 @@ pub static COMMITS_METADATA: Lazy<HashMap<CommitType, CommitConfig>> =
 
 pub type CommitsMetadata = HashMap<CommitType, CommitConfigOrNull>;
 
+#[cfg_attr(feature = "json_schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]
 #[serde(untagged)]
 pub enum CommitConfigOrNull {
@@ -56,6 +59,7 @@ pub enum CommitConfigOrNull {
     None {},
 }
 
+#[cfg_attr(feature = "json_schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Deserialize, Serialize, Eq, PartialEq)]
 #[serde(deny_unknown_fields, default)]
 pub struct Settings {
@@ -119,6 +123,7 @@ pub fn changelog_path() -> &'static PathBuf {
     &SETTINGS.changelog.path
 }
 
+#[cfg_attr(feature = "json_schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Deserialize, Serialize, Default, Eq, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct BumpProfile {

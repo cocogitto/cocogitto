@@ -1,0 +1,345 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Settings",
+  "type": "object",
+  "properties": {
+    "branch_whitelist": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "bump_profiles": {
+      "default": {},
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/BumpProfile"
+      }
+    },
+    "changelog": {
+      "default": {
+        "authors": [],
+        "owner": null,
+        "package_template": null,
+        "path": "CHANGELOG.md",
+        "remote": null,
+        "repository": null,
+        "template": null
+      },
+      "allOf": [
+        {
+          "$ref": "#/definitions/Changelog"
+        }
+      ]
+    },
+    "commit_types": {
+      "default": {},
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/CommitConfigOrNull"
+      }
+    },
+    "disable_bump_commit": {
+      "default": false,
+      "type": "boolean"
+    },
+    "disable_changelog": {
+      "default": false,
+      "type": "boolean"
+    },
+    "from_latest_tag": {
+      "default": false,
+      "type": "boolean"
+    },
+    "generate_mono_repository_global_tag": {
+      "default": true,
+      "type": "boolean"
+    },
+    "git_hooks": {
+      "default": {},
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/GitHook"
+      }
+    },
+    "ignore_merge_commits": {
+      "default": false,
+      "type": "boolean"
+    },
+    "monorepo_version_separator": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "packages": {
+      "default": {},
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/MonoRepoPackage"
+      }
+    },
+    "post_bump_hooks": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "post_package_bump_hooks": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "pre_bump_hooks": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "pre_package_bump_hooks": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "skip_ci": {
+      "default": "[skip ci]",
+      "type": "string"
+    },
+    "skip_untracked": {
+      "default": false,
+      "type": "boolean"
+    },
+    "tag_prefix": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "AuthorSetting": {
+      "type": "object",
+      "required": [
+        "signature",
+        "username"
+      ],
+      "properties": {
+        "signature": {
+          "type": "string"
+        },
+        "username": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "BumpProfile": {
+      "type": "object",
+      "properties": {
+        "post_bump_hooks": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "pre_bump_hooks": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "Changelog": {
+      "type": "object",
+      "properties": {
+        "authors": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AuthorSetting"
+          }
+        },
+        "owner": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "package_template": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "path": {
+          "default": "CHANGELOG.md",
+          "type": "string"
+        },
+        "remote": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "repository": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "template": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "CommitConfig": {
+      "description": "Configurations to create new conventional commit types or override behaviors of the existing ones.",
+      "type": "object",
+      "required": [
+        "changelog_title"
+      ],
+      "properties": {
+        "bump_minor": {
+          "description": "Allow for this commit type to bump the minor version.",
+          "default": false,
+          "type": "boolean"
+        },
+        "bump_patch": {
+          "description": "Allow for this commit type to bump the patch version.",
+          "default": false,
+          "type": "boolean"
+        },
+        "changelog_title": {
+          "description": "Define the title used in generated changelog for this commit type.",
+          "type": "string"
+        },
+        "omit_from_changelog": {
+          "description": "Do not display this commit type in changelogs.",
+          "default": false,
+          "type": "boolean"
+        }
+      }
+    },
+    "CommitConfigOrNull": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/CommitConfig"
+        },
+        {
+          "type": "object"
+        }
+      ]
+    },
+    "GitHook": {
+      "anyOf": [
+        {
+          "type": "object",
+          "required": [
+            "script"
+          ],
+          "properties": {
+            "script": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "path"
+          ],
+          "properties": {
+            "path": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "MonoRepoPackage": {
+      "type": "object",
+      "properties": {
+        "bump_profiles": {
+          "description": "Custom profile to override `pre_bump_hooks`, `post_bump_hooks`",
+          "default": {},
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/BumpProfile"
+          }
+        },
+        "changelog_path": {
+          "description": "Where to write the changelog",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "ignore": {
+          "description": "List of globs for paths to ignore, relative to the repository root dir.",
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "include": {
+          "description": "List of globs for additional paths to include, relative to the repository root dir.",
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "path": {
+          "description": "The package path, relative to the repository root dir. Used to scan commits and set hook commands current directory",
+          "default": "",
+          "type": "string"
+        },
+        "post_bump_hooks": {
+          "description": "Overrides `post_package_bump_hooks`",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "pre_bump_hooks": {
+          "description": "Overrides `pre_package_bump_hooks`",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "public_api": {
+          "description": "Bumping package marked as public api will increment the global monorepo once_celversion when using `cog bump --auto`",
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -5,6 +5,7 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
+#[cfg_attr(feature = "json_schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Deserialize, Serialize, Eq, PartialEq, Hash, Copy, Clone)]
 #[serde(deny_unknown_fields, rename_all = "kebab-case", into = "&str")]
 pub enum GitHookType {
@@ -95,6 +96,7 @@ impl fmt::Display for GitHookType {
     }
 }
 
+#[cfg_attr(feature = "json_schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Deserialize, Serialize, Eq, PartialEq)]
 #[serde(deny_unknown_fields, untagged)]
 pub enum GitHook {

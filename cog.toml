@@ -1,3 +1,5 @@
+#:schema ./docs/website/.vuepress/cog-schema.json
+
 # A list of glob patterns describing branches on which semver bump are allowed
 branch_whitelist = ["main"]
 
@@ -21,18 +23,16 @@ post_bump_hooks = [
     "git push",
     "git push origin {{version}}",
     "cargo package",
-    "cargo publish"
+    "cargo publish",
 ]
 
 # A custom named bump profile, the inner post/pre bump hook will be used
 # instead of the main ones when running `cog bump --hook-profile example --auto`
 [bump_profiles.example]
 pre_bump_hooks = [
-    "echo 'bumping from {{latest}} to {{version}} using a named profile'"
+    "echo 'bumping from {{latest}} to {{version}} using a named profile'",
 ]
-post_bump_hooks = [
-    "echo 'we are done'"
-]
+post_bump_hooks = ["echo 'we are done'"]
 
 # Shareable git-hooks, can be installed using `cog install-hook --all`
 # or alternatively `cog install-hooks {commit_hook_type}

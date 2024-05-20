@@ -38,12 +38,16 @@ pub fn init<S: AsRef<Path> + ?Sized>(path: &S) -> anyhow::Result<()> {
         eprint!("Found {} in {:?}, Nothing to do", CONFIG_PATH, &path);
         exit(1);
     } else {
-        std::fs::write(
-            &settings_path,
-            toml::to_string(&settings)
-                .map_err(|err| anyhow!("failed to serialize {}\n\ncause: {}", CONFIG_PATH, err))?,
-        )
-        .map_err(|err| {
+        let toml_string = toml::to_string(&settings)
+            .map(|toml_string| {
+                return format!(
+                    "{}\n\n{}",
+                    "#:schema https://docs.cocogitto.io/cog-schema.json", toml_string
+                );
+            })
+            .map_err(|err| anyhow!("failed to serialize {}\n\ncause: {}", CONFIG_PATH, err))?;
+
+        std::fs::write(&settings_path, toml_string).map_err(|err| {
             anyhow!(
                 "failed to write file `{:?}`\n\ncause: {}",
                 settings_path,
