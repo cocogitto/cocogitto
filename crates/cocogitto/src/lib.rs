@@ -10,7 +10,6 @@ use error::BumpError;
 
 pub mod command;
 pub mod error;
-pub mod log;
 
 pub trait CogCommand {
     fn settings() -> Result<Settings> {

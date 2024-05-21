@@ -1,0 +1,18 @@
+[package]
+name = "cog-log"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow.workspace = true
+cocogitto.workspace = true
+cocogitto-commit.workspace = true
+cocogitto-git.workspace = true
+git2.workspace = true
+which.workspace = true
+shell-words.workspace = true
+
+[dev-dependencies]
+cocogitto-test-helpers.workspace = true
+sealed_test.workspace = true
+speculoos.workspace = true

@@ -5,13 +5,11 @@ use std::path::PathBuf;
 
 use cocogitto_changelog::template::{RemoteContext, Template};
 
-use cocogitto::log::filter::{CommitFilter, CommitFilters};
-use cocogitto::log::output::Output;
 use cocogitto::{CocoGitto, CogCommand};
 use cocogitto_config::git_hook::{GitHook, GitHookType};
 use cocogitto_config::{self, COMMITS_METADATA, SETTINGS};
 
-use anyhow::{bail, Context, Result};
+use anyhow::{bail, Result};
 use clap::builder::{PossibleValue, PossibleValuesParser};
 use clap::{ArgAction, ArgGroup, Args, CommandFactory, Parser, Subcommand, ValueEnum};
 use clap_complete::{shells, Generator};
@@ -24,6 +22,7 @@ use cog_commit::CogCommitCommand;
 use cog_get_version::CogGetVersionCommand;
 use cog_git_hook::{CogInstallGitHookCommand, Hook};
 use cog_init::CogInitCommand;
+use cog_log::CogLogCommand;
 
 fn commit_types() -> PossibleValuesParser {
     let types = COMMITS_METADATA
@@ -547,50 +546,14 @@ fn main() -> Result<()> {
             author,
             scope,
             no_error,
-        } => {
-            let cocogitto = CocoGitto::get()?;
-
-            let repo_tag_name = cocogitto.get_repo_tag_name();
-            let repo_tag_name = repo_tag_name.as_deref().unwrap_or("cog log");
-
-            let mut output = Output::builder()
-                .with_pager_from_env("PAGER")
-                .with_file_name(repo_tag_name)
-                .build()?;
-
-            let mut filters = vec![];
-            if let Some(commit_types) = typ {
-                filters.extend(
-                    commit_types
-                        .iter()
-                        .map(|commit_type| CommitFilter::Type(commit_type.as_str().into())),
-                );
-            }
-
-            if let Some(scopes) = scope {
-                filters.extend(scopes.into_iter().map(CommitFilter::Scope));
-            }
-
-            if let Some(authors) = author {
-                filters.extend(authors.into_iter().map(CommitFilter::Author));
-            }
-
-            if breaking_change {
-                filters.push(CommitFilter::BreakingChange);
-            }
-
-            if no_error {
-                filters.push(CommitFilter::NoError);
-            }
-
-            let filters = CommitFilters(filters);
-
-            let content = cocogitto.get_log(filters)?;
-            output
-                .handle()?
-                .write_all(content.as_bytes())
-                .context("failed to write log into the pager")?;
+        } => CogLogCommand {
+            breaking_change,
+            typ,
+            author,
+            scope,
+            no_error,
         }
+        .execute()?,
         Command::Changelog {
             pattern,
             at,
@@ -708,6 +671,7 @@ fn init_logs(verbose: u8, quiet: bool) {
             "cog_get_version",
             "cog_git_hook",
             "cog_init",
+            "cog_log",
             "cocogitto_commit",
         ])
         .quiet(quiet)

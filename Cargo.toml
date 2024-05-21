@@ -25,6 +25,7 @@ cog-commit = { path = "crates/cog-commit" }
 cog-get-version = { path = "crates/cog-get-version" }
 cog-git-hook = { path = "crates/cog-git-hook" }
 cog-init = { path = "crates/cog-init" }
+cog-log = { path = "crates/cog-log" }
 
 semver = "1.0.23"
 colored = "^2"
