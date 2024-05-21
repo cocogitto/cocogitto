@@ -1,19 +1,20 @@
 use anyhow::bail;
 use anyhow::Result;
+use cocogitto::CogCommand;
 use cocogitto_git::tag::TagLookUpOptions;
+use cocogitto_tag::error::TagError;
 use log::warn;
 use semver::Version;
 
-use crate::CocoGitto;
-use cocogitto_tag::error::TagError;
+pub struct CogGetVersionCommand {
+    pub fallback: Option<String>,
+    pub package: Option<String>,
+}
 
-impl CocoGitto {
-    pub fn get_latest_version(
-        &self,
-        fallback: Option<String>,
-        package: Option<String>,
-    ) -> Result<()> {
-        let fallback = match fallback {
+impl CogCommand for CogGetVersionCommand {
+    fn execute(self) -> Result<()> {
+        let repository = &Self::repository()?;
+        let fallback = match self.fallback {
             Some(input) => match Version::parse(&input) {
                 Ok(version) => Some(version),
                 Err(err) => {
@@ -25,11 +26,9 @@ impl CocoGitto {
         };
 
         let options = TagLookUpOptions::default();
-        let current_tag = match package {
-            Some(pkg) => self
-                .repository
-                .get_latest_tag(TagLookUpOptions::package(&pkg)),
-            None => self.repository.get_latest_tag(options),
+        let current_tag = match self.package {
+            Some(pkg) => repository.get_latest_tag(TagLookUpOptions::package(&pkg)),
+            None => repository.get_latest_tag(options),
         };
 
         let current_version = match current_tag {

@@ -10,6 +10,7 @@ cocogitto-changelog.workspace = true
 cocogitto-bump.workspace = true
 cog-check.workspace = true
 cog-commit.workspace = true
+cog-get-version.workspace = true
 conventional_commit_parser.workspace = true
 itertools.workspace = true
 anyhow.workspace = true

@@ -21,6 +21,7 @@ use cocogitto::command::changelog::get_template_context;
 use cocogitto_bump::increment::IncrementCommand;
 use cog_check::CogCheckCommand;
 use cog_commit::CogCommitCommand;
+use cog_get_version::CogGetVersionCommand;
 
 fn commit_types() -> PossibleValuesParser {
     let types = COMMITS_METADATA
@@ -392,8 +393,7 @@ fn main() -> Result<()> {
 
     match cli.command {
         Command::GetVersion { fallback, package } => {
-            let cocogitto = CocoGitto::get()?;
-            cocogitto.get_latest_version(fallback, package)?
+            CogGetVersionCommand { fallback, package }.execute()?
         }
         Command::Bump {
             version,
@@ -674,7 +674,13 @@ fn init_logs(verbose: u8, quiet: bool) {
     let verbosity = if verbose == 0 { 2 } else { verbose - 1 };
     stderrlog::new()
         .module(module_path!())
-        .modules(vec!["cocogitto", "cog_check", "cocogitto_commit"])
+        .modules(vec![
+            "cocogitto",
+            "cog_check",
+            "cog_commit",
+            "cog_get_version",
+            "cocogitto_commit",
+        ])
         .quiet(quiet)
         .verbosity(verbosity as usize)
         .show_level(false)

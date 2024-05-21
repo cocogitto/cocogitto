@@ -1,0 +1,12 @@
+[package]
+name = "cog-get-version"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+cocogitto.workspace = true
+cocogitto-git.workspace = true
+cocogitto-tag.workspace = true
+anyhow.workspace = true
+log.workspace = true
+semver.workspace = true
