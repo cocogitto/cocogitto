@@ -349,12 +349,10 @@ dependencies = [
  "rand",
  "sealed_test",
  "semver",
- "shell-words",
  "speculoos",
  "tempfile",
  "tera",
  "toml 0.5.11",
- "which 6.0.1",
 ]
 
 [[package]]
@@ -602,7 +600,6 @@ dependencies = [
  "anyhow",
  "cmd_lib",
  "cocogitto",
- "cocogitto-git",
  "cocogitto-test-helpers",
  "sealed_test",
  "speculoos",

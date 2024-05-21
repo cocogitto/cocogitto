@@ -35,8 +35,6 @@ toml.workspace = true
 itertools.workspace = true
 tera.workspace = true
 semver.workspace = true
-shell-words.workspace = true
-which.workspace = true
 log.workspace = true
 
 

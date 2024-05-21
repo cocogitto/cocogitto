@@ -5,7 +5,6 @@ edition = "2021"
 
 [dependencies]
 cocogitto.workspace = true
-cocogitto-git.workspace = true
 anyhow.workspace = true
 
 [dev-dependencies]
