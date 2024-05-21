@@ -1,35 +1,6 @@
-use std::fmt::{self, Debug, Display, Formatter};
+use std::fmt::{self, Display, Formatter};
 
-use cocogitto_commit::error::ConventionalCommitError;
-use cocogitto_oid::OidOf;
 use colored::*;
-
-#[derive(Debug)]
-pub(crate) struct CogCheckReport {
-    pub from: OidOf,
-    pub errors: Vec<ConventionalCommitError>,
-}
-
-impl Display for CogCheckReport {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let header = format!(
-            "\nFound {} non compliant commits in {}..HEAD:\n",
-            self.errors.len(),
-            self.from
-        )
-        .red()
-        .bold();
-
-        writeln!(f, "{header}")?;
-
-        for err in &self.errors {
-            let underline = format!("{:>57}", " ").underline();
-            writeln!(f, "{underline:>5}\n")?;
-            write!(f, "{err}")?;
-        }
-        Ok(())
-    }
-}
 
 // This is not meant to be unwrapped like other errors
 // just to emit a warning on hook failure

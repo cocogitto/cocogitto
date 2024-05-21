@@ -14,6 +14,20 @@ pub mod command;
 pub mod error;
 pub mod log;
 
+pub trait CogCommand {
+    fn settings() -> Result<Settings> {
+        let current_dir = &std::env::current_dir()?;
+        Settings::get(current_dir.as_path()).map_err(Into::into)
+    }
+
+    fn repository() -> Result<Repository> {
+        let current_dir = &std::env::current_dir()?;
+        Repository::open(current_dir).map_err(Into::into)
+    }
+
+    fn execute(&self) -> anyhow::Result<()>;
+}
+
 #[derive(Debug)]
 pub struct CocoGitto {
     repository: Repository,

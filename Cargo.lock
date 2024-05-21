@@ -403,6 +403,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "cocogitto-check"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "cmd_lib",
+ "cocogitto",
+ "cocogitto-commit",
+ "cocogitto-git",
+ "cocogitto-oid",
+ "cocogitto-test-helpers",
+ "colored",
+ "log",
+ "sealed_test",
+ "speculoos",
+]
+
+[[package]]
 name = "cocogitto-commit"
 version = "0.1.0"
 dependencies = [
@@ -527,6 +544,7 @@ dependencies = [
  "cocogitto",
  "cocogitto-bump",
  "cocogitto-changelog",
+ "cocogitto-check",
  "cocogitto-config",
  "cocogitto-test-helpers",
  "conventional_commit_parser",

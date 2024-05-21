@@ -8,7 +8,7 @@ use cocogitto_changelog::template::{RemoteContext, Template};
 
 use cocogitto::log::filter::{CommitFilter, CommitFilters};
 use cocogitto::log::output::Output;
-use cocogitto::{CocoGitto, CommitHook};
+use cocogitto::{CocoGitto, CogCommand, CommitHook};
 use cocogitto_config::git_hook::GitHookType;
 use cocogitto_config::{self, SETTINGS};
 
@@ -22,6 +22,7 @@ use cocogitto::command::bump::{BumpOptions, PackageBumpOptions};
 use cocogitto::command::changelog::get_template_context;
 use cocogitto::command::commit::CommitOptions;
 use cocogitto_bump::increment::IncrementCommand;
+use cocogitto_check::CogCheckCommand;
 
 fn hook_profiles() -> PossibleValuesParser {
     let profiles = SETTINGS
@@ -315,7 +316,7 @@ enum Command {
     /// Add git hooks to the repository
     InstallHook {
         /// Type of hook to install
-        #[arg(value_parser = git_hook_types(),  group = "git-hooks")]
+        #[arg(value_parser = git_hook_types(), group = "git-hooks")]
         hook_type: Vec<String>,
         /// Install all git-hooks
         #[arg(short, long, group = "git-hooks")]
@@ -520,10 +521,7 @@ fn main() -> Result<()> {
             ignore_merge_commits,
             range,
         } => {
-            let cocogitto = CocoGitto::get()?;
-            let from_latest_tag = from_latest_tag || SETTINGS.from_latest_tag;
-            let ignore_merge_commits = ignore_merge_commits || SETTINGS.ignore_merge_commits;
-            cocogitto.check(from_latest_tag, ignore_merge_commits, range)?;
+            CogCheckCommand::try_new(from_latest_tag, ignore_merge_commits, range)?.execute()?;
         }
         Command::Edit { from_latest_tag } => {
             let cocogitto = CocoGitto::get()?;
@@ -700,8 +698,7 @@ fn init_logs(verbose: u8, quiet: bool) {
     let verbosity = if verbose == 0 { 2 } else { verbose - 1 };
     stderrlog::new()
         .module(module_path!())
-        .module("cocogitto_commit")
-        .modules(vec!["cocogitto"])
+        .modules(vec!["cocogitto", "cocogitto_check", "cocogitto_commit"])
         .quiet(quiet)
         .verbosity(verbosity as usize)
         .show_level(false)

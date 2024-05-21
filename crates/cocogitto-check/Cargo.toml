@@ -1,0 +1,19 @@
+[package]
+name = "cocogitto-check"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+cocogitto.workspace = true
+cocogitto-commit.workspace = true
+cocogitto-git.workspace = true
+cocogitto-oid.workspace = true
+anyhow.workspace = true
+colored.workspace = true
+log.workspace = true
+
+[dev-dependencies]
+cocogitto-test-helpers.workspace = true
+sealed_test.workspace = true
+speculoos.workspace = true
+cmd_lib.workspace = true
