@@ -1,4 +1,3 @@
-mod commit;
 mod mangen;
 
 use std::fs;
@@ -8,11 +7,10 @@ use cocogitto_changelog::template::{RemoteContext, Template};
 
 use cocogitto::log::filter::{CommitFilter, CommitFilters};
 use cocogitto::log::output::Output;
-use cocogitto::{CocoGitto, CogCommand, CommitHook};
+use cocogitto::{CocoGitto, CogCommand};
 use cocogitto_config::git_hook::GitHookType;
-use cocogitto_config::{self, SETTINGS};
+use cocogitto_config::{self, COMMITS_METADATA, SETTINGS};
 
-use crate::commit::prepare_edit_message;
 use anyhow::{bail, Context, Result};
 use clap::builder::{PossibleValue, PossibleValuesParser};
 use clap::{ArgAction, ArgGroup, Args, CommandFactory, Parser, Subcommand, ValueEnum};
@@ -20,9 +18,17 @@ use clap_complete::{shells, Generator};
 use clap_complete_nushell::Nushell;
 use cocogitto::command::bump::{BumpOptions, PackageBumpOptions};
 use cocogitto::command::changelog::get_template_context;
-use cocogitto::command::commit::CommitOptions;
 use cocogitto_bump::increment::IncrementCommand;
-use cocogitto_check::CogCheckCommand;
+use cog_check::CogCheckCommand;
+use cog_commit::CogCommitCommand;
+
+fn commit_types() -> PossibleValuesParser {
+    let types = COMMITS_METADATA
+        .iter()
+        .map(|(commit_type, _)| -> &str { commit_type.as_ref() });
+
+    types.into()
+}
 
 fn hook_profiles() -> PossibleValuesParser {
     let profiles = SETTINGS
@@ -157,7 +163,7 @@ enum Command {
 
     /// Interactively rename invalid commit messages
     Edit {
-        /// Edit non conventional commits, starting from the latest tag to HEAD
+        /// Edit non-conventional commits, starting from the latest tag to HEAD
         #[arg(short = 'l', long)]
         from_latest_tag: bool,
     },
@@ -341,7 +347,7 @@ enum Command {
 #[derive(Args)]
 struct CommitArgs {
     /// Conventional commit type
-    #[arg(name = "type", value_name = "TYPE", value_parser = commit::commit_types())]
+    #[arg(name = "type", value_name = "TYPE", value_parser = commit_types())]
     typ: String,
 
     /// Commit description
@@ -644,49 +650,19 @@ fn main() -> Result<()> {
             add_files,
             update_files,
         }) => {
-            let cocogitto = CocoGitto::get()?;
-            cocogitto.run_commit_hook(CommitHook::PreCommit)?;
-            let commit_message_path = cocogitto.prepare_edit_message_path();
-
-            let commit_message = if skip_ci || skip_ci_override.is_some() {
-                format!(
-                    "{} {}",
-                    message,
-                    skip_ci_override.unwrap_or(SETTINGS.skip_ci.clone())
-                )
-            } else {
-                message
-            };
-
-            let template = prepare_edit_message(
-                &typ,
-                &commit_message,
-                scope.as_deref(),
-                breaking_change,
-                &commit_message_path,
-            )?;
-            cocogitto.run_commit_hook(CommitHook::PrepareCommitMessage(template))?;
-
-            let (body, footer, breaking) = if edit {
-                commit::edit_message(&commit_message_path, breaking_change)?
-            } else {
-                (None, None, breaking_change)
-            };
-
-            let opts = CommitOptions {
-                commit_type: &typ,
+            CogCommitCommand {
+                typ: &typ,
+                message,
                 scope,
-                summary: commit_message,
-                body,
-                footer,
-                breaking,
+                breaking_change,
+                edit,
                 sign,
+                skip_ci,
+                skip_ci_override,
                 add_files,
                 update_files,
-            };
-
-            cocogitto.conventional_commit(opts)?;
-            cocogitto.run_commit_hook(CommitHook::PostCommit)?;
+            }
+            .execute()?;
         }
     }
 
@@ -698,7 +674,7 @@ fn init_logs(verbose: u8, quiet: bool) {
     let verbosity = if verbose == 0 { 2 } else { verbose - 1 };
     stderrlog::new()
         .module(module_path!())
-        .modules(vec!["cocogitto", "cocogitto_check", "cocogitto_commit"])
+        .modules(vec!["cocogitto", "cog_check", "cocogitto_commit"])
         .quiet(quiet)
         .verbosity(verbosity as usize)
         .show_level(false)

@@ -17,9 +17,11 @@ cocogitto-changelog = { path = "crates/cocogitto-changelog" }
 cocogitto-commit = { path = "crates/cocogitto-commit" }
 cocogitto-git = { path = "crates/cocogitto-git" }
 cocogitto-bump = { path = "crates/cocogitto-bump" }
-cocogitto-check = { path = "crates/cocogitto-check" }
 cocogitto-test-helpers = { path = "crates/cocogitto-test-helpers" }
 cocogitto = { path = "crates/cocogitto" }
+cog-check = { path = "crates/cog-check" }
+cog-commit = { path = "crates/cog-commit" }
+
 semver = "1.0.23"
 colored = "^2"
 toml = "0.5.11"

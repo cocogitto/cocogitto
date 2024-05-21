@@ -1,6 +1,5 @@
 pub mod bump;
 pub mod changelog;
-pub mod commit;
 pub mod edit;
 pub mod get_version;
 pub mod git_hooks;

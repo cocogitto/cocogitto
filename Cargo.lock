@@ -403,23 +403,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cocogitto-check"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "cmd_lib",
- "cocogitto",
- "cocogitto-commit",
- "cocogitto-git",
- "cocogitto-oid",
- "cocogitto-test-helpers",
- "colored",
- "log",
- "sealed_test",
- "speculoos",
-]
-
-[[package]]
 name = "cocogitto-commit"
 version = "0.1.0"
 dependencies = [
@@ -544,9 +527,10 @@ dependencies = [
  "cocogitto",
  "cocogitto-bump",
  "cocogitto-changelog",
- "cocogitto-check",
  "cocogitto-config",
  "cocogitto-test-helpers",
+ "cog-check",
+ "cog-commit",
  "conventional_commit_parser",
  "edit",
  "indoc",
@@ -558,6 +542,37 @@ dependencies = [
  "speculoos",
  "stderrlog",
  "toml 0.5.11",
+]
+
+[[package]]
+name = "cog-check"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "cmd_lib",
+ "cocogitto",
+ "cocogitto-commit",
+ "cocogitto-git",
+ "cocogitto-oid",
+ "cocogitto-test-helpers",
+ "colored",
+ "log",
+ "sealed_test",
+ "speculoos",
+]
+
+[[package]]
+name = "cog-commit"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "cocogitto",
+ "cocogitto-commit",
+ "cocogitto-git",
+ "conventional_commit_parser",
+ "edit",
+ "itertools",
+ "log",
 ]
 
 [[package]]

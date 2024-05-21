@@ -1,0 +1,14 @@
+[package]
+name = "cog-commit"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+cocogitto.workspace = true
+cocogitto-git.workspace = true
+cocogitto-commit.workspace = true
+conventional_commit_parser.workspace = true
+itertools.workspace = true
+edit.workspace = true
+anyhow.workspace = true
+log.workspace = true

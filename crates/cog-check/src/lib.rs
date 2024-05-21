@@ -33,7 +33,7 @@ impl CogCheckCommand {
 }
 
 impl CogCommand for CogCheckCommand {
-    fn execute(&self) -> Result<()> {
+    fn execute(self) -> Result<()> {
         let repository = &Self::repository()?;
         let settings = &Self::settings()?;
         let commit_range = if let Some(range) = &self.range {
