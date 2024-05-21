@@ -10,7 +10,6 @@ use git2::{
 pub mod commit;
 pub mod diff;
 pub mod error;
-pub mod hook;
 pub mod monorepo;
 pub mod rev;
 pub mod stash;

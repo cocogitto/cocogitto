@@ -8,7 +8,7 @@ use cocogitto_changelog::template::{RemoteContext, Template};
 use cocogitto::log::filter::{CommitFilter, CommitFilters};
 use cocogitto::log::output::Output;
 use cocogitto::{CocoGitto, CogCommand};
-use cocogitto_config::git_hook::GitHookType;
+use cocogitto_config::git_hook::{GitHook, GitHookType};
 use cocogitto_config::{self, COMMITS_METADATA, SETTINGS};
 
 use anyhow::{bail, Context, Result};
@@ -22,6 +22,7 @@ use cocogitto_bump::increment::IncrementCommand;
 use cog_check::CogCheckCommand;
 use cog_commit::CogCommitCommand;
 use cog_get_version::CogGetVersionCommand;
+use cog_git_hook::{CogInstallGitHookCommand, Hook};
 
 fn commit_types() -> PossibleValuesParser {
     let types = COMMITS_METADATA
@@ -532,7 +533,12 @@ fn main() -> Result<()> {
         Command::Edit { from_latest_tag } => {
             let cocogitto = CocoGitto::get()?;
             let from_latest_tag = from_latest_tag || SETTINGS.from_latest_tag;
-            cocogitto.check_and_edit(from_latest_tag)?;
+            let allowed_commits = SETTINGS.allowed_commit_types();
+            cocogitto.check_and_edit(
+                from_latest_tag,
+                &allowed_commits,
+                SETTINGS.ignore_merge_commits,
+            )?;
         }
         Command::Log {
             breaking_change,
@@ -622,15 +628,32 @@ fn main() -> Result<()> {
             all,
             overwrite,
         } => {
-            let cocogitto = CocoGitto::get()?;
-            if all {
-                cocogitto.install_all_hooks(overwrite)?;
-                return Ok(());
+            let settings_to_hook: for<'a> fn((&'a GitHookType, &'a GitHook)) -> Hook<'a> =
+                |(r#type, hook)| match &hook {
+                    GitHook::Script { script } => Hook::Script {
+                        script,
+                        r#type: (*r#type).into(),
+                    },
+                    GitHook::File { path } => Hook::File {
+                        path,
+                        r#type: (*r#type).into(),
+                    },
+                };
+
+            let hooks = if all {
+                SETTINGS.git_hooks.iter().map(settings_to_hook).collect()
+            } else {
+                let hook_types: Vec<GitHookType> =
+                    hook_types.into_iter().map(GitHookType::from).collect();
+                SETTINGS
+                    .git_hooks
+                    .iter()
+                    .filter(|(r#type, _)| hook_types.contains(r#type))
+                    .map(settings_to_hook)
+                    .collect()
             };
 
-            let hook_types = hook_types.into_iter().map(GitHookType::from).collect();
-
-            cocogitto.install_git_hooks(overwrite, hook_types)?;
+            CogInstallGitHookCommand { hooks, overwrite }.execute()?;
         }
         Command::GenerateCompletions { shell } => {
             clap_complete::generate(shell, &mut Cli::command(), "cog", &mut std::io::stdout());

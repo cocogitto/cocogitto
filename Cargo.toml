@@ -23,6 +23,7 @@ cocogitto = { path = "crates/cocogitto" }
 cog-check = { path = "crates/cog-check" }
 cog-commit = { path = "crates/cog-commit" }
 cog-get-version = { path = "crates/cog-get-version" }
+cog-git-hook = { path = "crates/cog-git-hook" }
 
 semver = "1.0.23"
 colored = "^2"
