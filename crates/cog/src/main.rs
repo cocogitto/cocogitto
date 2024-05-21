@@ -23,6 +23,7 @@ use cog_check::CogCheckCommand;
 use cog_commit::CogCommitCommand;
 use cog_get_version::CogGetVersionCommand;
 use cog_git_hook::{CogInstallGitHookCommand, Hook};
+use cog_init::CogInitCommand;
 
 fn commit_types() -> PossibleValuesParser {
     let types = COMMITS_METADATA
@@ -621,7 +622,10 @@ fn main() -> Result<()> {
             println!("{result}");
         }
         Command::Init { path } => {
-            cocogitto::command::init::init(&path)?;
+            CogInitCommand {
+                path: path.as_path(),
+            }
+            .execute()?;
         }
         Command::InstallHook {
             hook_type: hook_types,
@@ -702,6 +706,8 @@ fn init_logs(verbose: u8, quiet: bool) {
             "cog_check",
             "cog_commit",
             "cog_get_version",
+            "cog_git_hook",
+            "cog_init",
             "cocogitto_commit",
         ])
         .quiet(quiet)

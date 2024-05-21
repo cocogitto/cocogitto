@@ -12,6 +12,7 @@ cog-check.workspace = true
 cog-commit.workspace = true
 cog-get-version.workspace = true
 cog-git-hook.workspace = true
+cog-init.workspace = true
 anyhow.workspace = true
 stderrlog.workspace = true
 clap = { version = "4.5.2", features = ["derive", "string"] }

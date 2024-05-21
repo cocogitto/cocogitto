@@ -540,6 +540,7 @@ dependencies = [
  "cog-commit",
  "cog-get-version",
  "cog-git-hook",
+ "cog-init",
  "indoc",
  "predicates",
  "pretty_assertions",
@@ -602,6 +603,20 @@ dependencies = [
  "cocogitto",
  "cocogitto-git",
  "cocogitto-test-helpers",
+ "sealed_test",
+ "speculoos",
+ "toml 0.5.11",
+]
+
+[[package]]
+name = "cog-init"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "cocogitto",
+ "cocogitto-git",
+ "cocogitto-test-helpers",
+ "log",
  "sealed_test",
  "speculoos",
  "toml 0.5.11",

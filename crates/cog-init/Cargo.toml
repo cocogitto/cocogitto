@@ -1,0 +1,16 @@
+[package]
+name = "cog-init"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+cocogitto.workspace = true
+cocogitto-git.workspace = true
+anyhow.workspace = true
+log.workspace = true
+toml.workspace = true
+
+[dev-dependencies]
+cocogitto-test-helpers.workspace = true
+sealed_test.workspace = true
+speculoos.workspace = true
