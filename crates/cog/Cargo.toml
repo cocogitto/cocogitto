@@ -11,10 +11,7 @@ cocogitto-bump.workspace = true
 cog-check.workspace = true
 cog-commit.workspace = true
 cog-get-version.workspace = true
-conventional_commit_parser.workspace = true
-itertools.workspace = true
 anyhow.workspace = true
-edit.workspace = true
 stderrlog.workspace = true
 clap = { version = "4.5.2", features = ["derive", "string"] }
 clap_complete = { version = "4.5.1" }

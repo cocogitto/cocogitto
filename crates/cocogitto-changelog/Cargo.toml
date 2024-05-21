@@ -5,13 +5,10 @@ edition = "2021"
 
 [dependencies]
 cocogitto-commit.workspace = true
-cocogitto-git.workspace = true
 cocogitto-oid.workspace = true
 tera.workspace = true
 serde.workspace = true
 chrono.workspace = true
-colored.workspace = true
-log.workspace = true
 
 [dev-dependencies]
 cocogitto-git.workspace = true

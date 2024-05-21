@@ -344,13 +344,11 @@ dependencies = [
  "indoc",
  "itertools",
  "log",
- "once_cell",
  "predicates",
  "pretty_assertions",
  "rand",
  "sealed_test",
  "semver",
- "serde",
  "shell-words",
  "speculoos",
  "tempfile",
@@ -500,7 +498,6 @@ name = "cocogitto-tag"
 version = "0.1.0"
 dependencies = [
  "git2",
- "log",
  "semver",
  "serde",
 ]
@@ -542,10 +539,7 @@ dependencies = [
  "cog-check",
  "cog-commit",
  "cog-get-version",
- "conventional_commit_parser",
- "edit",
  "indoc",
- "itertools",
  "predicates",
  "pretty_assertions",
  "rand",

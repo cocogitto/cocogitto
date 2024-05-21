@@ -30,7 +30,6 @@ colored.workspace = true
 chrono.workspace = true
 tempfile.workspace = true
 globset.workspace = true
-serde.workspace = true
 # Don't bump yet (see https://github.com/cocogitto/cocogitto/issues/337)
 toml.workspace = true
 itertools.workspace = true
@@ -38,7 +37,6 @@ tera.workspace = true
 semver.workspace = true
 shell-words.workspace = true
 which.workspace = true
-once_cell.workspace = true
 log.workspace = true
 
 
