@@ -22,6 +22,7 @@ cocogitto-schema = { path = "crates/cocogitto-schema" }
 cocogitto = { path = "crates/cocogitto" }
 cog-check = { path = "crates/cog-check" }
 cog-commit = { path = "crates/cog-commit" }
+cog-edit = { path = "crates/cog-edit" }
 cog-get-version = { path = "crates/cog-get-version" }
 cog-git-hook = { path = "crates/cog-git-hook" }
 cog-init = { path = "crates/cog-init" }

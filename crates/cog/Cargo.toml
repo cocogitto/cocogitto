@@ -10,6 +10,7 @@ cocogitto-changelog.workspace = true
 cocogitto-bump.workspace = true
 cog-check.workspace = true
 cog-commit.workspace = true
+cog-edit.workspace = true
 cog-get-version.workspace = true
 cog-git-hook.workspace = true
 cog-init.workspace = true

@@ -19,6 +19,7 @@ use cocogitto::command::changelog::get_template_context;
 use cocogitto_bump::increment::IncrementCommand;
 use cog_check::CogCheckCommand;
 use cog_commit::CogCommitCommand;
+use cog_edit::CogEditCommand;
 use cog_get_version::CogGetVersionCommand;
 use cog_git_hook::{CogInstallGitHookCommand, Hook};
 use cog_init::CogInitCommand;
@@ -531,14 +532,7 @@ fn main() -> Result<()> {
             CogCheckCommand::try_new(from_latest_tag, ignore_merge_commits, range)?.execute()?;
         }
         Command::Edit { from_latest_tag } => {
-            let cocogitto = CocoGitto::get()?;
-            let from_latest_tag = from_latest_tag || SETTINGS.from_latest_tag;
-            let allowed_commits = SETTINGS.allowed_commit_types();
-            cocogitto.check_and_edit(
-                from_latest_tag,
-                &allowed_commits,
-                SETTINGS.ignore_merge_commits,
-            )?;
+            CogEditCommand { from_latest_tag }.execute()?;
         }
         Command::Log {
             breaking_change,

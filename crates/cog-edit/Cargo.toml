@@ -1,0 +1,14 @@
+[package]
+name = "cog-edit"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+cocogitto.workspace = true
+cocogitto-git.workspace = true
+cocogitto-commit.workspace = true
+anyhow.workspace = true
+tempfile.workspace = true
+git2.workspace = true
+log.workspace = true
+colored.workspace = true

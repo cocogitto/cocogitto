@@ -536,6 +536,7 @@ dependencies = [
  "cocogitto-test-helpers",
  "cog-check",
  "cog-commit",
+ "cog-edit",
  "cog-get-version",
  "cog-git-hook",
  "cog-init",
@@ -579,6 +580,20 @@ dependencies = [
  "edit",
  "itertools",
  "log",
+]
+
+[[package]]
+name = "cog-edit"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "cocogitto",
+ "cocogitto-commit",
+ "cocogitto-git",
+ "colored",
+ "git2",
+ "log",
+ "tempfile",
 ]
 
 [[package]]
