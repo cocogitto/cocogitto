@@ -40,10 +40,10 @@ pub fn init<S: AsRef<Path> + ?Sized>(path: &S) -> anyhow::Result<()> {
     } else {
         let toml_string = toml::to_string(&settings)
             .map(|toml_string| {
-                return format!(
+                format!(
                     "{}\n\n{}",
                     "#:schema https://docs.cocogitto.io/cog-schema.json", toml_string
-                );
+                )
             })
             .map_err(|err| anyhow!("failed to serialize {}\n\ncause: {}", CONFIG_PATH, err))?;
 
