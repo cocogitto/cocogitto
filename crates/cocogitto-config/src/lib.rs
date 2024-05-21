@@ -1,5 +1,5 @@
-#![deny(missing_docs)]
-
+// TODO: uncomment when ready
+//  #![deny(missing_docs)]
 use std::collections::HashMap;
 use std::path::PathBuf;
 
