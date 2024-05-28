@@ -70,7 +70,7 @@ and [Semver](https://semver.org/) specifications.
 ### Why ?
 
 There are plenty of tools listed on
-the [conventional commits web site](https://www.conventionalcommits.org/en/about/)
+the [conventional commits website](https://www.conventionalcommits.org/en/about/)
 to help you generate changelog, git hooks, commit template etc. Some of them are specifically designed for the
 Conventional Commits specification, and some of them are general purpose. 
 
