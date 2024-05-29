@@ -227,6 +227,10 @@ enum Command {
         /// Name of the repository used during template generation
         #[arg(long, requires_all = ["owner", "remote"])]
         repository: Option<String>,
+
+        /// Generate the changelog for the specified package
+        #[arg(short, long)]
+        package: Option<String>,
     },
 
     /// Get current version
@@ -581,6 +585,7 @@ fn main() -> Result<()> {
             remote,
             owner,
             repository,
+            package,
         } => {
             let cocogitto = CocoGitto::get()?;
 
@@ -593,15 +598,20 @@ fn main() -> Result<()> {
                 Template::default()
             };
 
-            // TODO: fallback to tag here
-            let pattern = pattern.as_deref().unwrap_or("..");
-            let result = match at {
-                Some(at) => cocogitto.get_changelog_at_tag(&at, template)?,
+            let pattern = at.unwrap_or(pattern.as_deref().unwrap_or("..").to_string());
+
+            let result = match package {
+                Some(package) => {
+                    let changelog =
+                        cocogitto.get_changelog_for_package(&pattern, &package, true)?;
+                    changelog.into_markdown(template)?
+                }
                 None => {
-                    let changelog = cocogitto.get_changelog(pattern, true)?;
+                    let changelog = cocogitto.get_changelog(&pattern, true)?;
                     changelog.into_markdown(template)?
                 }
             };
+
             println!("{result}");
         }
         Command::Init { path } => {

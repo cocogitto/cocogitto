@@ -6,12 +6,12 @@ use once_cell::sync::{Lazy, OnceCell};
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex, MutexGuard};
 
-static REPO_CACHE: Lazy<Arc<Mutex<BTreeMap<String, OidOf>>>> =
+static REPO_CACHE: Lazy<Arc<Mutex<BTreeMap<String, Vec<OidOf>>>>> =
     Lazy::new(|| Arc::new(Mutex::new(BTreeMap::new())));
 
 static FIRST_COMMIT: OnceCell<OidOf> = OnceCell::new();
 
-pub(crate) fn get_cache(repository: &Repository) -> MutexGuard<'_, BTreeMap<String, OidOf>> {
+pub(crate) fn get_cache(repository: &Repository) -> MutexGuard<'_, BTreeMap<String, Vec<OidOf>>> {
     let mut cache = REPO_CACHE.lock().unwrap();
     if cache.is_empty() {
         let head = repository.get_head_commit().expect("HEAD");
@@ -19,10 +19,10 @@ pub(crate) fn get_cache(repository: &Repository) -> MutexGuard<'_, BTreeMap<Stri
             OidOf::FirstCommit(repository.get_first_commit().expect("first commit"))
         });
 
-        cache.insert(head.id().to_string(), OidOf::Head(head.id()));
+        cache.insert(head.id().to_string(), vec![OidOf::Head(head.id())]);
         cache.insert(
             first.to_string(),
-            FIRST_COMMIT.get().expect("first commit").clone(),
+            vec![FIRST_COMMIT.get().expect("first commit").clone()],
         );
 
         let tag_iter = repository.0.tag_names(None).expect("tags");
@@ -35,15 +35,19 @@ pub(crate) fn get_cache(repository: &Repository) -> MutexGuard<'_, BTreeMap<Stri
         for tag in tag_iter {
             if let Some(target) = tag.target.as_ref() {
                 let target = target.to_string();
-                cache.insert(target, OidOf::Tag(tag.clone()));
+
+                let vec = cache.entry(target).or_insert(Vec::new());
+                vec.push(OidOf::Tag(tag.clone()));
             }
 
             if let Some(oid) = tag.oid.as_ref() {
                 let oid = oid.to_string();
-                cache.insert(oid, OidOf::Tag(tag.clone()));
+                let vec = cache.entry(oid).or_insert(Vec::new());
+                vec.push(OidOf::Tag(tag.clone()));
             }
 
-            cache.insert(tag.to_string(), OidOf::Tag(tag));
+            let vec = cache.entry(tag.to_string()).or_insert(Vec::new());
+            vec.push(OidOf::Tag(tag));
         }
     }
 
