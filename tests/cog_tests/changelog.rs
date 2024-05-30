@@ -563,6 +563,72 @@ fn ensure_omit_from_changelog_is_honored() -> Result<()> {
     Ok(())
 }
 
+#[sealed_test]
+fn get_changelog_for_package() -> Result<()> {
+    init_monorepo(&mut Settings::default())?;
+
+    let settings = formatdoc!(
+        "
+        [packages.one]
+        path = \"one\"
+        changelog_path = \"one/CHANGELOG.md\"
+
+        [packages.two]
+        path = \"two\"
+        changelog_path = \"two/CHANGELOG.md\"
+        "
+    );
+
+    Command::cargo_bin("cog")?
+        .arg("bump")
+        .arg("--auto")
+        .assert()
+        .success();
+
+    run_cmd!(
+        echo $settings > cog.toml;
+        git add .;
+        git commit -m "chore: update cog";
+        echo "one feature" > one/one_feature;
+        git add .;
+        git commit -m "feat: one feature";
+        mkdir two;
+        echo "two feature" > two/two_feature;
+        git add .;
+        git commit -m "feat: two feature";
+    )?;
+
+    Command::cargo_bin("cog")?
+        .arg("bump")
+        .arg("--auto")
+        .assert()
+        .success();
+
+    let changelog = Command::cargo_bin("cog")?
+        .arg("changelog")
+        .arg("-p")
+        .arg("one")
+        // Assert
+        .assert()
+        .success();
+
+    let tags = Command::new("git")
+        .arg("--no-pager")
+        .arg("tag")
+        .assert()
+        .success();
+
+    let tags = tags.get_output();
+    let tags = String::from_utf8_lossy(&tags.stdout);
+    println!("\n\n\n{}", tags.as_ref());
+
+    let changelog = changelog.get_output();
+    let changelog = String::from_utf8_lossy(&changelog.stdout);
+    println!("\n\n\n{}", changelog.as_ref());
+
+    assert_tag_exists("one-0.2.0")?;
+    Ok(())
+}
 //TODO
 /*// see: https://github.com/cocogitto/cocogitto/issues/359
 #[sealed_test]

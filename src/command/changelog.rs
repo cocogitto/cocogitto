@@ -1,8 +1,5 @@
 use crate::conventional::changelog::release::Release;
-use crate::conventional::changelog::template::Template;
-
 use crate::CocoGitto;
-use anyhow::anyhow;
 use anyhow::Result;
 
 impl CocoGitto {
@@ -14,11 +11,15 @@ impl CocoGitto {
         Release::try_from(commit_range).map_err(Into::into)
     }
 
-    pub fn get_changelog_at_tag(&self, tag: &str, template: Template) -> Result<String> {
-        let changelog = self.get_changelog(tag, false)?;
-
-        changelog
-            .into_markdown(template)
-            .map_err(|err| anyhow!(err))
+    pub fn get_changelog_for_package(
+        &self,
+        pattern: &str,
+        package: &str,
+        _with_child_releases: bool,
+    ) -> Result<Release> {
+        let commit_range = self
+            .repository
+            .get_commit_range_for_package(pattern, package)?;
+        Release::try_from(commit_range).map_err(Into::into)
     }
 }

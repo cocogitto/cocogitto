@@ -145,6 +145,7 @@ impl Repository {
 
         Ok(repo_cache
             .values()
+            .flatten()
             .filter_map(|oid| match oid {
                 OidOf::Tag(tag) if tag_filter(tag) => Some(tag),
                 _ => None,
