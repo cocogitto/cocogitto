@@ -1,5 +1,5 @@
 # Note that the following build needs binaries to be precompiled for the target
-# architectures. Use the `build-all` just recipies to build for all targets.
+# architectures. Use the `build-all` just recipes to build for all targets.
 FROM alpine as arm-builder
 COPY ./target/armv7-unknown-linux-musleabihf/release/cog /cog
 
