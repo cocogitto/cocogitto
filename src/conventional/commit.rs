@@ -81,6 +81,19 @@ impl Commit {
                     date,
                 };
 
+                if let (Some(scopes), Some(scope)) =
+                    (&SETTINGS.commit_scopes(), &commit.conventional.scope)
+                {
+                    if !scopes.contains(scope) {
+                        return Err(Box::new(ConventionalCommitError::CommitScopeNotDefined {
+                            oid: commit.oid.to_string(),
+                            summary: format_summary(&commit.conventional),
+                            scope: scope.to_string(),
+                            author: commit.author,
+                        }));
+                    }
+                }
+
                 match &SETTINGS
                     .commit_types()
                     .get(&commit.conventional.commit_type)
