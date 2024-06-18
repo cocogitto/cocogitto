@@ -1,6 +1,6 @@
-use cocogitto::command::changelog::{get_changelog, get_changelog_at_tag, get_template_context};
 use cocogitto::CogCommand;
 use cocogitto_changelog::template::{RemoteContext, Template};
+use cocogitto_changelog::{get_changelog, get_changelog_at_tag, get_template_context};
 
 pub struct CogChangelogCommand {
     pub pattern: Option<String>,

@@ -6,9 +6,15 @@ edition = "2021"
 [dependencies]
 cocogitto-commit.workspace = true
 cocogitto-oid.workspace = true
+cocogitto-git.workspace = true
+log.workspace = true
 tera.workspace = true
+colored.workspace = true
 serde.workspace = true
 chrono.workspace = true
+
+# TODO: Remove me
+cocogitto-config.workspace = true
 
 [dev-dependencies]
 cocogitto-git.workspace = true

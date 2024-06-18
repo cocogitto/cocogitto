@@ -2,10 +2,10 @@ use crate::command::bump::{
     ensure_tag_is_greater_than_previous, pretty_print_bump_summary, tag_or_fallback_to_zero,
     HookRunOptions, PackageBumpOptions,
 };
-use crate::command::changelog::get_package_changelog_template;
 use crate::CocoGitto;
 use anyhow::Result;
 use cocogitto_bump::bump;
+use cocogitto_changelog::get_package_changelog_template;
 use cocogitto_changelog::template::PackageContext;
 use cocogitto_changelog::ReleaseType;
 use cocogitto_config::SETTINGS;

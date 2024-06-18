@@ -1,12 +1,12 @@
 use cocogitto_tag::error::TagError;
 
-use crate::command::changelog::release_from_commits;
 use crate::BumpError;
 use crate::CocoGitto;
 use anyhow::{anyhow, bail, Context};
 use anyhow::{ensure, Result};
 use cocogitto_bump::increment::IncrementCommand;
 use cocogitto_changelog::release::Release;
+use cocogitto_changelog::release_from_commits;
 use cocogitto_commit::{Commit, CommitType};
 use cocogitto_config::hook::{HookType, Hooks};
 use cocogitto_config::monorepo::MonoRepoPackage;

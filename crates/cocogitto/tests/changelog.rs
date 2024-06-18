@@ -4,7 +4,7 @@ use cmd_lib::run_cmd;
 use sealed_test::prelude::*;
 use speculoos::prelude::*;
 
-use cocogitto::command::changelog::get_changelog;
+use cocogitto_changelog::get_changelog;
 
 use cocogitto_test_helpers::*;
 

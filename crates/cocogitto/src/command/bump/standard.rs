@@ -5,10 +5,10 @@ use crate::command::bump::{
 
 use cocogitto_changelog::ReleaseType;
 
-use crate::command::changelog::get_changelog_template;
 use crate::CocoGitto;
 use anyhow::Result;
 use cocogitto_bump::bump;
+use cocogitto_changelog::get_changelog_template;
 use cocogitto_config::SETTINGS;
 use cocogitto_git::tag::TagLookUpOptions;
 use cocogitto_hook::HookVersion;

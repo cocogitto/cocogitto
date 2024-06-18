@@ -8,12 +8,12 @@ use anyhow::Result;
 use cocogitto_config::SETTINGS;
 use colored::*;
 
-use crate::command::changelog::{get_monorepo_changelog_template, get_package_changelog_template};
 use cocogitto_bump::bump;
 use cocogitto_bump::error::BumpError;
 use cocogitto_bump::increment::IncrementCommand;
 use cocogitto_changelog::template::{MonoRepoContext, PackageBumpContext, PackageContext};
 use cocogitto_changelog::ReleaseType;
+use cocogitto_changelog::{get_monorepo_changelog_template, get_package_changelog_template};
 use cocogitto_git::tag::TagLookUpOptions;
 use cocogitto_hook::HookVersion;
 use cocogitto_oid::OidOf;
