@@ -28,7 +28,6 @@ git2.workspace = true
 anyhow.workspace = true
 colored.workspace = true
 chrono.workspace = true
-tempfile.workspace = true
 globset.workspace = true
 # Don't bump yet (see https://github.com/cocogitto/cocogitto/issues/337)
 toml.workspace = true

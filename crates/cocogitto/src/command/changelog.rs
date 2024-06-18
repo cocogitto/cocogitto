@@ -1,7 +1,6 @@
 use cocogitto_changelog::release::{ChangelogCommit, Release};
 use cocogitto_changelog::template::{RemoteContext, Template};
 
-use crate::CocoGitto;
 use anyhow::anyhow;
 use anyhow::Result;
 use chrono::Utc;
@@ -9,26 +8,33 @@ use cocogitto_changelog::error::ChangelogError;
 use cocogitto_commit::Commit;
 use cocogitto_config::SETTINGS;
 use cocogitto_git::rev::CommitIter;
+use cocogitto_git::Repository;
 use cocogitto_oid::OidOf;
 use colored::Colorize;
 use log::warn;
 
-impl CocoGitto {
-    /// ## Get a changelog between two oids
-    /// - `from` default value:latest tag or else first commit
-    /// - `to` default value:`HEAD` or else first commit
-    pub fn get_changelog(&self, pattern: &str, _with_child_releases: bool) -> Result<Release> {
-        let commit_range = self.repository.revwalk(pattern)?;
-        release_from_commits(commit_range).map_err(Into::into)
-    }
+/// ## Get a changelog between two oids
+/// - `from` default value:latest tag or else first commit
+/// - `to` default value:`HEAD` or else first commit
+pub fn get_changelog<'a>(
+    repository: &'a Repository,
+    pattern: &str,
+    _with_child_releases: bool,
+) -> Result<Release<'a>> {
+    let commit_range = repository.revwalk(pattern)?;
+    release_from_commits(commit_range).map_err(Into::into)
+}
 
-    pub fn get_changelog_at_tag(&self, tag: &str, template: Template) -> Result<String> {
-        let changelog = self.get_changelog(tag, false)?;
+pub fn get_changelog_at_tag(
+    repository: &Repository,
+    tag: &str,
+    template: Template,
+) -> Result<String> {
+    let changelog = get_changelog(repository, tag, false)?;
 
-        changelog
-            .into_markdown(template)
-            .map_err(|err| anyhow!(err))
-    }
+    changelog
+        .into_markdown(template)
+        .map_err(|err| anyhow!(err))
 }
 
 pub fn get_template_context() -> Option<RemoteContext> {

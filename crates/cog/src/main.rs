@@ -3,8 +3,6 @@ mod mangen;
 use std::fs;
 use std::path::PathBuf;
 
-use cocogitto_changelog::template::{RemoteContext, Template};
-
 use cocogitto::{CocoGitto, CogCommand};
 use cocogitto_config::git_hook::{GitHook, GitHookType};
 use cocogitto_config::{self, COMMITS_METADATA, SETTINGS};
@@ -15,8 +13,8 @@ use clap::{ArgAction, ArgGroup, Args, CommandFactory, Parser, Subcommand, ValueE
 use clap_complete::{shells, Generator};
 use clap_complete_nushell::Nushell;
 use cocogitto::command::bump::{BumpOptions, PackageBumpOptions};
-use cocogitto::command::changelog::get_template_context;
 use cocogitto_bump::increment::IncrementCommand;
+use cog_changelog::CogChangelogCommand;
 use cog_check::CogCheckCommand;
 use cog_commit::CogCommitCommand;
 use cog_edit::CogEditCommand;
@@ -556,27 +554,15 @@ fn main() -> Result<()> {
             owner,
             repository,
         } => {
-            let cocogitto = CocoGitto::get()?;
-
-            let context =
-                RemoteContext::try_new(remote, repository, owner).or_else(get_template_context);
-            let template = template.as_ref().or(SETTINGS.changelog.template.as_ref());
-            let template = if let Some(template) = template {
-                Template::from_arg(template, context)?
-            } else {
-                Template::default()
-            };
-
-            // TODO: fallback to tag here
-            let pattern = pattern.as_deref().unwrap_or("..");
-            let result = match at {
-                Some(at) => cocogitto.get_changelog_at_tag(&at, template)?,
-                None => {
-                    let changelog = cocogitto.get_changelog(pattern, true)?;
-                    changelog.into_markdown(template)?
-                }
-            };
-            println!("{result}");
+            CogChangelogCommand {
+                pattern,
+                at,
+                template,
+                remote,
+                owner,
+                repository,
+            }
+            .execute()?;
         }
         Command::Init { path } => {
             CogInitCommand {

@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/*"]
+members = ["crates/commands/*", "crates/libs/*", "crates/cog", "crates/cocogitto"]
 resolver = "2"
 
 [profile.release]
@@ -9,24 +9,25 @@ codegen-units = 1
 panic = "abort"
 
 [workspace.dependencies]
-cocogitto-config = { path = "crates/cocogitto-config" }
-cocogitto-tag = { path = "crates/cocogitto-tag" }
-cocogitto-oid = { path = "crates/cocogitto-oid" }
-cocogitto-hook = { path = "crates/cocogitto-hook" }
-cocogitto-changelog = { path = "crates/cocogitto-changelog" }
-cocogitto-commit = { path = "crates/cocogitto-commit" }
-cocogitto-git = { path = "crates/cocogitto-git" }
-cocogitto-bump = { path = "crates/cocogitto-bump" }
-cocogitto-test-helpers = { path = "crates/cocogitto-test-helpers" }
-cocogitto-schema = { path = "crates/cocogitto-schema" }
+cocogitto-config = { path = "crates/libs/cocogitto-config" }
+cocogitto-tag = { path = "crates/libs/cocogitto-tag" }
+cocogitto-oid = { path = "crates/libs/cocogitto-oid" }
+cocogitto-hook = { path = "crates/libs/cocogitto-hook" }
+cocogitto-changelog = { path = "crates/libs/cocogitto-changelog" }
+cocogitto-commit = { path = "crates/libs/cocogitto-commit" }
+cocogitto-git = { path = "crates/libs/cocogitto-git" }
+cocogitto-bump = { path = "crates/libs/cocogitto-bump" }
+cocogitto-test-helpers = { path = "crates/libs/cocogitto-test-helpers" }
+cocogitto-schema = { path = "crates/libs/cocogitto-schema" }
 cocogitto = { path = "crates/cocogitto" }
-cog-check = { path = "crates/cog-check" }
-cog-commit = { path = "crates/cog-commit" }
-cog-edit = { path = "crates/cog-edit" }
-cog-get-version = { path = "crates/cog-get-version" }
-cog-git-hook = { path = "crates/cog-git-hook" }
-cog-init = { path = "crates/cog-init" }
-cog-log = { path = "crates/cog-log" }
+cog-check = { path = "crates/commands/cog-check" }
+cog-commit = { path = "crates/commands/cog-commit" }
+cog-edit = { path = "crates/commands/cog-edit" }
+cog-get-version = { path = "crates/commands/cog-get-version" }
+cog-git-hook = { path = "crates/commands/cog-git-hook" }
+cog-init = { path = "crates/commands/cog-init" }
+cog-log = { path = "crates/commands/cog-log" }
+cog-changelog = { path = "crates/commands/cog-changelog" }
 
 semver = "1.0.23"
 colored = "^2"

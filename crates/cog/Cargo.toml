@@ -6,7 +6,6 @@ edition = "2021"
 [dependencies]
 cocogitto.workspace = true
 cocogitto-config.workspace = true
-cocogitto-changelog.workspace = true
 cocogitto-bump.workspace = true
 cog-check.workspace = true
 cog-commit.workspace = true
@@ -15,6 +14,7 @@ cog-get-version.workspace = true
 cog-git-hook.workspace = true
 cog-init.workspace = true
 cog-log.workspace = true
+cog-changelog.workspace = true
 anyhow.workspace = true
 stderrlog.workspace = true
 clap = { version = "4.5.2", features = ["derive", "string"] }
