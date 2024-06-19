@@ -1,6 +1,6 @@
 use anyhow::bail;
-use cocogitto::CogCommand;
 use cocogitto_commit::CommitType;
+use cog_command::CogCommand;
 use std::fs;
 use std::path::PathBuf;
 

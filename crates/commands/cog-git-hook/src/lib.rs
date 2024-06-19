@@ -4,7 +4,7 @@ use std::{fs, io};
 use anyhow::anyhow;
 use anyhow::Result;
 
-use cocogitto::CogCommand;
+use cog_command::CogCommand;
 
 pub struct CogInstallGitHookCommand<'a> {
     pub hooks: Vec<Hook<'a>>,
@@ -82,8 +82,8 @@ mod tests {
 
     use anyhow::Result;
     use cmd_lib::run_cmd;
-    use cocogitto::CogCommand;
     use cocogitto_test_helpers::git_init_no_gpg;
+    use cog_command::CogCommand;
     use sealed_test::prelude::*;
     use speculoos::prelude::*;
 

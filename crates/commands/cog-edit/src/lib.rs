@@ -1,9 +1,9 @@
 use anyhow::anyhow;
-use cocogitto::CogCommand;
 use cocogitto_commit::verify;
 use cocogitto_commit::{Commit, CommitType};
 use cocogitto_git::tag::TagLookUpOptions;
 use cocogitto_git::Repository;
+use cog_command::CogCommand;
 use colored::Colorize;
 use git2::{Oid, RebaseOptions};
 use log::{error, info, warn};

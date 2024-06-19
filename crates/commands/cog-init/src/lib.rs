@@ -1,6 +1,6 @@
 use anyhow::anyhow;
-use cocogitto::CogCommand;
 use cocogitto_git::Repository;
+use cog_command::CogCommand;
 use log::info;
 use std::path::Path;
 use std::process::exit;
@@ -81,8 +81,8 @@ impl<'a> CogCommand for CogInitCommand<'a> {
 mod test {
     use crate::CogInitCommand;
     use anyhow::Result;
-    use cocogitto::CogCommand;
     use cocogitto_test_helpers::*;
+    use cog_command::CogCommand;
     use sealed_test::prelude::*;
     use speculoos::prelude::*;
     use std::path::Path;

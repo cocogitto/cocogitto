@@ -5,9 +5,6 @@ use anyhow::{anyhow, Result};
 use cocogitto_config::Settings;
 use cocogitto_git::Repository;
 
-pub mod command;
-pub mod error;
-
 pub trait CogCommand {
     fn settings(path: &Path) -> Result<Settings> {
         Settings::try_from(path).map_err(anyhow::Error::from)

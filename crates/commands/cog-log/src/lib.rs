@@ -4,10 +4,10 @@ mod output;
 use crate::filter::CommitFilter;
 use crate::output::Output;
 use anyhow::{Context, Result};
-use cocogitto::CogCommand;
 use cocogitto_commit::{Commit, CommitType};
 use cocogitto_git::tag::TagLookUpOptions;
 use cocogitto_git::Repository;
+use cog_command::CogCommand;
 use filter::CommitFilters;
 use std::fmt::Write;
 

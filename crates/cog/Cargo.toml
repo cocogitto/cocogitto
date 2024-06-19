@@ -1,12 +1,21 @@
 [package]
 name = "cog"
-version = "0.1.0"
+version = "6.1.0"
+authors = ["Paul Delafosse <paul.delafosse@protonmail.com>"]
 edition = "2021"
+readme = "README.md"
+license = "MIT"
+repository = "https://github.com/cocogitto/cocogitto"
+categories = ["command-line-utilities", "development-tools"]
+keywords = ["git", "conventional-commit", "changelog", "semver"]
+description = """
+Cocogitto is a set of cli tools for the conventional commit
+and semver specifications.
+"""
 
 [dependencies]
-cocogitto.workspace = true
+cog-command.workspace = true
 cocogitto-config.workspace = true
-cocogitto-bump.workspace = true
 cog-check.workspace = true
 cog-commit.workspace = true
 cog-edit.workspace = true

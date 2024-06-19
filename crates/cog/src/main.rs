@@ -6,12 +6,12 @@ use clap::{ArgAction, ArgGroup, Args, CommandFactory, Parser, Subcommand, ValueE
 use clap_complete::{shells, Generator};
 use clap_complete_nushell::Nushell;
 
-use cocogitto::CogCommand;
 use cocogitto_config::git_hook::{GitHook, GitHookType};
 use cocogitto_config::{self, COMMITS_METADATA, SETTINGS};
 use cog_bump::CogBumpCommand;
 use cog_changelog::CogChangelogCommand;
 use cog_check::CogCheckCommand;
+use cog_command::CogCommand;
 use cog_commit::CogCommitCommand;
 use cog_edit::CogEditCommand;
 use cog_get_version::CogGetVersionCommand;

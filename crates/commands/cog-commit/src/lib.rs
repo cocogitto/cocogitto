@@ -1,8 +1,8 @@
 use anyhow::bail;
-use cocogitto::CogCommand;
 use cocogitto_commit::{validate_and_get_message, Commit};
 use cocogitto_git::error::Git2Error;
 use cocogitto_git::Repository;
+use cog_command::CogCommand;
 use conventional_commit_parser::commit::Separator;
 use itertools::Itertools;
 use log::info;

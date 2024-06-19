@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/commands/*", "crates/libs/*", "crates/cog", "crates/cocogitto"]
+members = ["crates/commands/*", "crates/libs/*", "crates/cog"]
 resolver = "2"
 
 [profile.release]
@@ -19,7 +19,7 @@ cocogitto-git = { path = "crates/libs/cocogitto-git" }
 cocogitto-bump = { path = "crates/libs/cocogitto-bump" }
 cocogitto-test-helpers = { path = "crates/libs/cocogitto-test-helpers" }
 cocogitto-schema = { path = "crates/libs/cocogitto-schema" }
-cocogitto = { path = "crates/cocogitto" }
+cog-command = { path = "crates/commands/cog-command" }
 cog-check = { path = "crates/commands/cog-check" }
 cog-commit = { path = "crates/commands/cog-commit" }
 cog-edit = { path = "crates/commands/cog-edit" }

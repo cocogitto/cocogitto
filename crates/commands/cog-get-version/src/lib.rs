@@ -1,8 +1,8 @@
 use anyhow::bail;
 use anyhow::Result;
-use cocogitto::CogCommand;
 use cocogitto_git::tag::TagLookUpOptions;
 use cocogitto_tag::error::TagError;
+use cog_command::CogCommand;
 use log::warn;
 use semver::Version;
 

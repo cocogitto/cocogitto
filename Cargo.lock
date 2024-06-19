@@ -322,37 +322,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cocogitto"
-version = "6.1.0"
-dependencies = [
- "anyhow",
- "assert_cmd",
- "cmd_lib",
- "cocogitto-bump",
- "cocogitto-changelog",
- "cocogitto-commit",
- "cocogitto-config",
- "cocogitto-git",
- "cocogitto-hook",
- "cocogitto-oid",
- "cocogitto-tag",
- "cocogitto-test-helpers",
- "colored",
- "globset",
- "indoc",
- "itertools",
- "log",
- "predicates",
- "pretty_assertions",
- "rand",
- "sealed_test",
- "semver",
- "speculoos",
- "tera",
- "toml 0.5.11",
-]
-
-[[package]]
 name = "cocogitto-bump"
 version = "0.1.0"
 dependencies = [
@@ -515,7 +484,7 @@ dependencies = [
 
 [[package]]
 name = "cog"
-version = "0.1.0"
+version = "6.1.0"
 dependencies = [
  "anyhow",
  "assert_cmd",
@@ -526,13 +495,12 @@ dependencies = [
  "clap_complete_nushell",
  "clap_mangen",
  "cmd_lib",
- "cocogitto",
- "cocogitto-bump",
  "cocogitto-config",
  "cocogitto-test-helpers",
  "cog-bump",
  "cog-changelog",
  "cog-check",
+ "cog-command",
  "cog-commit",
  "cog-edit",
  "cog-get-version",
@@ -556,7 +524,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "cmd_lib",
- "cocogitto",
  "cocogitto-bump",
  "cocogitto-changelog",
  "cocogitto-commit",
@@ -566,6 +533,7 @@ dependencies = [
  "cocogitto-oid",
  "cocogitto-tag",
  "cocogitto-test-helpers",
+ "cog-command",
  "colored",
  "globset",
  "itertools",
@@ -582,10 +550,12 @@ name = "cog-changelog"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "assert_cmd",
  "cmd_lib",
- "cocogitto",
  "cocogitto-changelog",
+ "cocogitto-config",
  "cocogitto-test-helpers",
+ "cog-command",
  "sealed_test",
  "speculoos",
 ]
@@ -596,11 +566,11 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "cmd_lib",
- "cocogitto",
  "cocogitto-commit",
  "cocogitto-git",
  "cocogitto-oid",
  "cocogitto-test-helpers",
+ "cog-command",
  "colored",
  "log",
  "sealed_test",
@@ -608,13 +578,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "cog-command"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "cocogitto-config",
+ "cocogitto-git",
+]
+
+[[package]]
 name = "cog-commit"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "cocogitto",
  "cocogitto-commit",
  "cocogitto-git",
+ "cog-command",
  "conventional_commit_parser",
  "edit",
  "itertools",
@@ -626,9 +605,9 @@ name = "cog-edit"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "cocogitto",
  "cocogitto-commit",
  "cocogitto-git",
+ "cog-command",
  "colored",
  "git2",
  "log",
@@ -640,9 +619,9 @@ name = "cog-get-version"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "cocogitto",
  "cocogitto-git",
  "cocogitto-tag",
+ "cog-command",
  "log",
  "semver",
 ]
@@ -653,8 +632,8 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "cmd_lib",
- "cocogitto",
  "cocogitto-test-helpers",
+ "cog-command",
  "sealed_test",
  "speculoos",
  "toml 0.5.11",
@@ -665,9 +644,9 @@ name = "cog-init"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "cocogitto",
  "cocogitto-git",
  "cocogitto-test-helpers",
+ "cog-command",
  "log",
  "sealed_test",
  "speculoos",
@@ -679,10 +658,10 @@ name = "cog-log"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "cocogitto",
  "cocogitto-commit",
  "cocogitto-git",
  "cocogitto-test-helpers",
+ "cog-command",
  "git2",
  "sealed_test",
  "shell-words",
@@ -695,8 +674,8 @@ name = "cog-verify"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "cocogitto",
  "cocogitto-commit",
+ "cog-command",
 ]
 
 [[package]]

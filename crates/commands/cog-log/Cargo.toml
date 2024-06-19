@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 anyhow.workspace = true
-cocogitto.workspace = true
+cog-command.workspace = true
 cocogitto-commit.workspace = true
 cocogitto-git.workspace = true
 git2.workspace = true

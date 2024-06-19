@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-cocogitto.workspace = true
+cog-command.workspace = true
 cocogitto-commit.workspace = true
 cocogitto-git.workspace = true
 cocogitto-oid.workspace = true

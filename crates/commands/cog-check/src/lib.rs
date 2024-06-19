@@ -1,9 +1,9 @@
 use anyhow::anyhow;
 use anyhow::Result;
-use cocogitto::CogCommand;
 use cocogitto_commit::{Commit, ConventionalCommitError};
 use cocogitto_git::tag::TagLookUpOptions;
 use cocogitto_oid::OidOf;
+use cog_command::CogCommand;
 use colored::*;
 use log::info;
 use std::fmt;
@@ -107,11 +107,11 @@ impl Display for CogCheckReport {
 mod test {
     use crate::CogCheckCommand;
     use cmd_lib::run_cmd;
-    use cocogitto::CogCommand;
     use cocogitto_test_helpers::{
         commit, create_empty_config, git_add, git_commit, git_init, git_init_and_set_current_path,
         git_tag,
     };
+    use cog_command::CogCommand;
     use sealed_test::prelude::*;
     use speculoos::prelude::*;
 
