@@ -28,6 +28,7 @@ cog-git-hook = { path = "crates/commands/cog-git-hook" }
 cog-init = { path = "crates/commands/cog-init" }
 cog-log = { path = "crates/commands/cog-log" }
 cog-changelog = { path = "crates/commands/cog-changelog" }
+cog-verify = { path = "crates/commands/cog-verify" }
 
 semver = "1.0.23"
 colored = "^2"

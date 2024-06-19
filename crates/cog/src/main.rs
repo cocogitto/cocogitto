@@ -515,7 +515,7 @@ fn main() -> Result<()> {
                 (Some(_), Some(_)) => unreachable!(),
             };
 
-            cocogitto::command::verify::verify(
+            cog_verify::verify(
                 author,
                 &commit_message,
                 ignore_merge_commits,

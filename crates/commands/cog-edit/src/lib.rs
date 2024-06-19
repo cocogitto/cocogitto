@@ -1,6 +1,6 @@
 use anyhow::anyhow;
-use cocogitto::command::verify::verify;
 use cocogitto::CogCommand;
+use cocogitto_commit::verify;
 use cocogitto_commit::{Commit, CommitType};
 use cocogitto_git::tag::TagLookUpOptions;
 use cocogitto_git::Repository;

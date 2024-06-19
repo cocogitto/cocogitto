@@ -538,6 +538,7 @@ dependencies = [
  "cog-git-hook",
  "cog-init",
  "cog-log",
+ "cog-verify",
  "indoc",
  "predicates",
  "pretty_assertions",
@@ -659,6 +660,13 @@ dependencies = [
  "shell-words",
  "speculoos",
  "which 6.0.1",
+]
+
+[[package]]
+name = "cog-verify"
+version = "0.1.0"
+dependencies = [
+ "cocogitto-commit",
 ]
 
 [[package]]
