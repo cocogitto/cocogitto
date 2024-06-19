@@ -110,15 +110,6 @@ impl Default for Settings {
     }
 }
 
-pub fn commit_username(author: &str) -> Option<&'static str> {
-    SETTINGS
-        .changelog
-        .authors
-        .iter()
-        .find(|author_map| author_map.signature == author)
-        .map(|author| author.username.as_str())
-}
-
 pub fn changelog_path() -> &'static PathBuf {
     &SETTINGS.changelog.path
 }

@@ -34,7 +34,8 @@ pub enum CommitHook {
 impl CogCommand for CogCommitCommand<'_> {
     fn execute(self) -> anyhow::Result<()> {
         let repository = &Self::repository()?;
-        let settings = &Self::settings()?;
+        let path = Self::default_path()?;
+        let settings = &Self::settings(path.as_path())?;
 
         Self::run_commit_hook(repository, CommitHook::PreCommit)?;
         let commit_message_path = Self::prepare_edit_message_path(repository);

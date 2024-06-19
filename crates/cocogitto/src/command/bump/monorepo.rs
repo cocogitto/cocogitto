@@ -212,7 +212,16 @@ impl CocoGitto {
             pretty_print_bump_summary(&changelog)?;
 
             let path = cocogitto_config::changelog_path();
-            let template = get_monorepo_changelog_template()?;
+            let remote = SETTINGS.changelog.remote.as_ref().cloned();
+            let repository = SETTINGS.changelog.repository.as_ref().cloned();
+            let owner = SETTINGS.changelog.owner.as_ref().cloned();
+            let template = SETTINGS
+                .changelog
+                .template
+                .as_deref()
+                .unwrap_or("monorepo_default");
+
+            let template = get_monorepo_changelog_template(remote, repository, owner, template)?;
 
             changelog.write_to_file(
                 path,
@@ -359,7 +368,16 @@ impl CocoGitto {
             pretty_print_bump_summary(&changelog)?;
 
             let path = cocogitto_config::changelog_path();
-            let template = get_monorepo_changelog_template()?;
+            let remote = SETTINGS.changelog.remote.as_ref().cloned();
+            let repository = SETTINGS.changelog.repository.as_ref().cloned();
+            let owner = SETTINGS.changelog.owner.as_ref().cloned();
+            let template = SETTINGS
+                .changelog
+                .template
+                .as_deref()
+                .unwrap_or("monorepo_default");
+
+            let template = get_monorepo_changelog_template(remote, repository, owner, template)?;
 
             changelog.write_to_file(
                 path,
@@ -573,7 +591,16 @@ impl CocoGitto {
             pretty_print_bump_summary(&changelog)?;
 
             let path = package.changelog_path();
-            let template = get_package_changelog_template()?;
+            let remote = SETTINGS.changelog.remote.as_ref().cloned();
+            let repository = SETTINGS.changelog.repository.as_ref().cloned();
+            let owner = SETTINGS.changelog.owner.as_ref().cloned();
+            let template = SETTINGS
+                .changelog
+                .package_template
+                .as_deref()
+                .unwrap_or("package_default");
+
+            let template = get_package_changelog_template(remote, repository, owner, template)?;
 
             let additional_context = ReleaseType::Package(PackageContext {
                 package_name: package_name.as_ref(),

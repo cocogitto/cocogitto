@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
+use std::path::{Path, PathBuf};
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 
 use cocogitto_config::Settings;
 use cocogitto_git::error::Git2Error;
@@ -12,14 +13,21 @@ pub mod command;
 pub mod error;
 
 pub trait CogCommand {
-    fn settings() -> Result<Settings> {
-        let current_dir = &std::env::current_dir()?;
-        Settings::get(current_dir.as_path()).map_err(Into::into)
+    fn settings(path: &Path) -> Result<Settings> {
+        Settings::try_from(path).map_err(anyhow::Error::from)
     }
 
     fn repository() -> Result<Repository> {
         let current_dir = &std::env::current_dir()?;
         Repository::open(current_dir).map_err(Into::into)
+    }
+
+    fn default_path() -> Result<PathBuf> {
+        let repository = Self::repository()?;
+        repository
+            .get_repo_dir()
+            .map(Path::to_path_buf)
+            .ok_or(anyhow!("Repository path"))
     }
 
     fn execute(self) -> anyhow::Result<()>;

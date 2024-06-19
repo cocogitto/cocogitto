@@ -21,7 +21,8 @@ impl CogCheckCommand {
         ignore_merge_commits: bool,
         range: Option<String>,
     ) -> Result<Self> {
-        let settings = Self::settings()?;
+        let path = Self::default_path()?;
+        let settings = Self::settings(path.as_path())?;
         let from_latest_tag = check_from_latest_tag || settings.from_latest_tag;
         let ignore_merge_commits = ignore_merge_commits || settings.ignore_merge_commits;
         Ok(Self {
@@ -35,7 +36,8 @@ impl CogCheckCommand {
 impl CogCommand for CogCheckCommand {
     fn execute(self) -> Result<()> {
         let repository = &Self::repository()?;
-        let settings = &Self::settings()?;
+        let path = Self::default_path()?;
+        let settings = &Self::settings(path.as_path())?;
         let commit_range = if let Some(range) = &self.range {
             repository.revwalk(range)?
         } else if self.from_latest_tag {

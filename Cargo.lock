@@ -327,7 +327,6 @@ version = "6.1.0"
 dependencies = [
  "anyhow",
  "assert_cmd",
- "chrono",
  "cmd_lib",
  "cocogitto-bump",
  "cocogitto-changelog",
@@ -339,7 +338,6 @@ dependencies = [
  "cocogitto-tag",
  "cocogitto-test-helpers",
  "colored",
- "git2",
  "globset",
  "indoc",
  "itertools",

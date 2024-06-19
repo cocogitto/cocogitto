@@ -219,7 +219,17 @@ impl CocoGitto {
     /// The target version is not created yet when generating the changelog.
     pub fn get_changelog_with_target_version(&self, pattern: &str, tag: Tag) -> Result<Release> {
         let commit_range = self.repository.revwalk(pattern)?;
-        let mut release = release_from_commits(commit_range)?;
+        let allowed_commits = &SETTINGS.allowed_commit_types();
+        let omitted_commits = &SETTINGS.commit_omitted_from_changelog();
+        let changelog_titles = &SETTINGS.changelog_titles();
+        let usernames = &SETTINGS.commit_usernames();
+        let mut release = release_from_commits(
+            commit_range,
+            allowed_commits,
+            omitted_commits,
+            changelog_titles,
+            usernames,
+        )?;
         release.version = OidOf::Tag(tag);
         Ok(release)
     }
@@ -234,8 +244,18 @@ impl CocoGitto {
         let commit_range = self
             .repository
             .get_commit_range_for_package(pattern, package)?;
+        let allowed_commits = &SETTINGS.allowed_commit_types();
+        let omitted_commits = &SETTINGS.commit_omitted_from_changelog();
+        let changelog_titles = &SETTINGS.changelog_titles();
+        let usernames = &SETTINGS.commit_usernames();
 
-        let mut release = release_from_commits(commit_range)?;
+        let mut release = release_from_commits(
+            commit_range,
+            allowed_commits,
+            omitted_commits,
+            changelog_titles,
+            usernames,
+        )?;
         release.version = OidOf::Tag(tag);
         Ok(release)
     }
@@ -250,8 +270,18 @@ impl CocoGitto {
         let commit_range = self
             .repository
             .get_commit_range_for_monorepo_global(pattern)?;
+        let allowed_commits = &SETTINGS.allowed_commit_types();
+        let omitted_commits = &SETTINGS.commit_omitted_from_changelog();
+        let changelog_titles = &SETTINGS.changelog_titles();
+        let usernames = &SETTINGS.commit_usernames();
 
-        let release = match release_from_commits(commit_range) {
+        let release = match release_from_commits(
+            commit_range,
+            allowed_commits,
+            omitted_commits,
+            changelog_titles,
+            usernames,
+        ) {
             Ok(mut release) => {
                 release.version = OidOf::Tag(tag);
                 release

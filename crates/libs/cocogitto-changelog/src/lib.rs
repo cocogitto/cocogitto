@@ -3,13 +3,13 @@ use crate::release::{ChangelogCommit, Release};
 use crate::renderer::Renderer;
 use crate::template::{MonoRepoContext, PackageContext, RemoteContext, Template};
 use chrono::Utc;
-use cocogitto_commit::Commit;
-use cocogitto_config::SETTINGS;
+use cocogitto_commit::{Commit, CommitType};
 use cocogitto_git::rev::CommitIter;
 use cocogitto_git::Repository;
 use cocogitto_oid::OidOf;
 use colored::Colorize;
 use log::warn;
+use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
@@ -40,46 +40,60 @@ pub enum ReleaseType<'a> {
 pub fn get_changelog<'a>(
     repository: &'a Repository,
     pattern: &str,
-    _with_child_releases: bool,
+    allowed_commits: &[CommitType],
+    omitted_commits: &HashMap<CommitType, bool>,
+    changelog_titles: &HashMap<CommitType, String>,
+    usernames: &HashMap<&'a str, &'a str>,
 ) -> Result<Release<'a>, ChangelogError> {
     let commit_range = repository.revwalk(pattern)?;
-    release_from_commits(commit_range).map_err(Into::into)
+    release_from_commits(
+        commit_range,
+        allowed_commits,
+        omitted_commits,
+        changelog_titles,
+        usernames,
+    )
+    .map_err(Into::into)
 }
 
 pub fn get_changelog_at_tag(
     repository: &Repository,
     tag: &str,
     template: Template,
+    allowed_commits: &[CommitType],
+    omitted_commits: &HashMap<CommitType, bool>,
+    changelog_titles: &HashMap<CommitType, String>,
+    usernames: &HashMap<&str, &str>,
 ) -> Result<String, ChangelogError> {
-    let changelog = get_changelog(repository, tag, false)?;
+    let changelog = get_changelog(
+        repository,
+        tag,
+        allowed_commits,
+        omitted_commits,
+        changelog_titles,
+        usernames,
+    )?;
 
     changelog.into_markdown(template).map_err(Into::into)
 }
 
-pub fn get_template_context() -> Option<RemoteContext> {
-    let remote = SETTINGS.changelog.remote.as_ref().cloned();
-
-    let repository = SETTINGS.changelog.repository.as_ref().cloned();
-
-    let owner = SETTINGS.changelog.owner.as_ref().cloned();
-
-    RemoteContext::try_new(remote, repository, owner)
-}
-
-pub fn get_changelog_template() -> Result<Template, ChangelogError> {
-    let context = get_template_context();
-    let template = SETTINGS.changelog.template.as_deref().unwrap_or("default");
-
+pub fn get_changelog_template(
+    remote: Option<String>,
+    repository: Option<String>,
+    owner: Option<String>,
+    template: &str,
+) -> Result<Template, ChangelogError> {
+    let context = RemoteContext::try_new(remote, repository, owner);
     Template::from_arg(template, context)
 }
 
-pub fn get_package_changelog_template() -> Result<Template, ChangelogError> {
-    let context = get_template_context();
-    let template = SETTINGS
-        .changelog
-        .package_template
-        .as_deref()
-        .unwrap_or("package_default");
+pub fn get_package_changelog_template(
+    remote: Option<String>,
+    repository: Option<String>,
+    owner: Option<String>,
+    template: &str,
+) -> Result<Template, ChangelogError> {
+    let context = RemoteContext::try_new(remote, repository, owner);
 
     let template = match template {
         "remote" => "package_remote",
@@ -90,13 +104,13 @@ pub fn get_package_changelog_template() -> Result<Template, ChangelogError> {
     Template::from_arg(template, context)
 }
 
-pub fn get_monorepo_changelog_template() -> Result<Template, ChangelogError> {
-    let context = get_template_context();
-    let template = SETTINGS
-        .changelog
-        .template
-        .as_deref()
-        .unwrap_or("monorepo_default");
+pub fn get_monorepo_changelog_template(
+    remote: Option<String>,
+    repository: Option<String>,
+    owner: Option<String>,
+    template: &str,
+) -> Result<Template, ChangelogError> {
+    let context = RemoteContext::try_new(remote, repository, owner);
 
     let template = match template {
         "remote" => "monorepo_remote",
@@ -107,7 +121,13 @@ pub fn get_monorepo_changelog_template() -> Result<Template, ChangelogError> {
     Template::from_arg(template, context)
 }
 
-pub fn release_from_commits(commits: CommitIter<'_>) -> Result<Release, ChangelogError> {
+pub fn release_from_commits<'a>(
+    commits: CommitIter<'a>,
+    allowed_commits: &[CommitType],
+    omitted_commits: &HashMap<CommitType, bool>,
+    changelog_titles: &HashMap<CommitType, String>,
+    usernames: &HashMap<&'a str, &'a str>,
+) -> Result<Release<'a>, ChangelogError> {
     let mut releases = vec![];
     let mut commit_iter = commits.into_iter().rev().peekable();
 
@@ -138,14 +158,17 @@ pub fn release_from_commits(commits: CommitIter<'_>) -> Result<Release, Changelo
             date: Utc::now().naive_local(),
             commits: release
                 .iter()
-                .filter_map(|(_, commit)| {
-                    match Commit::from_git_commit(commit, &SETTINGS.allowed_commit_types()) {
+                .filter_map(
+                    |(_, commit)| match Commit::from_git_commit(commit, allowed_commits) {
                         Ok(commit) => {
                             let commit_type = &commit.conventional.commit_type;
-                            if !SETTINGS.should_omit_commit(commit_type) {
+                            if !omitted_commits.get(commit_type).unwrap_or(&false) {
                                 let author_username =
-                                    cocogitto_config::commit_username(&commit.author);
-                                let changelog_title = SETTINGS.get_changelog_title(commit_type);
+                                    usernames.get(commit.author.as_str()).cloned();
+                                let changelog_title = changelog_titles
+                                    .get(commit_type)
+                                    .cloned()
+                                    .unwrap_or(commit_type.to_string());
                                 Some(ChangelogCommit::from_commit(
                                     commit,
                                     author_username,
@@ -160,8 +183,8 @@ pub fn release_from_commits(commits: CommitIter<'_>) -> Result<Release, Changelo
                             warn!("{}", err);
                             None
                         }
-                    }
-                })
+                    },
+                )
                 .collect(),
             previous: current.map(Box::new),
         };
@@ -219,6 +242,7 @@ impl Release<'_> {
 
 #[cfg(test)]
 mod test {
+    use cocogitto_config::Settings;
     use git2::Oid;
     use sealed_test::prelude::sealed_test;
     use sealed_test::prelude::*;
@@ -236,7 +260,19 @@ mod test {
     fn should_get_a_release() -> anyhow::Result<()> {
         let repo = open_cocogitto_repo()?;
         let iter = repo.revwalk("..")?;
-        let release = release_from_commits(iter);
+        let settings = Settings::default();
+        let allowed_commits = &settings.allowed_commit_types();
+        let omitted_commits = &settings.commit_omitted_from_changelog();
+        let changelog_titles = &settings.changelog_titles();
+        let usernames = &settings.commit_usernames();
+
+        let release = release_from_commits(
+            iter,
+            allowed_commits,
+            omitted_commits,
+            changelog_titles,
+            usernames,
+        );
         assert_that!(release)
             .is_ok()
             .matches(|r| !r.commits.is_empty());
@@ -256,8 +292,19 @@ mod test {
 
         let range = range?;
 
+        let settings = Settings::default();
+        let allowed_commits = &settings.allowed_commit_types();
+        let omitted_commits = &settings.commit_omitted_from_changelog();
+        let changelog_titles = &settings.changelog_titles();
+        let usernames = &settings.commit_usernames();
         // Act
-        let release = release_from_commits(range)?;
+        let release = release_from_commits(
+            range,
+            allowed_commits,
+            omitted_commits,
+            changelog_titles,
+            usernames,
+        )?;
 
         // Assert
         assert_that!(release.previous).is_none();
@@ -288,9 +335,20 @@ mod test {
         git_tag("0.2.0")?;
 
         let range = repo.revwalk("..0.2.0")?;
+        let settings = Settings::default();
+        let allowed_commits = &settings.allowed_commit_types();
+        let omitted_commits = &settings.commit_omitted_from_changelog();
+        let changelog_titles = &settings.changelog_titles();
+        let usernames = &settings.commit_usernames();
 
         // Act
-        let release = release_from_commits(range)?;
+        let release = release_from_commits(
+            range,
+            allowed_commits,
+            omitted_commits,
+            changelog_titles,
+            usernames,
+        )?;
 
         // Assert
         assert_that!(release.previous).is_some().matches(|_child| {
@@ -325,9 +383,20 @@ mod test {
         // Arrange
         let repo = open_cocogitto_repo()?;
         let range = repo.revwalk("0.32.1..0.32.3")?;
+        let settings = Settings::default();
+        let allowed_commits = &settings.allowed_commit_types();
+        let omitted_commits = &settings.commit_omitted_from_changelog();
+        let changelog_titles = &settings.changelog_titles();
+        let usernames = &settings.commit_usernames();
 
         // Act
-        let release = release_from_commits(range)?;
+        let release = release_from_commits(
+            range,
+            allowed_commits,
+            omitted_commits,
+            changelog_titles,
+            usernames,
+        )?;
 
         // Assert
         assert_that!(release.version.to_string()).is_equal_to("0.32.3".to_string());
@@ -352,9 +421,20 @@ mod test {
         };
 
         let range = repo.revwalk("..")?;
+        let settings = Settings::default();
+        let allowed_commits = &settings.allowed_commit_types();
+        let omitted_commits = &settings.commit_omitted_from_changelog();
+        let changelog_titles = &settings.changelog_titles();
+        let usernames = &settings.commit_usernames();
 
         // Act
-        let mut release = release_from_commits(range)?;
+        let mut release = release_from_commits(
+            range,
+            allowed_commits,
+            omitted_commits,
+            changelog_titles,
+            usernames,
+        )?;
         let mut count = 0;
 
         while let Some(previous) = release.previous {
@@ -381,9 +461,20 @@ mod test {
         let four = commit("fix: the bug")?;
 
         let range = repo.revwalk(&format!("{}..", &one[0..7]))?;
+        let settings = Settings::default();
+        let allowed_commits = &settings.allowed_commit_types();
+        let omitted_commits = &settings.commit_omitted_from_changelog();
+        let changelog_titles = &settings.changelog_titles();
+        let usernames = &settings.commit_usernames();
 
         // Act
-        let release = release_from_commits(range)?;
+        let release = release_from_commits(
+            range,
+            allowed_commits,
+            omitted_commits,
+            changelog_titles,
+            usernames,
+        )?;
 
         // Assert
         let actual_oids: Vec<String> = release
@@ -412,9 +503,20 @@ mod test {
         let three = commit("fix: the bug")?;
 
         let range = repo.revwalk(&format!("{}..", &from[0..7]))?;
+        let settings = Settings::default();
+        let allowed_commits = &settings.allowed_commit_types();
+        let omitted_commits = &settings.commit_omitted_from_changelog();
+        let changelog_titles = &settings.changelog_titles();
+        let usernames = &settings.commit_usernames();
 
         // Act
-        let release = release_from_commits(range)?;
+        let release = release_from_commits(
+            range,
+            allowed_commits,
+            omitted_commits,
+            changelog_titles,
+            usernames,
+        )?;
 
         // Assert
         let head_to_v1: Vec<String> = release

@@ -5,6 +5,7 @@ use sealed_test::prelude::*;
 use speculoos::prelude::*;
 
 use cocogitto_changelog::get_changelog;
+use cocogitto_config::Settings;
 
 use cocogitto_test_helpers::*;
 
@@ -33,11 +34,37 @@ fn getting_changelog_from_tags_should_produce_the_same_range_either_from_tags_or
     )
     .unwrap();
 
+    let settings = Settings::default();
+    let allowed_commits = &settings.allowed_commit_types();
+    let omitted_commits = &settings.commit_omitted_from_changelog();
+    let changelog_titles = &settings.changelog_titles();
+    let usernames = &settings.commit_usernames();
+
     // Act
-    let changelog_from_commit_range =
-        get_changelog(&repository, &format!("{sha_0_1}..{head}"), false)?;
-    let changelog_tag_range = get_changelog(&repository, "0.1.0..0.2.0", false)?;
-    let at_tag = get_changelog(&repository, "..0.2.0", false)?;
+    let changelog_from_commit_range = get_changelog(
+        &repository,
+        &format!("{sha_0_1}..{head}"),
+        allowed_commits,
+        omitted_commits,
+        changelog_titles,
+        usernames,
+    )?;
+    let changelog_tag_range = get_changelog(
+        &repository,
+        "0.1.0..0.2.0",
+        allowed_commits,
+        omitted_commits,
+        changelog_titles,
+        usernames,
+    )?;
+    let at_tag = get_changelog(
+        &repository,
+        "..0.2.0",
+        allowed_commits,
+        omitted_commits,
+        changelog_titles,
+        usernames,
+    )?;
 
     let commit_range_oids: Vec<String> = changelog_from_commit_range
         .commits
@@ -88,9 +115,21 @@ fn from_commit_should_be_drained() -> Result<()> {
 
     let head = git_log_head_sha()?;
 
+    let settings = Settings::default();
+    let allowed_commits = &settings.allowed_commit_types();
+    let omitted_commits = &settings.commit_omitted_from_changelog();
+    let changelog_titles = &settings.changelog_titles();
+    let usernames = &settings.commit_usernames();
+
     // Act
-    let changelog_from_commit_range =
-        get_changelog(&repository, &format!("{unttaged_sha}..{head}"), true)?;
+    let changelog_from_commit_range = get_changelog(
+        &repository,
+        &format!("{unttaged_sha}..{head}"),
+        allowed_commits,
+        omitted_commits,
+        changelog_titles,
+        usernames,
+    )?;
 
     let commit_range_oids: Vec<String> = changelog_from_commit_range
         .commits

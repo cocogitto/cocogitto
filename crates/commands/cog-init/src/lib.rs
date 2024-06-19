@@ -42,7 +42,7 @@ impl<'a> CogCommand for CogInitCommand<'a> {
             },
         };
 
-        let settings = Self::settings()?;
+        let settings = Self::settings(self.path)?;
         let settings_path = self.path.join(CONFIG_PATH);
         if settings_path.exists() {
             eprint!("Found {} in {:?}, Nothing to do", CONFIG_PATH, &self.path);

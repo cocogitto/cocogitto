@@ -18,8 +18,9 @@ pub struct CogEditCommand {
 
 impl CogCommand for CogEditCommand {
     fn execute(self) -> anyhow::Result<()> {
-        let settings = Self::settings()?;
         let repository = &Self::repository()?;
+        let path = Self::default_path()?;
+        let settings = Self::settings(path.as_path())?;
         let from_latest_tag = self.from_latest_tag || settings.from_latest_tag;
         let allowed_commits = settings.allowed_commit_types();
 

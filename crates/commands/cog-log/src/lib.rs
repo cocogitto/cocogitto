@@ -22,7 +22,8 @@ pub struct CogLogCommand {
 impl CogCommand for CogLogCommand {
     fn execute(self) -> Result<()> {
         let repository = &Self::repository()?;
-        let settings = &Self::settings()?;
+        let path = Self::default_path()?;
+        let settings = &Self::settings(path.as_path())?;
         let repo_tag_name = get_repo_tag_name(repository);
         let repo_tag_name = repo_tag_name.as_deref().unwrap_or("cog log");
 

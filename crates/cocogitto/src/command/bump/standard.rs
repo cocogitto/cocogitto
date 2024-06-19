@@ -59,7 +59,11 @@ impl CocoGitto {
             pretty_print_bump_summary(&changelog)?;
 
             let path = cocogitto_config::changelog_path();
-            let template = get_changelog_template()?;
+            let remote = SETTINGS.changelog.remote.as_ref().cloned();
+            let repository = SETTINGS.changelog.repository.as_ref().cloned();
+            let owner = SETTINGS.changelog.owner.as_ref().cloned();
+            let template = SETTINGS.changelog.template.as_deref().unwrap_or("default");
+            let template = get_changelog_template(remote, repository, owner, template)?;
 
             changelog.write_to_file(path, template, ReleaseType::Standard)?;
         }

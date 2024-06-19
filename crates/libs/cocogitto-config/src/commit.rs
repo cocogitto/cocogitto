@@ -1,6 +1,7 @@
 use crate::Settings;
 use conventional_commit_parser::commit::CommitType;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 /// Configurations to create new conventional commit types or override behaviors of the existing ones.
 #[cfg_attr(feature = "json_schema", derive(schemars::JsonSchema))]
@@ -24,10 +25,18 @@ impl Settings {
         self.commit_types().keys().cloned().collect()
     }
 
-    pub fn should_omit_commit(&self, r#type: &CommitType) -> bool {
+    pub fn commit_omitted_from_changelog(&self) -> HashMap<CommitType, bool> {
         self.commit_types()
-            .get(r#type)
-            .map_or(false, |config| config.omit_from_changelog)
+            .iter()
+            .map(|(k, v)| (k.clone(), v.omit_from_changelog))
+            .collect()
+    }
+
+    pub fn changelog_titles(&self) -> HashMap<CommitType, String> {
+        self.commit_types()
+            .iter()
+            .map(|(k, v)| (k.clone(), v.changelog_title.clone()))
+            .collect()
     }
 
     pub fn is_minor_bump(&self, r#type: &CommitType) -> bool {
@@ -54,6 +63,14 @@ impl Settings {
             .find(|(commit_type, _config)| *commit_type == r#type)
             .map(|meta| meta.1.changelog_title.to_string())
             .unwrap_or_else(|| r#type.to_string())
+    }
+
+    pub fn commit_usernames(&self) -> HashMap<&str, &str> {
+        self.changelog
+            .authors
+            .iter()
+            .map(|author| (author.signature.as_str(), author.username.as_str()))
+            .collect()
     }
 }
 

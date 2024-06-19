@@ -23,11 +23,9 @@ cocogitto-commit.workspace = true
 cocogitto-git.workspace = true
 cocogitto-changelog.workspace = true
 cocogitto-bump.workspace = true
-git2.workspace = true
 # Do not bump anyhow, (see: https://github.com/dtolnay/anyhow/issues/353)
 anyhow.workspace = true
 colored.workspace = true
-chrono.workspace = true
 globset.workspace = true
 # Don't bump yet (see https://github.com/cocogitto/cocogitto/issues/337)
 toml.workspace = true
