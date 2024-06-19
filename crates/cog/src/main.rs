@@ -1,19 +1,15 @@
-mod mangen;
-
-use std::fs;
 use std::path::PathBuf;
 
-use cocogitto::{CocoGitto, CogCommand};
-use cocogitto_config::git_hook::{GitHook, GitHookType};
-use cocogitto_config::{self, COMMITS_METADATA, SETTINGS};
-
-use anyhow::{bail, Result};
+use anyhow::Result;
 use clap::builder::{PossibleValue, PossibleValuesParser};
 use clap::{ArgAction, ArgGroup, Args, CommandFactory, Parser, Subcommand, ValueEnum};
 use clap_complete::{shells, Generator};
 use clap_complete_nushell::Nushell;
-use cocogitto::command::bump::{BumpOptions, PackageBumpOptions};
-use cocogitto_bump::increment::IncrementCommand;
+
+use cocogitto::CogCommand;
+use cocogitto_config::git_hook::{GitHook, GitHookType};
+use cocogitto_config::{self, COMMITS_METADATA, SETTINGS};
+use cog_bump::CogBumpCommand;
 use cog_changelog::CogChangelogCommand;
 use cog_check::CogCheckCommand;
 use cog_commit::CogCommitCommand;
@@ -22,6 +18,9 @@ use cog_get_version::CogGetVersionCommand;
 use cog_git_hook::{CogInstallGitHookCommand, Hook};
 use cog_init::CogInitCommand;
 use cog_log::CogLogCommand;
+use cog_verify::CogVerifyCommand;
+
+mod mangen;
 
 fn commit_types() -> PossibleValuesParser {
     let types = COMMITS_METADATA
@@ -411,116 +410,38 @@ fn main() -> Result<()> {
             skip_ci_override,
             skip_untracked,
             disable_bump_commit,
-        } => {
-            let mut cocogitto = CocoGitto::get()?;
-            let is_monorepo = !SETTINGS.packages.is_empty();
-
-            let increment = match version {
-                Some(version) => IncrementCommand::Manual(version),
-                None if auto => match package.as_ref() {
-                    Some(package) => {
-                        if !is_monorepo {
-                            bail!("Cannot create package version on non mono-repository config")
-                        };
-
-                        IncrementCommand::AutoPackage(package.to_owned())
-                    }
-                    None => IncrementCommand::Auto,
-                },
-                None if major => IncrementCommand::Major,
-                None if minor => IncrementCommand::Minor,
-                None if patch => IncrementCommand::Patch,
-                _ => unreachable!(),
-            };
-
-            if is_monorepo {
-                match package {
-                    Some(package_name) => {
-                        // Safe unwrap here, package name is validated by clap
-                        let package = SETTINGS.packages.get(&package_name).unwrap();
-
-                        let opts = PackageBumpOptions {
-                            package_name: &package_name,
-                            package,
-                            increment,
-                            pre_release: pre.as_deref(),
-                            build: build.as_deref(),
-                            hooks_config: hook_profile.as_deref(),
-                            annotated,
-                            dry_run,
-                            skip_ci,
-                            skip_ci_override,
-                            skip_untracked,
-                            disable_bump_commit,
-                        };
-
-                        cocogitto.create_package_version(opts)?
-                    }
-                    None => {
-                        let opts = BumpOptions {
-                            increment,
-                            pre_release: pre.as_deref(),
-                            build: build.as_deref(),
-                            hooks_config: hook_profile.as_deref(),
-                            annotated,
-                            dry_run,
-                            skip_ci,
-                            skip_ci_override,
-                            skip_untracked,
-                            disable_bump_commit,
-                        };
-
-                        cocogitto.create_monorepo_version(opts)?
-                    }
-                }
-            } else {
-                let opts = BumpOptions {
-                    increment,
-                    pre_release: pre.as_deref(),
-                    build: build.as_deref(),
-                    hooks_config: hook_profile.as_deref(),
-                    annotated,
-                    dry_run,
-                    skip_ci,
-                    skip_ci_override,
-                    skip_untracked,
-                    disable_bump_commit,
-                };
-                cocogitto.create_version(opts)?
-            }
+        } => CogBumpCommand {
+            version,
+            auto,
+            major,
+            minor,
+            patch,
+            pre,
+            build,
+            hook_profile,
+            package,
+            annotated,
+            dry_run,
+            skip_ci,
+            skip_ci_override,
+            skip_untracked,
+            disable_bump_commit,
         }
+        .execute()?,
         Command::Verify {
             message,
             file,
             ignore_merge_commits,
         } => {
             let ignore_merge_commits = ignore_merge_commits || SETTINGS.ignore_merge_commits;
-            let author = CocoGitto::get()
-                .map(|cogito| cogito.get_committer().unwrap())
-                .ok();
 
-            let commit_message = match (message, file) {
-                (Some(message), None) => message,
-                (None, Some(file_path)) => {
-                    if !file_path.exists() {
-                        bail!("File {file_path:#?} does not exist");
-                    }
-
-                    match fs::read_to_string(file_path) {
-                        Err(e) => bail!("Could not read the file ({e})"),
-                        Ok(msg) => msg,
-                    }
-                }
-                (None, None) => unreachable!(),
-                (Some(_), Some(_)) => unreachable!(),
-            };
-
-            cog_verify::verify(
-                author,
-                &commit_message,
+            CogVerifyCommand {
+                message,
+                file,
                 ignore_merge_commits,
-                &SETTINGS.allowed_commit_types(),
-            )?;
+                allowed_commits: SETTINGS.allowed_commit_types(),
+            }
+            .execute()?;
         }
         Command::Check {
             from_latest_tag,
@@ -652,6 +573,9 @@ fn init_logs(verbose: u8, quiet: bool) {
             "cog_git_hook",
             "cog_init",
             "cog_log",
+            "cog_verify",
+            "cog_bump",
+            "cog_changelog",
             "cocogitto_commit",
         ])
         .quiet(quiet)

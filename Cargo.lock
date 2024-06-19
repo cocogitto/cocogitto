@@ -530,6 +530,7 @@ dependencies = [
  "cocogitto-bump",
  "cocogitto-config",
  "cocogitto-test-helpers",
+ "cog-bump",
  "cog-changelog",
  "cog-check",
  "cog-commit",
@@ -546,6 +547,33 @@ dependencies = [
  "sealed_test",
  "speculoos",
  "stderrlog",
+ "toml 0.5.11",
+]
+
+[[package]]
+name = "cog-bump"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "cmd_lib",
+ "cocogitto",
+ "cocogitto-bump",
+ "cocogitto-changelog",
+ "cocogitto-commit",
+ "cocogitto-config",
+ "cocogitto-git",
+ "cocogitto-hook",
+ "cocogitto-oid",
+ "cocogitto-tag",
+ "cocogitto-test-helpers",
+ "colored",
+ "globset",
+ "itertools",
+ "log",
+ "sealed_test",
+ "semver",
+ "speculoos",
+ "tera",
  "toml 0.5.11",
 ]
 
@@ -666,6 +694,8 @@ dependencies = [
 name = "cog-verify"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
+ "cocogitto",
  "cocogitto-commit",
 ]
 

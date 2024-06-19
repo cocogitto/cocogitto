@@ -1,0 +1,29 @@
+[package]
+name = "cog-bump"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow.workspace = true
+colored.workspace = true
+globset.workspace = true
+itertools.workspace = true
+log.workspace = true
+semver.workspace = true
+tera.workspace = true
+cocogitto.workspace = true
+cocogitto-bump.workspace = true
+cocogitto-changelog.workspace = true
+cocogitto-commit.workspace = true
+cocogitto-config.workspace = true
+cocogitto-hook.workspace = true
+cocogitto-oid.workspace = true
+cocogitto-tag.workspace = true
+cocogitto-git.workspace = true
+
+[dev-dependencies]
+toml.workspace = true
+sealed_test.workspace = true
+cmd_lib.workspace = true
+speculoos.workspace = true
+cocogitto-test-helpers.workspace = true

@@ -16,6 +16,7 @@ cog-init.workspace = true
 cog-log.workspace = true
 cog-changelog.workspace = true
 cog-verify.workspace = true
+cog-bump.workspace = true
 anyhow.workspace = true
 stderrlog.workspace = true
 clap = { version = "4.5.2", features = ["derive", "string"] }

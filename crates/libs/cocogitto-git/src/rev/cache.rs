@@ -51,6 +51,10 @@ pub fn get_cache(repository: &Repository) -> MutexGuard<'_, BTreeMap<String, Oid
     cache
 }
 
+pub fn clear_cache() {
+    *REPO_CACHE.lock().unwrap() = BTreeMap::new();
+}
+
 impl Repository {
     pub fn resolve_tag(&self, tag: &str) -> Result<Tag, TagError> {
         self.0
