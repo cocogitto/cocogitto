@@ -1,0 +1,9 @@
+[package]
+name = "cocogitto-tag"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+semver.workspace = true
+git2.workspace = true
+serde.workspace = true

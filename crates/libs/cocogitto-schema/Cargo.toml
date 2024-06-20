@@ -1,0 +1,9 @@
+[package]
+name = "cocogitto-schema"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+cocogitto-config = { workspace = true, features = ["json_schema"] }
+schemars = "0.8.20"
+serde_json = "1.0.117"

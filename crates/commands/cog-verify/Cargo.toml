@@ -1,0 +1,9 @@
+[package]
+name = "cog-verify"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+cocogitto-commit.workspace = true
+cog-command.workspace = true
+anyhow.workspace = true

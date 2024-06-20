@@ -1,0 +1,19 @@
+[package]
+name = "cocogitto-test-helpers"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+cocogitto-tag.workspace = true
+cocogitto-git.workspace = true
+cocogitto-config.workspace = true
+cmd_lib.workspace = true
+anyhow.workspace = true
+speculoos.workspace = true
+toml.workspace = true
+cargo_metadata.workspace = true
+
+[dev-dependencies]
+anyhow.workspace = true
+sealed_test.workspace = true
+cocogitto-test-helpers.workspace = true

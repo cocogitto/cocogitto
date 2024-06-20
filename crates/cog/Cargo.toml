@@ -1,0 +1,47 @@
+[package]
+name = "cog"
+version = "6.1.0"
+authors = ["Paul Delafosse <paul.delafosse@protonmail.com>"]
+edition = "2021"
+readme = "README.md"
+license = "MIT"
+repository = "https://github.com/cocogitto/cocogitto"
+categories = ["command-line-utilities", "development-tools"]
+keywords = ["git", "conventional-commit", "changelog", "semver"]
+description = """
+Cocogitto is a set of cli tools for the conventional commit
+and semver specifications.
+"""
+
+[dependencies]
+cog-command.workspace = true
+cocogitto-config.workspace = true
+cog-check.workspace = true
+cog-commit.workspace = true
+cog-edit.workspace = true
+cog-get-version.workspace = true
+cog-git-hook.workspace = true
+cog-init.workspace = true
+cog-log.workspace = true
+cog-changelog.workspace = true
+cog-verify.workspace = true
+cog-bump.workspace = true
+anyhow.workspace = true
+stderrlog.workspace = true
+clap = { version = "4.5.2", features = ["derive", "string"] }
+clap_complete = { version = "4.5.1" }
+clap_mangen = { version = "0.2.20" }
+clap_complete_nushell = { version = "4.5.1" }
+
+[dev-dependencies]
+cocogitto-test-helpers.workspace = true
+assert_cmd.workspace = true
+predicates.workspace = true
+indoc.workspace = true
+speculoos.workspace = true
+pretty_assertions.workspace = true
+sealed_test.workspace = true
+cmd_lib.workspace = true
+cargo_metadata.workspace = true
+chrono.workspace = true
+toml.workspace = true

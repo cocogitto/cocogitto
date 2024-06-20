@@ -1,0 +1,25 @@
+[package]
+name = "cocogitto-git"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+cocogitto-tag.workspace = true
+cocogitto-oid.workspace = true
+cocogitto-config.workspace = true
+once_cell.workspace = true
+git2.workspace = true
+globset.workspace = true
+anyhow.workspace = true
+colored.workspace = true
+serde.workspace = true
+tempfile.workspace = true
+
+[dev-dependencies]
+speculoos.workspace = true
+sealed_test.workspace = true
+cmd_lib.workspace = true
+indoc.workspace = true
+cargo_metadata.workspace = true
+semver.workspace = true
+toml.workspace = true
