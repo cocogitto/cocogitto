@@ -150,6 +150,12 @@ git commit -m "feat: add awesome feature"
 
 See [User guide -> Conventional commits](https://docs.cocogitto.io/guide/#conventional-commits).
 
+## Configuration
+
+Use `cog.toml` file to configure your usage of Cocogitto.
+
+For the full list of options, see [User guide ->  Configuration reference](https://docs.cocogitto.io/config/).
+
 ## Auto-bumps
 
 Creating a version with `cog bump` will perform the following actions :

@@ -1,3 +1,5 @@
+# For a reference of possible values: https://docs.cocogitto.io/config/
+
 # A list of glob patterns describing branches on which semver bump are allowed
 branch_whitelist = ["main"]
 
