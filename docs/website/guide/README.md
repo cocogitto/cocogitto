@@ -189,6 +189,10 @@ ci = { changelog_title = "", omit_from_changelog = true }
 perf = { changelog_title = "", omit_from_changelog = true }
 ```
 
+**Change the auto-bump behavior for a commit_type:**
+[commit_types]
+build = { changelog_title = "build", bump_patch = true }
+
 **Disabling default commit types:**
 
 While active by default, you can disable any of the default commit types by providing an empty configuration :
@@ -576,7 +580,18 @@ The `bump` subcommand will execute the following steps :
 semver tag. Once a tag number as been calculated it will create a tagged commit containing
 the changelog for this new tag.
 
-**Example:**
+#### Auto bump commit types
+By default, only the following commit types will trigger the following auto bumps.
+
+```
+fix: a commit of the type fix patches a bug in your codebase (this correlates with PATCH in Semantic Versioning).
+feat: a commit of the type feat introduces a new feature to the codebase (this correlates with MINOR in Semantic Versioning).
+BREAKING CHANGE: a commit that has a footer BREAKING CHANGE:, or appends a ! after the type/scope, introduces a breaking API change (correlating with MAJOR in Semantic Versioning). A BREAKING CHANGE can be part of commits of any type.
+```
+
+If you want to change this or include other types you can update that in [commit_types] in cog.toml.
+
+#### Example
 
 Assuming we are working on the following git repository :
 
