@@ -13,6 +13,7 @@ use crate::hook::Hooks;
 use crate::settings::error::SettingError;
 use config::{Config, File, FileFormat};
 use conventional_commit_parser::commit::CommitType;
+use maplit::hashmap;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
@@ -488,32 +489,19 @@ impl Settings {
     }
 
     fn default_commit_config() -> HashMap<CommitType, CommitConfig> {
-        let mut default_types = HashMap::new();
-        default_types.insert(
-            CommitType::Feature,
-            CommitConfig::new("Features").with_minor_bump(),
-        );
-        default_types.insert(
-            CommitType::BugFix,
-            CommitConfig::new("Bug Fixes").with_patch_bump(),
-        );
-
-        default_types.insert(CommitType::Chore, CommitConfig::new("Miscellaneous Chores"));
-        default_types.insert(CommitType::Revert, CommitConfig::new("Revert"));
-        default_types.insert(
-            CommitType::Performances,
-            CommitConfig::new("Performance Improvements"),
-        );
-        default_types.insert(
-            CommitType::Documentation,
-            CommitConfig::new("Documentation"),
-        );
-        default_types.insert(CommitType::Style, CommitConfig::new("Style"));
-        default_types.insert(CommitType::Refactor, CommitConfig::new("Refactoring"));
-        default_types.insert(CommitType::Test, CommitConfig::new("Tests"));
-        default_types.insert(CommitType::Build, CommitConfig::new("Build system"));
-        default_types.insert(CommitType::Ci, CommitConfig::new("Continuous Integration"));
-        default_types
+        hashmap! {
+            CommitType::Feature => CommitConfig::new("Features").with_minor_bump().with_order(1),
+            CommitType::BugFix => CommitConfig::new("Bug Fixes").with_patch_bump().with_order(2),
+            CommitType::Performances => CommitConfig::new("Performance Improvements").with_order(3),
+            CommitType::Revert => CommitConfig::new("Revert").with_order(4),
+            CommitType::Documentation => CommitConfig::new("Documentation").with_order(5),
+            CommitType::Test => CommitConfig::new("Tests").with_order(6),
+            CommitType::Build => CommitConfig::new("Build system").with_order(7),
+            CommitType::Ci => CommitConfig::new("Continuous Integration").with_order(8),
+            CommitType::Refactor => CommitConfig::new("Refactoring").with_order(9),
+            CommitType::Chore => CommitConfig::new("Miscellaneous Chores").with_order(10),
+            CommitType::Style => CommitConfig::new("Style").with_order(11),
+        }
     }
 
     pub fn get_template_context(&self) -> Option<RemoteContext> {
