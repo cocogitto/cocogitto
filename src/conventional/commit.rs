@@ -33,6 +33,9 @@ pub struct CommitConfig {
     /// Allow for this commit type to bump the patch version.
     #[serde(default)]
     pub bump_patch: Option<bool>,
+    /// Specify a sort order attribute for this commit type.
+    #[serde(default)]
+    pub order: Option<u32>,
 }
 
 impl CommitConfig {
@@ -42,6 +45,7 @@ impl CommitConfig {
             omit_from_changelog: Some(false),
             bump_minor: Some(false),
             bump_patch: Some(false),
+            order: Some(0),
         }
     }
 
@@ -55,6 +59,7 @@ impl CommitConfig {
             omit_from_changelog: other.omit_from_changelog.or(self.omit_from_changelog),
             bump_minor: other.bump_minor.or(self.bump_minor),
             bump_patch: other.bump_patch.or(self.bump_patch),
+            order: other.order.or(self.order),
         }
     }
 
@@ -65,6 +70,11 @@ impl CommitConfig {
 
     pub(crate) fn with_patch_bump(mut self) -> Self {
         self.bump_patch = Some(true);
+        self
+    }
+
+    pub(crate) fn with_order(mut self, order: u32) -> Self {
+        self.order = Some(order);
         self
     }
 

@@ -51,6 +51,7 @@ stderrlog = "0.6.0"
 # This is a temporary fork, we can switch back to mainstream when https://github.com/GREsau/schemars/pull/384 is merged
 cog_schemars = { version = "0.1.0", optional = true }
 serde_json = { version = "1.0.132" , optional = true }
+maplit = "1.0.2"
 
 [dev-dependencies]
 assert_cmd = "2.0"
