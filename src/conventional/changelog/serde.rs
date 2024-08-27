@@ -36,6 +36,12 @@ impl Serialize for ChangelogCommit<'_> {
             .map(|meta| meta.1.changelog_title.clone())
             .unwrap_or_else(|| self.commit.conventional.commit_type.to_string());
 
+        let type_order = &COMMITS_METADATA
+            .iter()
+            .find(|(commit_type, _config)| *commit_type == &self.commit.conventional.commit_type)
+            .map(|meta| meta.1.order)
+            .unwrap_or(0);
+
         commit.serialize_field("id", &self.commit.oid)?;
         commit.serialize_field("author", &self.author_username)?;
         commit.serialize_field("signature", &self.commit.author)?;
@@ -44,6 +50,7 @@ impl Serialize for ChangelogCommit<'_> {
         commit.serialize_field("scope", &self.commit.conventional.scope)?;
         commit.serialize_field("summary", &self.commit.conventional.summary)?;
         commit.serialize_field("body", &self.commit.conventional.body)?;
+        commit.serialize_field("type_order", type_order)?;
         commit.serialize_field(
             "breaking_change",
             &self.commit.conventional.is_breaking_change,
