@@ -48,6 +48,12 @@ nix-env -iA nixos.cocogitto
 xbps-install cocogitto
 ```
 
+### MacOS
+
+```shell script
+brew install cocogitto
+```
+
 ## Shell completions
 
 Before getting started you might want to install shell completions (Note that this is not needed for the official archlinux package).
