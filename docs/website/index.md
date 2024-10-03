@@ -63,7 +63,7 @@ Example installing completions:
 
 ```sh
 # Bash
-cog generate-completions bash > ~/.local/share/bash-completion/completions/cog
+cog generate-completions bash > ~/.local/share/bash-completion/completions/cog.bash-completion
 
 # Bash (macOS/Homebrew)
 cog generate-completions bash > $(brew --prefix)/etc/bash_completion.d/cog.bash-completion
@@ -89,7 +89,7 @@ cog changelog --help
 ```
 
 Note that if you do not care about automatic release, changelog generation and just want
-to create conventional commit message you can jump to the [conventional commits section](./guide/#conventional_commits).
+to create a conventional commit message you can jump to the [conventional commits section](./guide/#conventional_commits).
 
 ## Conventional commits
 
@@ -131,16 +131,9 @@ See [Github integration -> GitHub action](./ci_cd/#github-action) for more info.
 To help your contributors respect the specification [cocogitto-bot](https://github.com/apps/cocogitto-bot)
 can decorate your PR with conventional commits status checks.
 
-See [Github integration -> GitHub bot](./ci_cd/#github-action) for more info.
+See [Github integration -> GitHub bot](./ci_cd/#github-bot) for more info.
 
 ### Docker
 
 There is a docker image for `cog` available [ghcr.io/cocogitto/latest](https://github.com/cocogitto/cocogitto/pkgs/container/cog)
-See [Docker](./docker/#Using-cocogitto-with-docker) for more info.
-
-
-
-
-
-
-
+See [Docker](./docker/#using-cocogitto-with-docker) for more info.

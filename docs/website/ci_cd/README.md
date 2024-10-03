@@ -4,7 +4,7 @@
 check commits against the conventional commits specification and create changelogs. 
 
 ::: warning
-The action runs on x86 linux runner only. 
+The action runs on x86 Linux runner only.
 :::
 
 ### Conventional commits check
@@ -62,8 +62,7 @@ If you need to use the created version number later in your job you can access i
     run: "echo '${{ steps.release.outputs.version }}'"
 ```
 ::: tip
-You can set the `git-user` and `git-user-email` options to override the default git signature 
-for the release commit.
+You can set the `git-user` and `git-user-email` options to override the default git signature for the release commit.
 
 You might also want to use a dedicated GitHub account to perform the release, this can be done using the checkout action:
 ```yaml
@@ -81,8 +80,7 @@ Also see:
 
 ### GitHub release changelog
 
-Depending on the options provided the action will run check and/or create a release but if you need to perform some custom steps
-you can directly use `cog`. 
+Depending on the options provided, the action will run checks and/or create a release. However, if you need to perform custom steps, you can directly use the `cog` command in your workflow.
 
 ```yaml
 on:
@@ -91,10 +89,11 @@ on:
     
 jobs:
   release:
-    name: Perform release
-      - uses: actions/checkout@v3
-          with:
-            fetch-depth: 0
+    steps:
+      - name: Perform release
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Cocogitto release
         id: release
@@ -134,7 +133,7 @@ Here are all the inputs available through `with`:
 
 ## GitHub Bot
 
-Cocogitto also has a GitHub bot that decorate pull request with status check. 
+Cocogitto also has a GitHub bot that decorates pull request with status check.
 
 To install it just go to [github.com/apps/cocogitto-bot](https://github.com/apps/cocogitto-bot) and click "Configure".
 Add the desired repository and grant the required permission.
@@ -152,6 +151,5 @@ Failure:
 ![cocogitto bot failure example](./cog-bot-ko.png)
 
 ::: tip 
-You can [make status check mandatory](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/troubleshooting-required-status-checks) 
-to enforce conventional commits in your  pull-requests.  
+You can [make status check mandatory](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/troubleshooting-required-status-checks) to enforce conventional commits in your pull-requests.
 :::
