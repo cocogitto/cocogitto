@@ -280,7 +280,7 @@ path = "hooks/pre-push.sh"
 ```
 
 ::: warning
-Not that unlike `git commit`, `cog commit` will not pick a default shell when running hooks. Make sure to provide
+Note that unlike `git commit`, `cog commit` will not pick a default shell when running hooks. Make sure to provide
 a shebang in your hook definition.
 :::
 
@@ -762,7 +762,7 @@ Error: prehook run `exit 1` failed
 
 #### Post bump hooks
 
-Post-bump hooks works exactly like pre-bum hooks. They are run after the version has been created
+Post-bump hooks works exactly like pre-bump hooks. They are run after the version has been created
 and are typically used to push changes to the remote, publish packages and apply branching model strategies.
 
 ```toml
@@ -777,7 +777,7 @@ post_bump_hooks = [
 ::: danger
 There is no rollback procedure for post-bump hook, on failure cog will abort and leave the repository
 in an undefined state.
-We are working on allowing user to define there rollback procedures, but it is not there yet.
+We are working on allowing user to define their rollback procedures, but it is not there yet.
 :::
 
 #### Version DSL
@@ -798,7 +798,7 @@ post_bump_hooks = [
 ]
 ```
 
-As you can see we are bumping the manifest using a small DSL. It as only a few keywords :
+As you can see we are bumping the manifest using a small DSL. It only has a few keywords :
 
 - start with the one of `version`,`version_tag`, `latest`, `latest_tag` or `package` keyword.
 - followed by an optional default value (example above: `|1.0.0`) in SemVer format in case the value for the keyword is not available - the default cannot be used with the package keyword.
@@ -1037,7 +1037,7 @@ To tell `cog` to pick only version starting with a prefix set this in your `cog.
 tag_prefix = "v"
 ```
 
-full tag including the prefix can be access in configuration file with {{version_tag}}
+Full tag including the prefix can be accessed the in configuration file with {{version_tag}}
 
 tag_prefix = "v"
 

@@ -20,7 +20,7 @@ The config reference list all value that can be set in the `cog.toml` file at th
 - Type: `String`
 - Optional: `true`
 - Description: Set a tag prefix value for cocogitto. For instance if you have a `v` as a tag prefix, cocogitto will
-  generate version starting with `v` and commands like `cog changelog` will pick only those versions.
+  generate versions starting with `v` and commands like `cog changelog` will pick only those versions.
 - Example:
   ```toml
   tag_prefix = "v"
@@ -439,7 +439,7 @@ The config reference list all value that can be set in the `cog.toml` file at th
 - Description: An array of commands executed after every package bump.
 - Example:
   ```toml
-  pre_bump_hooks = [
+  post_bump_hooks = [
       "cargo build --release",
       "cargo fmt --all",
       "cargo set-version {{version}}",

@@ -119,12 +119,12 @@ You can also take a look at the [built-in templates](https://github.com/cocogitt
 - `repository_url`: `false`
     * **Type:** `String`
     * **Description:** url to the repository in the form `https://{remote}/{owner}/{repository}`(
-      see: [Config -> Changelog -> repository](../config/#owner))
+      see: [Config -> Changelog -> Repository](../config/#owner))
     * **Nullable:** `true`
 
 ## Filters
 
-In addition to the [tera built-in filters](https://tera.netlify.app/docs/#built-ins) you can use the following:
+In addition to the [tera built-in filters](https://tera.netlify.app/docs/#built-ins), you can use the following:
 
 - `unscoped`
   * **Description:** filter unscoped commits from releases commits. Example:
