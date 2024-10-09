@@ -563,6 +563,226 @@ fn ensure_omit_from_changelog_is_honored() -> Result<()> {
     Ok(())
 }
 
+#[sealed_test]
+/// Test that the `order` configuration
+/// directive is honored if/when it is specified for
+/// a given commit type and used in a sort.
+fn order_from_changelog() -> Result<()> {
+    // Arrange
+    git_init()?;
+
+    let cog_toml = indoc!(
+        "[changelog]
+        remote = \"github.com\"
+        repository = \"test\"
+        owner = \"test\"
+
+        [commit_types]
+        feat = { changelog_title = \"Features\", order = 1 }
+        fix = { changelog_title = \"Bug Fixes\", order = 2 }
+        chore = { changelog_title = \"Miscellaneous Chores\", order = 3 }"
+    );
+
+    let template = indoc!(
+        "{% for order, ordered_commits in commits | sort(attribute=\"type_order\") | group_by(attribute=\"type_order\")-%}
+        #### {{ ordered_commits[0].type }}
+        {% for commit in ordered_commits -%}
+        - {{ commit.summary }}
+        {% endfor %}
+        {% endfor -%}"
+    );
+
+    let _setup = (
+        run_cmd!(echo $cog_toml > cog.toml;)?,
+        fs::read_to_string("cog.toml")?,
+        run_cmd!(echo $template > template.md;)?,
+        fs::read_to_string("template.md")?,
+        git_commit("chore: init")?,
+        git_commit("feat(scope1): start")?,
+        git_commit("feat: feature 1")?,
+        git_commit("feat: feature 2")?,
+        git_commit("fix: bug fix 1")?,
+    );
+
+    let changelog = Command::cargo_bin("cog")?
+        .arg("changelog")
+        .arg("-t")
+        .arg("template.md")
+        // Assert
+        .assert()
+        .success();
+
+    let changelog = changelog.get_output();
+    let changelog = String::from_utf8_lossy(&changelog.stdout);
+
+    assert_eq!(
+        changelog.as_ref(),
+        formatdoc!(
+            "#### Features
+            - feature 2
+            - feature 1
+            - start
+
+            #### Bug Fixes
+            - bug fix 1
+
+            #### Miscellaneous Chores
+            - init
+
+
+
+            "
+        )
+    );
+
+    let cog_toml = cog_toml.replace("order = 1", "order = 5");
+
+    run_cmd!(echo $cog_toml > cog.toml;)?;
+
+    let changelog = Command::cargo_bin("cog")?
+        .arg("changelog")
+        .arg("-t")
+        .arg("template.md")
+        // Assert
+        .assert()
+        .success();
+
+    let changelog = changelog.get_output();
+    let changelog = String::from_utf8_lossy(&changelog.stdout);
+
+    assert_eq!(
+        changelog.as_ref(),
+        formatdoc!(
+            "#### Bug Fixes
+            - bug fix 1
+
+            #### Miscellaneous Chores
+            - init
+
+            #### Features
+            - feature 2
+            - feature 1
+            - start
+
+
+
+            "
+        )
+    );
+
+    Ok(())
+}
+
+#[sealed_test]
+/// Test that the `order` configuration
+/// directive is honored if/when it is specified for
+/// a given commit type and used in a sort.
+fn group_by_type() -> Result<()> {
+    // Arrange
+    git_init()?;
+
+    let cog_toml = indoc!(
+        "[changelog]
+        remote = \"github.com\"
+        repository = \"test\"
+        owner = \"test\"
+
+        [commit_types]
+        feat = { changelog_title = \"Features\", order = 1 }
+        fix = { changelog_title = \"Bug Fixes\", order = 2 }
+        chore = { changelog_title = \"Miscellaneous Chores\", order = 3 }"
+    );
+
+    let template = indoc!(
+        "{% for value in commits | group_by_type -%}
+        #### {{ value.0 }}
+        {% for commit in value.1 -%}
+        - {{ commit.summary }}
+        {% endfor %}
+        {% endfor -%}"
+    );
+
+    let _setup = (
+        run_cmd!(echo $cog_toml > cog.toml;)?,
+        fs::read_to_string("cog.toml")?,
+        run_cmd!(echo $template > template.md;)?,
+        fs::read_to_string("template.md")?,
+        git_commit("chore: init")?,
+        git_commit("feat(scope1): start")?,
+        git_commit("feat: feature 1")?,
+        git_commit("feat: feature 2")?,
+        git_commit("fix: bug fix 1")?,
+    );
+
+    let changelog = Command::cargo_bin("cog")?
+        .arg("changelog")
+        .arg("-t")
+        .arg("template.md")
+        // Assert
+        .assert()
+        .success();
+
+    let changelog = changelog.get_output();
+    let changelog = String::from_utf8_lossy(&changelog.stdout);
+
+    assert_eq!(
+        changelog.as_ref(),
+        formatdoc!(
+            "#### Features
+            - feature 2
+            - feature 1
+            - start
+
+            #### Bug Fixes
+            - bug fix 1
+
+            #### Miscellaneous Chores
+            - init
+
+
+
+            "
+        )
+    );
+
+    let cog_toml = cog_toml.replace("order = 1", "order = 5");
+
+    run_cmd!(echo $cog_toml > cog.toml;)?;
+
+    let changelog = Command::cargo_bin("cog")?
+        .arg("changelog")
+        .arg("-t")
+        .arg("template.md")
+        // Assert
+        .assert()
+        .success();
+
+    let changelog = changelog.get_output();
+    let changelog = String::from_utf8_lossy(&changelog.stdout);
+
+    assert_eq!(
+        changelog.as_ref(),
+        formatdoc!(
+            "#### Bug Fixes
+            - bug fix 1
+
+            #### Miscellaneous Chores
+            - init
+
+            #### Features
+            - feature 2
+            - feature 1
+            - start
+
+
+
+            "
+        )
+    );
+
+    Ok(())
+}
+
 //TODO
 /*// see: https://github.com/cocogitto/cocogitto/issues/359
 #[sealed_test]
