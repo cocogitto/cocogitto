@@ -63,12 +63,33 @@ impl Repository {
     pub(super) fn resolve_oid_of(&self, from: &str) -> Result<OidOf, Git2Error> {
         let cache = get_cache(self);
 
-        let oid = cache
+        println!("oid to resolve is {}", from);
+
+        let oids = cache
             .iter()
             .find(|(k, _)| k.starts_with(from))
             .map(|(_, v)| v);
 
-        match oid {
+        for o in oids.unwrap_or(&Vec::new()) {
+            print!("oid is {} ", o.to_string());
+            match o {
+                OidOf::FirstCommit(_) => {
+                    print!("type is first FirstCommit ");
+                }
+                &OidOf::Head(_) => {
+                    print!("type is first Head ");
+                }
+                OidOf::Other(_) => {
+                    print!("type is first Other ");
+                }
+                &OidOf::Tag(_) => {
+                    print!("type is first Tag ");
+                }
+            }
+        }
+        println!("");
+
+        match oids {
             None => {
                 let object = self
                     .0
@@ -76,7 +97,47 @@ impl Repository {
                     .map_err(|_| Git2Error::UnknownRevision(from.to_string()))?;
                 Ok(OidOf::Other(object.id()))
             }
-            Some(oid) => Ok(oid.clone()),
+            Some(oids) => Ok(oids.first().unwrap().clone()),
+        }
+    }
+
+    pub(super) fn resolve_oid_of_for_package(
+        &self,
+        from: &str,
+        package: &str,
+    ) -> Result<OidOf, Git2Error> {
+        let cache = get_cache(self);
+
+        println!("pattern to look for is {}", from);
+
+        let oids = cache
+            .iter()
+            .find(|(k, _)| k.starts_with(from))
+            .map(|(_, v)| v.clone());
+
+        /*
+        println!("len is {}", &oid.len());
+
+        for o in &oid {
+            print!("oid is {} ", o.to_string());
+        }
+
+        println!("");
+        */
+
+        match oids {
+            None => {
+                let object = self
+                    .0
+                    .revparse_single(from)
+                    .map_err(|_| Git2Error::UnknownRevision(from.to_string()))?;
+                Ok(OidOf::Other(object.id()))
+            }
+            Some(oids) => Ok(oids
+                .iter()
+                .find(|oid| oid.to_string().starts_with(&package))
+                .unwrap_or(oids.first().unwrap())
+                .clone()),
         }
     }
 }

@@ -14,7 +14,7 @@ impl Repository {
         pattern: &str,
         package: &str,
     ) -> Result<CommitIter, Git2Error> {
-        let mut commit_range = self.revwalk(pattern)?;
+        let mut commit_range = self.revwalk_for_package(pattern, package)?;
         let mut commits = vec![];
         let package = SETTINGS.packages.get(package).expect("package exists");
         let package_path_filter = PackagePathFilter::from_package(package);
@@ -124,12 +124,47 @@ impl Repository {
             let oid = oid?;
             // TODO: can we avoid allocating strings here ?
             let oid_of = self.resolve_oid_of(&oid.to_string())?;
+
+            println!("resolved oid : {}", oid_of.to_string());
+
             let commit = self.0.find_commit(oid)?;
             commits.push((oid_of, commit));
         }
 
         // TODO: can we avoid allocating strings here ?
         let first_oid = self.resolve_oid_of(&spec.from().to_string())?;
+        let include_start = match &first_oid {
+            OidOf::Head(_) | OidOf::FirstCommit(_) => true,
+            OidOf::Tag(_) | OidOf::Other(_) => false,
+        };
+
+        if include_start {
+            let first_commit = self.0.find_commit(*spec.from())?;
+            commits.push((first_oid, first_commit));
+        }
+
+        Ok(CommitIter(commits))
+    }
+
+    /// Return a commit range from a [`RevspecPattern2`]
+    pub fn revwalk_for_package(&self, spec: &str, package: &str) -> Result<CommitIter, Git2Error> {
+        let spec = self.revspec_from_str(spec)?;
+        let mut revwalk = self.0.revwalk()?;
+        revwalk.push_range(&spec.to_string())?;
+
+        let mut commits: Vec<(OidOf, Commit)> = vec![];
+
+        for oid in revwalk {
+            let oid = oid?;
+            // TODO: can we avoid allocating strings here ?
+            let oid_of = self.resolve_oid_of_for_package(&oid.to_string(), package)?;
+
+            let commit = self.0.find_commit(oid)?;
+            commits.push((oid_of, commit));
+        }
+
+        // TODO: can we avoid allocating strings here ?
+        let first_oid = self.resolve_oid_of_for_package(&spec.from().to_string(), package)?;
         let include_start = match &first_oid {
             OidOf::Head(_) | OidOf::FirstCommit(_) => true,
             OidOf::Tag(_) | OidOf::Other(_) => false,
