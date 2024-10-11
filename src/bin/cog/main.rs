@@ -5,6 +5,7 @@ use std::fs;
 use std::path::PathBuf;
 
 use cocogitto::conventional::changelog::template::{RemoteContext, Template};
+use cocogitto::conventional::changelog::ReleaseType;
 use cocogitto::conventional::commit as conv_commit;
 use cocogitto::conventional::version::IncrementCommand;
 
@@ -598,8 +599,12 @@ fn main() -> Result<()> {
             let result = match at {
                 Some(at) => cocogitto.get_changelog_at_tag(&at, template)?,
                 None => {
-                    let changelog = cocogitto.get_changelog(pattern, true)?;
-                    changelog.into_markdown(template)?
+                    if !SETTINGS.packages.is_empty() {
+                        cocogitto.get_monorepo_changelog(pattern, template)?
+                    } else {
+                        let changelog = cocogitto.get_changelog(pattern, true)?;
+                        changelog.into_markdown(template, ReleaseType::Standard)?
+                    }
                 }
             };
             println!("{result}");
