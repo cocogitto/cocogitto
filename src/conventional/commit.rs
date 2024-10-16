@@ -32,6 +32,9 @@ pub struct CommitConfig {
     /// Allow for this commit type to bump the patch version.
     #[serde(default)]
     pub bump_patch: bool,
+    /// Specify a sort order attribute for this commit type.
+    #[serde(default)]
+    pub order: u32,
 }
 
 impl CommitConfig {
@@ -41,6 +44,7 @@ impl CommitConfig {
             omit_from_changelog: false,
             bump_minor: false,
             bump_patch: false,
+            order: 0,
         }
     }
 

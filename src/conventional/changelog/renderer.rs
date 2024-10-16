@@ -29,6 +29,7 @@ impl Renderer {
         tera.add_raw_template(template.kind.name(), content.as_ref())?;
         tera.register_filter("upper_first", Self::upper_first_filter);
         tera.register_filter("unscoped", Self::unscoped);
+        tera.register_filter("group_by_type", Self::group_by_type);
 
         Ok(Renderer {
             tera,
@@ -108,5 +109,41 @@ impl Renderer {
             .collect::<Vec<_>>();
 
         Ok(to_value(arr).unwrap())
+    }
+
+    // group commits and order by type
+    fn group_by_type(value: &Value, _: &HashMap<String, Value>) -> Result<Value, tera::Error> {
+        let arr = try_get_value!("group_by_type", "type", Vec<Value>, value);
+        let mut map = HashMap::new();
+
+        for v in arr {
+            let val = dotted_pointer(&v, "type").unwrap_or(&Value::Null);
+            let val = val.as_str().unwrap_or_default();
+            let val = val.to_string();
+
+            // let entry = map.entry(val).or_insert_with(|| vec![]);
+            let entry = map.entry(val).or_insert_with(Vec::new);
+            entry.push(v);
+        }
+
+        // Sort the output by keys, checking the sort_order on the commit
+        let mut keys = map.keys().collect::<Vec<_>>();
+        keys.sort_by(|a, b| {
+            let a = a.as_str();
+            let b = b.as_str();
+            let a = &map[a][0];
+            let b = &map[b][0];
+            let a = &a["type_order"].as_u64().unwrap_or(0);
+            let b = &b["type_order"].as_u64().unwrap_or(0);
+            a.cmp(b)
+        });
+
+        let mut out_vec = Vec::new();
+
+        for key in keys {
+            out_vec.push((key, map[key].clone()));
+        }
+
+        Ok(to_value(out_vec).unwrap())
     }
 }
