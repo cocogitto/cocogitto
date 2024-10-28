@@ -437,8 +437,6 @@ fn get_changelog_with_custom_template() -> Result<()> {
     );
 
     run_cmd!(echo $cog_toml > cog.toml;)?;
-
-    let _string = fs::read_to_string("cog.toml")?;
     let init = git_commit("chore: init")?;
     let commit_one = git_commit("feat(scope1): start")?;
     let commit_two = git_commit("feat: feature 1")?;
@@ -497,6 +495,34 @@ fn get_changelog_with_custom_template() -> Result<()> {
             commit_five_short = &commit_five[0..7],
         )
     );
+    Ok(())
+}
+
+#[sealed_test]
+fn should_ignore_merge_commit() -> Result<()> {
+    // Arrange
+    git_init()?;
+
+    run_cmd!(git config merge.ff false;)?;
+    run_cmd!(echo "ignore_merge_commits = true" > cog.toml;)?;
+    git_commit("chore: init")?;
+    git_commit("feat: first commit")?;
+    run_cmd!(git checkout -b branch1;)?;
+    git_commit("fix: fon branch 2")?;
+    run_cmd!(
+        git checkout master;
+        git merge branch1;
+    )?;
+
+    // Act
+    let changelog = Command::cargo_bin("cog")?
+        .arg("changelog")
+        // Assert
+        .assert()
+        .success();
+
+    let changelog = changelog.stderr("");
+
     Ok(())
 }
 
