@@ -15,9 +15,9 @@ cog init
 ```
 
 `cog init` works like `git init` except it create a template `cog.toml` config file,
-and an initial commit with the following message : `chore: initial commit`.
+and an initial commit with the following message: `chore: initial commit`.
 
-You can specify the target path of the repository you want to create :
+You can specify the target path of the repository you want to create:
 
 ```bash
 cog init my_repo
@@ -25,7 +25,7 @@ cog init my_repo
 
 ## Initialize an existing repo
 
-Running `cog init` on an existing repository will just create a template configuration without creating any commit :
+Running `cog init` on an existing repository will just create a template configuration without creating any commit:
 
 ```bash
 git init my_repo && cd my_repo

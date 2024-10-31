@@ -4,20 +4,20 @@ editLink: true
 
 # Check commit history
 
-Running `cog check` will check your commit history against the conventional commit specification :
+Running `cog check` will check your commit history against the conventional commit specification:
 
 ```bash
 ❯ cog check
 No errored commits
 ```
 
-Let us create an invalid commit :
+Let us create an invalid commit:
 
 ```bash
 git commit -m "Your Mother Was A Hamster, And Your Father Smelt Of Elderberries"
 ```
 
-And check our commit history again :
+And check our commit history again:
 
 ```bash
 ❯ cog check

@@ -4,7 +4,7 @@ editLink: true
 
 ## Make Cocogitto skip CI CD
 
-The `--skip-ci` option of the `bump` and `commit` commands offers the possibility to skip CI/CD by adding a "skip-ci" string your commits. The default string used by Cocogitto is `[skip ci]` but you can override it with your own string :
+The `--skip-ci` option of the `bump` and `commit` commands offers the possibility to skip CI/CD by adding a "skip-ci" string your commits. The default string used by Cocogitto is `[skip ci]` but you can override it with your own string:
 
 - Using the `skip_ci` configuration in the `cog.toml`.
 - Using the `--skip-ci-override` option of the `bump` and `commit` commands.
@@ -74,7 +74,7 @@ the warning will be printed to `stderr` and the bump will continue.
 When bumping by default, Cocogitto will create a commit that will include the Changelog(s), the tag(s) and any file 
 updated in the `pre_bump_hooks`.
 
-**Example with a monorepo** :
+**Example with a monorepo**:
 
 ```bash
 ❯ git log

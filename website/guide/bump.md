@@ -7,7 +7,7 @@ editLink: true
 The purpose of conventional commits is to be able to bump your project version and changelog
 automatically. Cocogitto allow you to do this with the `cog bump` command.
 
-The `bump` subcommand will execute the following steps :
+The `bump` subcommand will execute the following steps:
 
 1. Calculate the next version based on the commit types since the latest tag.
 2. Execute a set configuration defined pre-bump hooks.
@@ -35,7 +35,7 @@ If you want to change this or include other types you can update that in [commit
 
 ### Example
 
-Assuming we are working on the following git repository :
+Assuming we are working on the following git repository:
 
 ```git
 * 8e08b78 - (HEAD -> master) feat: another cool feature <Paul Delafosse>
@@ -45,7 +45,7 @@ Assuming we are working on the following git repository :
 * 6d014b4 - chore: initial commit <Paul Delafosse>
 ```
 
-Let us now create a version :
+Let us now create a version:
 
 ```bash
 ❯ cog bump --auto
@@ -62,7 +62,7 @@ Found feature commit a0c905
 Bumped version: ... -> 0.1.0
 ```
 
-If we look again at our git log :
+If we look again at our git log:
 
 ```git
 * 76c0ffd - (HEAD -> master, tag: 0.1.0) chore(version): 0.1.0 (2 minutes ago) <Paul Delafosse>
@@ -102,15 +102,15 @@ Also see [template config](/reference/config) if you need to change the default 
 
 ::: tip
 Sometimes getting a version number automatically is not what you want.
-Cocogitto let you specify the target version with the following flags :
+Cocogitto let you specify the target version with the following flags:
 
-- `--auto` : choose the next version for you (based on feature commit, bug fixes commit and BREAKING_CHANGE commit).
-- `--major` : increment the MAJOR version.
-- `--minor` : increment the MINOR version.
-- `--patch` : increment the PATCH version.
-- `--version <version>` : set version manually ( ex : `cog bump --version 3.2.1`).
-- `--pre <metadata>` : set the [pre-release metatada](https://semver.org/#spec-item-9).
-- `--build <metadata>` : set the [build metatada](https://semver.org/#spec-item-10).
+- `--auto`: choose the next version for you (based on feature commit, bug fixes commit and BREAKING_CHANGE commit).
+- `--major`: increment the MAJOR version.
+- `--minor`: increment the MINOR version.
+- `--patch`: increment the PATCH version.
+- `--version <version>`: set version manually ( ex: `cog bump --version 3.2.1`).
+- `--pre <metadata>`: set the [pre-release metatada](https://semver.org/#spec-item-9).
+- `--build <metadata>`: set the [build metatada](https://semver.org/#spec-item-10).
 
 **Example:**
 
@@ -127,7 +127,7 @@ That way, you can keep adding features in the development stage and decide yours
 
 #### Dry run
 
-If you just need to get the next version number without performing the automatic bump use the `--dry-run` flag :
+If you just need to get the next version number without performing the automatic bump use the `--dry-run` flag:
 
 ```shell
 cog bump --dry-run --auto
@@ -160,7 +160,7 @@ The same can be done for any of the version aliases.
 
 **Example:**
 
-When adding the following hooks to `cog.toml`, the hook commands will be run before creating the version commit :
+When adding the following hooks to `cog.toml`, the hook commands will be run before creating the version commit:
 
 ```toml
 # cog.toml
@@ -190,7 +190,7 @@ Any changes made to the repository during the pre-bump phase will be stashed und
 
 **Example:**
 
-cog.toml :
+cog.toml:
 
 ```toml
 pre_bump_hooks = [
@@ -200,7 +200,7 @@ pre_bump_hooks = [
 ]
 ```
 
-run :
+run:
 
 ```bash
 ❯ cog bump --auto
@@ -255,7 +255,7 @@ post_bump_hooks = [
 ]
 ```
 
-As you can see we are bumping the manifest using a small DSL. It only has a few keywords :
+As you can see we are bumping the manifest using a small DSL. It only has a few keywords:
 
 - start with the one of `version`,`version_tag`, `latest`, `latest_tag` or `package` keyword.
 - followed by an optional default value (example above: `|1.0.0`) in SemVer format in case the value for the keyword is not available - the default cannot be used with the package keyword.
@@ -270,7 +270,7 @@ As you can see we are bumping the manifest using a small DSL. It only has a few 
 For some branching model or release cadence you might want to bump your versions with
 different hooks.
 
-To do so you can define alternate profile hooks in `cog.toml` :
+To do so you can define alternate profile hooks in `cog.toml`:
 
 ```toml
 [bump_profiles.hotfix]
@@ -284,7 +284,7 @@ pre_bump_hooks = [
 post_bump_hooks = []
 ```
 
-Once your custom hook profile is set you can call it with the `--hook-profile` flag :
+Once your custom hook profile is set you can call it with the `--hook-profile` flag:
 
 ```bash
 ❯ cog bump -h hotfix --auto
@@ -298,7 +298,7 @@ Bumped version: 0.2.0 -> 0.3.0
 ```
 
 Note that for the sake of readability in this documentation, the above example use a oneliner
-to check the current branch but you would probably want to can a shell script instead :
+to check the current branch, but you would probably want to can a shell script instead:
 
 ```toml
 pre_bump_hooks = [
@@ -313,7 +313,7 @@ pre_bump_hooks = [
 It is a common practice to bump always from the same set of branches. For instance, you might want to allow bumping only
 on branch `main` and branches prefixed with `release/`.
 
-To do so add the following to your `cog.toml` :
+To do so add the following to your `cog.toml`:
 
 ```toml
 branch_whitelist = [

@@ -20,7 +20,7 @@ Once you have spotted invalid commits you can quickly fix your commit history by
 This will perform an automatic rebase, cycling through each malformed commit, and letting you edit them with your `$EDITOR`
 of choice.
 
-**Example :**
+**Example:**
 
 ```editor   
 # Editing commit c2bb56b93821ff34282f322be4d2231f53b9ada8
