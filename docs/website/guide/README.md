@@ -845,7 +845,7 @@ post_bump_hooks = []
 Once your custom hook profile is set you can call it with the `--hook-profile` flag :
 
 ```bash
-❯ cog bump -h hotfix --auto
+❯ cog bump -H hotfix --auto
 Skipping irrelevant commits:
 
 Found feature commit 5b21b3
