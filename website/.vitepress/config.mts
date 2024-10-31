@@ -36,6 +36,7 @@ function highlight(code, lang) {
 export default defineConfig({
     title: "Cocogitto",
     description: "The conventional commit toolbox",
+    head: [['link', { rel: 'icon', href: '/favicon.png' }]],
     themeConfig: {
         nav: [
             {text: 'Home', link: '/'},
@@ -77,6 +78,13 @@ export default defineConfig({
                 ]
             },
         ],
+
+        search: {
+            provider: 'local',
+            options: {
+                detailedView: true
+            }
+        },
 
         socialLinks: [
             {icon: 'github', link: 'https://github.com/cocogitto/cocogitto'}

@@ -6,7 +6,7 @@ editLink: true
 
 `cog changelog` can generate changelog automatically.
 
-Let's assume the following history :
+Let's assume the following history:
 
 ```git
 * e3ff26a - (HEAD -> master) feat!: implement parser specification <Paul Delafosse>
@@ -15,7 +15,7 @@ Let's assume the following history :
 * 6d014b4 - chore: initial commit <Paul Delafosse>
 ```
 
-Let us now get a changelog :
+Let us now get a changelog:
 
 ```bash
 cog changelog
@@ -46,7 +46,7 @@ cog changelog
 As you can see above a changelog is generated for each semver compliant tag.
 
 ::: tip
-You can specify a custom changelog range or tag like so :
+You can specify a custom changelog range or tag like so:
 
 ```bash
 # Display the changelog between `^1` and `2.0.0`
