@@ -76,6 +76,27 @@ fn auto_bump_dry_run_from_latest_tag() -> Result<()> {
 }
 
 #[sealed_test]
+fn auto_no_bump_dry_run_from_latest_tag() -> Result<()> {
+    git_init()?;
+    git_commit("chore: init")?;
+    git_commit("feat(taef): feature")?;
+    let tag = "1.0.0";
+    git_tag(tag)?;
+    git_commit("chore(taef): boring")?;
+    git_commit("chore: boring 2")?;
+
+    Command::cargo_bin("cog")?
+        .arg("bump")
+        .arg("--auto")
+        .arg("--dry-run")
+        .assert()
+        .success()
+        .stdout(format!("{tag}\n"));
+
+    Ok(())
+}
+
+#[sealed_test]
 fn auto_bump_major_from_latest_tag() -> Result<()> {
     git_init()?;
     git_commit("chore: init")?;

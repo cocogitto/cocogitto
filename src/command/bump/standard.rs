@@ -20,7 +20,7 @@ impl CocoGitto {
         let current_tag = self.repository.get_latest_tag(TagLookUpOptions::default());
         let current_tag = tag_or_fallback_to_zero(current_tag)?;
         let mut tag = current_tag.bump(opts.increment, &self.repository)?;
-        if current_tag == tag {
+        if !opts.dry_run && current_tag == tag {
             print!("No conventional commits for your repository that required a bump. Changelogs will be updated on the next bump.\nPre-Hooks and Post-Hooks have been skipped.\n");
             return Ok(());
         }
