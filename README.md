@@ -195,7 +195,7 @@ authors = [
 
 ## Changelogs
 
-`cog changelog` uses [tera](https://tera.netlify.app/) templates to generate markdown changelogs. It has several built-in
+`cog changelog` uses [tera](https://keats.github.io/tera/) templates to generate markdown changelogs. It has several built-in
 templates, and you can define your own.
 
 **Example:**
