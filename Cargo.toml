@@ -47,6 +47,10 @@ tera = "1.19.1"
 globset = "0.4.14"
 log = "0.4.21"
 stderrlog = "0.6.0"
+trustfall = { version = "0.7.1", optional = true }
+trustfall_rustdoc = { version = "0.16.4", optional = true }
+schemars = { version = "1.0.0-alpha.15", features = ["enumset1", "indexmap2"], optional = true }
+serde_json = { version = "1.0.132", optional = true }
 
 [dev-dependencies]
 assert_cmd = "2.0"
@@ -61,6 +65,7 @@ cmd_lib = "1.9.3"
 [features]
 default = ["cli"]
 cli = ["clap", "clap_complete", "clap_mangen", "clap_complete_nushell"]
+docgen = ["clap", "schemars", "serde_json", "trustfall", "trustfall_rustdoc"]
 
 [lib]
 name = "cocogitto"
@@ -69,6 +74,10 @@ path = "src/lib.rs"
 [[bin]]
 name = "cog"
 required-features = ["clap", "clap_complete", "clap_mangen"]
+
+[[bin]]
+name = "cog-doc"
+required-features = ["docgen"]
 
 [[test]]
 name = "all"

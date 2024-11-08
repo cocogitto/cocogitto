@@ -88,7 +88,11 @@ export default defineConfig({
 
         socialLinks: [
             {icon: 'github', link: 'https://github.com/cocogitto/cocogitto'}
-        ]
+        ],
+
+        editLink: {
+            pattern: 'https://github.com/cocogitto/cocogitto/edit/main/website/:path'
+        }
     },
     markdown: {
         highlight: (code, lang) => highlight(code, lang)

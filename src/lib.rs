@@ -32,6 +32,7 @@ pub mod settings;
 
 pub type CommitsMetadata = HashMap<CommitType, CommitConfigOrNull>;
 
+#[cfg_attr(feature = "docgen", derive(schemars::JsonSchema))]
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]
 #[serde(untagged)]
 pub enum CommitConfigOrNull {

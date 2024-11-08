@@ -1,3 +1,4 @@
+#:schema https://docs.cocogitto.io/cog-schema.json
 # For a reference of possible values: https://docs.cocogitto.io/config/
 
 # A list of glob patterns describing branches on which semver bump are allowed
