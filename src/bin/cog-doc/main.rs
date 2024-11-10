@@ -1,17 +1,21 @@
+use crate::ser::Item;
 use clap::Parser;
 use cocogitto::settings::Settings;
-use itertools::Itertools;
+use items::FieldOrVariant;
+use query::STRUCT_QUERY;
 use schemars::schema_for;
-use std::collections::BTreeMap;
-use std::fmt::Write;
+use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
 use trustfall_rustdoc::{VersionedIndexedCrate, VersionedRustdocAdapter};
 
-mod props;
+mod visitor;
+mod query;
+mod items;
+mod ser;
 
-const CONFIG_REFERENCE_HEADING: &str = r#"# Configuration reference
+const _CONFIG_REFERENCE_HEADING: &str = r#"# Configuration reference
 
 The config reference list all value that can be set in the `cog.toml` file at the root of a repository.
 
@@ -49,7 +53,6 @@ fn main() -> anyhow::Result<()> {
             }
         }
         Cli::ConfigReference { .. } => {
-            unimplemented!("Config reference generation not implemented yet (https://github.com/obi1kenobi/trustfall-rustdoc-adapter/issues/566)");
             trustfall_docgen();
         }
     }
@@ -59,7 +62,7 @@ fn main() -> anyhow::Result<()> {
 
 fn trustfall_docgen() {
     let manifest_dir = env!("CARGO_MANIFEST_DIR");
-    let doc_build = Command::new("cargo")
+    Command::new("cargo")
         .env("RUSTC_BOOTSTRAP", "1")
         .env(
             "RUSTDOCFLAGS",
@@ -68,7 +71,7 @@ fn trustfall_docgen() {
         .arg("+nightly")
         .arg("doc")
         .arg("--no-deps")
-        .status();
+        .status().unwrap();
 
     let json_doc = PathBuf::from(manifest_dir).join("target/doc/cocogitto.json");
     let versioned_crate = trustfall_rustdoc::load_rustdoc(&json_doc).unwrap();
@@ -76,29 +79,31 @@ fn trustfall_docgen() {
     let current = VersionedIndexedCrate::new(&versioned_crate);
     let adapter = VersionedRustdocAdapter::new(&current, None).unwrap();
 
-    let query = r#"query {
-  Crate {
-    item {
-      ... on Struct {
-        name @filter(op: "=", value: ["$struct_name"])
+    let result = query::trustfall_query(&adapter, "Settings", STRUCT_QUERY);
+    let items = visitor::visit_struct(&adapter, result);
 
-        field {
-          field_name: name @output
-          raw_type {
-            type_name: name @output
-          }
-        }
-      }
+    let mut grouped_items: HashMap<String, Vec<FieldOrVariant>> = HashMap::new();
+
+    for item in items {
+        grouped_items.entry(match &item {
+            FieldOrVariant::Struct(s) => s.parent_name.clone(),
+            FieldOrVariant::Enum(e) => e.enum_name.clone()
+        })
+            .or_insert_with(Vec::new)
+            .push(item);
     }
-  }
-}"#;
 
-    let mut vars = BTreeMap::new();
-    vars.insert("struct_name", "Settings");
-    let result = adapter.run_query(query, vars);
-    let result = result.unwrap();
+    let grouped_items: Vec<Item> = grouped_items.into_iter()
+        .map(|(name, value)| Item {
+            name,
+            values: value,
+        })
+        .collect();
 
-    for res in result {
-        println!("{:#?}", res);
+    for item in grouped_items.iter() {
+        println!("{}", item.to_markdown());
     }
+
 }
+
+
