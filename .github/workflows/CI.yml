@@ -136,6 +136,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
+          cache-dependency-path: website/package-lock.json
           node-version: 20
           cache: npm
       - name: Setup Pages
