@@ -17,6 +17,20 @@ static FILTER_MERGE_COMMITS: Lazy<fn(&&git2::Commit) -> bool> = Lazy::new(|| {
     }
 });
 
+static FILTER_FIXUP_COMMITS: Lazy<fn(&&git2::Commit) -> bool> = Lazy::new(|| {
+    |commit| {
+        if SETTINGS.ignore_fixup_commits {
+            commit.message()
+                .map(|msg| !msg.starts_with("fixup!")
+                    || !msg.starts_with("squash!")
+                    || !msg.starts_with("amend!"))
+                .unwrap_or(true)
+        } else {
+            true
+        }
+    }
+});
+
 pub(crate) trait Bump {
     fn manual_bump(&self, version: &str) -> Result<Self, semver::Error>
     where
@@ -146,6 +160,7 @@ impl Tag {
         let commits: Vec<&Git2Commit> = commits
             .iter_commits()
             .filter(&*FILTER_MERGE_COMMITS)
+            .filter(&*FILTER_FIXUP_COMMITS)
             .collect();
 
         let conventional_commits: Vec<Commit> = commits
@@ -180,6 +195,7 @@ impl Tag {
         let commits: Vec<&Git2Commit> = commits
             .iter_commits()
             .filter(&*FILTER_MERGE_COMMITS)
+            .filter(&*FILTER_FIXUP_COMMITS)
             .collect();
 
         let conventional_commits: Vec<Commit> = commits
@@ -213,6 +229,7 @@ impl Tag {
         let commits: Vec<&Git2Commit> = commits
             .iter_commits()
             .filter(&*FILTER_MERGE_COMMITS)
+            .filter(&*FILTER_FIXUP_COMMITS)
             .collect();
 
         let conventional_commits: Vec<Commit> = commits

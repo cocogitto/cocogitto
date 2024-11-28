@@ -249,6 +249,7 @@ pub fn verify(
     author: Option<String>,
     message: &str,
     ignore_merge_commit: bool,
+    ignore_fixup_commit: bool,
 ) -> Result<(), Box<ConventionalCommitError>> {
     // Strip away comments from git message before parsing
     let msg: String = message
@@ -261,6 +262,21 @@ pub fn verify(
 
     if (msg.starts_with("Merge ") || msg.starts_with("Pull request")) && ignore_merge_commit {
         info!("{}", "Merge commit was ignored".yellow());
+        return Ok(());
+    }
+
+    if msg.starts_with("fixup!") && ignore_fixup_commit {
+        info!("{}", "fixup! commit was ignored".yellow());
+        return Ok(());
+    }
+
+    if msg.starts_with("amend!") && ignore_fixup_commit {
+        info!("{}", "amend! commit was ignored".yellow());
+        return Ok(());
+    }
+
+    if msg.starts_with("squash!") && ignore_fixup_commit {
+        info!("{}", "squash! commit was ignored".yellow());
         return Ok(());
     }
 
@@ -293,9 +309,9 @@ pub fn verify(
 
 pub(crate) fn format_summary(commit: &ConventionalCommit) -> String {
     match &commit.scope {
-        None => format!("{}: {}", commit.commit_type, commit.summary,),
+        None => format!("{}: {}", commit.commit_type, commit.summary, ),
         Some(scope) => {
-            format!("{}({}): {}", commit.commit_type, scope, commit.summary,)
+            format!("{}({}): {}", commit.commit_type, scope, commit.summary, )
         }
     }
 }
@@ -378,7 +394,7 @@ mod test {
         let message = "feat(database): add postgresql driver";
 
         // Act
-        let result = verify(Some("toml".into()), message, false);
+        let result = verify(Some("toml".into()), message, false, false);
 
         // Assert
         assert_that!(result).is_ok();
@@ -396,7 +412,7 @@ mod test {
         );
 
         // Act
-        let result = verify(Some("toml".into()), message, false);
+        let result = verify(Some("toml".into()), message, false, false);
 
         // Assert
         assert_that!(result).is_ok();
@@ -408,7 +424,7 @@ mod test {
         let message = "feat add postgresql driver";
 
         // Act
-        let result = verify(Some("toml".into()), message, false);
+        let result = verify(Some("toml".into()), message, false, false);
 
         // Assert
         assert_that!(result).is_err();
@@ -420,7 +436,7 @@ mod test {
         let message = "post: add postgresql driver";
 
         // Act
-        let result = verify(Some("toml".into()), message, false);
+        let result = verify(Some("toml".into()), message, false, false);
 
         // Assert
         assert_that!(result).is_err();
@@ -441,7 +457,7 @@ mod test {
             "
         );
 
-        let outcome = verify(None, message, false);
+        let outcome = verify(None, message, false, false);
 
         assert_that!(outcome).is_ok();
         Ok(())

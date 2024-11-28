@@ -96,10 +96,12 @@ impl CocoGitto {
 
                         rebase.commit(None, &original_commit.committer(), Some(&new_message))?;
                         let ignore_merge_commit = SETTINGS.ignore_merge_commits;
+                        let ignore_fixup_commit = SETTINGS.ignore_fixup_commits;
                         match verify(
                             self.repository.get_author().ok(),
                             &new_message,
                             ignore_merge_commit,
+                            ignore_fixup_commit,
                         ) {
                             Ok(_) => {
                                 info!("Changed commit message to:\"{}\"", &new_message.trim_end())

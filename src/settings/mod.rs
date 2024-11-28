@@ -36,6 +36,8 @@ pub struct Settings {
     pub from_latest_tag: bool,
     /// A list of glob patterns to allow bumping only on matching branches.
     pub ignore_merge_commits: bool,
+    /// Silently ignore fixup commits
+    pub ignore_fixup_commits: bool,
     /// Whether to generate a changelog or not during bump.
     pub disable_changelog: bool,
     /// Whether to create a bump commit or not.
@@ -73,6 +75,7 @@ impl Default for Settings {
         Self {
             from_latest_tag: false,
             ignore_merge_commits: false,
+            ignore_fixup_commits: true,
             disable_changelog: false,
             disable_bump_commit: false,
             generate_mono_repository_global_tag: true,
