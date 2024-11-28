@@ -170,7 +170,7 @@ The config reference list all value that can be set in the `cog.toml` file at th
 
 - Type: `Hashmap<String, BumpProfile>`
 - Optional: `true`
-- Description: Add additional [pre-bump](./#pre_bump_hooks) and [post-bump](./#post_bump_hooks) hooks profile.
+- Description: Add additional [pre-bump](/guide/bump.html#pre-bump-hooks) and [post-bump](/guide/bump.html#post-bump-hooks) hooks profile.
   a profile can be used with the `cog bump --hook-profile <profile_name>` flag.
 - Example:
 
@@ -192,8 +192,7 @@ The config reference list all value that can be set in the `cog.toml` file at th
 
     - [User guide -> Automatic Versioning](/guide/bump.html#auto-bump)
     - [User guide -> Pre-bump hooks](/guide/bump.html#pre-bump-hooks)
-    - [User guide -> Pre-bump hooks](/guide/bump.html#post-bump-hooks)
-    - [User guide -> Version DSL](/guide/bump.html#version-dsl)
+    - [User guide -> Post-bump hooks](/guide/bump.html#post-bump-hooks)
     - [User guide -> Version DSL](/guide/bump.html#version-dsl)
     - [User guide -> Bump profiles](/guide/bump.html#bump-profiles)
 
@@ -260,7 +259,7 @@ The config reference list all value that can be set in the `cog.toml` file at th
 
   echo "[Check current commit message]"
   cog verify --file $1
-"""
+  """
   ```
 
 ## Changelog
@@ -600,7 +599,7 @@ The config reference list all value that can be set in the `cog.toml` file at th
 
 - Type: `Hashmap<String, BumpProfile>`
 - Optional: `true`
-- Description: Add additional per package [pre-bump](./#pre_bump_hooks) and [post-bump](./#post_bump_hooks) hooks profile.
+- Description: Add additional per package [pre-bump](/guide/bump.html#pre-bump-hooks) and [post-bump](/guide/bump.html#post-bump-hooks) hooks profile.
   a profile can be used with the `cog bump --hook-profile <profile_name>` flag.
 - Example:
 

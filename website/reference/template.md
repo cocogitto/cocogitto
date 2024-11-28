@@ -1,6 +1,6 @@
 # Changelog template reference
 
-For a detailed guide on how to write a template changelog refer to [tera's documentation](https://tera.netlify.app/docs/#templates).
+For a detailed guide on how to write a template changelog refer to [tera's documentation](https://keats.github.io/tera/docs/).
 
 You can also take a look at the [built-in templates](https://github.com/cocogitto/cocogitto/tree/main/src/conventional/changelog/template) in cocogitto repository.
 
@@ -9,17 +9,17 @@ You can also take a look at the [built-in templates](https://github.com/cocogitt
 ### Release
 
 - `commits` :
-    * **Type:** [`Array<Commit>`](./#commit)
+    * **Type:** [`Array<Commit>`](/reference/template.html#commit)
     * **Description:** commits contained in the release
     * **Nullable:** `false`
 
 - `version` :
-    * **Type:** [`GitRef`](./#gitref)
+    * **Type:** [`GitRef`](/reference/template.html#gitref)
     * **Description:** tag name or/and git oid of the current release tip
     * **Nullable:** `false`
 
 - `from`
-    * **Type:** [`GitRef`](./#gitref)
+    * **Type:** [`GitRef`](/reference/template.html#gitref)
     * **Description:** tag name or/and git oid of the commit preceding the release
     * **Nullable:** `false`
 
@@ -37,12 +37,12 @@ You can also take a look at the [built-in templates](https://github.com/cocogitt
 
 - `author`:
     * **Type:** `String`
-    * **Description:** the name of the [commit author](../config/#authors) on the remote platform
+    * **Description:** the name of the [commit author](/reference/template.html#authors) on the remote platform
     * **Nullable:** `true`
 
 - `signature`:
     * **Type:** `String`
-    * **Description:** the git signature of the [commit author](../config/#authors)
+    * **Description:** the git signature of the [commit author](/reference/template.html#authors)
     * **Nullable:** `false`
 
 - `type`:
@@ -76,7 +76,7 @@ You can also take a look at the [built-in templates](https://github.com/cocogitt
     * **Nullable:** `false`
 
 - `footer`:
-    * **Type:** [`Array<Footer>`](./#footer)
+    * **Type:** [`Array<Footer>`](/reference/template.html#footer)
     * **Description:** the conventional commit footers
     * **Nullable:** `false`
 
@@ -84,7 +84,7 @@ You can also take a look at the [built-in templates](https://github.com/cocogitt
 
 - `tag`:
     * **Type:** `String`
-    * **Description:** a SemVer tag name, with an optional [`tag_prefix`](../config/#tag_prefix). `null` if the version is
+    * **Description:** a SemVer tag name, with an optional [`tag_prefix`](/reference/config.html#tag_prefix). `null` if the version is
       pointing to unreleased changes.
     * **Nullable:** `true`
 
@@ -110,21 +110,21 @@ You can also take a look at the [built-in templates](https://github.com/cocogitt
 - `platform`:
     * **Type:** `String`
     * **Description:** url to the configured git platform in the form `https://{remote}` (
-      see: [Config -> Changelog -> Remote](../config/#remote))
+      see: [Config -> Changelog -> Remote](/reference/config.html#remote))
     * **Nullable:** `true`
 - `owner`:
     * **Type:** `String`
-    * **Description:** name of the repository owner (see: [Config -> Changelog -> Owner](../config/#owner))
+    * **Description:** name of the repository owner (see: [Config -> Changelog -> Owner](/reference/config.html#owner))
     * **Nullable:** `true`
 - `repository_url`: `false`
     * **Type:** `String`
     * **Description:** url to the repository in the form `https://{remote}/{owner}/{repository}`(
-      see: [Config -> Changelog -> Repository](../config/#owner))
+      see: [Config -> Changelog -> Repository](/reference/config.html#repository))
     * **Nullable:** `true`
 
 ## Filters
 
-In addition to the [tera built-in filters](https://tera.netlify.app/docs/#built-ins), you can use the following:
+In addition to the [tera built-in filters](https://keats.github.io/tera/docs/#built-in-filters), you can use the following:
 
 - `unscoped`
   * **Description:** filter unscoped commits from releases commits. Example:

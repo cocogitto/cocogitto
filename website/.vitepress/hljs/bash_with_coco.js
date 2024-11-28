@@ -88,6 +88,7 @@ export default function(hljs) {
         "xbps-install",
         "brew",
         "nix-env",
+        "choco",
     ];
 
     return {

@@ -105,7 +105,7 @@ cog changelog --help
 ```
 
 Note that if you do not care about automatic release, changelog generation and just want
-to create a conventional commit message you can jump to the [conventional commits section](./guide/#conventional_commits).
+to create a conventional commit message you can jump to the [conventional commits section](/guide/commit.html#conventional-commits).
 
 ## Conventional commits
 
@@ -126,13 +126,13 @@ cog commit feat "implement the parser specification"
 Using `cog commit` while working on a project using conventional commits is less verbose than good old git cli and prevent
 typos and common mistake when writing conventional commit messages.
 
-See [User guide -> Conventional commits](./guide/commit) for more information.
+See [User guide -> Conventional commits](/guide/commit.html#conventional-commits) for more information.
 
 
 ## Repository management
 
 While local commit are made with the `cog commit` command, other `cog` subcommands are meant to manage your repository
-both locally and in a CI context. For an in depth guide on how to use it see [User guide](./guide/init).
+both locally and in a CI context. For an in depth guide on how to use it see [User guide](/guide/init.html#repository-initialization).
 
 ## GitHub integration
 
