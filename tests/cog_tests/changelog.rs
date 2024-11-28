@@ -525,6 +525,56 @@ fn should_ignore_merge_commit() -> Result<()> {
 }
 
 #[sealed_test]
+fn should_not_ignore_fixup_commit() -> Result<()> {
+    // Arrange
+    git_init()?;
+    run_cmd!(echo "ignore_fixup_commits = false" > cog.toml;)?;
+    git_commit("chore: init")?;
+    let sha = git_commit("feat: first commit")?;
+    run_cmd!(git checkout -b branch1;)?;
+    git_commit("fix: fon branch 2")?;
+    run_cmd!(
+        echo toto > titi;
+        git add .;
+        git commit --fixup $sha;
+    )?;
+
+    // Act
+    Command::cargo_bin("cog")?
+        .arg("changelog")
+        // Assert
+        .assert()
+        .success()
+        .stderr(predicates::str::contains("1 | fixup! feat: first commit"));
+
+    Ok(())
+}
+
+#[sealed_test]
+fn should_ignore_fixup_commit() -> Result<()> {
+    // Arrange
+    git_init()?;
+    git_commit("chore: init")?;
+    let sha = git_commit("feat: first commit")?;
+    run_cmd!(git checkout -b branch1;)?;
+    git_commit("fix: fon branch 2")?;
+    run_cmd!(
+        echo toto > titi;
+        git add .;
+        git commit --fixup $sha;
+    )?;
+
+    // Act
+    Command::cargo_bin("cog")?
+        .arg("changelog")
+        // Assert
+        .assert()
+        .success();
+
+    Ok(())
+}
+
+#[sealed_test]
 /// Test that the `omit_from_changelog` configuration
 /// directive is honored if/when it is specified for
 /// a given commit type.

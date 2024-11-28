@@ -62,6 +62,15 @@ impl TryFrom<CommitIter<'_>> for Release<'_> {
                             true
                         }
                     })
+                    .filter(|(_commit, commit)| {
+                        if SETTINGS.ignore_fixup_commits {
+                            !commit.message().unwrap().starts_with("fixup!")
+                                && !commit.message().unwrap().starts_with("squash!")
+                                && !commit.message().unwrap().starts_with("amend!")
+                        } else {
+                            true
+                        }
+                    })
                     .filter_map(|(_, commit)| match Commit::from_git_commit(commit) {
                         Ok(commit) => {
                             if !commit.should_omit() {
@@ -566,13 +575,13 @@ mod test {
                 Some(Oid::from_str("9bb5facac5724bc81385fdd740fedbb49056da00").unwrap()),
                 None,
             )
-            .unwrap();
+                .unwrap();
             let from = Tag::from_str(
                 "0.1.0",
                 Some(Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap()),
                 None,
             )
-            .unwrap();
+                .unwrap();
             Release {
                 version: OidOf::Tag(version),
                 from: OidOf::Tag(from),

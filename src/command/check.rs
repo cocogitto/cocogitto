@@ -13,6 +13,7 @@ impl CocoGitto {
         &self,
         check_from_latest_tag: bool,
         ignore_merge_commits: bool,
+        ignore_fixup_commits: bool,
         range: Option<String>,
     ) -> Result<()> {
         let commit_range = if let Some(range) = range {
@@ -26,20 +27,26 @@ impl CocoGitto {
             self.repository.revwalk("..")?
         };
 
-        let errors: Vec<_> = if ignore_merge_commits {
-            commit_range
-                .iter_commits()
-                .filter(|commit| commit.parent_count() <= 1)
-                .map(Commit::from_git_commit)
-                .filter_map(Result::err)
-                .collect()
-        } else {
-            commit_range
-                .iter_commits()
-                .map(Commit::from_git_commit)
-                .filter_map(Result::err)
-                .collect()
-        };
+        let ignore_merge_commit_fn = |commit: &git2::Commit| commit.parent_count() <= 1;
+        let ignore_fixup_commit_fn = |commit: &git2::Commit| !commit.message().unwrap().starts_with("fixup!")
+            && !commit.message().unwrap().starts_with("squash!")
+            && !commit.message().unwrap().starts_with("amend!");
+
+
+        let errors: Vec<_> = commit_range
+            .iter_commits()
+            .filter(|commit| if ignore_merge_commits && ignore_fixup_commits {
+                ignore_merge_commit_fn(commit) && ignore_fixup_commit_fn(commit)
+            } else if ignore_fixup_commits {
+                ignore_fixup_commit_fn(commit)
+            } else if ignore_merge_commits {
+                ignore_merge_commit_fn(commit)
+            } else {
+                true
+            })
+            .map(Commit::from_git_commit)
+            .filter_map(Result::err)
+            .collect();
 
         if errors.is_empty() {
             let msg = "No errored commits".green();
