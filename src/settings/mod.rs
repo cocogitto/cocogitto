@@ -42,6 +42,8 @@ pub struct Settings {
     pub disable_bump_commit: bool,
     /// Activate or deactivate global tag generation for mono-repository.
     pub generate_mono_repository_global_tag: bool,
+    /// Activate or deactivate package tag generation for mono-repository.
+    pub generate_mono_repository_package_tags: bool,
     /// Specify the version separator character for mono-repository package's tags.
     pub monorepo_version_separator: Option<String>,
     /// A list of glob patterns to allow bumping only on matching branches.
@@ -74,6 +76,7 @@ impl Default for Settings {
             disable_changelog: false,
             disable_bump_commit: false,
             generate_mono_repository_global_tag: true,
+            generate_mono_repository_package_tags: true,
             monorepo_version_separator: None,
             branch_whitelist: vec![],
             tag_prefix: None,
