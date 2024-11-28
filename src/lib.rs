@@ -74,12 +74,16 @@ pub enum CommitHook {
 }
 
 impl CocoGitto {
-    pub fn get() -> Result<Self> {
-        let repository = Repository::open(&std::env::current_dir()?)?;
+    pub fn get_at(path: PathBuf) -> Result<Self> {
+        let repository = Repository::open(&path)?;
         let _settings = Settings::get(&repository)?;
         let _changelog_path = settings::changelog_path();
 
         Ok(CocoGitto { repository })
+    }
+
+    pub fn get() -> Result<Self> {
+        CocoGitto::get_at(std::env::current_dir()?)
     }
 
     pub fn get_committer(&self) -> Result<String, Git2Error> {
