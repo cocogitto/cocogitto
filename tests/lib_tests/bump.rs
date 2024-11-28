@@ -388,6 +388,88 @@ fn auto_bump_package_only_ok() -> Result<()> {
     Ok(())
 }
 
+#[sealed_test]
+fn auto_bump_global_only_ok() -> Result<()> {
+    // Arrange
+    let mut packages = HashMap::new();
+    let jenkins = || MonoRepoPackage {
+        path: PathBuf::from("jenkins"),
+        public_api: false,
+        changelog_path: Some("jenkins/CHANGELOG.md".to_owned()),
+        ..Default::default()
+    };
+
+    packages.insert("jenkins".to_owned(), jenkins());
+
+    let thumbor = || MonoRepoPackage {
+        path: PathBuf::from("thumbor"),
+        public_api: false,
+        changelog_path: Some("thumbor/CHANGELOG.md".to_owned()),
+        ..Default::default()
+    };
+
+    packages.insert("thumbor".to_owned(), thumbor());
+
+    let settings = Settings {
+        packages,
+        generate_mono_repository_package_tags: false,
+        ..Default::default()
+    };
+
+    let settings = toml::to_string(&settings)?;
+
+    git_init()?;
+    run_cmd!(
+        echo Hello > README.md;
+        git add .;
+        git commit -m "first commit";
+        mkdir jenkins;
+        echo "some jenkins stuff" > jenkins/file;
+        git add .;
+        git commit -m "feat(jenkins): add jenkins stuffs";
+        mkdir thumbor;
+        echo "some thumbor stuff" > thumbor/file;
+        git add .;
+        git commit -m "feat(thumbor): add thumbor stuffs";
+        echo $settings > cog.toml;
+        git add .;
+        git commit -m "chore: add cog.toml";
+    )?;
+
+    let mut cocogitto = CocoGitto::get()?;
+
+    // Act
+    cocogitto.create_monorepo_version(BumpOptions::default())?;
+
+    assert_tag_does_not_exist("jenkins-0.1.0")?;
+    assert_tag_does_not_exist("thumbor-0.1.0")?;
+    assert_tag_exists("0.1.0")?;
+
+    cocogitto.clear_cache();
+
+    run_cmd!(
+        echo "fix jenkins bug" > jenkins/fix;
+        git add .;
+        git commit -m "fix(jenkins): bug fix on jenkins package";
+    )?;
+
+    cocogitto.create_monorepo_version(BumpOptions::default())?;
+
+    // Assert
+    assert_tag_exists("0.1.1")?;
+
+    run_cmd!(
+        echo "feat global feature" > global;
+        git add .;
+        git commit -m "feat: some global feature";
+    )?;
+
+    cocogitto.create_monorepo_version(BumpOptions::default())?;
+
+    assert_tag_exists("0.2.0")?;
+    Ok(())
+}
+
 // FIXME: Failing on non compliant tag should be configurable
 //  until it's implemented we will ignore non compliant tags
 // #[sealed_test]

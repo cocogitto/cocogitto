@@ -440,6 +440,17 @@ The config reference list all value that can be set in the `cog.toml` file at th
   generate_mono_repository_global_tag = false
   ```
   
+### ``generate_mono_repository_package_tags``
+
+- Type: `boolean`
+- Optional: `true`
+- Default value: `true`
+- Description: Activate or deactivate packages tag generation for mono-repository.
+- Example:
+  ```toml
+  generate_mono_repository_package_tags = false
+  ```
+  
 ### `pre_package_bump_hooks`
 
 - Type: `Array<String>`
