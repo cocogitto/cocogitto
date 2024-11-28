@@ -1,0 +1,15 @@
+{
+  "scripts": {
+    "docs:dev": "vitepress dev",
+    "docs:build": "vitepress build",
+    "docs:preview": "vitepress preview"
+  },
+  "dependencies": {
+    "highlight.js": "^11.10.0",
+    "vitepress": "^1.4.1",
+    "vue": "^3.5.12"
+  },
+  "devDependencies": {
+    "sass": "^1.80.5"
+  }
+}

@@ -29,8 +29,19 @@ pub enum ReleaseType<'a> {
 }
 
 impl Release<'_> {
-    pub fn into_markdown(self, template: Template) -> Result<String, tera::Error> {
-        let mut renderer = Renderer::try_new(template)?;
+    pub fn into_markdown(
+        self,
+        template: Template,
+        context: ReleaseType,
+    ) -> Result<String, tera::Error> {
+        let renderer = Renderer::try_new(template)?;
+
+        let mut renderer = match context {
+            ReleaseType::Standard => renderer,
+            ReleaseType::MonoRepo(context) => renderer.with_monorepo_context(context),
+            ReleaseType::Package(context) => renderer.with_package_context(context),
+        };
+
         renderer.render(self)
     }
 
@@ -40,19 +51,10 @@ impl Release<'_> {
         template: Template,
         kind: ReleaseType,
     ) -> Result<(), ChangelogError> {
-        let renderer = Renderer::try_new(template)?;
-
-        let mut renderer = match kind {
-            ReleaseType::Standard => renderer,
-            ReleaseType::MonoRepo(context) => renderer.with_monorepo_context(context),
-            ReleaseType::Package(context) => renderer.with_package_context(context),
-        };
-
-        let changelog = renderer.render(self)?;
-
         let mut changelog_content = fs::read_to_string(path.as_ref())
             .unwrap_or_else(|_| [DEFAULT_HEADER, DEFAULT_FOOTER].join(""));
 
+        let changelog = self.into_markdown(template, kind)?;
         let separator_idx = changelog_content.find(CHANGELOG_SEPARATOR);
 
         if let Some(idx) = separator_idx {

@@ -20,24 +20,40 @@ pub(crate) type AuthorSettings = Vec<AuthorSetting>;
 
 mod error;
 
+#[cfg_attr(feature = "docgen", derive(schemars::JsonSchema))]
 #[derive(Copy, Clone)]
 pub enum HookType {
     PreBump,
     PostBump,
 }
 
+/// # Cocogitto config
+#[cfg_attr(feature = "docgen", derive(schemars::JsonSchema))]
 #[derive(Debug, Deserialize, Serialize, Eq, PartialEq)]
 #[serde(deny_unknown_fields, default)]
 pub struct Settings {
+    /// Whether to only consider commits since the latest SemVer tag.
     pub from_latest_tag: bool,
+    /// A list of glob patterns to allow bumping only on matching branches.
     pub ignore_merge_commits: bool,
+    /// Whether to generate a changelog or not during bump.
     pub disable_changelog: bool,
+    /// Whether to create a bump commit or not.
     pub disable_bump_commit: bool,
+    /// Activate or deactivate global tag generation for mono-repository.
     pub generate_mono_repository_global_tag: bool,
+    /// Specify the version separator character for mono-repository package's tags.
     pub monorepo_version_separator: Option<String>,
+    /// A list of glob patterns to allow bumping only on matching branches.
     pub branch_whitelist: Vec<String>,
+    /// Set a tag prefix value for cocogitto. For instance if you have a `v`
+    /// as a tag prefix, cocogitto will generate versions starting with `v` and
+    /// commands like `cog changelog` will pick only those versions.
     pub tag_prefix: Option<String>,
+    /// A "skip-ci" string to add to the commits when using the `bump` or `commit commands.
+    /// Default value is `[skip ci].
     pub skip_ci: String,
+    /// Allows to perform bump even if there are untracked or uncommited changes.
     pub skip_untracked: bool,
     pub pre_bump_hooks: Vec<String>,
     pub post_bump_hooks: Vec<String>,
@@ -76,6 +92,7 @@ impl Default for Settings {
     }
 }
 
+#[cfg_attr(feature = "docgen", derive(schemars::JsonSchema))]
 #[derive(Debug, Deserialize, Serialize, Eq, PartialEq, Hash, Copy, Clone)]
 #[serde(deny_unknown_fields, rename_all = "kebab-case", into = "&str")]
 pub enum GitHookType {
@@ -166,6 +183,7 @@ impl fmt::Display for GitHookType {
     }
 }
 
+#[cfg_attr(feature = "docgen", derive(schemars::JsonSchema))]
 #[derive(Debug, Deserialize, Serialize, Eq, PartialEq)]
 #[serde(deny_unknown_fields, untagged)]
 pub enum GitHook {
@@ -173,6 +191,7 @@ pub enum GitHook {
     File { path: PathBuf },
 }
 
+#[cfg_attr(feature = "docgen", derive(schemars::JsonSchema))]
 #[derive(Debug, Deserialize, Serialize, Eq, PartialEq)]
 #[serde(deny_unknown_fields, default)]
 pub struct MonoRepoPackage {
@@ -239,6 +258,8 @@ impl MonoRepoPackage {
     }
 }
 
+/// # Changelog
+#[cfg_attr(feature = "docgen", derive(schemars::JsonSchema))]
 #[derive(Debug, Deserialize, Serialize, Clone, Eq, PartialEq)]
 #[serde(deny_unknown_fields, default)]
 pub struct Changelog {
@@ -265,6 +286,7 @@ impl Default for Changelog {
     }
 }
 
+#[cfg_attr(feature = "docgen", derive(schemars::JsonSchema))]
 #[derive(Debug, Deserialize, Serialize, Clone, Eq, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct AuthorSetting {
@@ -285,6 +307,8 @@ pub fn changelog_path() -> &'static PathBuf {
     &SETTINGS.changelog.path
 }
 
+/// # Bump profile
+#[cfg_attr(feature = "docgen", derive(schemars::JsonSchema))]
 #[derive(Debug, Deserialize, Serialize, Default, Eq, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct BumpProfile {

@@ -437,8 +437,6 @@ fn get_changelog_with_custom_template() -> Result<()> {
     );
 
     run_cmd!(echo $cog_toml > cog.toml;)?;
-
-    let _string = fs::read_to_string("cog.toml")?;
     let init = git_commit("chore: init")?;
     let commit_one = git_commit("feat(scope1): start")?;
     let commit_two = git_commit("feat: feature 1")?;
@@ -497,6 +495,34 @@ fn get_changelog_with_custom_template() -> Result<()> {
             commit_five_short = &commit_five[0..7],
         )
     );
+    Ok(())
+}
+
+#[sealed_test]
+fn should_ignore_merge_commit() -> Result<()> {
+    // Arrange
+    git_init()?;
+
+    run_cmd!(git config merge.ff false;)?;
+    run_cmd!(echo "ignore_merge_commits = true" > cog.toml;)?;
+    git_commit("chore: init")?;
+    git_commit("feat: first commit")?;
+    run_cmd!(git checkout -b branch1;)?;
+    git_commit("fix: fon branch 2")?;
+    run_cmd!(
+        git checkout master;
+        git merge branch1;
+    )?;
+
+    // Act
+    let changelog = Command::cargo_bin("cog")?
+        .arg("changelog")
+        // Assert
+        .assert()
+        .success();
+
+    let changelog = changelog.stderr("");
+
     Ok(())
 }
 
@@ -779,6 +805,43 @@ fn group_by_type() -> Result<()> {
             "
         )
     );
+
+    Ok(())
+}
+
+#[sealed_test]
+fn should_get_global_changelog() -> anyhow::Result<()> {
+    // Arrange
+    git_init()?;
+    run_cmd!(
+        mkdir -p packages/pkg1
+        mkdir -p packages/pkg2
+    )?;
+
+    let cog = indoc!(
+        r#"[changelog]
+        remote = "github.com"
+        repository = "test"
+        owner = "test"
+
+        [packages]
+        pkg1 = { path = "packages/pkg1" }
+        pkg2 = { path = "packages/pkg2" }
+        "#
+    );
+    git_add(cog, "cog.toml")?;
+    git_commit("chore: init")?;
+    git_add("pkg1", "packages/pkg1/README.md")?;
+    let _ = git_commit("feat: package 1 feat")?;
+    git_add("pkg2", "packages/pkg2/README.md")?;
+    let _ = git_commit("feat: package 2 fix")?;
+
+    Command::cargo_bin("cog")?
+        .arg("changelog")
+        .arg("--template")
+        .arg("monorepo_default")
+        .assert()
+        .success();
 
     Ok(())
 }

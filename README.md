@@ -150,6 +150,12 @@ git commit -m "feat: add awesome feature"
 
 See [User guide -> Conventional commits](https://docs.cocogitto.io/guide/#conventional-commits).
 
+## Configuration
+
+Use `cog.toml` file to configure your usage of Cocogitto.
+
+For the full list of options, see [User guide ->  Configuration reference](https://docs.cocogitto.io/config/).
+
 ## Auto-bumps
 
 Creating a version with `cog bump` will perform the following actions :
@@ -189,7 +195,7 @@ authors = [
 
 ## Changelogs
 
-`cog changelog` uses [tera](https://tera.netlify.app/) templates to generate markdown changelogs. It has several built-in
+`cog changelog` uses [tera](https://keats.github.io/tera/) templates to generate markdown changelogs. It has several built-in
 templates, and you can define your own.
 
 **Example:**
