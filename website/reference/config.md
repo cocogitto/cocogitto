@@ -245,6 +245,23 @@ The config reference list all value that can be set in the `cog.toml` file at th
 - Also see:
     - [User guide -> Disable bump commit creation](../guide/#disable-bump-commit-creation)
 
+### `git_hooks`
+
+- Type: `Map<GitHookType, GitHook>`
+- Optional: `true`
+- Default value: `{}`
+- Description: Define a set of git hook installable via `cog install-hook`.
+- Example:
+  ```toml
+  [git_hooks.commit-msg]
+  script = """#!/bin/sh
+  set -e
+
+  echo "[Check current commit message]"
+  cog verify --file $1
+"""
+  ```
+
 ## Changelog
 
 - Type: `Changelog`
@@ -418,6 +435,17 @@ The config reference list all value that can be set in the `cog.toml` file at th
   monorepo_version_separator = "-"
   ```
 
+### ``generate_mono_repository_global_tag``
+
+- Type: `boolean`
+- Optional: `true`
+- Default value: `true`
+- Description: Activate or deactivate global tag generation for mono-repository.
+- Example:
+  ```toml
+  generate_mono_repository_global_tag = false
+  ```
+  
 ### `pre_package_bump_hooks`
 
 - Type: `Array<String>`
