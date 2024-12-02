@@ -309,9 +309,9 @@ pub fn verify(
 
 pub(crate) fn format_summary(commit: &ConventionalCommit) -> String {
     match &commit.scope {
-        None => format!("{}: {}", commit.commit_type, commit.summary, ),
+        None => format!("{}: {}", commit.commit_type, commit.summary,),
         Some(scope) => {
-            format!("{}({}): {}", commit.commit_type, scope, commit.summary, )
+            format!("{}({}): {}", commit.commit_type, scope, commit.summary,)
         }
     }
 }

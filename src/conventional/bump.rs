@@ -20,10 +20,13 @@ static FILTER_MERGE_COMMITS: Lazy<fn(&&git2::Commit) -> bool> = Lazy::new(|| {
 static FILTER_FIXUP_COMMITS: Lazy<fn(&&git2::Commit) -> bool> = Lazy::new(|| {
     |commit| {
         if SETTINGS.ignore_fixup_commits {
-            commit.message()
-                .map(|msg| !msg.starts_with("fixup!")
-                    || !msg.starts_with("squash!")
-                    || !msg.starts_with("amend!"))
+            commit
+                .message()
+                .map(|msg| {
+                    !msg.starts_with("fixup!")
+                        || !msg.starts_with("squash!")
+                        || !msg.starts_with("amend!")
+                })
                 .unwrap_or(true)
         } else {
             true
