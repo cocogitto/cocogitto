@@ -518,7 +518,12 @@ fn main() -> Result<()> {
                 (Some(_), Some(_)) => unreachable!(),
             };
 
-            conv_commit::verify(author, &commit_message, ignore_merge_commits, ignore_fixup_commits)?;
+            conv_commit::verify(
+                author,
+                &commit_message,
+                ignore_merge_commits,
+                ignore_fixup_commits,
+            )?;
         }
         Command::Check {
             from_latest_tag,
@@ -530,7 +535,12 @@ fn main() -> Result<()> {
             let from_latest_tag = from_latest_tag || SETTINGS.from_latest_tag;
             let ignore_merge_commits = ignore_merge_commits || SETTINGS.ignore_merge_commits;
             let ignore_fixup_commits = ignore_fixup_commits || SETTINGS.ignore_fixup_commits;
-            cocogitto.check(from_latest_tag, ignore_merge_commits, ignore_fixup_commits, range)?;
+            cocogitto.check(
+                from_latest_tag,
+                ignore_merge_commits,
+                ignore_fixup_commits,
+                range,
+            )?;
         }
         Command::Edit { from_latest_tag } => {
             let cocogitto = CocoGitto::get()?;

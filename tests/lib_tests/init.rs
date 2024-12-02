@@ -34,6 +34,5 @@ fn should_skip_initialization_if_repository_exists() -> Result<()> {
     assert_that!(status).contains("On branch master");
     assert_that!(status).contains("Changes to be committed:");
     assert_that!(status).contains("new file:   cog.toml");
-
     Ok(())
 }
