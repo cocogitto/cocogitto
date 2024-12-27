@@ -30,6 +30,8 @@ jobs:
         include:
           - os: macos-latest
             target: x86_64-apple-darwin
+          - os: macos-latest
+            target: aarch64-apple-darwin
           - os: ubuntu-latest
             target: x86_64-unknown-linux-musl
           - os: windows-latest
@@ -96,7 +98,7 @@ jobs:
           chmod +x -R  x86_64-unknown-linux-musl/cog
           cp -r /home/runner/artifacts/LICENSE/LICENSE x86_64-unknown-linux-musl/
           tar -czf cocogitto-x86_64-unknown-linux-musl.tar.gz x86_64-unknown-linux-musl/*
-          
+
           mkdir armv7-unknown-linux-musleabihf
           cp -r /home/runner/artifacts/armv7-unknown-linux-musleabihf/cog armv7-unknown-linux-musleabihf/cog
           chmod +x -R  armv7-unknown-linux-musleabihf/cog
@@ -108,7 +110,7 @@ jobs:
           chmod +x -R  aarch64-unknown-linux-gnu/cog
           cp -r /home/runner/artifacts/LICENSE/LICENSE aarch64-unknown-linux-gnu/
           tar -czf cocogitto-aarch64-unknown-linux-gnu.tar.gz aarch64-unknown-linux-gnu/*
-          
+
           mkdir x86_64-pc-windows-msvc
           cp -r /home/runner/artifacts/x86_64-pc-windows-msvc/cog.exe x86_64-pc-windows-msvc/cog.exe
           chmod +x -R  x86_64-pc-windows-msvc/cog.exe
@@ -120,7 +122,7 @@ jobs:
           chmod +x -R  x86_64-apple-darwin/cog
           cp -r /home/runner/artifacts/LICENSE/LICENSE x86_64-apple-darwin/
           tar -czf cocogitto-x86_64-apple-darwin.tar.gz x86_64-apple-darwin/*
-          
+
       - uses: svenstaro/upload-release-action@v1-release
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
@@ -182,11 +184,11 @@ jobs:
           mkdir -p target/x86_64-unknown-linux-musl/release/
           mkdir -p target/armv7-unknown-linux-musleabihf/release/
           mkdir -p target/aarch64-unknown-linux-gnu/release/
-          
+
           cp -r /home/runner/artifacts/x86_64-unknown-linux-musl/. target/x86_64-unknown-linux-musl/release
           cp -r /home/runner/artifacts/armv7-unknown-linux-musleabihf/. target/armv7-unknown-linux-musleabihf/release
           cp -r /home/runner/artifacts/aarch64-unknown-linux-gnu/. target/aarch64-unknown-linux-gnu/release
-          
+
           chmod +x -R  target/x86_64-unknown-linux-musl/release
           chmod +x -R  target/armv7-unknown-linux-musleabihf/release
           chmod +x -R  target/aarch64-unknown-linux-gnu/release
