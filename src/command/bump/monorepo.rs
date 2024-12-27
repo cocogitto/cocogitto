@@ -97,9 +97,11 @@ impl CocoGitto {
             }
         }
 
-        for bump in &bumps {
-            self.repository
-                .create_tag(&bump.new_version.prefixed_tag, disable_bump_commit)?;
+        if SETTINGS.generate_mono_repository_package_tags {
+            for bump in &bumps {
+                self.repository
+                    .create_tag(&bump.new_version.prefixed_tag, disable_bump_commit)?;
+            }
         }
 
         // Run per package post hooks
@@ -145,10 +147,14 @@ impl CocoGitto {
             .repository
             .get_latest_tag(TagLookUpOptions::default().include_pre_release());
         let old = tag_or_fallback_to_zero(old)?;
-        let mut tag = old.bump(
-            IncrementCommand::AutoMonoRepoGlobal(increment_from_package_bumps),
-            &self.repository,
-        )?;
+        let mut tag = if SETTINGS.generate_mono_repository_package_tags {
+            old.bump(
+                IncrementCommand::AutoMonoRepoGlobal(increment_from_package_bumps),
+                &self.repository,
+            )?
+        } else {
+            old.bump(IncrementCommand::Auto, &self.repository)?
+        };
 
         ensure_tag_is_greater_than_previous(&old, &tag)?;
 
@@ -255,9 +261,11 @@ impl CocoGitto {
             }
         }
 
-        for bump in &bumps {
-            self.repository
-                .create_tag(&bump.new_version.prefixed_tag, disable_bump_commit)?;
+        if SETTINGS.generate_mono_repository_package_tags {
+            for bump in &bumps {
+                self.repository
+                    .create_tag(&bump.new_version.prefixed_tag, disable_bump_commit)?;
+            }
         }
 
         if let Some(msg_tmpl) = opts.annotated {

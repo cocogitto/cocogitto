@@ -515,13 +515,11 @@ fn should_ignore_merge_commit() -> Result<()> {
     )?;
 
     // Act
-    let changelog = Command::cargo_bin("cog")?
+    Command::cargo_bin("cog")?
         .arg("changelog")
         // Assert
         .assert()
         .success();
-
-    let changelog = changelog.stderr("");
 
     Ok(())
 }

@@ -105,7 +105,7 @@ impl From<Git2Statuses<'_>> for Statuses {
     }
 }
 
-impl<'a, 'b: 'a> From<Git2StatusEntry<'b>> for Status {
+impl<'b> From<Git2StatusEntry<'b>> for Status {
     fn from(status: Git2StatusEntry<'b>) -> Self {
         let path = status.path().unwrap_or("invalid utf8 path").to_string();
         match status.status() {

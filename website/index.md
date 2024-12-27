@@ -11,7 +11,7 @@ hero:
   actions:
     - theme: brand
       text: Getting Started
-      link: /guide
+      link: /guide/init
 
 features:
   - title: Verified commits️

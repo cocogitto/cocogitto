@@ -148,13 +148,13 @@ cog commit feat "add awesome feature"
 git commit -m "feat: add awesome feature"
 ```
 
-See [User guide -> Conventional commits](https://docs.cocogitto.io/guide/#conventional-commits).
+See [User guide -> Conventional commits](https://docs.cocogitto.io/guide/commit#conventional-commits).
 
 ## Configuration
 
 Use `cog.toml` file to configure your usage of Cocogitto.
 
-For the full list of options, see [User guide ->  Configuration reference](https://docs.cocogitto.io/config/).
+For the full list of options, see [User guide ->  Configuration reference](https://docs.cocogitto.io/reference/config#configuration-reference).
 
 ## Auto-bumps
 
@@ -266,7 +266,7 @@ using [cocogitto-action](https://github.com/cocogitto/cocogitto-action).
       git-user-email: 'mycoolproject@org.org'
 ```
 
-See [Github integration -> GitHub action](https://docs.cocogitto.io/ci_cd/#github-action)
+See [Github integration -> GitHub action](https://docs.cocogitto.io/ci_cd/action#github-action)
 
 **GitHub bot:**
 
