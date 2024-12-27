@@ -169,17 +169,20 @@ mod test {
     #[sealed_test]
     fn get_repo_working_dir_some() -> Result<()> {
         // Arrange
-        let expected_dir = std::env::current_dir()?;
+        let expected_dir = std::env::current_dir()?.canonicalize()?;
         let repo = Repository::init(&expected_dir)?;
+
         let dir = PathBuf::from_str("dir")?;
         std::fs::create_dir(&dir)?;
         std::env::set_current_dir(&dir)?;
 
         // Act
-        let root_dir = repo.get_repo_dir();
+        let root_dir = repo.get_repo_dir().map(|p| p.canonicalize().unwrap());
 
         // Assert
-        assert_that!(root_dir).is_equal_to(Some(expected_dir.as_path()));
+        let expected_canonical = expected_dir.canonicalize()?;
+        assert_that!(root_dir).is_equal_to(Some(expected_canonical));
+
         Ok(())
     }
 
