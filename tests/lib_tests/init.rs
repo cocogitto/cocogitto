@@ -30,11 +30,6 @@ fn should_skip_initialization_if_repository_exists() -> Result<()> {
     // Assert
     assert_that!(Path::new("cog.toml")).exists();
     assert_that!(git_log_head_message()?).is_equal_to("The first commit\n".to_string());
-    if cfg!(target_os = "macos") {
-        assert_that!(git_status()?)
-            .contains("On branch master\nChanges to be committed:\n\tnew file:   cog.toml\n");
-    } else {
-        assert_that!(git_status()?).contains("git restore --staged");
-    }
+    assert_that!(git_status()?).contains("git restore --staged");
     Ok(())
 }
