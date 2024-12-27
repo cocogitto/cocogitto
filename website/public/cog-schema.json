@@ -57,6 +57,11 @@
       "type": "boolean",
       "default": true
     },
+    "generate_mono_repository_package_tags": {
+      "description": "Activate or deactivate package tag generation for mono-repository.",
+      "type": "boolean",
+      "default": true
+    },
     "git_hooks": {
       "type": "object",
       "additionalProperties": {

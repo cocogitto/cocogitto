@@ -2,6 +2,39 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## [6.2.0](https://github.com/cocogitto/cocogitto/compare/6.1.0..6.2.0) - 2024-11-28
+#### Bug Fixes
+- fix ignore merge commit no longer honored - ([112bfcc](https://github.com/cocogitto/cocogitto/commit/112bfcc4a014b05dc43712cd4cb32846e5923251)) - [@oknozor](https://github.com/oknozor)
+- populate monorepo changelog tera context - ([3875f65](https://github.com/cocogitto/cocogitto/commit/3875f65918f2710b335a872a433b5cef0a7c82b6)) - [@oknozor](https://github.com/oknozor)
+#### Continuous Integration
+- fix codedov upload - ([6f3a292](https://github.com/cocogitto/cocogitto/commit/6f3a292c7c52144c225c4901c01d5c1020a1f112)) - [@oknozor](https://github.com/oknozor)
+#### Documentation
+- **(config)** add link to cog.toml config reference to README and cog.toml - ([ab1fccb](https://github.com/cocogitto/cocogitto/commit/ab1fccba029aa0c05345cb38c98a99c01a09e8ea)) - Emily Zall
+- **(website)** clarify which commit types auto bump by default and how to change this config - ([13ab5a3](https://github.com/cocogitto/cocogitto/commit/13ab5a3e4112efb4705d7b82da9b95bba894a179)) - Emily Zall
+- **(website)** fix some typos - ([7096430](https://github.com/cocogitto/cocogitto/commit/7096430d1852cecf8e85d842971563cb71dc8b2f)) - mroetsc
+- **(website)** include MacOS install instructions on homepage - ([7f6b5f1](https://github.com/cocogitto/cocogitto/commit/7f6b5f1d3cb50db10b89b77c19a45ee2611df903)) - Ali Dowair
+- migrate to vitepress - ([3ff98b2](https://github.com/cocogitto/cocogitto/commit/3ff98b20eeeb4e8b44000e23ddb77de53902f477)) - [@oknozor](https://github.com/oknozor)
+- update tera link in README.md - ([24dd3da](https://github.com/cocogitto/cocogitto/commit/24dd3da91ee0427d7cc5ecfe36fff3cc0521566b)) - David LJ
+- correct minor typos (#396) - ([72e1f86](https://github.com/cocogitto/cocogitto/commit/72e1f8624939a089414aa28418bd2249972fac23)) - tjmurray
+#### Features
+- **(settings)** allow to disable default commit types - ([b84247f](https://github.com/cocogitto/cocogitto/commit/b84247fd39c2bb1aff685293fe32cc4d43dfa090)) - [@oknozor](https://github.com/oknozor)
+- allow to disable package tagging for monorepos - ([426223e](https://github.com/cocogitto/cocogitto/commit/426223e807e0e653afc85cde498a5db976babfa9)) - [@oknozor](https://github.com/oknozor)
+- open repo at path - ([f496807](https://github.com/cocogitto/cocogitto/commit/f4968079684972c9d616f29e0cfa4aeb2d56b344)) - Finley Thomalla
+- Add optional default version definition in the VersionDSL, the separator is a `|`, the default version is defined in a way that allows us to apply modifiers to it when a version is not available. The same applies for tags (we use the tag prefix defined in the settings). - ([07ae2ac](https://github.com/cocogitto/cocogitto/commit/07ae2acca7cca729693c3c56515f77f79865366c)) - Matjaz Domen Pecan
+#### Miscellaneous Chores
+- **(deps-dev)** bump follow-redirects from 1.15.4 to 1.15.6 in /docs - ([bf0c67b](https://github.com/cocogitto/cocogitto/commit/bf0c67b05a3a2986b64dfc5cca2ea956058f6996)) - dependabot[bot]
+- **(documentation)** More clarity in documentation, add clarification that the default cannot be used with the package keyword. - ([23e4310](https://github.com/cocogitto/cocogitto/commit/23e43101fd9611d13f053eced5737fd9ced5e1d5)) - Matjaz Domen Pecan
+- **(documentation)** Break the lines on added documentation to make it more readable. - ([6da99a2](https://github.com/cocogitto/cocogitto/commit/6da99a251259c7686ed03f33d7778581712f6f26)) - Matjaz Domen Pecan
+- **(documentation)** Fleshing out the documentation about defaults. - ([68c3528](https://github.com/cocogitto/cocogitto/commit/68c3528152513b6937e828387e7e88a727a2f7db)) - Matjaz Domen Pecan
+- **(documentation)** add documentation for the VersionDSL default version functionality. - ([145df03](https://github.com/cocogitto/cocogitto/commit/145df0300a93a301614ccbdf6f6c577446aaaebf)) - Matjaz Domen Pecan
+- **(rustfmt)** Forgot to run it before. - ([2283359](https://github.com/cocogitto/cocogitto/commit/22833597e148afac2bb1ea7002592f1e6c889160)) - Matjaz Domen Pecan
+- update docs - ([ded0d4d](https://github.com/cocogitto/cocogitto/commit/ded0d4d7d29db0f194f545a9cfbbdd5f6fa1ade2)) - Jacob Torrång
+- cargo update - ([7d022f9](https://github.com/cocogitto/cocogitto/commit/7d022f970be66c0b3a26d89bb5471609b4c84352)) - [@oknozor](https://github.com/oknozor)
+#### Tests
+- **(changelog)** add reproducer for #388 - ([f5ac58b](https://github.com/cocogitto/cocogitto/commit/f5ac58b5e74f21036083a294e7353fb1be382c5c)) - [@oknozor](https://github.com/oknozor)
+
+- - -
+
 ## [6.1.0](https://github.com/cocogitto/cocogitto/compare/6.0.1..6.1.0) - 2024-03-14
 #### Bug Fixes
 - **(bump)** use commit meta to determine no bump commits - ([f9d3dd3](https://github.com/cocogitto/cocogitto/commit/f9d3dd35a1adeffc465b5aa7e3645bdbcdff7bbf)) - Maksym Kondratenko

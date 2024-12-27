@@ -155,7 +155,7 @@ impl ToContext for MonoRepoContext<'_> {
     }
 }
 
-impl<'a> ToContext for PackageContext<'a> {
+impl ToContext for PackageContext<'_> {
     fn to_context(&self) -> Context {
         let mut context = tera::Context::new();
         context.insert("package_name", &self.package_name);
