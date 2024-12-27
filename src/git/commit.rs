@@ -90,6 +90,8 @@ impl Repository {
     }
 }
 
+// Clippy does not seem to be aware that `wait_with_output` is equivalent to `wait`
+#[allow(clippy::zombie_processes)]
 fn x509_gitsign(program: String, user: &str, content: &str) -> Result<String, Git2Error> {
     let mut child = Command::new(program);
     child.args(["--armor", "-b", "-s", "-u", user]);
@@ -116,6 +118,7 @@ fn x509_gitsign(program: String, user: &str, content: &str) -> Result<String, Gi
     })?
 }
 
+#[allow(clippy::zombie_processes)]
 fn gpg_sign_string(
     program: String,
     key: Option<String>,
