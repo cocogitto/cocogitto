@@ -16,6 +16,7 @@ jobs:
     name: Tests for platform  ${{ matrix.os }}/${{ matrix.target }}
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: macos-latest
