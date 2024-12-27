@@ -10,7 +10,7 @@ pub mod revwalk;
 #[derive(Debug)]
 pub struct CommitIter<'repo>(Vec<(OidOf, Commit<'repo>)>);
 
-impl<'repo> CommitIter<'repo> {
+impl CommitIter<'_> {
     pub fn from_oid(&self) -> OidOf {
         self.0.last().expect("non empty commit range").0.clone()
     }
