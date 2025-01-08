@@ -20,7 +20,7 @@ codegen-units = 1
 panic = "abort"
 
 [dependencies]
-git2 = { version = "0.19.0", default-features = false, features = [] }
+git2 = { version = "0.20.0", default-features = false, features = [] }
 # Do not bump anyhow, (see: https://github.com/dtolnay/anyhow/issues/353)
 anyhow = "1.0.75"
 colored = "^2"
