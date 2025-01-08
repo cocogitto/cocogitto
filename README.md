@@ -113,7 +113,7 @@ pacman -S cocogitto
 cargo install --locked cocogitto
 ```
 
-#### NixOs
+#### NixOS
 
 ```shell
 nix-env -iA cocogitto
