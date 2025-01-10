@@ -638,7 +638,7 @@ All notable changes to this project will be documented in this file. See [conven
 
 ### Bug Fixes
 
-[2103a7](https://github.com/oknozor/cocogitto/commit/2103a7f768cf67eeb85f30ad72a75134ee89e772) - %version is now interpretted even without space separator - [oknozor](https://github.com/oknozor)
+[2103a7](https://github.com/oknozor/cocogitto/commit/2103a7f768cf67eeb85f30ad72a75134ee89e772) - %version is now interpreted even without space separator - [oknozor](https://github.com/oknozor)
 
 
 - - -
