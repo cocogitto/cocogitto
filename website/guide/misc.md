@@ -63,15 +63,15 @@ Date: Tue Mar 7 15:06:18 2023 +0200
     chore(version): 1.0.0 [ci-skip]
 ```
 
-## Skip untracked or uncommited changes
+## Skip untracked or uncommitted changes
 
-By default, Cocogitto will abort bump if there are uncommited or untracked changes. You can change this behavior using 
-the `skip_untracked` configuration in the `cog.toml` file or the `--skip-untracked` option of the `bump` command. If so, 
+By default, Cocogitto will abort bump if there are uncommitted or untracked changes. You can change this behavior using
+the `skip_untracked` configuration in the `cog.toml` file or the `--skip-untracked` option of the `bump` command. If so,
 the warning will be printed to `stderr` and the bump will continue.
 
 ## Disable bump commit creation
 
-When bumping by default, Cocogitto will create a commit that will include the Changelog(s), the tag(s) and any file 
+When bumping by default, Cocogitto will create a commit that will include the Changelog(s), the tag(s) and any file
 updated in the `pre_bump_hooks`.
 
 **Example with a monorepo**:
@@ -84,9 +84,9 @@ Date: Tue Mar 7 15:06:18 2023 +0200
     chore(version): bump packages
 ```
 
-To disable its creation, you can use the `disable_bump_commit` configuration in the `cog.toml` or 
-the `--disable-bump-commit` option of the `cog bump` command. In that case, Cocogitto will create the tag(s) on the 
-latest commit and will not commit the files mentionned above. They will have to be manually commited, for example using 
+To disable its creation, you can use the `disable_bump_commit` configuration in the `cog.toml` or
+the `--disable-bump-commit` option of the `cog bump` command. In that case, Cocogitto will create the tag(s) on the
+latest commit and will not commit the files mentionned above. They will have to be manually commited, for example using
 the `post_bump_hooks`.
 
 ## Get the current version

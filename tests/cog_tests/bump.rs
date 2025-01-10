@@ -416,7 +416,7 @@ fn package_dry_run() -> Result<()> {
 }
 
 #[sealed_test]
-fn uncommited_changes_should_throw_error_by_default() -> Result<()> {
+fn uncommitted_changes_should_throw_error_by_default() -> Result<()> {
     init_monorepo(&mut Settings::default())?;
 
     run_cmd!(
@@ -434,7 +434,7 @@ fn uncommited_changes_should_throw_error_by_default() -> Result<()> {
 }
 
 #[sealed_test]
-fn uncommited_changes_should_not_throw_error_with_option() -> Result<()> {
+fn uncommitted_changes_should_not_throw_error_with_option() -> Result<()> {
     let mut settings = Settings {
         skip_untracked: true,
         ..Default::default()
