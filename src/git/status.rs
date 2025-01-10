@@ -184,7 +184,7 @@ mod test {
 
         // Assert
         assert_that!(statuses.iter())
-            .contains(&super::Status::Untracked(Changes::New("file".into())));
+            .contains(super::Status::Untracked(Changes::New("file".into())));
         assert_that!(statuses).has_length(1);
         Ok(())
     }
