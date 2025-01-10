@@ -56,7 +56,7 @@ fn get_changelog_range() -> Result<()> {
                 #### Bug Fixes
                 - **(cd)** fix ci cross build command bin args - (7f04a98) - *oknozor*
                 #### Documentation
-                - rewrite readme completely - (b223f7b) - oknozor
+                - rewritte readme completely - (b223f7b) - oknozor
                 #### Features
                 - move check edit to dedicated subcommand and fix rebase - (fc74207) - oknozor
                 - remove config commit on init existing repo - (1028d0b) - oknozor
