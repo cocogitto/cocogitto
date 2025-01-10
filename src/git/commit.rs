@@ -259,7 +259,7 @@ mod test {
 
     #[cfg(not(target_os = "windows"))]
     #[sealed_test]
-    fn crate_signed_ssh_commit_ok() -> Result<()> {
+    fn create_signed_ssh_commit_ok() -> Result<()> {
         // Arrange
         let crate_dir = std::env::var("CARGO_MANIFEST_DIR")?;
 
@@ -278,7 +278,7 @@ mod test {
             git init;
             chmod 600 $crate_dir/tests/assets/sshkey;
             chmod 600 $crate_dir/tests/assets/sshkey.pub;
-            git config --local user.signingkey "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHsnHukmf4SX31jdbf+aZjH2pvmHwuz7ysxdjErMK+i2";
+            git config --local user.signingkey $crate_dir/tests/assets/sshkey.pub;
             git config --local commit.gpgSign true;
             git config --local gpg.format ssh;
             git config --local gpg.ssh.program ssh-keygen;
