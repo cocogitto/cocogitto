@@ -810,7 +810,7 @@ All notable changes to this project will be documented in this file. See [conven
 
 ### Documentation
 
-[b223f7](https://github.com/oknozor/cocogitto/commit/b223f7bec7f2f9df2189e56ffc7177ffa49d6440) - rewritte readme completely - [oknozor](https://github.com/oknozor)
+[b223f7](https://github.com/oknozor/cocogitto/commit/b223f7bec7f2f9df2189e56ffc7177ffa49d6440) - rewrite readme completely - [oknozor](https://github.com/oknozor)
 
 
 ### Bug Fixes
