@@ -3,6 +3,7 @@ use crate::git::repository::Repository;
 use git2::{Commit, ObjectType, Oid, ResetType, Signature, Tree};
 use std::fs;
 use std::io::{Read, Write};
+use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
 impl Repository {
@@ -162,30 +163,26 @@ fn ssh_sign_string(
         return Err(Git2Error::SshError("No ssh key found".to_string()));
     };
 
-    let mut child = Command::new(program);
-    child.args(["-Y", "sign", "-n", "git"]);
+    if !PathBuf::from(&key).exists() {
+        return Err(Git2Error::SshError(format!(
+            "Signing key not found in {key}"
+        )));
+    }
 
-    let mut signing_key = tempfile::NamedTempFile::new()?;
     let mut buffer = tempfile::NamedTempFile::new()?;
-    signing_key.write_all(key.as_bytes())?;
     buffer.write_all(content.as_bytes())?;
-    let signing_key_ref = signing_key.into_temp_path();
-    let buffer_ref = buffer.into_temp_path();
-    child.args([
-        "-f",
-        signing_key_ref.to_string_lossy().as_ref(),
-        buffer_ref.to_string_lossy().as_ref(),
-    ]);
+    let buffer = buffer.into_temp_path();
+    let buffer_file = buffer.to_string_lossy();
 
-    child
+    Command::new(program)
+        .args(["-Y", "sign", "-n", "git", "-f", &key, buffer_file.as_ref()])
         .stdin(Stdio::null())
         .stdout(Stdio::null())
-        .spawn()
-        .map_err(Git2Error::IOError)?
-        .wait()?;
+        .stderr(Stdio::null())
+        .output()?;
 
     let mut signature = String::new();
-    let sig_file = buffer_ref.to_str().unwrap().to_string() + ".sig";
+    let sig_file = buffer_file.to_string() + ".sig";
     fs::File::open(sig_file)?
         .read_to_string(&mut signature)
         .map_err(Git2Error::IOError)?;
