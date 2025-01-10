@@ -120,7 +120,7 @@ impl Commit {
         SETTINGS
             .commit_types()
             .get(&self.conventional.commit_type)
-            .map_or(false, |config| config.omit_from_changelog)
+            .is_some_and(|config| config.omit_from_changelog)
     }
 
     pub(crate) fn is_major_bump(&self) -> bool {
@@ -385,7 +385,7 @@ mod test {
             },
         ]);
 
-        assert_that!(commit.to_string()).is_equal_to(&message.to_string())
+        assert_that!(commit.to_string()).is_equal_to(message.to_string())
     }
 
     #[test]
