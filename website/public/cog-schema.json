@@ -123,7 +123,7 @@
       "default": "[skip ci]"
     },
     "skip_untracked": {
-      "description": "Allows to perform bump even if there are untracked or uncommited changes.",
+      "description": "Allows to perform bump even if there are untracked or uncommitted changes.",
       "type": "boolean",
       "default": false
     },

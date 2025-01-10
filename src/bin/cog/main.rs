@@ -304,7 +304,7 @@ enum Command {
         #[arg(long = "skip-ci-override")]
         skip_ci_override: Option<String>,
 
-        /// Don't fail if there are untracked or uncommited files
+        /// Don't fail if there are untracked or uncommitted files
         #[arg(long = "skip-untracked")]
         skip_untracked: bool,
 

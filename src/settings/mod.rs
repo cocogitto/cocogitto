@@ -57,7 +57,7 @@ pub struct Settings {
     /// A "skip-ci" string to add to the commits when using the `bump` or `commit commands.
     /// Default value is `[skip ci].
     pub skip_ci: String,
-    /// Allows to perform bump even if there are untracked or uncommited changes.
+    /// Allows to perform bump even if there are untracked or uncommitted changes.
     pub skip_untracked: bool,
     pub pre_bump_hooks: Vec<String>,
     pub post_bump_hooks: Vec<String>,
