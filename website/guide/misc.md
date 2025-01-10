@@ -86,7 +86,7 @@ Date: Tue Mar 7 15:06:18 2023 +0200
 
 To disable its creation, you can use the `disable_bump_commit` configuration in the `cog.toml` or
 the `--disable-bump-commit` option of the `cog bump` command. In that case, Cocogitto will create the tag(s) on the
-latest commit and will not commit the files mentionned above. They will have to be manually commited, for example using
+latest commit and will not commit the files mentioned above. They will have to be manually committed, for example using
 the `post_bump_hooks`.
 
 ## Get the current version

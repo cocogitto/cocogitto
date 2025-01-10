@@ -511,7 +511,7 @@ fn bump_package_with_cog_toml_defined_skip_ci_ok() -> Result<()> {
 }
 
 #[sealed_test]
-fn bump_package_with_skip_ci_override_option_takes_predecence() -> Result<()> {
+fn bump_package_with_skip_ci_override_option_takes_precedence() -> Result<()> {
     let mut settings = Settings {
         skip_ci: String::from("[ci-skip]"),
         ..Default::default()
