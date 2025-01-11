@@ -12,6 +12,7 @@ description = """
 Cocogitto is a set of cli tools for the conventional commit
 and semver specifications.
 """
+rust-version = "1.78.0"
 
 [profile.release]
 opt-level = 2
