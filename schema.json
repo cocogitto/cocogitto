@@ -1,0 +1,363 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Cocogitto config",
+  "type": "object",
+  "properties": {
+    "branch_whitelist": {
+      "description": "A list of glob patterns to allow bumping only on matching branches.",
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "string"
+      }
+    },
+    "bump_profiles": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/BumpProfile"
+      },
+      "default": {}
+    },
+    "changelog": {
+      "$ref": "#/$defs/Changelog",
+      "default": {
+        "authors": [],
+        "owner": null,
+        "package_template": null,
+        "path": "CHANGELOG.md",
+        "remote": null,
+        "repository": null,
+        "template": null
+      }
+    },
+    "commit_types": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/CommitConfigOrNull"
+      },
+      "default": {}
+    },
+    "disable_bump_commit": {
+      "description": "Whether to create a bump commit or not.",
+      "type": "boolean",
+      "default": false
+    },
+    "disable_changelog": {
+      "description": "Whether to generate a changelog or not during bump.",
+      "type": "boolean",
+      "default": false
+    },
+    "from_latest_tag": {
+      "description": "Whether to only consider commits since the latest SemVer tag.",
+      "type": "boolean",
+      "default": false
+    },
+    "generate_mono_repository_global_tag": {
+      "description": "Activate or deactivate global tag generation for mono-repository.",
+      "type": "boolean",
+      "default": true
+    },
+    "generate_mono_repository_package_tags": {
+      "description": "Activate or deactivate package tag generation for mono-repository.",
+      "type": "boolean",
+      "default": true
+    },
+    "git_hooks": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/GitHook"
+      },
+      "default": {},
+      "propertyNames": {
+        "$ref": "#/$defs/GitHookType"
+      }
+    },
+    "ignore_fixup_commits": {
+      "description": "Silently ignore fixup commits",
+      "type": "boolean",
+      "default": true
+    },
+    "ignore_merge_commits": {
+      "description": "A list of glob patterns to allow bumping only on matching branches.",
+      "type": "boolean",
+      "default": false
+    },
+    "monorepo_version_separator": {
+      "description": "Specify the version separator character for mono-repository package's tags.",
+      "type": ["string", "null"],
+      "default": null
+    },
+    "packages": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/MonoRepoPackage"
+      },
+      "default": {}
+    },
+    "post_bump_hooks": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "string"
+      }
+    },
+    "post_package_bump_hooks": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "string"
+      }
+    },
+    "pre_bump_hooks": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "string"
+      }
+    },
+    "pre_package_bump_hooks": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "string"
+      }
+    },
+    "skip_ci": {
+      "description": "A \"skip-ci\" string to add to the commits when using the `bump` or `commit commands.\n Default value is `[skip ci].",
+      "type": "string",
+      "default": "[skip ci]"
+    },
+    "skip_untracked": {
+      "description": "Allows to perform bump even if there are untracked or uncommitted changes.",
+      "type": "boolean",
+      "default": false
+    },
+    "tag_prefix": {
+      "description": "Set a tag prefix value for cocogitto. For instance if you have a `v`\n as a tag prefix, cocogitto will generate versions starting with `v` and\n commands like `cog changelog` will pick only those versions.",
+      "type": ["string", "null"],
+      "default": null
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "AuthorSetting": {
+      "type": "object",
+      "properties": {
+        "signature": {
+          "type": "string"
+        },
+        "username": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": ["signature", "username"]
+    },
+    "BumpProfile": {
+      "title": "Bump profile",
+      "type": "object",
+      "properties": {
+        "post_bump_hooks": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          }
+        },
+        "pre_bump_hooks": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "Changelog": {
+      "title": "Changelog",
+      "type": "object",
+      "properties": {
+        "authors": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/AuthorSetting"
+          }
+        },
+        "owner": {
+          "type": ["string", "null"],
+          "default": null
+        },
+        "package_template": {
+          "type": ["string", "null"],
+          "default": null
+        },
+        "path": {
+          "type": "string",
+          "default": "CHANGELOG.md"
+        },
+        "remote": {
+          "type": ["string", "null"],
+          "default": null
+        },
+        "repository": {
+          "type": ["string", "null"],
+          "default": null
+        },
+        "template": {
+          "type": ["string", "null"],
+          "default": null
+        }
+      },
+      "additionalProperties": false
+    },
+    "CommitConfig": {
+      "description": "Configurations to create new conventional commit types or override behaviors of the existing ones.",
+      "type": "object",
+      "properties": {
+        "bump_minor": {
+          "description": "Allow for this commit type to bump the minor version.",
+          "type": "boolean",
+          "default": false
+        },
+        "bump_patch": {
+          "description": "Allow for this commit type to bump the patch version.",
+          "type": "boolean",
+          "default": false
+        },
+        "changelog_title": {
+          "description": "Define the title used in generated changelog for this commit type.",
+          "type": "string"
+        },
+        "omit_from_changelog": {
+          "description": "Do not display this commit type in changelogs.",
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "required": ["changelog_title"]
+    },
+    "CommitConfigOrNull": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CommitConfig"
+        },
+        {
+          "type": "object"
+        }
+      ]
+    },
+    "GitHook": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "script": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "required": ["script"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "required": ["path"]
+        }
+      ]
+    },
+    "GitHookType": {
+      "type": "string",
+      "enum": [
+        "applypatch-msg",
+        "pre-applypatch",
+        "post-applypatch",
+        "pre-commit",
+        "pre-merge-commit",
+        "pre-prepare-commit-msg",
+        "commit-msg",
+        "post-commit",
+        "pre-rebase",
+        "post-checkout",
+        "post-merge",
+        "pre-push",
+        "pre-auto-gc",
+        "post-rewrite",
+        "sendemail-validate",
+        "fsmonitor-watchman",
+        "p4-changelist",
+        "p4-prepare-changelist",
+        "p4-postchangelist",
+        "p4-pre-submit",
+        "post-index-change"
+      ]
+    },
+    "MonoRepoPackage": {
+      "type": "object",
+      "properties": {
+        "bump_profiles": {
+          "description": "Custom profile to override `pre_bump_hooks`, `post_bump_hooks`",
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/BumpProfile"
+          },
+          "default": {}
+        },
+        "changelog_path": {
+          "description": "Where to write the changelog",
+          "type": ["string", "null"],
+          "default": null
+        },
+        "ignore": {
+          "description": "List of globs for paths to ignore, relative to\n the repository root dir.",
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          }
+        },
+        "include": {
+          "description": "List of globs for additional paths to include, relative to\n the repository root dir.",
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          }
+        },
+        "path": {
+          "description": "The package path, relative to the repository root dir.\n Used to scan commits and set hook commands current directory",
+          "type": "string",
+          "default": ""
+        },
+        "post_bump_hooks": {
+          "description": "Overrides `post_package_bump_hooks`",
+          "type": ["array", "null"],
+          "default": null,
+          "items": {
+            "type": "string"
+          }
+        },
+        "pre_bump_hooks": {
+          "description": "Overrides `pre_package_bump_hooks`",
+          "type": ["array", "null"],
+          "default": null,
+          "items": {
+            "type": "string"
+          }
+        },
+        "public_api": {
+          "description": "Bumping package marked as public api will increment\n the global monorepo version when using `cog bump --auto`",
+          "type": "boolean",
+          "default": true
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
