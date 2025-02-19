@@ -43,7 +43,7 @@ fn check_commit_history_ok() -> Result<()> {
     let cocogitto = CocoGitto::get()?;
 
     // Act
-    let check = cocogitto.check(false, false, None);
+    let check = cocogitto.check(false, false, false, None);
 
     // Assert
     assert_that!(check).is_ok();
@@ -59,7 +59,7 @@ fn check_commit_history_err_with_merge_commit() -> Result<()> {
     let cocogitto = CocoGitto::get()?;
 
     // Act
-    let check = cocogitto.check(false, false, None);
+    let check = cocogitto.check(false, false, false, None);
 
     // Assert
     assert_that!(check).is_err();
@@ -82,7 +82,7 @@ fn check_commit_history_ok_with_merge_commit_ignored() -> Result<()> {
     let cocogitto = CocoGitto::get()?;
 
     // Act
-    let check = cocogitto.check(false, true, None);
+    let check = cocogitto.check(false, true, false, None);
 
     // Assert
     assert_that!(check).is_ok();
@@ -99,7 +99,7 @@ fn check_commit_history_err() -> Result<()> {
     let cocogitto = CocoGitto::get()?;
 
     // Act
-    let check = cocogitto.check(false, false, None);
+    let check = cocogitto.check(false, false, false, None);
 
     // Assert
     assert_that!(check).is_err();
@@ -118,7 +118,7 @@ fn check_commit_ok_from_latest_tag() -> Result<()> {
     let cocogitto = CocoGitto::get()?;
 
     // Act
-    let check = cocogitto.check(true, false, None);
+    let check = cocogitto.check(true, false, false, None);
 
     // Assert
     assert_that!(check).is_ok();
@@ -136,7 +136,7 @@ fn check_commit_err_from_latest_tag() -> Result<()> {
     let cocogitto = CocoGitto::get()?;
 
     // Act
-    let check = cocogitto.check(true, false, None);
+    let check = cocogitto.check(true, false, false, None);
 
     // Assert
     assert_that!(check).is_err();
@@ -157,7 +157,7 @@ fn long_commit_summary_does_not_panic() -> Result<()> {
         ..Default::default()
     })?;
 
-    let check = cocogitto.check(false, false, None);
+    let check = cocogitto.check(false, false, false, None);
 
     assert_that!(check.is_ok());
     Ok(())
@@ -173,7 +173,7 @@ fn check_commit_ok_commit_range() -> Result<()> {
     let cocogitto = CocoGitto::get()?;
 
     // Act
-    let check = cocogitto.check(true, false, Some(range));
+    let check = cocogitto.check(true, false, false, Some(range));
 
     // Assert
     assert_that!(check).is_ok();
@@ -191,7 +191,7 @@ fn check_commit_err_commit_range() -> Result<()> {
     let cocogitto = CocoGitto::get()?;
 
     // Act
-    let check = cocogitto.check(true, false, Some(range));
+    let check = cocogitto.check(true, false, false, Some(range));
 
     // Assert
     assert_that!(check).is_err();
@@ -208,7 +208,7 @@ fn check_commit_range_err_with_merge_commit() -> Result<()> {
     let cocogitto = CocoGitto::get()?;
 
     // Act
-    let check = cocogitto.check(false, false, Some(range));
+    let check = cocogitto.check(false, false, false, Some(range));
 
     // Assert
     assert_that!(check).is_err();
@@ -232,7 +232,7 @@ fn check_commit_range_ok_with_merge_commit_ignored() -> Result<()> {
     let cocogitto = CocoGitto::get()?;
 
     // Act
-    let check = cocogitto.check(false, true, Some(range));
+    let check = cocogitto.check(false, true, false, Some(range));
 
     // Assert
     assert_that!(check).is_ok();

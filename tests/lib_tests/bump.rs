@@ -699,7 +699,7 @@ fn bump_no_error_should_be_thrown_on_only_chore_docs_commit() -> Result<()> {
 }
 
 #[sealed_test]
-fn error_on_no_conventionnal_commits_found_for_monorepo() -> Result<()> {
+fn error_on_no_conventional_commits_found_for_monorepo() -> Result<()> {
     let settings = Settings {
         ..Default::default()
     };
@@ -746,7 +746,7 @@ fn error_on_no_conventionnal_commits_found_for_monorepo() -> Result<()> {
 }
 
 #[sealed_test]
-fn error_on_no_conventionnal_commits_found_for_package() -> Result<()> {
+fn error_on_no_conventional_commits_found_for_package() -> Result<()> {
     // Arrange
     let mut packages = HashMap::new();
     let jenkins = || MonoRepoPackage {
@@ -811,7 +811,7 @@ fn error_on_no_conventionnal_commits_found_for_package() -> Result<()> {
 }
 
 #[sealed_test]
-fn bump_with_unconventionnal_and_conventional_commits_found_for_packages() -> Result<()> {
+fn bump_with_unconventional_and_conventional_commits_found_for_packages() -> Result<()> {
     // Arrange
     let mut packages = HashMap::new();
     let jenkins = || MonoRepoPackage {

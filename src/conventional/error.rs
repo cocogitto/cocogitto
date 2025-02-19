@@ -20,6 +20,12 @@ pub enum ConventionalCommitError {
         commit_type: String,
         author: String,
     },
+    CommitScopeNotDefined {
+        oid: String,
+        summary: String,
+        scope: String,
+        author: String,
+    },
     ParseError(ParseError),
 }
 
@@ -124,6 +130,26 @@ impl Display for ConventionalCommitError {
                     cause = "Error:".yellow().bold(),
                     summary = summary.italic(),
                     commit_type = commit_type.red()
+                )
+            }
+            ConventionalCommitError::CommitScopeNotDefined {
+                oid,
+                summary,
+                scope,
+                author,
+            } => {
+                let error_header = "Errored commit: ".bold().red();
+                let author = format!("<{author}>").blue();
+                writeln!(
+                    f,
+                    "{}{} {}\n\t{message}'{summary}'\n\t{cause}Commit scope `{scope}` not allowed",
+                    error_header,
+                    oid,
+                    author,
+                    message = "Commit message:".yellow().bold(),
+                    cause = "Error: ".yellow().bold(),
+                    summary = summary.italic(),
+                    scope = scope.red(),
                 )
             }
             ConventionalCommitError::ParseError(err) => {

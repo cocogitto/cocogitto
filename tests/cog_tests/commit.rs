@@ -304,3 +304,92 @@ fn should_error_on_disabled_commit_error() -> Result<()> {
         .failure();
     Ok(())
 }
+
+#[sealed_test]
+/// Creating cog.toml with empty content. This makes sure that a cog.toml without the `scopes`
+/// array still allows an arbitrary commit scope.
+fn allow_arbitrary_scope_when_not_constrained() -> Result<()> {
+    git_init()?;
+    git_add("content", "test_file")?;
+
+    fs::write("cog.toml", "")?;
+
+    Command::cargo_bin("cog")?
+        .arg("commit")
+        .arg("test")
+        .arg("arbitrary commit scopes are allowed")
+        .arg("arbitrary_scope")
+        .assert()
+        .success();
+    Ok(())
+}
+
+#[sealed_test]
+/// Creating cog.toml with an empty definition of scopes. The effect is that there are no valid
+/// scopes, hence scopes are disallowed for use entirely.
+fn empty_scopes_disallow_scopes() -> Result<()> {
+    git_init()?;
+    git_add("content", "test_file")?;
+
+    let settings = r#"
+        scopes = []
+    "#;
+    fs::write("cog.toml", settings)?;
+
+    Command::cargo_bin("cog")?
+        .arg("commit")
+        .arg("test")
+        .arg("scopes are disabled")
+        .arg("arbitrary_scope")
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains(
+            "Commit scope `arbitrary_scope` not allowed",
+        ));
+    Ok(())
+}
+
+#[sealed_test]
+/// Create the cog.toml with a valid scope "valid_scope". This is the only scope that should be
+/// allowed.
+fn only_allow_defined_scope() -> Result<()> {
+    git_init()?;
+    git_add("content", "test_file")?;
+
+    let settings = r#"
+        scopes = ["valid_scope"]
+    "#;
+    fs::write("cog.toml", settings)?;
+
+    Command::cargo_bin("cog")?
+        .arg("commit")
+        .arg("test")
+        .arg("only one valid scope")
+        .arg("valid_scope")
+        .assert()
+        .success();
+    Ok(())
+}
+
+#[sealed_test]
+/// Defining scopes in cog.toml and using an undefined one should error.
+fn should_error_on_disallowed_scope() -> Result<()> {
+    git_init()?;
+    git_add("content", "test_file")?;
+    let settings = r#"
+        scopes = ["valid_scope"]
+    "#;
+    fs::write("cog.toml", settings)?;
+
+    Command::cargo_bin("cog")?
+        .arg("commit")
+        .arg("feat")
+        .arg("fails due to invalid commit scope")
+        .arg("invalid_scope")
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains(
+            "Commit scope `invalid_scope` not allowed",
+        ));
+    Ok(())
+}

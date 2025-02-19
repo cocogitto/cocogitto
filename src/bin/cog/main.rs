@@ -146,6 +146,10 @@ enum Command {
         #[arg(short, long)]
         ignore_merge_commits: bool,
 
+        /// Ignore fixup!, squash! and amend! commit messages
+        #[arg(long)]
+        ignore_fixup_commits: bool,
+
         /// Check commits in the specified range
         #[arg(group = "commit_range")]
         range: Option<String>,
@@ -198,6 +202,10 @@ enum Command {
         /// Ignore merge commit messages
         #[arg(short, long)]
         ignore_merge_commits: bool,
+
+        /// Ignore fixup!, squash! and amend! commit messages
+        #[arg(long)]
+        ignore_fixup_commits: bool,
     },
 
     /// Display a changelog for the given commit oid range
@@ -296,7 +304,7 @@ enum Command {
         #[arg(long = "skip-ci-override")]
         skip_ci_override: Option<String>,
 
-        /// Don't fail if there are untracked or uncommited files
+        /// Don't fail if there are untracked or uncommitted files
         #[arg(long = "skip-untracked")]
         skip_untracked: bool,
 
@@ -486,8 +494,10 @@ fn main() -> Result<()> {
             message,
             file,
             ignore_merge_commits,
+            ignore_fixup_commits,
         } => {
             let ignore_merge_commits = ignore_merge_commits || SETTINGS.ignore_merge_commits;
+            let ignore_fixup_commits = ignore_fixup_commits || SETTINGS.ignore_fixup_commits;
             let author = CocoGitto::get()
                 .map(|cogito| cogito.get_committer().unwrap())
                 .ok();
@@ -508,17 +518,29 @@ fn main() -> Result<()> {
                 (Some(_), Some(_)) => unreachable!(),
             };
 
-            conv_commit::verify(author, &commit_message, ignore_merge_commits)?;
+            conv_commit::verify(
+                author,
+                &commit_message,
+                ignore_merge_commits,
+                ignore_fixup_commits,
+            )?;
         }
         Command::Check {
             from_latest_tag,
             ignore_merge_commits,
+            ignore_fixup_commits,
             range,
         } => {
             let cocogitto = CocoGitto::get()?;
             let from_latest_tag = from_latest_tag || SETTINGS.from_latest_tag;
             let ignore_merge_commits = ignore_merge_commits || SETTINGS.ignore_merge_commits;
-            cocogitto.check(from_latest_tag, ignore_merge_commits, range)?;
+            let ignore_fixup_commits = ignore_fixup_commits || SETTINGS.ignore_fixup_commits;
+            cocogitto.check(
+                from_latest_tag,
+                ignore_merge_commits,
+                ignore_fixup_commits,
+                range,
+            )?;
         }
         Command::Edit { from_latest_tag } => {
             let cocogitto = CocoGitto::get()?;

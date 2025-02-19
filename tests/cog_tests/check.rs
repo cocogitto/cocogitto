@@ -143,3 +143,56 @@ fn cog_check_from_latest_tag_and_commit_range_failure() -> Result<()> {
         ));
     Ok(())
 }
+
+#[sealed_test]
+fn cog_valid_commit_scopes() -> Result<()> {
+    // Arrange
+    git_init()?;
+    git_commit("chore(beginnings): init")?;
+    git_commit("feat(subsystem): feature")?;
+    git_commit("fix(frontend): bug fix")?;
+
+    let settings = r#"
+        scopes = [
+            "beginnings",
+            "subsystem",
+            "frontend",
+        ]
+    "#;
+    std::fs::write("cog.toml", settings)?;
+
+    // Act
+    Command::cargo_bin("cog")?
+        .arg("check")
+        // Assert
+        .assert()
+        .success()
+        .stderr(predicate::str::contains("No errored commits"));
+    Ok(())
+}
+
+#[sealed_test]
+fn cog_invalid_commit_scopes() -> Result<()> {
+    // Arrange
+    git_init()?;
+    git_commit("chore(beginnings): init")?;
+    git_commit("feat(subsystem): feature")?;
+    git_commit("fix(frontend): bug fix")?;
+
+    // "beginnings" is not a valid commit scope
+    let settings = r#"
+        scopes = [
+            "subsystem",
+            "frontend",
+        ]
+    "#;
+    std::fs::write("cog.toml", settings)?;
+
+    // Act
+    Command::cargo_bin("cog")?
+        .arg("check")
+        // Assert
+        .assert()
+        .failure();
+    Ok(())
+}

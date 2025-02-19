@@ -3,6 +3,7 @@ use crate::git::repository::Repository;
 use git2::{Commit, ObjectType, Oid, ResetType, Signature, Tree};
 use std::fs;
 use std::io::{Read, Write};
+use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
 impl Repository {
@@ -162,30 +163,26 @@ fn ssh_sign_string(
         return Err(Git2Error::SshError("No ssh key found".to_string()));
     };
 
-    let mut child = Command::new(program);
-    child.args(["-Y", "sign", "-n", "git"]);
+    if !PathBuf::from(&key).exists() {
+        return Err(Git2Error::SshError(format!(
+            "Signing key not found in {key}"
+        )));
+    }
 
-    let mut signing_key = tempfile::NamedTempFile::new()?;
     let mut buffer = tempfile::NamedTempFile::new()?;
-    signing_key.write_all(key.as_bytes())?;
     buffer.write_all(content.as_bytes())?;
-    let signing_key_ref = signing_key.into_temp_path();
-    let buffer_ref = buffer.into_temp_path();
-    child.args([
-        "-f",
-        signing_key_ref.to_string_lossy().as_ref(),
-        buffer_ref.to_string_lossy().as_ref(),
-    ]);
+    let buffer = buffer.into_temp_path();
+    let buffer_file = buffer.to_string_lossy();
 
-    child
+    Command::new(program)
+        .args(["-Y", "sign", "-n", "git", "-f", &key, buffer_file.as_ref()])
         .stdin(Stdio::null())
         .stdout(Stdio::null())
-        .spawn()
-        .map_err(Git2Error::IOError)?
-        .wait()?;
+        .stderr(Stdio::null())
+        .output()?;
 
     let mut signature = String::new();
-    let sig_file = buffer_ref.to_str().unwrap().to_string() + ".sig";
+    let sig_file = buffer_file.to_string() + ".sig";
     fs::File::open(sig_file)?
         .read_to_string(&mut signature)
         .map_err(Git2Error::IOError)?;
@@ -262,7 +259,7 @@ mod test {
 
     #[cfg(not(target_os = "windows"))]
     #[sealed_test]
-    fn crate_signed_ssh_commit_ok() -> Result<()> {
+    fn create_signed_ssh_commit_ok() -> Result<()> {
         // Arrange
         let crate_dir = std::env::var("CARGO_MANIFEST_DIR")?;
 
@@ -281,7 +278,7 @@ mod test {
             git init;
             chmod 600 $crate_dir/tests/assets/sshkey;
             chmod 600 $crate_dir/tests/assets/sshkey.pub;
-            git config --local user.signingkey "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHsnHukmf4SX31jdbf+aZjH2pvmHwuz7ysxdjErMK+i2";
+            git config --local user.signingkey $crate_dir/tests/assets/sshkey.pub;
             git config --local commit.gpgSign true;
             git config --local gpg.format ssh;
             git config --local gpg.ssh.program ssh-keygen;

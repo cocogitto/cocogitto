@@ -36,6 +36,8 @@ pub struct Settings {
     pub from_latest_tag: bool,
     /// A list of glob patterns to allow bumping only on matching branches.
     pub ignore_merge_commits: bool,
+    /// Silently ignore fixup commits
+    pub ignore_fixup_commits: bool,
     /// Whether to generate a changelog or not during bump.
     pub disable_changelog: bool,
     /// Whether to create a bump commit or not.
@@ -55,7 +57,7 @@ pub struct Settings {
     /// A "skip-ci" string to add to the commits when using the `bump` or `commit commands.
     /// Default value is `[skip ci].
     pub skip_ci: String,
-    /// Allows to perform bump even if there are untracked or uncommited changes.
+    /// Allows to perform bump even if there are untracked or uncommitted changes.
     pub skip_untracked: bool,
     pub pre_bump_hooks: Vec<String>,
     pub post_bump_hooks: Vec<String>,
@@ -66,6 +68,7 @@ pub struct Settings {
     pub changelog: Changelog,
     pub bump_profiles: HashMap<String, BumpProfile>,
     pub packages: HashMap<String, MonoRepoPackage>,
+    pub scopes: Option<Vec<String>>,
 }
 
 impl Default for Settings {
@@ -73,6 +76,7 @@ impl Default for Settings {
         Self {
             from_latest_tag: false,
             ignore_merge_commits: false,
+            ignore_fixup_commits: true,
             disable_changelog: false,
             disable_bump_commit: false,
             generate_mono_repository_global_tag: true,
@@ -91,6 +95,7 @@ impl Default for Settings {
             changelog: Default::default(),
             bump_profiles: Default::default(),
             packages: Default::default(),
+            scopes: Default::default(),
         }
     }
 }
@@ -352,6 +357,10 @@ impl Settings {
                 CommitConfigOrNull::None {} => None,
             })
             .collect()
+    }
+
+    pub fn commit_scopes(&self) -> Option<Vec<String>> {
+        self.scopes.clone()
     }
 
     fn default_commit_config() -> CommitsMetadata {
