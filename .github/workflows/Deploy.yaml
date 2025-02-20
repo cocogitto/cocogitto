@@ -5,7 +5,7 @@ on:
     branches:
       - main
     tags:
-      - '*'
+      - "*"
 
 env:
   CARGO_TERM_COLOR: always
@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: LICENSE
           path: LICENSE
@@ -44,46 +44,45 @@ jobs:
             target: aarch64-unknown-linux-gnu
 
     steps:
-        - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-        - uses: Swatinem/rust-cache@v2
-          with:
-            cache-all-crates: "true"
-            key: "${{ matrix.os }}-${{ matrix.target }}"
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-all-crates: "true"
+          key: "${{ matrix.os }}-${{ matrix.target }}"
 
-        - uses: actions-rs/toolchain@v1
-          with:
-            toolchain: stable
-            target: ${{ matrix.target }}
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{ matrix.target }}
 
-        - if: ${{ matrix.windows }}
-          uses: actions-rs/cargo@v1
-          with:
-            command: build
-            args: --target ${{ matrix.target }} --release --locked
+      - if: ${{ matrix.windows }}
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --target ${{ matrix.target }} --release --locked
 
-        - if: ${{ ! matrix.windows }}
-          uses: actions-rs/cargo@v1
-          with:
-            use-cross: true
-            command: build
-            args: --target ${{ matrix.target }} --release --locked
+      - if: ${{ ! matrix.windows }}
+        uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: build
+          args: --target ${{ matrix.target }} --release --locked
 
-        - if: ${{ ! matrix.windows }}
-          uses: actions/upload-artifact@v3
-          with:
-            name: ${{ matrix.target }}
-            path: target/${{ matrix.target }}/release/cog
+      - if: ${{ ! matrix.windows }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+          path: target/${{ matrix.target }}/release/cog
 
-        - if: ${{ matrix.windows }}
-          uses: actions/upload-artifact@v3
-          with:
-            name: ${{ matrix.target }}
-            path: target/${{ matrix.target }}/release/cog.exe
-
+      - if: ${{ matrix.windows }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+          path: target/${{ matrix.target }}/release/cog.exe
 
   upload_to_release:
-    needs: [ build, upload_license]
+    needs: [build, upload_license]
     name: Publish cog binaries
     runs-on: ubuntu-latest
     if: ${{ github.ref_type == 'tag' }}
@@ -160,7 +159,7 @@ jobs:
           asset_name: cocogitto-${{ github.ref_name }}-x86_64-apple-darwin.tar.gz
 
   docker:
-    needs: [ build ]
+    needs: [build]
     name: Docker publish cog:lastest
     runs-on: ubuntu-latest
     steps:
