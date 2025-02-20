@@ -393,3 +393,65 @@ fn should_error_on_disallowed_scope() -> Result<()> {
         ));
     Ok(())
 }
+
+#[sealed_test]
+fn should_run_git_hooks() -> Result<()> {
+    git_init()?;
+    git_add("content", "test_file")?;
+
+    run_cmd!(
+       echo "echo 'running pre-commit hook'" > .git/hooks/pre-commit;
+       echo "echo 'running prepare-commit-msg hook'" > .git/hooks/prepare-commit-msg;
+       echo "echo 'running commit-msg hook'" > .git/hooks/commit-msg;
+       echo "echo 'running post-commit hook'" > .git/hooks/post-commit;
+       chmod +x .git/hooks/pre-commit;
+       chmod +x .git/hooks/prepare-commit-msg;
+       chmod +x .git/hooks/commit-msg;
+       chmod +x .git/hooks/post-commit;
+    )?;
+
+    Command::cargo_bin("cog")?
+        .arg("commit")
+        .arg("feat")
+        .arg("test commit")
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("running pre-commit hook"))
+        .stdout(predicates::str::contains("running prepare-commit-msg hook"))
+        .stdout(predicates::str::contains("running commit-msg hook"))
+        .stdout(predicates::str::contains("running post-commit hook"));
+
+    Ok(())
+}
+
+#[sealed_test]
+fn should_run_pre_commit_hook_with_custom_hooks_path() -> Result<()> {
+    git_init()?;
+    git_add("content", "test_file")?;
+
+    run_cmd!(
+       git config --local core.hooksPath .husky;
+       mkdir .husky;
+       echo "echo 'running pre-commit hook'" > .husky/pre-commit;
+       echo "echo 'running prepare-commit-msg hook'" > .husky/prepare-commit-msg;
+       echo "echo 'running commit-msg hook'" > .husky/commit-msg;
+       echo "echo 'running post-commit hook'" > .husky/post-commit;
+       chmod +x .husky/pre-commit;
+       chmod +x .husky/prepare-commit-msg;
+       chmod +x .husky/commit-msg;
+       chmod +x .husky/post-commit;
+    )?;
+
+    Command::cargo_bin("cog")?
+        .arg("commit")
+        .arg("feat")
+        .arg("test commit")
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("running pre-commit hook"))
+        .stdout(predicates::str::contains("running prepare-commit-msg hook"))
+        .stdout(predicates::str::contains("running commit-msg hook"))
+        .stdout(predicates::str::contains("running post-commit hook"));
+
+    Ok(())
+}

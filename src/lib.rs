@@ -127,7 +127,12 @@ impl CocoGitto {
 
     pub fn run_commit_hook(&self, hook: CommitHook) -> Result<(), Git2Error> {
         let repo_dir = self.repository.get_repo_dir().expect("git repository");
-        let hooks_dir = repo_dir.join(".git/hooks");
+        let git_config = self.repository.0.config()?;
+        let hooks_dir = git_config
+            .get_string("core.hooksPath")
+            .map(|path| repo_dir.join(path))
+            .unwrap_or_else(|_| repo_dir.join(".git/hooks"));
+
         let edit_message = repo_dir.join(".git/COMMIT_EDITMSG");
         let edit_message = edit_message.to_string_lossy();
 
@@ -144,8 +149,14 @@ impl CocoGitto {
         };
 
         if hook_path.exists() {
-            let status = Command::new(hook_path)
-                .args(args)
+            let mut command = {
+                let shell = std::env::var("SHELL").unwrap_or_else(|_| "sh".to_string());
+                Command::new(shell)
+            };
+
+            let status = command
+                .arg(&hook_path)
+                .args(&args)
                 .stdout(Stdio::inherit())
                 .stdin(Stdio::inherit())
                 .stderr(Stdio::inherit())
