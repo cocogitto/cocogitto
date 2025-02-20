@@ -149,15 +149,6 @@ impl CocoGitto {
         };
 
         if hook_path.exists() {
-            #[cfg(windows)]
-            let mut command = {
-                let shell = std::env::var("COMSPEC").unwrap_or_else(|_| "cmd".to_string());
-                let mut command = Command::new(shell);
-                command.arg("/C");
-                command
-            };
-
-            #[cfg(unix)]
             let mut command = {
                 let shell = std::env::var("SHELL").unwrap_or_else(|_| "sh".to_string());
                 Command::new(shell)
