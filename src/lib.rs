@@ -1,4 +1,6 @@
 use std::collections::{BTreeMap, HashMap};
+use std::fs::File;
+use std::io::{self, BufRead};
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
@@ -149,13 +151,20 @@ impl CocoGitto {
         };
 
         if hook_path.exists() {
-            let mut command = {
-                let shell = std::env::var("SHELL").unwrap_or_else(|_| "sh".to_string());
-                Command::new(shell)
+            let file = File::open(&hook_path)?;
+            let mut reader = io::BufReader::new(file);
+            let mut first_line = String::new();
+            reader.read_line(&mut first_line)?;
+
+            let mut command = if first_line.starts_with("#!") {
+                Command::new(&hook_path)
+            } else {
+                let mut cmd = Command::new("sh");
+                cmd.arg(&hook_path);
+                cmd
             };
 
             let status = command
-                .arg(&hook_path)
                 .args(&args)
                 .stdout(Stdio::inherit())
                 .stdin(Stdio::inherit())
