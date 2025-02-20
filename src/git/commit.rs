@@ -195,7 +195,7 @@ mod test {
     use crate::git::repository::Repository;
     use crate::test_helpers::git_init_no_gpg;
     use anyhow::Result;
-    use cmd_lib::{run_cmd, run_fun};
+    use cmd_lib::run_cmd;
     use sealed_test::prelude::*;
     use speculoos::prelude::*;
 
@@ -260,6 +260,8 @@ mod test {
     #[cfg(not(target_os = "windows"))]
     #[sealed_test]
     fn create_signed_ssh_commit_ok() -> Result<()> {
+        use cmd_lib::run_fun;
+
         // Arrange
         let crate_dir = std::env::var("CARGO_MANIFEST_DIR")?;
 

@@ -151,14 +151,10 @@ impl CocoGitto {
         if hook_path.exists() {
             #[cfg(windows)]
             let mut command = {
-                // On Windows, look for .exe extension first
-                let exe_path = hook_path.with_extension("exe");
-                if exe_path.exists() {
-                    Command::new(exe_path)
-                } else {
-                    // Fallback to sh for script files
-                    Command::new("sh")
-                }
+                let shell = std::env::var("COMSPEC").unwrap_or_else(|_| "cmd".to_string());
+                let mut command = Command::new(shell);
+                command.arg("/C");
+                command
             };
 
             #[cfg(unix)]

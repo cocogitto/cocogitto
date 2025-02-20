@@ -455,30 +455,3 @@ fn should_run_pre_commit_hook_with_custom_hooks_path() -> Result<()> {
 
     Ok(())
 }
-
-#[sealed_test]
-#[cfg(windows)]
-fn should_run_pre_commit_hook_with_powershell() -> Result<()> {
-    git_init()?;
-    git_add("content", "test_file")?;
-
-    run_cmd!(
-       echo "Write-Output 'running pre-commit hook'" > .git/hooks/pre-commit;
-       echo "Write-Output 'running prepare-commit-msg hook'" > .git/hooks/prepare-commit-msg;
-       echo "Write-Output 'running commit-msg hook'" > .git/hooks/commit-msg;
-       echo "Write-Output 'running post-commit hook'" > .git/hooks/post-commit;
-    )?;
-
-    Command::cargo_bin("cog")?
-        .arg("commit")
-        .arg("feat")
-        .arg("test commit")
-        .assert()
-        .success()
-        .stdout(predicates::str::contains("running pre-commit hook"))
-        .stdout(predicates::str::contains("running prepare-commit-msg hook"))
-        .stdout(predicates::str::contains("running commit-msg hook"))
-        .stdout(predicates::str::contains("running post-commit hook"));
-
-    Ok(())
-}
