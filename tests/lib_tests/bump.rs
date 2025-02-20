@@ -4,6 +4,7 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 use cmd_lib::run_cmd;
+use cmd_lib::run_fun;
 use sealed_test::prelude::*;
 use speculoos::prelude::*;
 
@@ -270,6 +271,79 @@ fn consecutive_package_bump_ok() -> Result<()> {
     assert_tag_exists("jenkins-0.1.1")?;
     assert_tag_does_not_exist("jenkins-0.2.0")?;
     assert_tag_does_not_exist("0.1.0")?;
+    Ok(())
+}
+
+fn ordered_package_bump() -> Result<()> {
+    // Arrange
+    let mut packages = HashMap::new();
+    let jenkins = || MonoRepoPackage {
+        path: PathBuf::from("jenkins"),
+        public_api: false,
+        changelog_path: Some("jenkins/CHANGELOG.md".to_owned()),
+        bump_order: Some(2),
+        ..Default::default()
+    };
+
+    packages.insert("jenkins".to_owned(), jenkins());
+
+    let thumbor = || MonoRepoPackage {
+        path: PathBuf::from("thumbor"),
+        public_api: false,
+        changelog_path: Some("thumbor/CHANGELOG.md".to_owned()),
+        bump_order: Some(1),
+        ..Default::default()
+    };
+
+    packages.insert("thumbor".to_owned(), thumbor());
+
+    let settings = Settings {
+        packages,
+        ignore_merge_commits: true,
+        ..Default::default()
+    };
+
+    let settings = toml::to_string(&settings)?;
+
+    git_init()?;
+    run_cmd!(
+        echo Hello > README.md;
+        git add .;
+        git commit -m "first commit";
+        mkdir jenkins;
+        echo "some jenkins stuff" > jenkins/file;
+        git add .;
+        git commit -m "feat(jenkins): add jenkins stuffs";
+        mkdir thumbor;
+        echo "some thumbor stuff" > thumbor/file;
+        git add .;
+        git commit -m "feat(thumbor): add thumbor stuffs";
+        echo $settings > cog.toml;
+        git add .;
+        git commit -m "chore: add cog.toml";
+    )?;
+
+    let mut cocogitto = CocoGitto::get()?;
+
+    // Act
+    cocogitto.create_monorepo_version(BumpOptions {
+        increment: IncrementCommand::Auto,
+        pre_release: None,
+        build: None,
+        hooks_config: None,
+        annotated: None,
+        dry_run: false,
+        skip_ci: false,
+        skip_ci_override: None,
+        skip_untracked: false,
+        disable_bump_commit: false,
+    });
+
+    // Assert
+    let tags_sorted_by_date = run_fun!(git tag --sort=-taggerdate)?;
+    let tags_sorted_by_date: Vec<&str> = tags_sorted_by_date.lines().collect();
+    assert_that!(tags_sorted_by_date).is_equal_to(vec!["jenkins-0.1.0", "thumbor-0.1.0"]);
+
     Ok(())
 }
 

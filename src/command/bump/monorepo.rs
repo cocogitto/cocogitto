@@ -11,6 +11,7 @@ use crate::conventional::version::{Increment, IncrementCommand};
 
 use crate::git::tag::{Tag, TagLookUpOptions};
 use crate::hook::HookVersion;
+use crate::settings::MonoRepoPackage;
 use crate::{settings, CocoGitto, SETTINGS};
 use anyhow::Result;
 use colored::*;
@@ -449,7 +450,10 @@ impl CocoGitto {
         build: Option<&str>,
     ) -> Result<Vec<PackageBumpData>> {
         let mut package_bumps = vec![];
-        for (package_name, package) in SETTINGS.packages.iter() {
+        let mut packages: Vec<(&String, &MonoRepoPackage)> = SETTINGS.packages.iter().collect();
+        packages.sort_by(|a, b| a.1.bump_order.cmp(&b.1.bump_order));
+
+        for (package_name, package) in packages {
             let old = self.repository.get_latest_package_tag(package_name);
             let old = tag_or_fallback_to_zero(old)?;
 

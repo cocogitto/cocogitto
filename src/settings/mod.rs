@@ -204,7 +204,7 @@ pub enum GitHook {
 #[serde(deny_unknown_fields, default)]
 pub struct MonoRepoPackage {
     /// The package path, relative to the repository root dir.
-    /// Used to scan commits and set hook commands current directory
+    /// Used to scan commits and set hook commands current directory.
     pub path: PathBuf,
     /// List of globs for additional paths to include, relative to
     /// the repository root dir.
@@ -212,17 +212,20 @@ pub struct MonoRepoPackage {
     /// List of globs for paths to ignore, relative to
     /// the repository root dir.
     pub ignore: Vec<String>,
-    /// Where to write the changelog
+    /// Where to write the changelog.
     pub changelog_path: Option<String>,
     /// Bumping package marked as public api will increment
-    /// the global monorepo version when using `cog bump --auto`
+    /// the global monorepo version when using `cog bump --auto`.
     pub public_api: bool,
-    /// Overrides `pre_package_bump_hooks`
+    /// Overrides `pre_package_bump_hooks`.
     pub pre_bump_hooks: Option<Vec<String>>,
-    /// Overrides `post_package_bump_hooks`
+    /// Overrides `post_package_bump_hooks`.
     pub post_bump_hooks: Option<Vec<String>>,
-    /// Custom profile to override `pre_bump_hooks`, `post_bump_hooks`
+    /// Custom profile to override `pre_bump_hooks`, `post_bump_hooks`.
     pub bump_profiles: HashMap<String, BumpProfile>,
+    /// Ordering of packages in the changelog, this affect in which order
+    /// packages will be bumped.
+    pub bump_order: Option<usize>,
 }
 
 impl Default for &MonoRepoPackage {
@@ -236,6 +239,7 @@ impl Default for &MonoRepoPackage {
             post_bump_hooks: None,
             bump_profiles: Default::default(),
             public_api: true,
+            bump_order: None,
         });
 
         Box::leak(package)
@@ -253,6 +257,7 @@ impl Default for MonoRepoPackage {
             post_bump_hooks: None,
             bump_profiles: Default::default(),
             public_api: true,
+            bump_order: None,
         }
     }
 }
