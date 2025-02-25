@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 use crate::conventional::commit::CommitConfig;
 use crate::git::repository::Repository;
-use crate::{CommitConfigOrNull, CommitsMetadata, CONFIG_PATH, SETTINGS};
+use crate::{CommitsMetadata, CONFIG_PATH, SETTINGS};
 
 use crate::conventional::changelog::error::ChangelogError;
 use crate::conventional::changelog::template::{RemoteContext, Template};
@@ -19,15 +19,39 @@ use std::path::Path;
 pub(crate) type AuthorSettings = Vec<AuthorSetting>;
 
 mod error;
+mod ser;
 
-#[cfg_attr(feature = "docgen", derive(schemars::JsonSchema))]
 #[derive(Copy, Clone)]
 pub enum HookType {
     PreBump,
     PostBump,
 }
 
-/// # Cocogitto config
+/// # Settings
+/// Configuration structure for the Cocogitto tool.
+///
+/// This struct defines the main configuration options for Cocogitto, including settings
+/// for version generation, changelog handling, commit conventions, hooks, and monorepo support.
+///
+///  **Example :**
+/// ```toml
+/// # Basic settings
+/// from_latest_tag = true
+/// ignore_merge_commits = true
+///
+/// # Changelog settings
+/// [changelog]
+/// path = "CHANGELOG.md"
+/// template = "remote"
+///
+/// # Git hooks
+/// [git_hooks.pre-commit]
+/// script = "./scripts/pre-commit.sh"
+///
+/// # Monorepo configuration
+/// [packages.my-package]
+/// path = "packages/my-package"
+/// ```
 #[cfg_attr(feature = "docgen", derive(schemars::JsonSchema))]
 #[derive(Debug, Deserialize, Serialize, Eq, PartialEq)]
 #[serde(deny_unknown_fields, default)]
@@ -54,20 +78,37 @@ pub struct Settings {
     /// as a tag prefix, cocogitto will generate versions starting with `v` and
     /// commands like `cog changelog` will pick only those versions.
     pub tag_prefix: Option<String>,
-    /// A "skip-ci" string to add to the commits when using the `bump` or `commit commands.
+    /// A "skip-ci" string to add to the commits when using the `bump` or `commit` commands.
     /// Default value is `[skip ci].
     pub skip_ci: String,
     /// Allows to perform bump even if there are untracked or uncommitted changes.
     pub skip_untracked: bool,
+    /// Hooks that will be executed before a bump command in root dir.
     pub pre_bump_hooks: Vec<String>,
+    /// Hooks that will be executed after a bump command in root dir.
     pub post_bump_hooks: Vec<String>,
+    /// Hooks that will be executed before a bump command in package dir.
     pub pre_package_bump_hooks: Vec<String>,
+    /// Hooks that will be executed after a bump command in package dir.
     pub post_package_bump_hooks: Vec<String>,
+    /// Git hooks configuration.
     pub git_hooks: HashMap<GitHookType, GitHook>,
-    pub commit_types: HashMap<String, CommitConfigOrNull>,
+    /// Custom commit types configuration.
+    // Note: the custom serde deserializer is needed to be able to serialize from an empty object `{}`
+    // to disable default commit. This translates to `Option<CommitConfig>` in the schemar doc generator.
+    #[serde(with = "ser::commit_types_serde")]
+    #[cfg_attr(
+        feature = "docgen",
+        schemars(with = "HashMap<String, Option<CommitConfig>>")
+    )]
+    pub commit_types: HashMap<String, Option<CommitConfig>>,
+    /// Changelog configuration.
     pub changelog: Changelog,
+    /// Custom bump profiles configurations.
     pub bump_profiles: HashMap<String, BumpProfile>,
+    /// Monorepo packages configuration.
     pub packages: HashMap<String, MonoRepoPackage>,
+    /// List of valid commit scopes.
     pub scopes: Option<Vec<String>>,
 }
 
@@ -100,6 +141,18 @@ impl Default for Settings {
     }
 }
 
+/// # GitHookType
+/// Represents the different types of Git hooks that can be configured.
+///
+/// This enum defines all the standard Git hook types that can be used
+/// in the configuration. Each variant corresponds to a specific Git hook
+/// that gets triggered at different points in Git's execution.
+///
+///  **Example :**
+/// ```toml
+/// [git_hooks.pre-commit]
+/// script = "./scripts/pre-commit.sh"
+/// ```
 #[cfg_attr(feature = "docgen", derive(schemars::JsonSchema))]
 #[derive(Debug, Deserialize, Serialize, Eq, PartialEq, Hash, Copy, Clone)]
 #[serde(deny_unknown_fields, rename_all = "kebab-case", into = "&str")]
@@ -191,14 +244,35 @@ impl fmt::Display for GitHookType {
     }
 }
 
+/// # GitHook
+/// A GitHook can be defined either as a script string that will be executed directly,
+/// or as a path to a script file that will be executed
 #[cfg_attr(feature = "docgen", derive(schemars::JsonSchema))]
 #[derive(Debug, Deserialize, Serialize, Eq, PartialEq)]
 #[serde(deny_unknown_fields, untagged)]
 pub enum GitHook {
+    /// Direct script string that will be executed
     Script { script: String },
+    /// Path to a script file that will be executed
     File { path: PathBuf },
 }
 
+/// # MonoRepoPackage
+/// Configuration for a package in a monorepo setup.
+///
+/// This struct defines how a single package within a monorepo should be handled,
+/// including its location, included/excluded files, changelog settings, and bump behavior.
+///
+///  **Example :**
+/// ```toml
+/// [packages.my-package]
+/// path = "packages/my-package"
+/// include = ["packages/my-package/**"]
+/// ignore = ["**/test/**"]
+/// changelog_path = "CHANGELOG.md"
+/// public_api = true
+/// bump_order = 1
+/// ```
 #[cfg_attr(feature = "docgen", derive(schemars::JsonSchema))]
 #[derive(Debug, Deserialize, Serialize, Eq, PartialEq)]
 #[serde(deny_unknown_fields, default)]
@@ -217,15 +291,15 @@ pub struct MonoRepoPackage {
     /// Bumping package marked as public api will increment
     /// the global monorepo version when using `cog bump --auto`.
     pub public_api: bool,
+    /// Ordering of packages in the changelog, this affect in which order
+    /// packages will be bumped.
+    pub bump_order: Option<usize>,
     /// Overrides `pre_package_bump_hooks`.
     pub pre_bump_hooks: Option<Vec<String>>,
     /// Overrides `post_package_bump_hooks`.
     pub post_bump_hooks: Option<Vec<String>>,
     /// Custom profile to override `pre_bump_hooks`, `post_bump_hooks`.
     pub bump_profiles: HashMap<String, BumpProfile>,
-    /// Ordering of packages in the changelog, this affect in which order
-    /// packages will be bumped.
-    pub bump_order: Option<usize>,
 }
 
 impl Default for &MonoRepoPackage {
@@ -272,16 +346,37 @@ impl MonoRepoPackage {
 }
 
 /// # Changelog
+/// Configuration for changelog generation.
+///
+/// This struct defines how the changelog should be generated,
+/// including templates, remote repository information, and author settings.
+///
+///  **Example :**
+/// ```toml
+/// [changelog]
+/// template = "remote"
+/// path = "CHANGELOG.md"
+/// remote = "github.com"
+/// owner = "cocogitto"
+/// repository = "cocogitto"
+/// ```
 #[cfg_attr(feature = "docgen", derive(schemars::JsonSchema))]
 #[derive(Debug, Deserialize, Serialize, Clone, Eq, PartialEq)]
 #[serde(deny_unknown_fields, default)]
 pub struct Changelog {
+    /// Template to use for changelog generation. Can be "remote", "full_hash" or a custom template path
     pub template: Option<String>,
+    /// Template to use for package changelogs in monorepos
     pub package_template: Option<String>,
+    /// Remote Git repository URL (e.g. "github.com")
     pub remote: Option<String>,
+    /// Path where changelog file should be written
     pub path: PathBuf,
+    /// Repository owner/organization name
     pub owner: Option<String>,
+    /// Repository name
     pub repository: Option<String>,
+    /// Author mappings for changelog generation
     pub authors: AuthorSettings,
 }
 
@@ -299,11 +394,25 @@ impl Default for Changelog {
     }
 }
 
+/// # AuthorSetting
+/// Configuration for mapping Git signatures to usernames.
+///
+/// This struct defines the mapping between a Git commit signature (email address)
+/// and the corresponding username to use in changelog generation.
+///
+///  **Example :**
+/// ```toml
+/// [[changelog.authors]]
+/// signature = "user@example.com"
+/// username = "githubuser"
+/// ```
 #[cfg_attr(feature = "docgen", derive(schemars::JsonSchema))]
 #[derive(Debug, Deserialize, Serialize, Clone, Eq, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct AuthorSetting {
+    /// The Git commit signature (typically an email address)
     pub signature: String,
+    /// The username to display in changelogs
     pub username: String,
 }
 
@@ -320,13 +429,26 @@ pub fn changelog_path() -> &'static PathBuf {
     &SETTINGS.changelog.path
 }
 
-/// # Bump profile
+/// # BumpProfile
+/// A custom profile for configuring hooks that run before and after version bumps.
+///
+/// Bump profiles allow defining different sets of hooks that can be selected
+/// when running bump commands.
+///
+///  **Example :**
+/// ```toml
+/// [bump_profiles.production]
+/// pre_bump_hooks = ["./scripts/pre-release.sh"]
+/// post_bump_hooks = ["./scripts/post-release.sh"]
+/// ```
 #[cfg_attr(feature = "docgen", derive(schemars::JsonSchema))]
 #[derive(Debug, Deserialize, Serialize, Default, Eq, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct BumpProfile {
+    /// List of hooks to run before bumping the version
     #[serde(default)]
     pub pre_bump_hooks: Vec<String>,
+    /// List of hooks to run after bumping the version
     #[serde(default)]
     pub post_bump_hooks: Vec<String>,
 }
@@ -353,8 +475,8 @@ impl Settings {
         default_types
             .into_iter()
             .filter_map(|(key, value)| match value {
-                CommitConfigOrNull::CommitConfig(config) => Some((key, config)),
-                CommitConfigOrNull::None {} => None,
+                Some(config) => Some((key, config)),
+                None {} => None,
             })
             .collect()
     }
@@ -367,48 +489,33 @@ impl Settings {
         let mut default_types = HashMap::new();
         default_types.insert(
             CommitType::Feature,
-            CommitConfigOrNull::CommitConfig(CommitConfig::new("Features").with_minor_bump()),
+            Some(CommitConfig::new("Features").with_minor_bump()),
         );
         default_types.insert(
             CommitType::BugFix,
-            CommitConfigOrNull::CommitConfig(CommitConfig::new("Bug Fixes").with_patch_bump()),
+            Some(CommitConfig::new("Bug Fixes").with_patch_bump()),
         );
 
         default_types.insert(
             CommitType::Chore,
-            CommitConfigOrNull::CommitConfig(CommitConfig::new("Miscellaneous Chores")),
+            Some(CommitConfig::new("Miscellaneous Chores")),
         );
-        default_types.insert(
-            CommitType::Revert,
-            CommitConfigOrNull::CommitConfig(CommitConfig::new("Revert")),
-        );
+        default_types.insert(CommitType::Revert, Some(CommitConfig::new("Revert")));
         default_types.insert(
             CommitType::Performances,
-            CommitConfigOrNull::CommitConfig(CommitConfig::new("Performance Improvements")),
+            Some(CommitConfig::new("Performance Improvements")),
         );
         default_types.insert(
             CommitType::Documentation,
-            CommitConfigOrNull::CommitConfig(CommitConfig::new("Documentation")),
+            Some(CommitConfig::new("Documentation")),
         );
-        default_types.insert(
-            CommitType::Style,
-            CommitConfigOrNull::CommitConfig(CommitConfig::new("Style")),
-        );
-        default_types.insert(
-            CommitType::Refactor,
-            CommitConfigOrNull::CommitConfig(CommitConfig::new("Refactoring")),
-        );
-        default_types.insert(
-            CommitType::Test,
-            CommitConfigOrNull::CommitConfig(CommitConfig::new("Tests")),
-        );
-        default_types.insert(
-            CommitType::Build,
-            CommitConfigOrNull::CommitConfig(CommitConfig::new("Build system")),
-        );
+        default_types.insert(CommitType::Style, Some(CommitConfig::new("Style")));
+        default_types.insert(CommitType::Refactor, Some(CommitConfig::new("Refactoring")));
+        default_types.insert(CommitType::Test, Some(CommitConfig::new("Tests")));
+        default_types.insert(CommitType::Build, Some(CommitConfig::new("Build system")));
         default_types.insert(
             CommitType::Ci,
-            CommitConfigOrNull::CommitConfig(CommitConfig::new("Continuous Integration")),
+            Some(CommitConfig::new("Continuous Integration")),
         );
         default_types
     }
@@ -566,6 +673,7 @@ mod test {
 [commit_types]
 feat = {}
 "#;
+
         fs::write("cog.toml", settings)?;
         assert_that!(COMMITS_METADATA.keys()).does_not_contain(&CommitType::Feature);
         assert_that!(COMMITS_METADATA.keys()).contains(&CommitType::BugFix);

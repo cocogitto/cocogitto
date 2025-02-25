@@ -302,7 +302,6 @@ mod test {
     use crate::git::tag::Tag;
     use crate::settings::{MonoRepoPackage, Settings};
     use crate::test_helpers::{git_init_no_gpg, git_tag};
-    use crate::CommitConfigOrNull;
 
     impl Commit {
         fn commit_fixture(commit_type: CommitType, is_breaking_change: bool) -> Self {
@@ -533,7 +532,7 @@ mod test {
         let mut commit_types = HashMap::new();
         commit_types.insert(
             "ex".to_string(),
-            CommitConfigOrNull::CommitConfig(CommitConfig::new("Ex").with_minor_bump()),
+            Some(CommitConfig::new("Ex").with_minor_bump()),
         );
         let settings = Settings {
             commit_types,
@@ -563,7 +562,7 @@ mod test {
         let mut commit_types = HashMap::new();
         commit_types.insert(
             "ex".to_string(),
-            CommitConfigOrNull::CommitConfig(CommitConfig::new("Ex").with_patch_bump()),
+            Some(CommitConfig::new("Ex").with_patch_bump()),
         );
         let settings = Settings {
             commit_types,
@@ -593,7 +592,7 @@ mod test {
         let mut commit_types = HashMap::new();
         commit_types.insert(
             "perf".to_string(),
-            CommitConfigOrNull::CommitConfig(CommitConfig::new("Perf").with_minor_bump()),
+            Some(CommitConfig::new("Perf").with_minor_bump()),
         );
         let settings = Settings {
             commit_types,

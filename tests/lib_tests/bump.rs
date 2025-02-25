@@ -274,9 +274,14 @@ fn consecutive_package_bump_ok() -> Result<()> {
     Ok(())
 }
 
+#[sealed_test]
 fn ordered_package_bump() -> Result<()> {
     // Arrange
-    let mut packages = HashMap::new();
+    let mut settings = Settings {
+        ignore_merge_commits: true,
+        ..Default::default()
+    };
+
     let jenkins = || MonoRepoPackage {
         path: PathBuf::from("jenkins"),
         public_api: false,
@@ -285,7 +290,7 @@ fn ordered_package_bump() -> Result<()> {
         ..Default::default()
     };
 
-    packages.insert("jenkins".to_owned(), jenkins());
+    settings.packages.insert("jenkins".to_owned(), jenkins());
 
     let thumbor = || MonoRepoPackage {
         path: PathBuf::from("thumbor"),
@@ -295,13 +300,7 @@ fn ordered_package_bump() -> Result<()> {
         ..Default::default()
     };
 
-    packages.insert("thumbor".to_owned(), thumbor());
-
-    let settings = Settings {
-        packages,
-        ignore_merge_commits: true,
-        ..Default::default()
-    };
+    settings.packages.insert("thumbor".to_owned(), thumbor());
 
     let settings = toml::to_string(&settings)?;
 
@@ -309,7 +308,7 @@ fn ordered_package_bump() -> Result<()> {
     run_cmd!(
         echo Hello > README.md;
         git add .;
-        git commit -m "first commit";
+        git commit -m "chore: first commit";
         mkdir jenkins;
         echo "some jenkins stuff" > jenkins/file;
         git add .;
@@ -337,12 +336,12 @@ fn ordered_package_bump() -> Result<()> {
         skip_ci_override: None,
         skip_untracked: false,
         disable_bump_commit: false,
-    });
+    })?;
 
     // Assert
     let tags_sorted_by_date = run_fun!(git tag --sort=-taggerdate)?;
     let tags_sorted_by_date: Vec<&str> = tags_sorted_by_date.lines().collect();
-    assert_that!(tags_sorted_by_date).is_equal_to(vec!["jenkins-0.1.0", "thumbor-0.1.0"]);
+    assert_that!(tags_sorted_by_date).is_equal_to(vec!["0.0.0", "jenkins-0.1.0", "thumbor-0.1.0"]);
 
     Ok(())
 }

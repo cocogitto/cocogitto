@@ -17,7 +17,7 @@ pub struct Commit {
     pub author: String,
     pub date: NaiveDateTime,
 }
-
+/// # CommitConfig
 /// Configurations to create new conventional commit types or override behaviors of the existing ones.
 #[cfg_attr(feature = "docgen", derive(schemars::JsonSchema))]
 #[derive(Debug, Deserialize, Serialize, Clone, Eq, PartialEq)]
