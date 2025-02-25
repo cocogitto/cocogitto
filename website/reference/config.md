@@ -2,630 +2,447 @@
 
 The config reference list all value that can be set in the `cog.toml` file at the root of a repository.
 
-## General
+## `Settings`
+- **Description :** Configuration structure for the Cocogitto tool.
 
-### `from_latest_tag`
+ This struct defines the main configuration options for Cocogitto, including settings
+ for version generation, changelog handling, commit conventions, hooks, and monorepo support.
 
-- Type: `boolean`
-- Optional: `true`
-- Default: `false`
-- Description: Whether to only consider commits since the latest SemVer tag.
-- Example:
-  ```toml
-  from_latest_tag = true
-  ```
+  **Example :**
+ ```toml
+ # Basic settings
+ from_latest_tag = true
+ ignore_merge_commits = true
 
-### `tag_prefix`
+ # Changelog settings
+ [changelog]
+ path = "CHANGELOG.md"
+ template = "remote"
 
-- Type: `String`
-- Optional: `true`
-- Description: Set a tag prefix value for cocogitto. For instance if you have a `v` as a tag prefix, cocogitto will
-  generate versions starting with `v` and commands like `cog changelog` will pick only those versions.
-- Example:
-  ```toml
-  tag_prefix = "v"
-  ```
-- Also see:
+ # Git hooks
+ [git_hooks.pre-commit]
+ script = "./scripts/pre-commit.sh"
 
-  [User guide -> Tag prefix](/guide/tag.html#tag-prefix)
+ # Monorepo configuration
+ [packages.my-package]
+ path = "packages/my-package"
+ ```
+## `branch_whitelist`
+- **Description :** A list of glob patterns to allow bumping only on matching branches.
+- **Type :** `Array`
+- **Default :**
+```toml
+branch_whitelist = []
+```
+- **Type :** `String`
 
-### `branch_whitelist`
+## `bump_profiles`
+- **Description :** Custom bump profiles configurations.
+- **Type :** `Map<String, BumpProfile>`
+- **Default :**
+```toml
+[bump_profiles]
+```
 
-- Type: `Array<String>`
-- Optional: `true`
-- Description: A list of glob patterns to allow bumping only on matching branches.
-- Example:
-  ```toml
-  branch_whitelist = [ "main", "release/**" ]
-  ```
-- Also see:
+## `changelog`
+- **Description :** Changelog configuration.
+- **Type :** [Changelog](#Changelog)
+- **Default :**
+```toml
+[changelog]
+authors = []
+owner = "null"
+package_template = "null"
+path = "CHANGELOG.md"
+remote = "null"
+repository = "null"
+template = "null"
+```
 
-  [User guide -> Branch whitelist](/guide/bump.html#branch-whitelist)
+## `commit_types`
+- **Description :** Custom commit types configuration.
+- **Type :** `Map<String, CommitConfig | Null>`
+- **Default :**
+```toml
+[commit_types]
+```
 
-### `ignore_merge_commits`
+## `disable_bump_commit`
+- **Description :** Whether to create a bump commit or not.
+- **Type :** `Boolean`
+- **Default :**
+```toml
+disable_bump_commit = false
+```
 
-- Type: `boolean`
-- Optional: `true`
-- Default: `false`
-- Description: Whether to ignore or to lint merge commits.
-- Example:
-  ```toml
-  ignore_merge_commits = true
-  ```
-- Also see:
+## `disable_changelog`
+- **Description :** Whether to generate a changelog or not during bump.
+- **Type :** `Boolean`
+- **Default :**
+```toml
+disable_changelog = false
+```
 
-  [User guide -> Deal with merge commit](/guide/commit.html#deal-with-merge-commits)
+## `from_latest_tag`
+- **Description :** Whether to only consider commits since the latest SemVer tag.
+- **Type :** `Boolean`
+- **Default :**
+```toml
+from_latest_tag = false
+```
 
-## Commit Types
+## `generate_mono_repository_global_tag`
+- **Description :** Activate or deactivate global tag generation for mono-repository.
+- **Type :** `Boolean`
+- **Default :**
+```toml
+generate_mono_repository_global_tag = true
+```
 
-- Type: `Hashmap<String, CommitType>`
-- Optional: `true`
-- Description: Extend the allowed commit types, creating a new `cog commit` command, and allowing generation of changelog entries for the
-  given type. Can also be used to override the default commit types.
-- Example:
-  ```toml
-  [commit_types]
-  hotfix = { changelog_title = "Hotfixes" }
-  chore = { changelog_title = "Hotfixes", omit_from_changelog = true }
-  release = { changelog_title = "Releases" }
-  feat = {} # disabled
-  ```
-- Also see:
+## `generate_mono_repository_package_tags`
+- **Description :** Activate or deactivate package tag generation for mono-repository.
+- **Type :** `Boolean`
+- **Default :**
+```toml
+generate_mono_repository_package_tags = true
+```
 
-  [User guide -> Custom commit types](/guide/commit.html#custom-commit-types)
+## `git_hooks`
+- **Description :** Git hooks configuration.
+- **Type :** `Map<GitHookType, GitHook>`
+- **Default :**
+```toml
+[git_hooks]
+```
+ref #/$defs/GitHookType
 
-### `changelog_title`
+## `ignore_fixup_commits`
+- **Description :** Silently ignore fixup commits
+- **Type :** `Boolean`
+- **Default :**
+```toml
+ignore_fixup_commits = true
+```
 
-- Type: `String`
-- Optional: `false`
-- Description: Change the changelog title for the given commit type.
-- Example:
-  ```toml
-  [commit_types]
-  chore = { changelog_title = "Misc" }
-  hotfix = { changelog_title = "Hot fix" }
-  ```
+## `ignore_merge_commits`
+- **Description :** A list of glob patterns to allow bumping only on matching branches.
+- **Type :** `Boolean`
+- **Default :**
+```toml
+ignore_merge_commits = false
+```
 
-### `omit_from_changelog`
+## `monorepo_version_separator`
+- **Description :** Specify the version separator character for mono-repository package's tags.
+- **Type :** `String | Null`
 
-- Type: `Bool`
-- Optional: `true`
-- Default value: `false`
-- Description: Do not generate changelog entries for the given commit type.
-- Example:
-  ```toml
-  [commit_types]
-  chore = { changelog_title = "Chore", omit_from_changelog = true }
-  ```
+## `packages`
+- **Description :** Monorepo packages configuration.
+- **Type :** `Map<String, MonoRepoPackage>`
+- **Default :**
+```toml
+[packages]
+```
 
-### `bump_patch`
+## `post_bump_hooks`
+- **Description :** Hooks that will be executed after a bump command in root dir.
+- **Type :** `Array`
+- **Default :**
+```toml
+post_bump_hooks = []
+```
+- **Type :** `String`
 
-- Type: `Bool`
-- Optional: `true`
-- Default value: `false`
-- Description: Commits of this type will bump the patch version of a tag.
-- Example:
-  ```toml
-  [commit_types]
-  chore = { changelog_title = "Chore", bump_patch = true }
-  ```
+## `post_package_bump_hooks`
+- **Description :** Hooks that will be executed after a bump command in package dir.
+- **Type :** `Array`
+- **Default :**
+```toml
+post_package_bump_hooks = []
+```
+- **Type :** `String`
 
-### `bump_minor`
+## `pre_bump_hooks`
+- **Description :** Hooks that will be executed before a bump command in root dir.
+- **Type :** `Array`
+- **Default :**
+```toml
+pre_bump_hooks = []
+```
+- **Type :** `String`
 
-- Type: `Bool`
-- Optional: `true`
-- Default value: `false`
-- Description: Commits of this type will bump the minor version of a tag.
-- Example:
-  ```toml
-  [commit_types]
-  chore = { changelog_title = "Chore", bump_minor = true }
-  ```
+## `pre_package_bump_hooks`
+- **Description :** Hooks that will be executed before a bump command in package dir.
+- **Type :** `Array`
+- **Default :**
+```toml
+pre_package_bump_hooks = []
+```
+- **Type :** `String`
 
-## Bump config
+## `scopes`
+- **Description :** List of valid commit scopes.
+- **Type :** `Array | Null`
+- **Type :** `String`
+
+## `skip_ci`
+- **Description :** A "skip-ci" string to add to the commits when using the `bump` or `commit` commands.
+ Default value is `[skip ci].
+- **Type :** `String`
+- **Default :**
+```toml
+skip_ci = "[skip ci]"
+```
+
+## `skip_untracked`
+- **Description :** Allows to perform bump even if there are untracked or uncommitted changes.
+- **Type :** `Boolean`
+- **Default :**
+```toml
+skip_untracked = false
+```
+
+## `tag_prefix`
+- **Description :** Set a tag prefix value for cocogitto. For instance if you have a `v`
+ as a tag prefix, cocogitto will generate versions starting with `v` and
+ commands like `cog changelog` will pick only those versions.
+- **Type :** `String | Null`
+
+## AuthorSetting
+- **Description :** Configuration for mapping Git signatures to usernames.
+
+ This struct defines the mapping between a Git commit signature (email address)
+ and the corresponding username to use in changelog generation.
+
+  **Example :**
+ ```toml
+ [[changelog.authors]]
+ signature = "user@example.com"
+ username = "githubuser"
+ ```
+### `signature` <Badge type="danger" text="required" />
+- **Description :** The Git commit signature (typically an email address)
+- **Type :** `String`
+
+### `username` <Badge type="danger" text="required" />
+- **Description :** The username to display in changelogs
+- **Type :** `String`
+
+
+## BumpProfile
+- **Description :** A custom profile for configuring hooks that run before and after version bumps.
+
+ Bump profiles allow defining different sets of hooks that can be selected
+ when running bump commands.
+
+  **Example :**
+ ```toml
+ [bump_profiles.production]
+ pre_bump_hooks = ["./scripts/pre-release.sh"]
+ post_bump_hooks = ["./scripts/post-release.sh"]
+ ```
+### `post_bump_hooks`
+- **Description :** List of hooks to run after bumping the version
+- **Type :** `Array`
+- **Default :**
+```toml
+post_bump_hooks = []
+```
+- **Type :** `String`
 
 ### `pre_bump_hooks`
+- **Description :** List of hooks to run before bumping the version
+- **Type :** `Array`
+- **Default :**
+```toml
+pre_bump_hooks = []
+```
+- **Type :** `String`
 
-- Type: `Array<String>`
-- Optional: `true`
-- Description: An array of commands to execute before a version bump.
-- Example:
-  ```toml
-  pre_bump_hooks = [
-      "sh -c \"./ci/check_branch.sh\"",
-      "cargo test -- --test-threads 1",
-      "cargo clippy",
-      "cargo build --release",
-      "cargo fmt --all",
-      "cargo bump {{version}}",
-  ]
-  ```
-- Also see:
-
-    - [User guide -> Automatic Versioning](/guide/bump.html#auto-bump)
-    - [User guide -> Pre-bump hooks](/guide/bump.html#pre-bump-hooks)
-    - [User guide -> Version DSL](/guide/bump.html#version-dsl)
-
-### `post_bump_hooks`
-
-- Type: `Array<String>`
-- Optional: `true`
-- Description: An array of commands to execute after a version bump.
-- Example:
-  ```toml
-  post_bump_hooks = [
-      "git push",
-      "git push origin {{version}}",
-      "cargo package",
-      "cargo publish"
-  ]
-  ```
-- Also see:
-
-  - [User guide -> Automatic Versioning](/guide/bump.html#auto-bump)
-  - [User guide -> Pre-bump hooks](/guide/bump.html#post-bump-hooks)
-  - [User guide -> Version DSL](/guide/bump.html#version-dsl)
-
-### `bump_profiles`
-
-- Type: `Hashmap<String, BumpProfile>`
-- Optional: `true`
-- Description: Add additional [pre-bump](/guide/bump.html#pre-bump-hooks) and [post-bump](/guide/bump.html#post-bump-hooks) hooks profile.
-  a profile can be used with the `cog bump --hook-profile <profile_name>` flag.
-- Example:
-
-  ```toml
-  [bump_profiles.hotfix]
-  pre_bump_hooks = [
-      "cargo build --release",
-      "cargo fmt --all",
-      "cargo bump {{version}}",
-  ]
-
-  post_bump_hooks = [
-      "cargo package",
-      "cargo publish"
-  ]
-  ```
-
-- Also see:
-
-    - [User guide -> Automatic Versioning](/guide/bump.html#auto-bump)
-    - [User guide -> Pre-bump hooks](/guide/bump.html#pre-bump-hooks)
-    - [User guide -> Post-bump hooks](/guide/bump.html#post-bump-hooks)
-    - [User guide -> Version DSL](/guide/bump.html#version-dsl)
-    - [User guide -> Bump profiles](/guide/bump.html#bump-profiles)
-
-### `skip_ci`
-
-- Type: `String`
-- Optional: `true`
-- Description: A "skip-ci" string to add to the commits when using the `bump` or `commit` commands. Default value is `[skip ci]`.
-- Example:
-  ```toml
-  skip_ci = "[ci-skip]"
-  ```
-- Also see:
-    - [User guide -> Make Cocogitto skip CI CD](/guide/misc.html#make-cocogitto-skip-ci-cd)
-
-### `skip_untracked`
-
-- Type: `boolean`
-- Optional: `true`
-- Default value: `false`
-- Description: Allows to perform bump even if there are untracked or uncommitted changes.
-- Example:
-  ```toml
-  skip_untracked = true
-  ```
-- Also see:
-    - [User guide -> Skip untracked or uncommitted changes](/guide/misc.html#skip-untracked-or-uncommitted-changes)
-
-### `disable_changelog`
-
-- Type: `boolean`
-- Optional: `true`
-- Default value: `false`
-- Description: Disable changelog generation when bumping.
-- Example:
-  ```toml
-  disable_changelog = true
-  ```
-
-### `disable_bump_commit`
-
-- Type: `boolean`
-- Optional: `true`
-- Default value: `false`
-- Description: Cocogitto will not create a bump commit and will instead tag the latest commit.
-- Example:
-  ```toml
-  disable_bump_commit = true
-  ```
-- Also see:
-    - [User guide -> Disable bump commit creation](/guide/misc.html#disable-bump-commit-creation)
-
-### `git_hooks`
-
-- Type: `Map<GitHookType, GitHook>`
-- Optional: `true`
-- Default value: `{}`
-- Description: Define a set of git hook installable via `cog install-hook`.
-- Example:
-  ```toml
-  [git_hooks.commit-msg]
-  script = """#!/bin/sh
-  set -e
-
-  echo "[Check current commit message]"
-  cog verify --file $1
-  """
-  ```
 
 ## Changelog
+- **Description :** Configuration for changelog generation.
 
-- Type: `Changelog`
-- Optional: `true`
-- Description: Set the configuration for the changelog generation.
-- Example:
-  ```toml
-  [changelog]
-  path = "CHANGELOG.md"
-  template = "remote"
-  remote = "github.com"
-  repository = "cocogitto"
-  owner = "cocogitto"
-  authors = [
-    { signature = "Paul Delafosse", username = "oknozor" },
-    { signature = "Jack Dorland", username = "jackdorland" },
-    { signature = "Mike Lubinets", username = "mersinvald" },
-    { signature = "Marcin Puc", username = "tranzystorek-io" },
-    { signature = "Renault Fernandes", username = "renaultfernandes" },
-    { signature = "Pieter Joost van de Sande", username = "pjvds" },
-    { signature = "orhun", username = "orhun" },
-    { signature = "Danny Tatom", username = "its-danny" },
-  ]
-  ```
-- Also see:
-    - [User guide -> Changelog](/guide/changelog.html#changelogs)
+ This struct defines how the changelog should be generated,
+ including templates, remote repository information, and author settings.
 
-### `path`
-
-- Type: `String`
-- Optional: `true`
-- Default value: `"CHANGELOG.md"`
-- Description: Path the repository markdown changelog.
-- Example:
-  ```toml
-  [changelog]
-  path = "my_changelog.md"
-  ```
-- Also see:
-
-    - [User guide -> Automatic Versioning](/guide/bump.html#auto-bump)
-    - [User guide -> Changelog](/guide/changelog.html#changelogs)
-
-### `template`
-
-- Type: `String`
-- Optional: `true`
-- Default value: `"default"`
-- Description: Name of the builtin template to use for changelog generation or path to a custom template.
-  Note that `remote`, `repository` and `owner` are mandatory if the "remote" built-in template is used or if your
-  custom template make use of those variables.
-- Built-in templates : `default`, `remote`, `full_hash`
-- Example:
-  ```toml
-  [changelog]
-  template = "full_hash"
-  ```
-- Also see:
-
-    - [User guide -> Changelog](/guide/changelog.html#changelogs)
-    - [User guide -> Built-in templates](/guide/changelog.html#built-in-templates)
-    - [User guide -> Custom templates](/guide/changelog.html#custom-templates)
-
-### `package_template`
-
-- Type: `String`
-- Optional: `true`
-- Default value: `"package_default"`
-- Description: Name of the builtin template to use for package changelog generation or path to a custom template.
-  Note that `remote`, `repository` and `owner` are mandatory if the "remote" built-in template is used or if your
-  custom template make use of those variables.
-- Built-in templates : `package_default`, `package_remote`, `package_full_hash`
-- Example:
-  ```toml
-  [changelog]
-  package_template = "package_full_hash"
-  ```
-
-### `remote`
-
-- Type: `String`
-- Optional: `true`
-- Description: Domain name of the git platform hosting the repository, used for Markdown link generation in changelogs.
-  when provided `repository` and `owner` are also required.
-- Example:
-  ```toml
-  [changelog]
-  template = "remote"
-  remote = "github.com"
-  repository = "cocogitto"
-  owner = "cocogitto"
-  ```
-- Also see:
-
-  - [User guide -> Changelog](/guide/changelog.html#changelogs)
-  - [User guide -> Built-in templates](/guide/changelog.html#built-in-templates)
-  - [User guide -> Custom templates](/guide/changelog.html#custom-templates)
-
-### `repository`
-
-- Type: `String`
-- Optional: `true`
-- Description: Name of the repository on the remote git platform.
-- Example:
-  ```toml
-  [changelog]
-  template = "remote"
-  remote = "github.com"
-  repository = "cocogitto"
-  owner = "cocogitto"
-  ```
-- Also see:
-
-    - [User guide -> Changelog](/guide/changelog)
+  **Example :**
+ ```toml
+ [changelog]
+ template = "remote"
+ path = "CHANGELOG.md"
+ remote = "github.com"
+ owner = "cocogitto"
+ repository = "cocogitto"
+ ```
+### `authors`
+- **Description :** Author mappings for changelog generation
+- **Type :** `Array`
+- **Default :**
+```toml
+authors = []
+```
+ref #/$defs/AuthorSetting
 
 ### `owner`
+- **Description :** Repository owner/organization name
+- **Type :** `String | Null`
 
-- Type: `String`
-- Optional: `true`
-- Description: Owner of the repository on the remote git platform.
-- Example:
-  ```toml
-  [changelog]
-  template = "remote"
-  remote = "github.com"
-  repository = "cocogitto"
-  owner = "cocogitto"
-  ```
-- Also see:
-
-  - [User guide -> Changelog](/guide/changelog)
-
-### `authors`
-
-- Type: `Array<Author>`
-- Optional: `true`
-- Description: A list of commit authors with their git signature and git platform username to generate Markdown links in changelogs.
-- Example:
-  ```toml
-    [changelog]
-    authors = [
-      { signature = "Paul Delafosse", username = "oknozor" },
-      { signature = "Jack Dorland", username = "jackdorland" },
-      { signature = "Mike Lubinets", username = "mersinvald" },
-      { signature = "Marcin Puc", username = "tranzystorek-io" },
-      { signature = "Renault Fernandes", username = "renaultfernandes" },
-      { signature = "Pieter Joost van de Sande", username = "pjvds" },
-      { signature = "orhun", username = "orhun" },
-      { signature = "Danny Tatom", username = "its-danny" },
-  ]
-  ```
-- Also see:
-  - [User guide -> Changelog](/guide/changelog)
-
-## Mono-repository config
-
-### `monorepo_version_separator`
-
-- Type: `String`
-- Optional: `true`
-- Description: Set a package tag separator. For instance if you have a `-` as package separator, cocogitto will
-  generate monorepo package version starting with the package name followed by the optional prefix and package version (ex: `my-package-v1.0.0`)
-- Example:
-  ```toml
-  monorepo_version_separator = "-"
-  ```
-
-### ``generate_mono_repository_global_tag``
-
-- Type: `boolean`
-- Optional: `true`
-- Default value: `true`
-- Description: Activate or deactivate global tag generation for mono-repository.
-- Example:
-  ```toml
-  generate_mono_repository_global_tag = false
-  ```
-
-### ``generate_mono_repository_package_tags``
-
-- Type: `boolean`
-- Optional: `true`
-- Default value: `true`
-- Description: Activate or deactivate packages tag generation for mono-repository.
-- Example:
-  ```toml
-  generate_mono_repository_package_tags = false
-  ```
-
-### `pre_package_bump_hooks`
-
-- Type: `Array<String>`
-- Optional: `true`
-- Description: An array of commands executed before every package bump.
-- Example:
-  ```toml
-  pre_bump_hooks = [
-      "cargo build --release",
-      "cargo fmt --all",
-      "cargo set-version {{version}}",
-  ]
-  ```
-
-### `post_package_bump_hooks`
-
-- Type: `Array<String>`
-- Optional: `true`
-- Description: An array of commands executed after every package bump.
-- Example:
-  ```toml
-  post_bump_hooks = [
-      "cargo build --release",
-      "cargo fmt --all",
-      "cargo set-version {{version}}",
-  ]
-  ```
-
-## Mono-repository packages
-
-- Type: `Hashmap<String, MonoRepoPackage>`
-- Optional: `true`
-- Description: Add packages that will be included when doing `cog bump`.
-- Example:
-  ```toml
-  [packages]
-
-  [packages.my_other_package]
-  path = "packages/my_other_package"
-
-  [packages.my_package]
-  path = "packages/my_package"
-  public_api = false
-  include = []
-  ignore = []
-  pre_bump_hooks = []
-  post_bump_hooks = []
-  ```
-- See also
-  [User guide -> Packages configuration](/guide/monorepo.html#packages-configuration)
+### `package_template`
+- **Description :** Template to use for package changelogs in monorepos
+- **Type :** `String | Null`
 
 ### `path`
+- **Description :** Path where changelog file should be written
+- **Type :** `String`
+- **Default :**
+```toml
+path = "CHANGELOG.md"
+```
 
-- Type: `String`
-- Optional: `false`
-- Description: Set the package path.
-- Example:
-  ```toml
-  [packages]
-  my_package = { path = "packages/my_package" }
-  ```
+### `remote`
+- **Description :** Remote Git repository URL (e.g. "github.com")
+- **Type :** `String | Null`
 
-### `include`
+### `repository`
+- **Description :** Repository name
+- **Type :** `String | Null`
 
-- Type: `Array<String>`
-- Optional: `true`
-- Description: An array of additional path globs to consider part of the package.
-  These additional paths will trigger a package version bump in addition to the path in `path`.
-  The globs are evaluated with [globset](https://crates.io/crates/globset) with the `literal_separator` option enabled.
-- Example:
-  ```toml
-  [packages]
-  my_package = { path = "packages/my_package", include = ["common/**"] }
-  ```
+### `template`
+- **Description :** Template to use for changelog generation. Can be "remote", "full_hash" or a custom template path
+- **Type :** `String | Null`
 
-### `ignore`
 
-- Type: `Array<String>`
-- Optional: `true`
-- Description: An array of path globs to ignore as part of the package.
-  These paths will never trigger a package version bump (even if they normally would based on `path` and `include`).
-  The globs are evaluated with [globset](https://crates.io/crates/globset) with the `literal_separator` option enabled.
-- Example:
-  ```toml
-  [packages]
-  my_package = { path = "packages/my_package", include = ["packages/my_package/.github/**"] }
-  ```
+## CommitConfig
+- **Description :** Configurations to create new conventional commit types or override behaviors of the existing ones.
+### `bump_minor`
+- **Description :** Allow for this commit type to bump the minor version.
+- **Type :** `Boolean`
+- **Default :**
+```toml
+bump_minor = false
+```
 
-### `changelog_path`
+### `bump_patch`
+- **Description :** Allow for this commit type to bump the patch version.
+- **Type :** `Boolean`
+- **Default :**
+```toml
+bump_patch = false
+```
 
-- Type: `String`
-- Optional: `true`
-- Default: `{path}/CHANGELOG.md`
-- Description: Overrides the default changelog path, allowing to set an absolute path.
-- Example:
-  ```toml
-  [packages]
-  my_package = { path = "packages/my_package", changelog_path = "changelogs/my_package.md" }
-  ```
+### `changelog_title` <Badge type="danger" text="required" />
+- **Description :** Define the title used in generated changelog for this commit type.
+- **Type :** `String`
 
-### `public_api`
+### `omit_from_changelog`
+- **Description :** Do not display this commit type in changelogs.
+- **Type :** `Boolean`
+- **Default :**
+```toml
+omit_from_changelog = false
+```
 
-- Type: `boolean`
-- Optional: `true`
-- Default: `true`
-- Description: If set to `false` the package will not trigger global version bump.
-- Example:
-  ```toml
-  [packages]
-  my_package = { path = "packages/my_package", public_api = false }
-  ```
-- Also see:
 
-  [User guide -> Package configuration](/guide/monorepo.html#packages-configuration)
+## GitHook
+- **Description :** A GitHook can be defined either as a script string that will be executed directly,
+ or as a path to a script file that will be executed
 
-### `pre_bump_hooks`
+## GitHookType
+- **Description :** Represents the different types of Git hooks that can be configured.
 
-- Type: `Array<String>`
-- Optional: `true`
-- Description: An array of commands to execute before a package bump.
-- Example:
+ This enum defines all the standard Git hook types that can be used
+ in the configuration. Each variant corresponds to a specific Git hook
+ that gets triggered at different points in Git's execution.
 
-  ```toml
-  pre_bump_hooks = [
-      "cargo build --release",
-      "cargo fmt --all",
-      "cargo set-version {{version}}",
-  ]
-  ```
+  **Example :**
+ ```toml
+ [git_hooks.pre-commit]
+ script = "./scripts/pre-commit.sh"
+ ```
+- **Type :** `String`
+- **Possible values :** `applypatch-msg`, `pre-applypatch`, `post-applypatch`, `pre-commit`, `pre-merge-commit`, `pre-prepare-commit-msg`, `commit-msg`, `post-commit`, `pre-rebase`, `post-checkout`, `post-merge`, `pre-push`, `pre-auto-gc`, `post-rewrite`, `sendemail-validate`, `fsmonitor-watchman`, `p4-changelist`, `p4-prepare-changelist`, `p4-postchangelist`, `p4-pre-submit`, `post-index-change`
 
-- Also see:
+## MonoRepoPackage
+- **Description :** Configuration for a package in a monorepo setup.
 
-    - [User guide -> Automatic Versioning](/guide/bump.html#auto-bump)
-    - [User guide -> Automatic versioning for monorepo](/guide/monorepo.html#packages-hooks)
-    - [User guide -> Post-bump hooks](/guide/bump.html#post-bump-hooks)
-    - [User guide -> Version DSL](/guide/bump.html#version-dsl)
+ This struct defines how a single package within a monorepo should be handled,
+ including its location, included/excluded files, changelog settings, and bump behavior.
 
-### `post_bump_hooks`
-
-- Type: `Array<String>`
-- Optional: `true`
-- Description: An array of commands to execute after a version bump.
-- Example:
-  ```toml
-  post_bump_hooks = [
-      "echo {{latest}} bumped to {{version}}",
-  ]
-  ```
-- Also see:
-
-  - [User guide -> Automatic Versioning](/guide/bump.html#auto-bump)
-  - [User guide -> Automatic versioning for monorepo](/guide/monorepo.html#packages-hooks)
-  - [User guide -> Post-bump hooks](/guide/bump.html#post-bump-hooks)
-  - [User guide -> Version DSL](/guide/bump.html#version-dsl)
+  **Example :**
+ ```toml
+ [packages.my-package]
+ path = "packages/my-package"
+ include = ["packages/my-package/**"]
+ ignore = ["**/test/**"]
+ changelog_path = "CHANGELOG.md"
+ public_api = true
+ bump_order = 1
+ ```
+### `bump_order`
+- **Description :** Ordering of packages in the changelog, this affect in which order
+ packages will be bumped.
+- **Type :** `Integer | Null`
 
 ### `bump_profiles`
+- **Description :** Custom profile to override `pre_bump_hooks`, `post_bump_hooks`.
+- **Type :** `Map<String, BumpProfile>`
+- **Default :**
+```toml
+[bump_profiles]
+```
 
-- Type: `Hashmap<String, BumpProfile>`
-- Optional: `true`
-- Description: Add additional per package [pre-bump](/guide/bump.html#pre-bump-hooks) and [post-bump](/guide/bump.html#post-bump-hooks) hooks profile.
-  a profile can be used with the `cog bump --hook-profile <profile_name>` flag.
-- Example:
+### `changelog_path`
+- **Description :** Where to write the changelog.
+- **Type :** `String | Null`
 
-  ```toml
-  [packages.my-package]
-  path = "packages/my-package"
+### `ignore`
+- **Description :** List of globs for paths to ignore, relative to
+ the repository root dir.
+- **Type :** `Array`
+- **Default :**
+```toml
+ignore = []
+```
+- **Type :** `String`
 
-  [bump_profiles.hotfix]
-  pre_bump_hooks = [
-      "cargo build --release",
-      "cargo fmt --all",
-      "cargo set-version {{version}}",
-  ]
+### `include`
+- **Description :** List of globs for additional paths to include, relative to
+ the repository root dir.
+- **Type :** `Array`
+- **Default :**
+```toml
+include = []
+```
+- **Type :** `String`
 
-  post_bump_hooks = [
-      "cargo package",
-  ]
-  ```
+### `path`
+- **Description :** The package path, relative to the repository root dir.
+ Used to scan commits and set hook commands current directory.
+- **Type :** `String`
+- **Default :**
+```toml
+path = ""
+```
+
+### `post_bump_hooks`
+- **Description :** Overrides `post_package_bump_hooks`.
+- **Type :** `Array | Null`
+- **Type :** `String`
+
+### `pre_bump_hooks`
+- **Description :** Overrides `pre_package_bump_hooks`.
+- **Type :** `Array | Null`
+- **Type :** `String`
+
+### `public_api`
+- **Description :** Bumping package marked as public api will increment
+ the global monorepo version when using `cog bump --auto`.
+- **Type :** `Boolean`
+- **Default :**
+```toml
+public_api = true
+```
+
+
+

@@ -90,7 +90,7 @@ mod test {
         let oid = Oid::from_str("1234567890").unwrap();
         let tag = Tag::from_str("1.0.0", Some(oid), None).unwrap();
 
-        let result = toml::to_string(&tag);
+        let result = serde_json::to_string(&tag);
 
         assert_that!(result)
             .is_ok()
@@ -120,7 +120,7 @@ mod test {
             },
         };
 
-        let result = toml::to_string(&commit);
+        let result = serde_json::to_string(&commit);
 
         assert_that!(result).is_ok();
     }

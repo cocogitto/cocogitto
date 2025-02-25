@@ -26,11 +26,9 @@ impl Repository {
             let tip = &self.0.find_commit(head_target)?;
 
             self.commit_or_signed_commit(&sig, message, &tree, &[tip], sign)
-                .map_err(Git2Error::from)
         } else if is_empty && has_delta_or_allowed_empty {
             // First repo commit
             self.commit_or_signed_commit(&sig, message, &tree, &[], sign)
-                .map_err(Git2Error::from)
         } else {
             let statuses = self.get_statuses()?;
             let statuses = if statuses.0.is_empty() {
