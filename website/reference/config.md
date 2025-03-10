@@ -213,13 +213,13 @@ The config reference list all value that can be set in the `cog.toml` file at th
 - Type: `boolean`
 - Optional: `true`
 - Default value: `false`
-- Description: Allows to perform bump even if there are untracked or uncommited changes.
+- Description: Allows to perform bump even if there are untracked or uncommitted changes.
 - Example:
   ```toml
   skip_untracked = true
   ```
 - Also see:
-    - [User guide -> Skip untracked or uncommited changes](/guide/misc.html#skip-untracked-or-uncommited-changes)
+    - [User guide -> Skip untracked or uncommitted changes](/guide/misc.html#skip-untracked-or-uncommitted-changes)
 
 ### `disable_changelog`
 
@@ -439,7 +439,7 @@ The config reference list all value that can be set in the `cog.toml` file at th
   ```toml
   generate_mono_repository_global_tag = false
   ```
-  
+
 ### ``generate_mono_repository_package_tags``
 
 - Type: `boolean`
@@ -450,7 +450,7 @@ The config reference list all value that can be set in the `cog.toml` file at th
   ```toml
   generate_mono_repository_package_tags = false
   ```
-  
+
 ### `pre_package_bump_hooks`
 
 - Type: `Array<String>`

@@ -109,8 +109,8 @@ Cocogitto let you specify the target version with the following flags:
 - `--minor`: increment the MINOR version.
 - `--patch`: increment the PATCH version.
 - `--version <version>`: set version manually ( ex: `cog bump --version 3.2.1`).
-- `--pre <metadata>`: set the [pre-release metatada](https://semver.org/#spec-item-9).
-- `--build <metadata>`: set the [build metatada](https://semver.org/#spec-item-10).
+- `--pre <metadata>`: set the [pre-release metadata](https://semver.org/#spec-item-9).
+- `--build <metadata>`: set the [build metadata](https://semver.org/#spec-item-10).
 
 **Example:**
 
@@ -134,7 +134,7 @@ cog bump --dry-run --auto
 ```
 
 :::tip
-The `dry-run` flag can be helpful when writing shell scritps using cocogitto. Since only the version number will
+The `dry-run` flag can be helpful when writing shell scripts using cocogitto. Since only the version number will
 output to stdout so you can do the following:
 
 ```shell
@@ -262,7 +262,7 @@ As you can see we are bumping the manifest using a small DSL. It only has a few 
 - followed by the `+` operator.
 - `major`, `minor` and `patch` to specify the kind of increment you want.
   Then an optional amount, default being one (`version+1minor` and `version+minor` being the same).
-- followed by any number of `+{amount}{kind}` (exemple: `version+2major+1patch`)
+- followed by any number of `+{amount}{kind}` (example: `version+2major+1patch`)
 - ended by any alphanumeric character (SemVer additional labels for pre-release and build metadata), here `-SNAPSHOT`.
 
 ### Bump profiles

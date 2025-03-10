@@ -179,7 +179,7 @@ mod test {
     }
 
     #[sealed_test]
-    fn shoud_get_range_for_a_single_release() -> Result<()> {
+    fn should_get_range_for_a_single_release() -> Result<()> {
         // Arrange
         let repo = git_init_no_gpg()?;
         let one = commit("chore: first commit")?;
@@ -211,7 +211,7 @@ mod test {
     }
 
     #[sealed_test]
-    fn shoud_get_range_for_a_multiple_release() -> Result<()> {
+    fn should_get_range_for_a_multiple_release() -> Result<()> {
         // Arrange
         let repo = git_init_no_gpg()?;
         let one = commit("chore: first commit")?;

@@ -12,6 +12,7 @@ description = """
 Cocogitto is a set of cli tools for the conventional commit
 and semver specifications.
 """
+rust-version = "1.78.0"
 
 [profile.release]
 opt-level = 2
@@ -20,7 +21,7 @@ codegen-units = 1
 panic = "abort"
 
 [dependencies]
-git2 = { version = "0.18.2", default-features = false, features = [] }
+git2 = { version = "0.20.0", default-features = false, features = [] }
 # Do not bump anyhow, (see: https://github.com/dtolnay/anyhow/issues/353)
 anyhow = "1.0.75"
 colored = "^2"

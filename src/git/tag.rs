@@ -672,7 +672,7 @@ mod test {
         let tag = repo.get_latest_package_tag("lunatic-timer-api")?;
 
         // Assert
-        assert_that!(tag.to_string()).is_equal_to(&"lunatic-timer-api-v0.12.0".to_string());
+        assert_that!(tag.to_string()).is_equal_to("lunatic-timer-api-v0.12.0".to_string());
         Ok(())
     }
 }

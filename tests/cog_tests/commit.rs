@@ -304,3 +304,154 @@ fn should_error_on_disabled_commit_error() -> Result<()> {
         .failure();
     Ok(())
 }
+
+#[sealed_test]
+/// Creating cog.toml with empty content. This makes sure that a cog.toml without the `scopes`
+/// array still allows an arbitrary commit scope.
+fn allow_arbitrary_scope_when_not_constrained() -> Result<()> {
+    git_init()?;
+    git_add("content", "test_file")?;
+
+    fs::write("cog.toml", "")?;
+
+    Command::cargo_bin("cog")?
+        .arg("commit")
+        .arg("test")
+        .arg("arbitrary commit scopes are allowed")
+        .arg("arbitrary_scope")
+        .assert()
+        .success();
+    Ok(())
+}
+
+#[sealed_test]
+/// Creating cog.toml with an empty definition of scopes. The effect is that there are no valid
+/// scopes, hence scopes are disallowed for use entirely.
+fn empty_scopes_disallow_scopes() -> Result<()> {
+    git_init()?;
+    git_add("content", "test_file")?;
+
+    let settings = r#"
+        scopes = []
+    "#;
+    fs::write("cog.toml", settings)?;
+
+    Command::cargo_bin("cog")?
+        .arg("commit")
+        .arg("test")
+        .arg("scopes are disabled")
+        .arg("arbitrary_scope")
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains(
+            "Commit scope `arbitrary_scope` not allowed",
+        ));
+    Ok(())
+}
+
+#[sealed_test]
+/// Create the cog.toml with a valid scope "valid_scope". This is the only scope that should be
+/// allowed.
+fn only_allow_defined_scope() -> Result<()> {
+    git_init()?;
+    git_add("content", "test_file")?;
+
+    let settings = r#"
+        scopes = ["valid_scope"]
+    "#;
+    fs::write("cog.toml", settings)?;
+
+    Command::cargo_bin("cog")?
+        .arg("commit")
+        .arg("test")
+        .arg("only one valid scope")
+        .arg("valid_scope")
+        .assert()
+        .success();
+    Ok(())
+}
+
+#[sealed_test]
+/// Defining scopes in cog.toml and using an undefined one should error.
+fn should_error_on_disallowed_scope() -> Result<()> {
+    git_init()?;
+    git_add("content", "test_file")?;
+    let settings = r#"
+        scopes = ["valid_scope"]
+    "#;
+    fs::write("cog.toml", settings)?;
+
+    Command::cargo_bin("cog")?
+        .arg("commit")
+        .arg("feat")
+        .arg("fails due to invalid commit scope")
+        .arg("invalid_scope")
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains(
+            "Commit scope `invalid_scope` not allowed",
+        ));
+    Ok(())
+}
+
+#[sealed_test]
+fn should_run_git_hooks() -> Result<()> {
+    git_init()?;
+    git_add("content", "test_file")?;
+
+    run_cmd!(
+       echo "echo 'running pre-commit hook'" > .git/hooks/pre-commit;
+       echo "echo 'running prepare-commit-msg hook'" > .git/hooks/prepare-commit-msg;
+       echo "echo 'running commit-msg hook'" > .git/hooks/commit-msg;
+       echo "echo 'running post-commit hook'" > .git/hooks/post-commit;
+       chmod +x .git/hooks/pre-commit;
+       chmod +x .git/hooks/prepare-commit-msg;
+       chmod +x .git/hooks/commit-msg;
+       chmod +x .git/hooks/post-commit;
+    )?;
+
+    Command::cargo_bin("cog")?
+        .arg("commit")
+        .arg("feat")
+        .arg("test commit")
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("running pre-commit hook"))
+        .stdout(predicates::str::contains("running prepare-commit-msg hook"))
+        .stdout(predicates::str::contains("running commit-msg hook"))
+        .stdout(predicates::str::contains("running post-commit hook"));
+
+    Ok(())
+}
+
+#[sealed_test]
+fn should_run_pre_commit_hook_with_custom_hooks_path() -> Result<()> {
+    git_init()?;
+    git_add("content", "test_file")?;
+
+    run_cmd!(
+       git config --local core.hooksPath .husky;
+       mkdir .husky;
+       echo "echo 'running pre-commit hook'" > .husky/pre-commit;
+       echo "echo 'running prepare-commit-msg hook'" > .husky/prepare-commit-msg;
+       echo "echo 'running commit-msg hook'" > .husky/commit-msg;
+       echo "echo 'running post-commit hook'" > .husky/post-commit;
+       chmod +x .husky/pre-commit;
+       chmod +x .husky/prepare-commit-msg;
+       chmod +x .husky/commit-msg;
+       chmod +x .husky/post-commit;
+    )?;
+
+    Command::cargo_bin("cog")?
+        .arg("commit")
+        .arg("feat")
+        .arg("test commit")
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("running pre-commit hook"))
+        .stdout(predicates::str::contains("running prepare-commit-msg hook"))
+        .stdout(predicates::str::contains("running commit-msg hook"))
+        .stdout(predicates::str::contains("running post-commit hook"));
+
+    Ok(())
+}

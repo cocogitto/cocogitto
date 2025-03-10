@@ -24,11 +24,6 @@ cargo clippy
 path = "hooks/pre-push.sh"
 ```
 
-::: warning
-Note that unlike `git commit`, `cog commit` will not pick a default shell when running hooks. Make sure to provide
-a shebang in your hook definition.
-:::
-
 Now that our hook are defined in cocogitto's config they can be installed with `cog install-hook`.
 
 **Install all git-hooks:**

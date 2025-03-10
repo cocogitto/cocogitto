@@ -64,6 +64,23 @@ If some of your packages does not belong to your project public API use `public_
 from updating the global project version.
 :::
 
+### Package bump order
+
+When creating tags for multiple packages in a monorepo, you can control the order in which packages are bumped by setting the `bump_order` property in your package configuration. Packages with lower `bump_order` values will be bumped first.
+
+**Example:**
+
+```toml
+[packages]
+package-a = { path = "packages/a", bump_order = 1 } # Will be bumped first
+package-b = { path = "packages/b", bump_order = 2 } # Will be bumped second
+package-c = { path = "packages/c" } # No explicit order specified
+```
+
+This is particularly useful when you have dependencies between packages and need to ensure they are versioned in a specific order. Tags will be created according to the specified bump order, which can be important for deployment processes or dependency management.
+
+If `bump_order` is not specified for a package, those packages will be processed after packages with explicit ordering.
+
 ### Packages hooks
 
 When creating a monorepo version Cocogitto will execute the pre-bump and post-bump hooks normally. Additionally, it will

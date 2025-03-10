@@ -1,6 +1,6 @@
 name: Release
 
-on: 
+on:
   workflow_dispatch:
 
 jobs:
@@ -25,11 +25,9 @@ jobs:
           profile: minimal
           toolchain: stable
 
-      - run: 
-          cargo install cargo-edit
+      - run: cargo install cargo-edit
 
-      - run:
-          cargo login ${{secrets.CARGO_TOKEN}}
+      - run: cargo login ${{secrets.CARGO_TOKEN}}
 
       - name: SemVer release
         id: release
@@ -37,8 +35,8 @@ jobs:
         with:
           check-latest-tag-only: true
           release: true
-          git-user: 'github-actions'
-          git-user-email: 'github-actions@github.com'
+          git-user: "github-actions"
+          git-user-email: "github-actions@github.com"
 
       - name: Generate Changelog
         run: cog changelog --at ${{ steps.release.outputs.version }} -t full_hash > GITHUB_CHANGELOG.md
@@ -71,13 +69,12 @@ jobs:
         run: npm ci
         working-directory: ./website
 
-
       - name: Build with VitePress
         run: npm run docs:build
         working-directory: ./website
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: website/.vitepress/dist
 

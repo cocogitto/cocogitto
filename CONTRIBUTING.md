@@ -1,6 +1,6 @@
 # Cocogitto's contributing guide
 
-Thank you for taking your time to contribute to Cocogitto! Below is a non-exhaustive list of what you can 
+Thank you for taking your time to contribute to Cocogitto! Below is a non-exhaustive list of what you can
 do to help Cocogitto.
 
 ## Opening issues
@@ -9,12 +9,12 @@ If you spot a bug or want to request a feature you are welcome to [open an issue
 
 ## Writing documentation
 
-The official Cocogitto documentation is hosted on the [cocogitto/website](https://github.com/cocogitto/website) repository. 
+The official Cocogitto documentation is hosted on the [cocogitto/website](https://github.com/cocogitto/website) repository.
 If you find something is missing or unclear please open a pull request or an issue there.
 
 ## Submitting a pull request
 
-Before submitting a PR don't hesitate to talk about your feature request or bug fix either on the issue board or on 
+Before submitting a PR don't hesitate to talk about your feature request or bug fix either on the issue board or on
 our [discord server](https://discord.gg/951009223121195021).
 If you need an early review or guidance on how to implement a feature or bug fix, draft PRs are welcome.
 
@@ -43,20 +43,20 @@ In addition, our CI pipeline uses the following formatter and linter:
 
 ### Error handling
 * `unwrap()` usage should be avoided, if needed use `expect("why")` instead.
-* For convenience, errors in the [cog](src/bin/cog.rs) CLI and the public API are wrapped with the 
+* For convenience, errors in the [cog](src/bin/cog.rs) CLI and the public API are wrapped with the
   [`anyhow!`](https://docs.rs/anyhow/latest/anyhow/macro.anyhow.html) macro.
-  On the other hand, in order to be predictable, every error in the private part of the crate should be defined 
-  in the corresponding `error.rs` file. For instance, git2 errors are defined under [src/git/error.rs](src/git/error.rs). 
+  On the other hand, in order to be predictable, every error in the private part of the crate should be defined
+  in the corresponding `error.rs` file. For instance, git2 errors are defined under [src/git/error.rs](src/git/error.rs).
 
 ### Testing
 
-Before submitting a PR please make sure your code is tested. The CI pipeline ensures that coverage never drops by more than 
+Before submitting a PR please make sure your code is tested. The CI pipeline ensures that coverage never drops by more than
 1%, and total coverage should never go below 80%.
 
 **Testing git repositories:**
 
 Due to the extensive usage of [git2](https://crates.io/crates/git2) in Cocogitto,
-testing withing a repository is often required.
+testing within a repository is often required.
 
 
 This kind of tests must use the [`#[sealed_test]`](https://crates.io/crates/sealed_test)
@@ -68,12 +68,12 @@ If you need to run some additional shell command or are not writing an integrati
 
 **Unit test:**
 
-Cocogitto tests are organized as described in [The Rust Programing Language book](https://doc.rust-lang.org/stable/book/ch11-03-test-organization.html). 
-Private function should be tested right where they live 
+Cocogitto tests are organized as described in [The Rust Programing Language book](https://doc.rust-lang.org/stable/book/ch11-03-test-organization.html).
+Private function should be tested right where they live
 
 Example:
 ```rust
-// mod commit ... 
+// mod commit ...
 #[cfg(test)]
 mod test {
   use crate::git::repository::Repository;
@@ -86,12 +86,12 @@ mod test {
   fn create_commit_ok() -> Result<()> {
     // Arrange
     let repo = git_init_no_gpg()?;
-    
+
     run_cmd!(
             echo changes > file;
             git add .;
         )?;
-    
+
     // Act
     let oid = repo.commit("feat: a test commit");
 
@@ -99,7 +99,7 @@ mod test {
     assert_that!(oid).is_ok();
     Ok(())
   }
-// ... 
+// ...
 }
 ```
 
@@ -127,5 +127,3 @@ fn should_skip_initialization_if_repository_exists() -> Result<()> {
     Ok(())
 }
 ```
-
-

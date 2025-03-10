@@ -36,6 +36,8 @@ pub struct Settings {
     pub from_latest_tag: bool,
     /// A list of glob patterns to allow bumping only on matching branches.
     pub ignore_merge_commits: bool,
+    /// Silently ignore fixup commits
+    pub ignore_fixup_commits: bool,
     /// Whether to generate a changelog or not during bump.
     pub disable_changelog: bool,
     /// Whether to create a bump commit or not.
@@ -55,7 +57,7 @@ pub struct Settings {
     /// A "skip-ci" string to add to the commits when using the `bump` or `commit commands.
     /// Default value is `[skip ci].
     pub skip_ci: String,
-    /// Allows to perform bump even if there are untracked or uncommited changes.
+    /// Allows to perform bump even if there are untracked or uncommitted changes.
     pub skip_untracked: bool,
     pub pre_bump_hooks: Vec<String>,
     pub post_bump_hooks: Vec<String>,
@@ -66,6 +68,7 @@ pub struct Settings {
     pub changelog: Changelog,
     pub bump_profiles: HashMap<String, BumpProfile>,
     pub packages: HashMap<String, MonoRepoPackage>,
+    pub scopes: Option<Vec<String>>,
 }
 
 impl Default for Settings {
@@ -73,6 +76,7 @@ impl Default for Settings {
         Self {
             from_latest_tag: false,
             ignore_merge_commits: false,
+            ignore_fixup_commits: true,
             disable_changelog: false,
             disable_bump_commit: false,
             generate_mono_repository_global_tag: true,
@@ -91,6 +95,7 @@ impl Default for Settings {
             changelog: Default::default(),
             bump_profiles: Default::default(),
             packages: Default::default(),
+            scopes: Default::default(),
         }
     }
 }
@@ -199,7 +204,7 @@ pub enum GitHook {
 #[serde(deny_unknown_fields, default)]
 pub struct MonoRepoPackage {
     /// The package path, relative to the repository root dir.
-    /// Used to scan commits and set hook commands current directory
+    /// Used to scan commits and set hook commands current directory.
     pub path: PathBuf,
     /// List of globs for additional paths to include, relative to
     /// the repository root dir.
@@ -207,17 +212,20 @@ pub struct MonoRepoPackage {
     /// List of globs for paths to ignore, relative to
     /// the repository root dir.
     pub ignore: Vec<String>,
-    /// Where to write the changelog
+    /// Where to write the changelog.
     pub changelog_path: Option<String>,
     /// Bumping package marked as public api will increment
-    /// the global monorepo version when using `cog bump --auto`
+    /// the global monorepo version when using `cog bump --auto`.
     pub public_api: bool,
-    /// Overrides `pre_package_bump_hooks`
+    /// Overrides `pre_package_bump_hooks`.
     pub pre_bump_hooks: Option<Vec<String>>,
-    /// Overrides `post_package_bump_hooks`
+    /// Overrides `post_package_bump_hooks`.
     pub post_bump_hooks: Option<Vec<String>>,
-    /// Custom profile to override `pre_bump_hooks`, `post_bump_hooks`
+    /// Custom profile to override `pre_bump_hooks`, `post_bump_hooks`.
     pub bump_profiles: HashMap<String, BumpProfile>,
+    /// Ordering of packages in the changelog, this affect in which order
+    /// packages will be bumped.
+    pub bump_order: Option<usize>,
 }
 
 impl Default for &MonoRepoPackage {
@@ -231,6 +239,7 @@ impl Default for &MonoRepoPackage {
             post_bump_hooks: None,
             bump_profiles: Default::default(),
             public_api: true,
+            bump_order: None,
         });
 
         Box::leak(package)
@@ -248,6 +257,7 @@ impl Default for MonoRepoPackage {
             post_bump_hooks: None,
             bump_profiles: Default::default(),
             public_api: true,
+            bump_order: None,
         }
     }
 }
@@ -347,6 +357,10 @@ impl Settings {
                 CommitConfigOrNull::None {} => None,
             })
             .collect()
+    }
+
+    pub fn commit_scopes(&self) -> Option<Vec<String>> {
+        self.scopes.clone()
     }
 
     fn default_commit_config() -> CommitsMetadata {

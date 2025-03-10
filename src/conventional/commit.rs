@@ -86,6 +86,19 @@ impl Commit {
                     date,
                 };
 
+                if let (Some(scopes), Some(scope)) =
+                    (&SETTINGS.commit_scopes(), &commit.conventional.scope)
+                {
+                    if !scopes.contains(scope) {
+                        return Err(Box::new(ConventionalCommitError::CommitScopeNotDefined {
+                            oid: commit.oid.to_string(),
+                            summary: format_summary(&commit.conventional),
+                            scope: scope.to_string(),
+                            author: commit.author,
+                        }));
+                    }
+                }
+
                 match &SETTINGS
                     .commit_types()
                     .get(&commit.conventional.commit_type)
@@ -124,7 +137,7 @@ impl Commit {
         SETTINGS
             .commit_types()
             .get(&self.conventional.commit_type)
-            .map_or(false, |config| config.omit_from_changelog)
+            .is_some_and(|config| config.omit_from_changelog)
     }
 
     pub(crate) fn is_major_bump(&self) -> bool {
@@ -253,6 +266,7 @@ pub fn verify(
     author: Option<String>,
     message: &str,
     ignore_merge_commit: bool,
+    ignore_fixup_commit: bool,
 ) -> Result<(), Box<ConventionalCommitError>> {
     // Strip away comments from git message before parsing
     let msg: String = message
@@ -265,6 +279,21 @@ pub fn verify(
 
     if (msg.starts_with("Merge ") || msg.starts_with("Pull request")) && ignore_merge_commit {
         info!("{}", "Merge commit was ignored".yellow());
+        return Ok(());
+    }
+
+    if msg.starts_with("fixup!") && ignore_fixup_commit {
+        info!("{}", "fixup! commit was ignored".yellow());
+        return Ok(());
+    }
+
+    if msg.starts_with("amend!") && ignore_fixup_commit {
+        info!("{}", "amend! commit was ignored".yellow());
+        return Ok(());
+    }
+
+    if msg.starts_with("squash!") && ignore_fixup_commit {
+        info!("{}", "squash! commit was ignored".yellow());
         return Ok(());
     }
 
@@ -373,7 +402,7 @@ mod test {
             },
         ]);
 
-        assert_that!(commit.to_string()).is_equal_to(&message.to_string())
+        assert_that!(commit.to_string()).is_equal_to(message.to_string())
     }
 
     #[test]
@@ -382,7 +411,7 @@ mod test {
         let message = "feat(database): add postgresql driver";
 
         // Act
-        let result = verify(Some("toml".into()), message, false);
+        let result = verify(Some("toml".into()), message, false, false);
 
         // Assert
         assert_that!(result).is_ok();
@@ -400,7 +429,7 @@ mod test {
         );
 
         // Act
-        let result = verify(Some("toml".into()), message, false);
+        let result = verify(Some("toml".into()), message, false, false);
 
         // Assert
         assert_that!(result).is_ok();
@@ -412,7 +441,7 @@ mod test {
         let message = "feat add postgresql driver";
 
         // Act
-        let result = verify(Some("toml".into()), message, false);
+        let result = verify(Some("toml".into()), message, false, false);
 
         // Assert
         assert_that!(result).is_err();
@@ -424,7 +453,7 @@ mod test {
         let message = "post: add postgresql driver";
 
         // Act
-        let result = verify(Some("toml".into()), message, false);
+        let result = verify(Some("toml".into()), message, false, false);
 
         // Assert
         assert_that!(result).is_err();
@@ -445,7 +474,7 @@ mod test {
             "
         );
 
-        let outcome = verify(None, message, false);
+        let outcome = verify(None, message, false, false);
 
         assert_that!(outcome).is_ok();
         Ok(())
