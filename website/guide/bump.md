@@ -19,7 +19,7 @@ The `bump` subcommand will execute the following steps:
 ## Auto bump
 
 `cog bump` will calculate the next version based on your commit history since the latest
-semver tag. Once a tag number as been calculated it will create a tagged commit containing
+semver tag. Once a tag number has been calculated it will create a tagged commit containing
 the changelog for this new tag.
 
 ### Auto bump commit types
