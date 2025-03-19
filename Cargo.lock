@@ -301,6 +301,7 @@ dependencies = [
  "clap_complete_nushell",
  "clap_mangen",
  "cmd_lib",
+ "cog_schemars",
  "colored",
  "config",
  "conventional_commit_parser",
@@ -315,7 +316,6 @@ dependencies = [
  "pest_derive",
  "predicates",
  "pretty_assertions",
- "schemars",
  "sealed_test",
  "semver",
  "serde",
@@ -327,6 +327,31 @@ dependencies = [
  "tera",
  "toml",
  "which 6.0.1",
+]
+
+[[package]]
+name = "cog_schemars"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a57bf0b80c32bc57dc81249f176e94b6df0f06f564728c47cf57182be4739666"
+dependencies = [
+ "cog_schemars_derive",
+ "dyn-clone",
+ "ref-cast",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "cog_schemars_derive"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b2e9d210533cd400c0b7a67f48d258dbcda840a13b883c3a0c4bc0abeb3703d5"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "serde_derive_internals",
+ "syn 2.0.87",
 ]
 
 [[package]]
@@ -1266,27 +1291,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "schemars"
-version = "1.0.0-alpha.17"
-dependencies = [
- "dyn-clone",
- "ref-cast",
- "schemars_derive",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "schemars_derive"
-version = "1.0.0-alpha.17"
-dependencies = [
- "proc-macro2",
- "quote",
- "serde_derive_internals",
- "syn 2.0.87",
-]
-
-[[package]]
 name = "sealed_test"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1401,9 +1405,9 @@ dependencies = [
 
 [[package]]
 name = "speculoos"
-version = "0.11.0"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "65881c9270d6157f30a09233305da51bed97eef9192d0ea21e57b1c8f05c3620"
+checksum = "113dfd4fcb5579d1b72f56ed115400db93eda48763c2a5aba45e76e9d915ae64"
 dependencies = [
  "num",
 ]

@@ -1,6 +1,6 @@
 use cocogitto::settings::Settings;
+use cog_schemars::schema_for;
 use itertools::Itertools;
-use schemars::schema_for;
 use serde::Deserialize;
 use serde_json::Value;
 use std::collections::BTreeMap;
