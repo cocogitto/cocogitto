@@ -2,6 +2,57 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## [6.3.0](https://github.com/cocogitto/cocogitto/compare/6.2.0..6.3.0) - 2025-03-19
+#### Bug Fixes
+- **(commit)** fixed order of commit type options (#431) - ([53c6f5c](https://github.com/cocogitto/cocogitto/commit/53c6f5ce46fec865ccc5858d2c1cff2d2b6755aa)) - Sertonix
+- **(githooks)** direct exec with shebang or fallback to sh - ([7f3ab80](https://github.com/cocogitto/cocogitto/commit/7f3ab809fb102022953e316f466a21ae975af467)) - [@oknozor](https://github.com/oknozor)
+- fix ssh signing - ([30ef4c5](https://github.com/cocogitto/cocogitto/commit/30ef4c5c62cc1942aec3f5c8034dd9bc85151ded)) - [@oknozor](https://github.com/oknozor)
+- fixes broken link in project README - ([e8ea261](https://github.com/cocogitto/cocogitto/commit/e8ea2618353b77386bf2369facd25c0f915efb85)) - affantaufiqur
+- set correct url for Getting Started - ([f2e2ee8](https://github.com/cocogitto/cocogitto/commit/f2e2ee82ab8e11f092d164688c1061ce3aeea3e9)) - Kristof Mattei
+#### Continuous Integration
+- fix changelog ommission until next release - ([2522799](https://github.com/cocogitto/cocogitto/commit/252279957b92116849542cbba5d01f1a0751512c)) - [@oknozor](https://github.com/oknozor)
+- bump download artifact action - ([cff93d3](https://github.com/cocogitto/cocogitto/commit/cff93d365fdfec4faa52d9c9694e5cb5b4008ed7)) - [@oknozor](https://github.com/oknozor)
+- fix bump deprecated upload-artifact action - ([9f3fee5](https://github.com/cocogitto/cocogitto/commit/9f3fee5a97b423d59027972b361bef11bb74128f)) - [@oknozor](https://github.com/oknozor)
+#### Documentation
+- generated config reference - ([4c2c991](https://github.com/cocogitto/cocogitto/commit/4c2c991fe7d4cb886f993793aaafb07fcc5890bf)) - [@oknozor](https://github.com/oknozor)
+- fix capitalisation of NixOS - ([0683402](https://github.com/cocogitto/cocogitto/commit/06834021f50bb64b7507d5bdc595698e0073d5ff)) - txk2048
+#### Features
+- **(check)** Support commit scope checking - ([77f2acb](https://github.com/cocogitto/cocogitto/commit/77f2acb46efa55583ea2258099aa2bd6fd93b7f8)) - Thomas Böhler
+- **(commit)** support custom hooksPath in gitconfig (#448) - ([f003e78](https://github.com/cocogitto/cocogitto/commit/f003e7853fd212f264af2fc2d024e189b7fce301)) - [@oknozor](https://github.com/oknozor)
+- allow to partially override default commit type - ([7f59acc](https://github.com/cocogitto/cocogitto/commit/7f59acc161553b26a5429308027b5ca8c178c576)) - [@oknozor](https://github.com/oknozor)
+- add bump order config for packages (#443) - ([e888f52](https://github.com/cocogitto/cocogitto/commit/e888f524f1e8c4456d0e2c1a5b77a4950a7f8773)) - [@oknozor](https://github.com/oknozor)
+- ignore fixup commits - ([b246352](https://github.com/cocogitto/cocogitto/commit/b24635257988078e9a9a896498b4fd12506588d9)) - [@oknozor](https://github.com/oknozor)
+#### Miscellaneous Chores
+- **(deps)** update git2 to 0.20.0 - ([27f1a67](https://github.com/cocogitto/cocogitto/commit/27f1a670620e19f1399ca48fedcaa008ff375184)) - Rui Chen
+- **(deps)** update git2 to 0.19.0 - ([9a11383](https://github.com/cocogitto/cocogitto/commit/9a11383294d9046e4156ef943830b36a29b3da1e)) - Rui Chen
+- **(deps)** bump nanoid from 3.3.7 to 3.3.8 in /website (#432) - ([4100e6b](https://github.com/cocogitto/cocogitto/commit/4100e6b35a364f8ce439a439b36422d75d0b1c3a)) - dependabot[bot]
+- **(typo)** as been -> has been - ([cfe4fac](https://github.com/cocogitto/cocogitto/commit/cfe4fac22afd352f5cfafd22b94c1abecfddf77a)) - Jx
+- **(workflows)** no `fail-fast` - ([e40cc76](https://github.com/cocogitto/cocogitto/commit/e40cc76164edd45a7a178a82bbecfba73ddb6f3a)) - Rui Chen
+- **(workflows/CI)** add `aarch64-apple-darwin` target - ([022e70a](https://github.com/cocogitto/cocogitto/commit/022e70aaac5e359425e89004080b8214b89bb5a5)) - Rui Chen
+- **(workflows/Deploy)** add `aarch64-apple-darwin` target - ([028df7d](https://github.com/cocogitto/cocogitto/commit/028df7d705a49857084ae6f13d930f2ff220e98b)) - Rui Chen
+- omit chore and tests commits from changelog - ([a8655dc](https://github.com/cocogitto/cocogitto/commit/a8655dc7b557af0c180cdadd4b19458ba162fe78)) - [@oknozor](https://github.com/oknozor)
+- use schemars temp fork - ([f2a8663](https://github.com/cocogitto/cocogitto/commit/f2a86635b5729ac9e168a5b2e57ee818c2ade80f)) - [@oknozor](https://github.com/oknozor)
+- thanks clippy - ([6f6304f](https://github.com/cocogitto/cocogitto/commit/6f6304fbec27a772888bfcef2e38411007b47cff)) - [@oknozor](https://github.com/oknozor)
+- add msrv - ([f8cfa57](https://github.com/cocogitto/cocogitto/commit/f8cfa57a0d79303e8c582c03fe0d0f941ef044dc)) - Rui Chen
+- revert `rewritte` typo fix for ci - ([c26ff39](https://github.com/cocogitto/cocogitto/commit/c26ff3907d7f8dc32c1713282abcc54def4e36af)) - Rui Chen
+- fix typos - ([5ab49cb](https://github.com/cocogitto/cocogitto/commit/5ab49cb932e368978d0e5f225c8ab5c7e561b6b5)) - Rui Chen
+- s/rewritte/rewrite/g - ([37434f2](https://github.com/cocogitto/cocogitto/commit/37434f2e4ef72b2f7729a809b88cccb4984fd266)) - Rui Chen
+- s/interpretted/interpreted/g - ([074ab7e](https://github.com/cocogitto/cocogitto/commit/074ab7e48efb5edebe3414aea7de2c858252d860)) - Rui Chen
+- s/withing/within/g - ([a8c81a1](https://github.com/cocogitto/cocogitto/commit/a8c81a1dd5ada797bf1afd38298cf6307a8623f9)) - Rui Chen
+- s/shoud/should/g - ([a4c750a](https://github.com/cocogitto/cocogitto/commit/a4c750a25801b52951335bd869f21778b5b82d29)) - Rui Chen
+- s/uncommited/uncommitted/g - ([7903ffc](https://github.com/cocogitto/cocogitto/commit/7903ffc7d08287a8178c7077c8ed236d56379c55)) - Rui Chen
+- thanks clippy - ([37a0caf](https://github.com/cocogitto/cocogitto/commit/37a0cafb01433e597c39740d9ff0197bc67bb30b)) - [@oknozor](https://github.com/oknozor)
+- update tests - ([970f176](https://github.com/cocogitto/cocogitto/commit/970f176a5814cf164ea801898fc0ef3110c1c688)) - Rui Chen
+- thanks clippy - ([4002591](https://github.com/cocogitto/cocogitto/commit/400259139eec1f34b37191f2d2011ee984c08454)) - [@oknozor](https://github.com/oknozor)
+#### Performance Improvements
+- use lazy loaded commit types - ([9eb4fc5](https://github.com/cocogitto/cocogitto/commit/9eb4fc5ca85d00b9a9baae1ee1957769f2fce657)) - [@oknozor](https://github.com/oknozor)
+#### Tests
+- **(check)** Add commit scope checking tests - ([d2fbba1](https://github.com/cocogitto/cocogitto/commit/d2fbba1040b67d5eee7a3c7f6cef7e1ac60fe69a)) - Thomas Böhler
+- fix ssh key test - ([ed2b104](https://github.com/cocogitto/cocogitto/commit/ed2b104d91a4b41de3fc860b2f18dfdba4d2fefd)) - [@oknozor](https://github.com/oknozor)
+- fix failing macos test - ([9a75fc8](https://github.com/cocogitto/cocogitto/commit/9a75fc866ace33e24422611a5b6423057fb3f0f4)) - [@oknozor](https://github.com/oknozor)
+
+- - -
+
 ## [6.2.0](https://github.com/cocogitto/cocogitto/compare/6.1.0..6.2.0) - 2024-11-28
 #### Bug Fixes
 - fix ignore merge commit no longer honored - ([112bfcc](https://github.com/cocogitto/cocogitto/commit/112bfcc4a014b05dc43712cd4cb32846e5923251)) - [@oknozor](https://github.com/oknozor)

@@ -61,7 +61,7 @@ template = "null"
 
 ## `commit_types`
 - **Description :** Custom commit types configuration.
-- **Type :** `Map<String, CommitConfig | Null>`
+- **Type :** `Map<String, CommitConfig>`
 - **Default :**
 ```toml
 [commit_types]
@@ -317,31 +317,19 @@ path = "CHANGELOG.md"
 - **Description :** Configurations to create new conventional commit types or override behaviors of the existing ones.
 ### `bump_minor`
 - **Description :** Allow for this commit type to bump the minor version.
-- **Type :** `Boolean`
-- **Default :**
-```toml
-bump_minor = false
-```
+- **Type :** `Boolean | Null`
 
 ### `bump_patch`
 - **Description :** Allow for this commit type to bump the patch version.
-- **Type :** `Boolean`
-- **Default :**
-```toml
-bump_patch = false
-```
+- **Type :** `Boolean | Null`
 
-### `changelog_title` <Badge type="danger" text="required" />
+### `changelog_title`
 - **Description :** Define the title used in generated changelog for this commit type.
-- **Type :** `String`
+- **Type :** `String | Null`
 
 ### `omit_from_changelog`
 - **Description :** Do not display this commit type in changelogs.
-- **Type :** `Boolean`
-- **Default :**
-```toml
-omit_from_changelog = false
-```
+- **Type :** `Boolean | Null`
 
 
 ## GitHook

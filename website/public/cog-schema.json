@@ -1,6 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Cocogitto config",
+  "title": "Settings",
+  "description": "Configuration structure for the Cocogitto tool.\n\n This struct defines the main configuration options for Cocogitto, including settings\n for version generation, changelog handling, commit conventions, hooks, and monorepo support.\n\n  **Example :**\n ```toml\n # Basic settings\n from_latest_tag = true\n ignore_merge_commits = true\n\n # Changelog settings\n [changelog]\n path = \"CHANGELOG.md\"\n template = \"remote\"\n\n # Git hooks\n [git_hooks.pre-commit]\n script = \"./scripts/pre-commit.sh\"\n\n # Monorepo configuration\n [packages.my-package]\n path = \"packages/my-package\"\n ```",
   "type": "object",
   "properties": {
     "branch_whitelist": {
@@ -12,6 +13,7 @@
       }
     },
     "bump_profiles": {
+      "description": "Custom bump profiles configurations.",
       "type": "object",
       "additionalProperties": {
         "$ref": "#/$defs/BumpProfile"
@@ -19,6 +21,7 @@
       "default": {}
     },
     "changelog": {
+      "description": "Changelog configuration.",
       "$ref": "#/$defs/Changelog",
       "default": {
         "authors": [],
@@ -31,9 +34,10 @@
       }
     },
     "commit_types": {
+      "description": "Custom commit types configuration.",
       "type": "object",
       "additionalProperties": {
-        "$ref": "#/$defs/CommitConfigOrNull"
+        "$ref": "#/$defs/CommitConfig"
       },
       "default": {}
     },
@@ -63,11 +67,20 @@
       "default": true
     },
     "git_hooks": {
+      "description": "Git hooks configuration.",
       "type": "object",
       "additionalProperties": {
         "$ref": "#/$defs/GitHook"
       },
-      "default": {}
+      "default": {},
+      "propertyNames": {
+        "$ref": "#/$defs/GitHookType"
+      }
+    },
+    "ignore_fixup_commits": {
+      "description": "Silently ignore fixup commits",
+      "type": "boolean",
+      "default": true
     },
     "ignore_merge_commits": {
       "description": "A list of glob patterns to allow bumping only on matching branches.",
@@ -83,6 +96,7 @@
       "default": null
     },
     "packages": {
+      "description": "Monorepo packages configuration.",
       "type": "object",
       "additionalProperties": {
         "$ref": "#/$defs/MonoRepoPackage"
@@ -90,6 +104,7 @@
       "default": {}
     },
     "post_bump_hooks": {
+      "description": "Hooks that will be executed after a bump command in root dir.",
       "type": "array",
       "default": [],
       "items": {
@@ -97,6 +112,7 @@
       }
     },
     "post_package_bump_hooks": {
+      "description": "Hooks that will be executed after a bump command in package dir.",
       "type": "array",
       "default": [],
       "items": {
@@ -104,6 +120,7 @@
       }
     },
     "pre_bump_hooks": {
+      "description": "Hooks that will be executed before a bump command in root dir.",
       "type": "array",
       "default": [],
       "items": {
@@ -111,14 +128,26 @@
       }
     },
     "pre_package_bump_hooks": {
+      "description": "Hooks that will be executed before a bump command in package dir.",
       "type": "array",
       "default": [],
       "items": {
         "type": "string"
       }
     },
+    "scopes": {
+      "description": "List of valid commit scopes.",
+      "type": [
+        "array",
+        "null"
+      ],
+      "default": null,
+      "items": {
+        "type": "string"
+      }
+    },
     "skip_ci": {
-      "description": "A \"skip-ci\" string to add to the commits when using the `bump` or `commit commands.\n Default value is `[skip ci].",
+      "description": "A \"skip-ci\" string to add to the commits when using the `bump` or `commit` commands.\n Default value is `[skip ci].",
       "type": "string",
       "default": "[skip ci]"
     },
@@ -139,12 +168,16 @@
   "additionalProperties": false,
   "$defs": {
     "AuthorSetting": {
+      "title": "AuthorSetting",
+      "description": "Configuration for mapping Git signatures to usernames.\n\n This struct defines the mapping between a Git commit signature (email address)\n and the corresponding username to use in changelog generation.\n\n  **Example :**\n ```toml\n [[changelog.authors]]\n signature = \"user@example.com\"\n username = \"githubuser\"\n ```",
       "type": "object",
       "properties": {
         "signature": {
+          "description": "The Git commit signature (typically an email address)",
           "type": "string"
         },
         "username": {
+          "description": "The username to display in changelogs",
           "type": "string"
         }
       },
@@ -155,10 +188,12 @@
       ]
     },
     "BumpProfile": {
-      "title": "Bump profile",
+      "title": "BumpProfile",
+      "description": "A custom profile for configuring hooks that run before and after version bumps.\n\n Bump profiles allow defining different sets of hooks that can be selected\n when running bump commands.\n\n  **Example :**\n ```toml\n [bump_profiles.production]\n pre_bump_hooks = [\"./scripts/pre-release.sh\"]\n post_bump_hooks = [\"./scripts/post-release.sh\"]\n ```",
       "type": "object",
       "properties": {
         "post_bump_hooks": {
+          "description": "List of hooks to run after bumping the version",
           "type": "array",
           "default": [],
           "items": {
@@ -166,6 +201,7 @@
           }
         },
         "pre_bump_hooks": {
+          "description": "List of hooks to run before bumping the version",
           "type": "array",
           "default": [],
           "items": {
@@ -177,9 +213,11 @@
     },
     "Changelog": {
       "title": "Changelog",
+      "description": "Configuration for changelog generation.\n\n This struct defines how the changelog should be generated,\n including templates, remote repository information, and author settings.\n\n  **Example :**\n ```toml\n [changelog]\n template = \"remote\"\n path = \"CHANGELOG.md\"\n remote = \"github.com\"\n owner = \"cocogitto\"\n repository = \"cocogitto\"\n ```",
       "type": "object",
       "properties": {
         "authors": {
+          "description": "Author mappings for changelog generation",
           "type": "array",
           "default": [],
           "items": {
@@ -187,6 +225,7 @@
           }
         },
         "owner": {
+          "description": "Repository owner/organization name",
           "type": [
             "string",
             "null"
@@ -194,6 +233,7 @@
           "default": null
         },
         "package_template": {
+          "description": "Template to use for package changelogs in monorepos",
           "type": [
             "string",
             "null"
@@ -201,10 +241,12 @@
           "default": null
         },
         "path": {
+          "description": "Path where changelog file should be written",
           "type": "string",
           "default": "CHANGELOG.md"
         },
         "remote": {
+          "description": "Remote Git repository URL (e.g. \"github.com\")",
           "type": [
             "string",
             "null"
@@ -212,6 +254,7 @@
           "default": null
         },
         "repository": {
+          "description": "Repository name",
           "type": [
             "string",
             "null"
@@ -219,6 +262,7 @@
           "default": null
         },
         "template": {
+          "description": "Template to use for changelog generation. Can be \"remote\", \"full_hash\" or a custom template path",
           "type": [
             "string",
             "null"
@@ -229,46 +273,49 @@
       "additionalProperties": false
     },
     "CommitConfig": {
+      "title": "CommitConfig",
       "description": "Configurations to create new conventional commit types or override behaviors of the existing ones.",
       "type": "object",
       "properties": {
         "bump_minor": {
           "description": "Allow for this commit type to bump the minor version.",
-          "type": "boolean",
-          "default": false
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "default": null
         },
         "bump_patch": {
           "description": "Allow for this commit type to bump the patch version.",
-          "type": "boolean",
-          "default": false
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "default": null
         },
         "changelog_title": {
           "description": "Define the title used in generated changelog for this commit type.",
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "omit_from_changelog": {
           "description": "Do not display this commit type in changelogs.",
-          "type": "boolean",
-          "default": false
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "default": null
         }
-      },
-      "required": [
-        "changelog_title"
-      ]
-    },
-    "CommitConfigOrNull": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/CommitConfig"
-        },
-        {
-          "type": "object"
-        }
-      ]
+      }
     },
     "GitHook": {
+      "title": "GitHook",
+      "description": "A GitHook can be defined either as a script string that will be executed directly,\n or as a path to a script file that will be executed",
       "anyOf": [
         {
+          "description": "Direct script string that will be executed",
           "type": "object",
           "properties": {
             "script": {
@@ -281,6 +328,7 @@
           ]
         },
         {
+          "description": "Path to a script file that will be executed",
           "type": "object",
           "properties": {
             "path": {
@@ -294,11 +342,51 @@
         }
       ]
     },
+    "GitHookType": {
+      "title": "GitHookType",
+      "description": "Represents the different types of Git hooks that can be configured.\n\n This enum defines all the standard Git hook types that can be used\n in the configuration. Each variant corresponds to a specific Git hook\n that gets triggered at different points in Git's execution.\n\n  **Example :**\n ```toml\n [git_hooks.pre-commit]\n script = \"./scripts/pre-commit.sh\"\n ```",
+      "type": "string",
+      "enum": [
+        "applypatch-msg",
+        "pre-applypatch",
+        "post-applypatch",
+        "pre-commit",
+        "pre-merge-commit",
+        "pre-prepare-commit-msg",
+        "commit-msg",
+        "post-commit",
+        "pre-rebase",
+        "post-checkout",
+        "post-merge",
+        "pre-push",
+        "pre-auto-gc",
+        "post-rewrite",
+        "sendemail-validate",
+        "fsmonitor-watchman",
+        "p4-changelist",
+        "p4-prepare-changelist",
+        "p4-postchangelist",
+        "p4-pre-submit",
+        "post-index-change"
+      ]
+    },
     "MonoRepoPackage": {
+      "title": "MonoRepoPackage",
+      "description": "Configuration for a package in a monorepo setup.\n\n This struct defines how a single package within a monorepo should be handled,\n including its location, included/excluded files, changelog settings, and bump behavior.\n\n  **Example :**\n ```toml\n [packages.my-package]\n path = \"packages/my-package\"\n include = [\"packages/my-package/**\"]\n ignore = [\"**/test/**\"]\n changelog_path = \"CHANGELOG.md\"\n public_api = true\n bump_order = 1\n ```",
       "type": "object",
       "properties": {
+        "bump_order": {
+          "description": "Ordering of packages in the changelog, this affect in which order\n packages will be bumped.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint",
+          "default": null,
+          "minimum": 0
+        },
         "bump_profiles": {
-          "description": "Custom profile to override `pre_bump_hooks`, `post_bump_hooks`",
+          "description": "Custom profile to override `pre_bump_hooks`, `post_bump_hooks`.",
           "type": "object",
           "additionalProperties": {
             "$ref": "#/$defs/BumpProfile"
@@ -306,7 +394,7 @@
           "default": {}
         },
         "changelog_path": {
-          "description": "Where to write the changelog",
+          "description": "Where to write the changelog.",
           "type": [
             "string",
             "null"
@@ -330,12 +418,12 @@
           }
         },
         "path": {
-          "description": "The package path, relative to the repository root dir.\n Used to scan commits and set hook commands current directory",
+          "description": "The package path, relative to the repository root dir.\n Used to scan commits and set hook commands current directory.",
           "type": "string",
           "default": ""
         },
         "post_bump_hooks": {
-          "description": "Overrides `post_package_bump_hooks`",
+          "description": "Overrides `post_package_bump_hooks`.",
           "type": [
             "array",
             "null"
@@ -346,7 +434,7 @@
           }
         },
         "pre_bump_hooks": {
-          "description": "Overrides `pre_package_bump_hooks`",
+          "description": "Overrides `pre_package_bump_hooks`.",
           "type": [
             "array",
             "null"
@@ -357,7 +445,7 @@
           }
         },
         "public_api": {
-          "description": "Bumping package marked as public api will increment\n the global monorepo version when using `cog bump --auto`",
+          "description": "Bumping package marked as public api will increment\n the global monorepo version when using `cog bump --auto`.",
           "type": "boolean",
           "default": true
         }
