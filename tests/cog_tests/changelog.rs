@@ -37,8 +37,6 @@ fn get_changelog_range() -> Result<()> {
                 - fix openssl missing in CD - (1c0d2e9) - oknozor
                 #### Documentation
                 - tag, conventional commit and license badges to readme - (da6f63d) - oknozor
-                #### Miscellaneous Chores
-                - **(version)** 0.32.3 - (0939f4c) - *oknozor*
 
                 - - -
 
@@ -47,8 +45,6 @@ fn get_changelog_range() -> Result<()> {
                 - **(cd)** bump setup-rust-action to v1.3.3 - (5350b11) - *oknozor*
                 #### Documentation
                 - add corrections to README - (9a33516) - oknozor
-                #### Miscellaneous Chores
-                - **(version)** 0.32.2 - (ef4803b) - *oknozor*
 
                 - - -
 
@@ -60,9 +56,6 @@ fn get_changelog_range() -> Result<()> {
                 #### Features
                 - move check edit to dedicated subcommand and fix rebase - (fc74207) - oknozor
                 - remove config commit on init existing repo - (1028d0b) - oknozor
-                #### Miscellaneous Chores
-                - **(version)** 0.32.1 - (5bcfd6f) - *oknozor*
-                - update Cargo.toml - (72bd1e4) - oknozor
                 #### Refactoring
                 - change config name to cog.toml - (d4aa61b) - oknozor
 
