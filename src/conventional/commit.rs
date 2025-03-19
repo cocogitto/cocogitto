@@ -23,36 +23,57 @@ pub struct Commit {
 #[derive(Debug, Deserialize, Serialize, Clone, Eq, PartialEq)]
 pub struct CommitConfig {
     /// Define the title used in generated changelog for this commit type.
-    pub changelog_title: String,
+    pub changelog_title: Option<String>,
     /// Do not display this commit type in changelogs.
     #[serde(default)]
-    pub omit_from_changelog: bool,
+    pub omit_from_changelog: Option<bool>,
     /// Allow for this commit type to bump the minor version.
     #[serde(default)]
-    pub bump_minor: bool,
+    pub bump_minor: Option<bool>,
     /// Allow for this commit type to bump the patch version.
     #[serde(default)]
-    pub bump_patch: bool,
+    pub bump_patch: Option<bool>,
 }
 
 impl CommitConfig {
     pub(crate) fn new(changelog_title: &str) -> Self {
         CommitConfig {
-            changelog_title: changelog_title.to_string(),
-            omit_from_changelog: false,
-            bump_minor: false,
-            bump_patch: false,
+            changelog_title: Some(changelog_title.to_string()),
+            omit_from_changelog: None,
+            bump_minor: None,
+            bump_patch: None,
+        }
+    }
+
+    pub(crate) fn merge(self, other: CommitConfig) -> CommitConfig {
+        CommitConfig {
+            changelog_title: other.changelog_title.or(self.changelog_title),
+            omit_from_changelog: other.omit_from_changelog.or(self.omit_from_changelog),
+            bump_minor: other.bump_minor.or(self.bump_minor),
+            bump_patch: other.bump_patch.or(self.bump_patch),
         }
     }
 
     pub(crate) fn with_minor_bump(mut self) -> Self {
-        self.bump_minor = true;
+        self.bump_minor = Some(true);
         self
     }
 
     pub(crate) fn with_patch_bump(mut self) -> Self {
-        self.bump_patch = true;
+        self.bump_patch = Some(true);
         self
+    }
+
+    pub(crate) fn omit_from_changelog(&self) -> bool {
+        self.omit_from_changelog.unwrap_or_default()
+    }
+
+    pub(crate) fn bump_minor(&self) -> bool {
+        self.bump_minor.unwrap_or_default()
+    }
+
+    pub(crate) fn bump_patch(&self) -> bool {
+        self.bump_patch.unwrap_or_default()
     }
 }
 
@@ -133,7 +154,7 @@ impl Commit {
         SETTINGS
             .commit_types()
             .get(&self.conventional.commit_type)
-            .is_some_and(|config| config.omit_from_changelog)
+            .is_some_and(|config| config.omit_from_changelog())
     }
 
     pub(crate) fn is_major_bump(&self) -> bool {
@@ -146,7 +167,7 @@ impl Commit {
             return false;
         };
 
-        commit_config.bump_minor
+        commit_config.bump_minor()
     }
 
     pub(crate) fn is_patch_bump(&self) -> bool {
@@ -155,7 +176,7 @@ impl Commit {
             return false;
         };
 
-        commit_config.bump_patch
+        commit_config.bump_patch()
     }
 
     pub fn get_log(&self) -> String {

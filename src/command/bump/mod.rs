@@ -363,7 +363,9 @@ impl Release<'_> {
             .filter_map(|commit: &&Commit| {
                 let commit_config = COMMITS_METADATA.get(&commit.conventional.commit_type);
                 match commit_config {
-                    Some(commit_config) if commit_config.bump_minor || commit_config.bump_patch => {
+                    Some(commit_config)
+                        if commit_config.bump_minor() || commit_config.bump_patch() =>
+                    {
                         None
                     }
                     _ if commit.conventional.is_breaking_change => None,

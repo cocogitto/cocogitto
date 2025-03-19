@@ -34,7 +34,7 @@ impl Serialize for ChangelogCommit<'_> {
             .iter()
             .find(|(commit_type, _config)| *commit_type == &self.commit.conventional.commit_type)
             .map(|meta| meta.1.changelog_title.clone())
-            .unwrap_or_else(|| self.commit.conventional.commit_type.to_string());
+            .unwrap_or_else(|| Some(self.commit.conventional.commit_type.to_string()));
 
         commit.serialize_field("id", &self.commit.oid)?;
         commit.serialize_field("author", &self.author_username)?;
