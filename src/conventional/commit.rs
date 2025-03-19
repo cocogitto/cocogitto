@@ -19,7 +19,7 @@ pub struct Commit {
 }
 /// # CommitConfig
 /// Configurations to create new conventional commit types or override behaviors of the existing ones.
-#[cfg_attr(feature = "docgen", derive(schemars::JsonSchema))]
+#[cfg_attr(feature = "docgen", derive(cog_schemars::JsonSchema))]
 #[derive(Debug, Deserialize, Serialize, Clone, Eq, PartialEq)]
 pub struct CommitConfig {
     /// Define the title used in generated changelog for this commit type.

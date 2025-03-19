@@ -2,7 +2,7 @@ use crate::markdown::ToMarkDown;
 use crate::schema::root_schema;
 use clap::Parser;
 use cocogitto::settings::Settings;
-use schemars::schema_for;
+use cog_schemars::schema_for;
 use std::fs;
 use std::io::{BufWriter, Write};
 use std::path::PathBuf;

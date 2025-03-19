@@ -52,7 +52,7 @@ pub enum HookType {
 /// [packages.my-package]
 /// path = "packages/my-package"
 /// ```
-#[cfg_attr(feature = "docgen", derive(schemars::JsonSchema))]
+#[cfg_attr(feature = "docgen", derive(cog_schemars::JsonSchema))]
 #[derive(Debug, Deserialize, Serialize, Eq, PartialEq)]
 #[serde(deny_unknown_fields, default)]
 pub struct Settings {
@@ -99,7 +99,7 @@ pub struct Settings {
     #[serde(with = "ser::commit_types_serde")]
     #[cfg_attr(
         feature = "docgen",
-        schemars(with = "HashMap<String, Option<CommitConfig>>")
+        cog_schemars(with = "HashMap<String, Option<CommitConfig>>")
     )]
     pub commit_types: HashMap<String, Option<CommitConfig>>,
     /// Changelog configuration.
@@ -153,7 +153,7 @@ impl Default for Settings {
 /// [git_hooks.pre-commit]
 /// script = "./scripts/pre-commit.sh"
 /// ```
-#[cfg_attr(feature = "docgen", derive(schemars::JsonSchema))]
+#[cfg_attr(feature = "docgen", derive(cog_schemars::JsonSchema))]
 #[derive(Debug, Deserialize, Serialize, Eq, PartialEq, Hash, Copy, Clone)]
 #[serde(deny_unknown_fields, rename_all = "kebab-case", into = "&str")]
 pub enum GitHookType {
@@ -247,7 +247,7 @@ impl fmt::Display for GitHookType {
 /// # GitHook
 /// A GitHook can be defined either as a script string that will be executed directly,
 /// or as a path to a script file that will be executed
-#[cfg_attr(feature = "docgen", derive(schemars::JsonSchema))]
+#[cfg_attr(feature = "docgen", derive(cog_schemars::JsonSchema))]
 #[derive(Debug, Deserialize, Serialize, Eq, PartialEq)]
 #[serde(deny_unknown_fields, untagged)]
 pub enum GitHook {
@@ -273,7 +273,7 @@ pub enum GitHook {
 /// public_api = true
 /// bump_order = 1
 /// ```
-#[cfg_attr(feature = "docgen", derive(schemars::JsonSchema))]
+#[cfg_attr(feature = "docgen", derive(cog_schemars::JsonSchema))]
 #[derive(Debug, Deserialize, Serialize, Eq, PartialEq)]
 #[serde(deny_unknown_fields, default)]
 pub struct MonoRepoPackage {
@@ -360,7 +360,7 @@ impl MonoRepoPackage {
 /// owner = "cocogitto"
 /// repository = "cocogitto"
 /// ```
-#[cfg_attr(feature = "docgen", derive(schemars::JsonSchema))]
+#[cfg_attr(feature = "docgen", derive(cog_schemars::JsonSchema))]
 #[derive(Debug, Deserialize, Serialize, Clone, Eq, PartialEq)]
 #[serde(deny_unknown_fields, default)]
 pub struct Changelog {
@@ -406,7 +406,7 @@ impl Default for Changelog {
 /// signature = "user@example.com"
 /// username = "githubuser"
 /// ```
-#[cfg_attr(feature = "docgen", derive(schemars::JsonSchema))]
+#[cfg_attr(feature = "docgen", derive(cog_schemars::JsonSchema))]
 #[derive(Debug, Deserialize, Serialize, Clone, Eq, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct AuthorSetting {
@@ -441,7 +441,7 @@ pub fn changelog_path() -> &'static PathBuf {
 /// pre_bump_hooks = ["./scripts/pre-release.sh"]
 /// post_bump_hooks = ["./scripts/post-release.sh"]
 /// ```
-#[cfg_attr(feature = "docgen", derive(schemars::JsonSchema))]
+#[cfg_attr(feature = "docgen", derive(cog_schemars::JsonSchema))]
 #[derive(Debug, Deserialize, Serialize, Default, Eq, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct BumpProfile {
