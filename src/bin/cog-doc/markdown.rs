@@ -69,7 +69,7 @@ impl ToMarkDown for &mut Property {
                 None => {}
             },
             Some(reference) => {
-                let link = reference_link(&reference);
+                let link = reference_link(reference);
                 writeln!(out, "- **Type :** {}", link)?;
             }
         };
@@ -79,7 +79,7 @@ impl ToMarkDown for &mut Property {
         if let Some(definitions) = &mut self.properties {
             for (name, mut definition) in definitions {
                 definition.property_key = Some(name.clone());
-                if required.contains(&name) {
+                if required.contains(name) {
                     writeln!(
                         out,
                         r####"### `{}` <Badge type="danger" text="required" />"####,
@@ -147,15 +147,10 @@ fn json_to_toml(json: &JsonValue) -> Option<TomlValue> {
     match json {
         JsonValue::Null => Some(TomlValue::String("null".to_string())), // TOML has no null
         JsonValue::Bool(b) => Some(TomlValue::Boolean(*b)),
-        JsonValue::Number(n) => {
-            if let Some(i) = n.as_i64() {
-                Some(TomlValue::Integer(i))
-            } else if let Some(f) = n.as_f64() {
-                Some(TomlValue::Float(f))
-            } else {
-                None
-            }
-        }
+        JsonValue::Number(n) => n
+            .as_i64()
+            .map(TomlValue::Integer)
+            .or(n.as_f64().map(TomlValue::Float)),
         JsonValue::String(s) => Some(TomlValue::String(s.clone())),
         JsonValue::Array(arr) => {
             let toml_arr: Vec<TomlValue> = arr.iter().filter_map(json_to_toml).collect();
