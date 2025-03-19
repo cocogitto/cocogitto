@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 use crate::conventional::commit::CommitConfig;
 use crate::git::repository::Repository;
-use crate::{CommitsMetadata, CONFIG_PATH, SETTINGS};
+use crate::{CONFIG_PATH, SETTINGS};
 
 use crate::conventional::changelog::error::ChangelogError;
 use crate::conventional::changelog::template::{RemoteContext, Template};
@@ -19,7 +19,6 @@ use std::path::Path;
 pub(crate) type AuthorSettings = Vec<AuthorSetting>;
 
 mod error;
-mod ser;
 
 #[derive(Copy, Clone)]
 pub enum HookType {
@@ -96,12 +95,7 @@ pub struct Settings {
     /// Custom commit types configuration.
     // Note: the custom serde deserializer is needed to be able to serialize from an empty object `{}`
     // to disable default commit. This translates to `Option<CommitConfig>` in the schemar doc generator.
-    #[serde(with = "ser::commit_types_serde")]
-    #[cfg_attr(
-        feature = "docgen",
-        cog_schemars(with = "HashMap<String, Option<CommitConfig>>")
-    )]
-    pub commit_types: HashMap<String, Option<CommitConfig>>,
+    pub commit_types: HashMap<String, CommitConfig>,
     /// Changelog configuration.
     pub changelog: Changelog,
     /// Custom bump profiles configurations.
@@ -469,28 +463,23 @@ impl Settings {
             let _ = custom_types.insert(CommitType::from(key.as_str()), value.clone());
         });
 
-        let mut default_types: HashMap<CommitType, Option<CommitConfig>> =
+        let mut default_types: HashMap<CommitType, CommitConfig> =
             Settings::default_commit_config()
                 .into_iter()
-                .filter_map(|(key, config)| config.map(|config| (key, config)))
                 .map(|(key, config)| {
-                    if let Some(Some(custom_config)) = custom_types.remove(&key) {
+                    if let Some(custom_config) = custom_types.remove(&key) {
                         let config = config.merge(custom_config);
-                        (key, Some(config))
+                        (key, config)
                     } else {
-                        (key, Some(config))
+                        (key, config)
                     }
                 })
                 .collect();
 
         default_types.extend(custom_types);
-
         default_types
             .into_iter()
-            .filter_map(|(key, value)| match value {
-                Some(config) => Some((key, config)),
-                None {} => None,
-            })
+            .filter(|(_, config)| !config.none())
             .collect()
     }
 
@@ -498,38 +487,32 @@ impl Settings {
         self.scopes.clone()
     }
 
-    fn default_commit_config() -> CommitsMetadata {
+    fn default_commit_config() -> HashMap<CommitType, CommitConfig> {
         let mut default_types = HashMap::new();
         default_types.insert(
             CommitType::Feature,
-            Some(CommitConfig::new("Features").with_minor_bump()),
+            CommitConfig::new("Features").with_minor_bump(),
         );
         default_types.insert(
             CommitType::BugFix,
-            Some(CommitConfig::new("Bug Fixes").with_patch_bump()),
+            CommitConfig::new("Bug Fixes").with_patch_bump(),
         );
 
-        default_types.insert(
-            CommitType::Chore,
-            Some(CommitConfig::new("Miscellaneous Chores")),
-        );
-        default_types.insert(CommitType::Revert, Some(CommitConfig::new("Revert")));
+        default_types.insert(CommitType::Chore, CommitConfig::new("Miscellaneous Chores"));
+        default_types.insert(CommitType::Revert, CommitConfig::new("Revert"));
         default_types.insert(
             CommitType::Performances,
-            Some(CommitConfig::new("Performance Improvements")),
+            CommitConfig::new("Performance Improvements"),
         );
         default_types.insert(
             CommitType::Documentation,
-            Some(CommitConfig::new("Documentation")),
+            CommitConfig::new("Documentation"),
         );
-        default_types.insert(CommitType::Style, Some(CommitConfig::new("Style")));
-        default_types.insert(CommitType::Refactor, Some(CommitConfig::new("Refactoring")));
-        default_types.insert(CommitType::Test, Some(CommitConfig::new("Tests")));
-        default_types.insert(CommitType::Build, Some(CommitConfig::new("Build system")));
-        default_types.insert(
-            CommitType::Ci,
-            Some(CommitConfig::new("Continuous Integration")),
-        );
+        default_types.insert(CommitType::Style, CommitConfig::new("Style"));
+        default_types.insert(CommitType::Refactor, CommitConfig::new("Refactoring"));
+        default_types.insert(CommitType::Test, CommitConfig::new("Tests"));
+        default_types.insert(CommitType::Build, CommitConfig::new("Build system"));
+        default_types.insert(CommitType::Ci, CommitConfig::new("Continuous Integration"));
         default_types
     }
 
