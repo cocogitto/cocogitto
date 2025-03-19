@@ -468,7 +468,20 @@ impl Settings {
         commit_settings.iter().for_each(|(key, value)| {
             let _ = custom_types.insert(CommitType::from(key.as_str()), value.clone());
         });
-        let mut default_types = Settings::default_commit_config();
+
+        let mut default_types: HashMap<CommitType, Option<CommitConfig>> =
+            Settings::default_commit_config()
+                .into_iter()
+                .filter_map(|(key, config)| config.map(|config| (key, config)))
+                .map(|(key, config)| {
+                    if let Some(Some(custom_config)) = custom_types.remove(&key) {
+                        let config = config.merge(custom_config);
+                        (key, Some(config))
+                    } else {
+                        (key, Some(config))
+                    }
+                })
+                .collect();
 
         default_types.extend(custom_types);
 
