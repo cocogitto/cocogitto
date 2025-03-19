@@ -800,6 +800,34 @@ fn disable_commit_creation_with_pre_bump_hooks_standard_ok() -> Result<()> {
 }
 
 #[sealed_test]
+fn override_default_commit() -> Result<()> {
+    git_init()?;
+
+    git_add(
+        indoc! {
+          r#"[commit_types]
+          feat = { changelog_title = "🌟 Features" }
+          fix = { changelog_title = "🐛 Bug Fixes" }"#
+        },
+        "cog.toml",
+    )?;
+
+    git_commit("chore: init")?;
+    git_commit("feat: feature")?;
+    git_commit("fix: fix")?;
+
+    Command::cargo_bin("cog")?
+        .arg("bump")
+        .arg("--auto")
+        .assert()
+        .success();
+
+    assert_tag_exists("0.1.0")?;
+
+    Ok(())
+}
+
+#[sealed_test]
 fn disable_commit_creation_monorepo_ok() -> Result<()> {
     let mut settings = Settings {
         disable_bump_commit: true,
