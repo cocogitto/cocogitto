@@ -50,7 +50,7 @@ pub static SETTINGS: Lazy<Settings> = Lazy::new(|| {
 // `Commit` etc. Be sure that `CocoGitto::new` is called before using this  in order to bypass
 // unwrapping in case of error.
 pub static COMMITS_METADATA: Lazy<HashMap<CommitType, CommitConfig>> =
-    Lazy::new(|| SETTINGS.commit_types());
+    Lazy::new(|| SETTINGS.load_commit_types());
 
 #[derive(Debug)]
 pub struct CocoGitto {
