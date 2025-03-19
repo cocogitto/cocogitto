@@ -530,10 +530,7 @@ mod test {
         // Arrange
         git_init_no_gpg()?;
         let mut commit_types = HashMap::new();
-        commit_types.insert(
-            "ex".to_string(),
-            Some(CommitConfig::new("Ex").with_minor_bump()),
-        );
+        commit_types.insert("ex".to_string(), CommitConfig::new("Ex").with_minor_bump());
         let settings = Settings {
             commit_types,
             ..Default::default()
@@ -560,10 +557,7 @@ mod test {
         // Arrange
         git_init_no_gpg()?;
         let mut commit_types = HashMap::new();
-        commit_types.insert(
-            "ex".to_string(),
-            Some(CommitConfig::new("Ex").with_patch_bump()),
-        );
+        commit_types.insert("ex".to_string(), CommitConfig::new("Ex").with_patch_bump());
         let settings = Settings {
             commit_types,
             ..Default::default()
@@ -592,7 +586,7 @@ mod test {
         let mut commit_types = HashMap::new();
         commit_types.insert(
             "perf".to_string(),
-            Some(CommitConfig::new("Perf").with_minor_bump()),
+            CommitConfig::new("Perf").with_minor_bump(),
         );
         let settings = Settings {
             commit_types,

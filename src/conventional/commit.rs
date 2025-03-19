@@ -39,13 +39,17 @@ impl CommitConfig {
     pub(crate) fn new(changelog_title: &str) -> Self {
         CommitConfig {
             changelog_title: Some(changelog_title.to_string()),
-            omit_from_changelog: None,
-            bump_minor: None,
-            bump_patch: None,
+            omit_from_changelog: Some(false),
+            bump_minor: Some(false),
+            bump_patch: Some(false),
         }
     }
 
     pub(crate) fn merge(self, other: CommitConfig) -> CommitConfig {
+        if other.none() {
+            return other;
+        }
+
         CommitConfig {
             changelog_title: other.changelog_title.or(self.changelog_title),
             omit_from_changelog: other.omit_from_changelog.or(self.omit_from_changelog),
@@ -74,6 +78,13 @@ impl CommitConfig {
 
     pub(crate) fn bump_patch(&self) -> bool {
         self.bump_patch.unwrap_or_default()
+    }
+
+    pub(crate) fn none(&self) -> bool {
+        self.bump_patch.is_none()
+            && self.omit_from_changelog.is_none()
+            && self.bump_minor.is_none()
+            && self.changelog_title.is_none()
     }
 }
 
@@ -554,25 +565,25 @@ mod test {
 
         // Assert
         assert!(
-            !&config.omit_from_changelog,
+            !&config.omit_from_changelog(),
             "expected CommitConfig::omit_from_changelog to be falsy unless explicitly set"
         );
 
         // Act
-        config.omit_from_changelog = true;
+        config.omit_from_changelog = Some(true);
 
         // Assert
         assert!(
-            &config.omit_from_changelog,
+            &config.omit_from_changelog(),
             "CommitConfig::omit_from_changelog should be truthy after calling CommitConfig::omit"
         );
 
         // Act
-        config.omit_from_changelog = false;
+        config.omit_from_changelog = Some(false);
 
         // Assert
         assert!(
-            !&config.omit_from_changelog,
+            !&config.omit_from_changelog(),
             "CommitConfig::omit_from_changelog should be falsy after calling CommitConfig::include"
         );
     }
