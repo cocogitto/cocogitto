@@ -50,7 +50,7 @@ fn main() -> anyhow::Result<()> {
             let mut root = root_schema()?;
             let buffer = vec![];
             let mut writer = BufWriter::new(buffer);
-            writer.write(CONFIG_REFERENCE_HEADING.as_bytes())?;
+            writer.write_all(CONFIG_REFERENCE_HEADING.as_bytes())?;
             root.to_markdown(&mut writer)?;
             let content = writer.into_inner()?;
             fs::write(out, content)?;

@@ -68,10 +68,7 @@ impl fmt::Display for Type {
             Type::Multiple(types) => write!(
                 f,
                 "{}",
-                types
-                    .iter()
-                    .map(|t| capitalize_first_letter(&t))
-                    .join(" | ")
+                types.iter().map(|t| capitalize_first_letter(t)).join(" | ")
             )?,
         };
         Ok(())
@@ -105,9 +102,9 @@ pub enum AnyOf {
     },
 }
 
-impl Into<Type> for AnyOf {
-    fn into(self) -> Type {
-        match self {
+impl From<AnyOf> for Type {
+    fn from(value: AnyOf) -> Self {
+        match value {
             AnyOf::Type { r#type } => Type::Unique(r#type),
             AnyOf::Ref { reference } => Type::Unique(reference_stripped(&reference).to_string()),
         }
@@ -123,7 +120,7 @@ pub(crate) fn reference_link(reference: &str) -> String {
 pub(crate) fn reference_stripped(reference: &str) -> String {
     let reference = reference.strip_prefix("#/$defs/");
     let reference = reference.unwrap();
-    format!("{reference}")
+    reference.to_string()
 }
 
 fn capitalize_first_letter(s: &str) -> String {
