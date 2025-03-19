@@ -455,7 +455,7 @@ impl Settings {
         repository.try_into()
     }
 
-    pub fn commit_types(&self) -> HashMap<CommitType, CommitConfig> {
+    pub fn load_commit_types(&self) -> HashMap<CommitType, CommitConfig> {
         let commit_settings = self.commit_types.clone();
         let mut custom_types = HashMap::new();
 

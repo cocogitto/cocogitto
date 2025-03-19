@@ -2,7 +2,7 @@ use std::cmp::Ordering;
 use std::fmt::{self, Formatter};
 
 pub use crate::conventional::error::ConventionalCommitError;
-use crate::SETTINGS;
+use crate::{COMMITS_METADATA, SETTINGS};
 use chrono::{DateTime, NaiveDateTime, Utc};
 use colored::*;
 use conventional_commit_parser::commit::ConventionalCommit;
@@ -127,10 +127,7 @@ impl Commit {
                     }
                 }
 
-                match &SETTINGS
-                    .commit_types()
-                    .get(&commit.conventional.commit_type)
-                {
+                match &COMMITS_METADATA.get(&commit.conventional.commit_type) {
                     Some(_) => Ok(commit),
                     None => Err(Box::new(ConventionalCommitError::CommitTypeNotAllowed {
                         oid: commit.oid.to_string(),
@@ -162,8 +159,7 @@ impl Commit {
     }
 
     pub(crate) fn should_omit(&self) -> bool {
-        SETTINGS
-            .commit_types()
+        COMMITS_METADATA
             .get(&self.conventional.commit_type)
             .is_some_and(|config| config.omit_from_changelog())
     }
@@ -173,8 +169,7 @@ impl Commit {
     }
 
     pub(crate) fn is_minor_bump(&self) -> bool {
-        let commit_settings = SETTINGS.commit_types();
-        let Some(commit_config) = commit_settings.get(&self.conventional.commit_type) else {
+        let Some(commit_config) = COMMITS_METADATA.get(&self.conventional.commit_type) else {
             return false;
         };
 
@@ -182,8 +177,7 @@ impl Commit {
     }
 
     pub(crate) fn is_patch_bump(&self) -> bool {
-        let commit_settings = SETTINGS.commit_types();
-        let Some(commit_config) = commit_settings.get(&self.conventional.commit_type) else {
+        let Some(commit_config) = COMMITS_METADATA.get(&self.conventional.commit_type) else {
             return false;
         };
 
@@ -328,7 +322,7 @@ pub fn verify(
     let commit = conventional_commit_parser::parse(msg);
 
     match commit {
-        Ok(commit) => match &SETTINGS.commit_types().get(&commit.commit_type) {
+        Ok(commit) => match &COMMITS_METADATA.get(&commit.commit_type) {
             Some(_) => {
                 info!(
                     "{}",
