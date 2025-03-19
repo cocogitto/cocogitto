@@ -31,7 +31,7 @@ jobs:
 
       - name: SemVer release
         id: release
-        uses: cocogitto/cocogitto-action@v3.5
+        uses: cocogitto/cocogitto-action@v3
         with:
           check-latest-tag-only: true
           release: true

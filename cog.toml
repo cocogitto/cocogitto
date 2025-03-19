@@ -62,9 +62,8 @@ cargo clippy
 # `cog commit {commit_type}` commit command will be generated at runtime
 [commit_types]
 ex = { changelog_title = "This is the markdown title for `ex` commit type" }
-# TODO: uncomment after next cocogitto-action release
-# chore = { omit_from_changelog = true }
-# test = { omit_from_changelog = true }
+chore = { omit_from_changelog = true }
+test = { omit_from_changelog = true }
 
 [changelog]
 path = "CHANGELOG.md"
