@@ -42,7 +42,7 @@ git commit -m "feat: add awesome feature"
 
 ## Helpful error messages
 
-Using `cog commit` should prevent a wide range of error in your conventional commit message. But if you still made a mistake,
+Using `cog commit` should prevent a wide range of errors in your conventional commit message. But if you still made a mistake,
 `cog` will display an error explaining what went wrong:
 
 ```bash
