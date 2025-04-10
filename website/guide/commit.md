@@ -7,10 +7,9 @@ editLink: true
 `cog commit` allows you to easily create commits respecting the
 [conventional commits specification](https://www.conventionalcommits.org/en/v1.0.0/). It comes with a set of predefined
 arguments named after conventional commit types and
-[Angular commit convention](https://github.com/angular/angular/blob/22b96b9/CONTRIBUTING.md#-commit-message-guidelines)
-: (`feat`, `fix`, `style`, `build`, `refactor`, `ci`, `test`, `perf`, `chore`, `revert`, `docs`).
+[Angular commit convention](https://github.com/angular/angular/blob/22b96b9/CONTRIBUTING.md#-commit-message-guidelines): (`feat`, `fix`, `style`, `build`, `refactor`, `ci`, `test`, `perf`, `chore`, `revert`, `docs`).
 
-As described in the specification conventional commits messages are structured as follows:
+As described in the specification conventional commit messages are structured as follows:
 
 ```conventional_commit
 <type>[optional scope]: <description>
@@ -183,3 +182,4 @@ That said you can simply make Cocogitto ignore merge commits by setting the foll
 ```toml
 ignore_merge_commits = true
 ```
+
