@@ -47,7 +47,7 @@ Using `cog commit` should prevent a wide range of errors in your conventional co
 
 ```bash
 ❯ cog commit feat "add ability to parse arrays" "sco(pe"
-Error: A scope value cannot contains inner parenthesis
+Error: A scope value cannot contain inner parenthesis
 
 Caused by:
      --> 1:9
