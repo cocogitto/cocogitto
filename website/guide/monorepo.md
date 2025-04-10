@@ -26,7 +26,7 @@ When using `cog bump` in a mono-repository context, it behaves slightly differen
 
 - `cog bump --auto`: creates a tag per changed packages since their respective latest releases and creates a global
   mono-repository tag.
-- `cog bump` used why manual bump flags such as `--minor`, `--major`, `--patch` or `--version` will only
+- `cog bump` used with manual bump flags such as `--minor`, `--major`, `--patch` or `--version` will only
   create the monorepo version without bumping packages.
 
 - `cog bump --package=my_package --auto` creates a single package tag from the latest package tag
