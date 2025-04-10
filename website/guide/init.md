@@ -14,7 +14,7 @@ mkdir my_repo && cd my_repo
 cog init
 ```
 
-`cog init` works like `git init` except it create a template `cog.toml` config file,
+`cog init` works like `git init` except it creates a template `cog.toml` config file,
 and an initial commit with the following message: `chore: initial commit`.
 
 You can specify the target path of the repository you want to create:
@@ -37,5 +37,6 @@ cog init
 On branch master
 Changes to be committed:
   (use "git restore --staged <file>..." to unstage)
-	new file:   cog.toml
+ new file:   cog.toml
 ```
+
