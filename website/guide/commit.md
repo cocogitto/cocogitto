@@ -7,10 +7,9 @@ editLink: true
 `cog commit` allows you to easily create commits respecting the
 [conventional commits specification](https://www.conventionalcommits.org/en/v1.0.0/). It comes with a set of predefined
 arguments named after conventional commit types and
-[Angular commit convention](https://github.com/angular/angular/blob/22b96b9/CONTRIBUTING.md#-commit-message-guidelines)
-: (`feat`, `fix`, `style`, `build`, `refactor`, `ci`, `test`, `perf`, `chore`, `revert`, `docs`).
+[Angular commit convention](https://github.com/angular/angular/blob/22b96b9/CONTRIBUTING.md#-commit-message-guidelines): (`feat`, `fix`, `style`, `build`, `refactor`, `ci`, `test`, `perf`, `chore`, `revert`, `docs`).
 
-As described in the specification conventional commits messages are structured as follows:
+As described in the specification conventional commit messages are structured as follows:
 
 ```conventional_commit
 <type>[optional scope]: <description>
@@ -43,12 +42,12 @@ git commit -m "feat: add awesome feature"
 
 ## Helpful error messages
 
-Using `cog commit` should prevent a wide range of error in your conventional commit message. But if you still made a mistake,
+Using `cog commit` should prevent a wide range of errors in your conventional commit message. But if you still made a mistake,
 `cog` will display an error explaining what went wrong:
 
 ```bash
 ❯ cog commit feat "add ability to parse arrays" "sco(pe"
-Error: A scope value cannot contains inner parenthesis
+Error: A scope value cannot contain inner parenthesis
 
 Caused by:
      --> 1:9
@@ -183,3 +182,4 @@ That said you can simply make Cocogitto ignore merge commits by setting the foll
 ```toml
 ignore_merge_commits = true
 ```
+
