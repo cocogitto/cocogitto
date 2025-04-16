@@ -31,7 +31,7 @@ impl CocoGitto {
     }
 
     pub fn get_repo_tag_name(&self) -> Option<String> {
-        let repo_path = self.repository.get_repo_dir()?.iter().last()?;
+        let repo_path = self.repository.get_repo_dir()?.iter().next_back()?;
         let mut repo_tag_name = repo_path.to_str()?.to_string();
 
         if let Some(branch_shorthand) = self.repository.get_branch_shorthand() {
