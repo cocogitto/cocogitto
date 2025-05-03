@@ -17,7 +17,7 @@ impl Repository {
         config.get_string("user.signingKey").map_err(Into::into)
     }
 
-    pub(crate) fn signin_key_path(&self) -> Result<PathBuf, Git2Error> {
+    pub(crate) fn signing_key_path(&self) -> Result<PathBuf, Git2Error> {
         let config = self.0.config()?;
         config.get_path("user.signingKey").map_err(Into::into)
     }
@@ -281,6 +281,27 @@ mod test {
 
         // Assert
         assert_that!(shorthand).is_equal_to(Some("master".to_string()));
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn signing_key_path_resolves_tilde() -> Result<()> {
+        // Arrange
+        let repo = git_init_no_gpg()?;
+
+        // update path to key
+        run_cmd!(
+            git config --local user.signingkey ~/.ssh/key.pub;
+        )?;
+
+        let path_to_signing_key = repo.signing_key_path().ok();
+        let path_to_signing_key = path_to_signing_key.unwrap();
+        let path_to_signing_key = path_to_signing_key.to_string_lossy();
+
+        let actual_home = std::env::var("HOME").ok().unwrap();
+
+        assert_that!(path_to_signing_key).starts_with(actual_home);
+
         Ok(())
     }
 }

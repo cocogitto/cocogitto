@@ -66,7 +66,7 @@ impl Repository {
 
         let signature = if self.ssh_sign() {
             let program = self.ssh_program();
-            let key = self.signin_key_path().ok();
+            let key = self.signing_key_path().ok();
             ssh_sign_string(program, key, &commit_as_str)?
         } else if self.x509_sign() {
             let program = self.gpg_x509_program();
