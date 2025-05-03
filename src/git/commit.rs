@@ -74,7 +74,7 @@ impl Repository {
             x509_gitsign(program, user, &commit_as_str)?
         } else {
             let program = self.gpg_program();
-            let key = self.signin_key().ok();
+            let key = self.signing_key().ok();
             gpg_sign_string(program, key, &commit_as_str)?
         };
 

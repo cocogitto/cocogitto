@@ -12,7 +12,7 @@ use git2::{
 pub(crate) struct Repository(pub(crate) Git2Repository);
 
 impl Repository {
-    pub(crate) fn signin_key(&self) -> Result<String, Git2Error> {
+    pub(crate) fn signing_key(&self) -> Result<String, Git2Error> {
         let config = self.0.config()?;
         config.get_string("user.signingKey").map_err(Into::into)
     }
