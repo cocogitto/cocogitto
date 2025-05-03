@@ -1,5 +1,8 @@
-use std::fmt::{Debug, Formatter};
 use std::path::Path;
+use std::{
+    fmt::{Debug, Formatter},
+    path::PathBuf,
+};
 
 use crate::git::error::Git2Error;
 use git2::{
@@ -12,6 +15,11 @@ impl Repository {
     pub(crate) fn signin_key(&self) -> Result<String, Git2Error> {
         let config = self.0.config()?;
         config.get_string("user.signingKey").map_err(Into::into)
+    }
+
+    pub(crate) fn signin_key_path(&self) -> Result<PathBuf, Git2Error> {
+        let config = self.0.config()?;
+        config.get_path("user.signingKey").map_err(Into::into)
     }
 
     pub(crate) fn gpg_sign(&self) -> bool {
