@@ -295,12 +295,11 @@ mod test {
         )?;
 
         let path_to_signing_key = repo.signing_key_path().unwrap();
-        let path_to_signing_key = path_to_signing_key.to_string_lossy();
 
         let home_env_var = if cfg!(windows) { "USERPROFILE" } else { "HOME" };
         let actual_home = std::env::var(home_env_var).unwrap();
 
-        assert_that!(path_to_signing_key).starts_with(actual_home);
+        assert!(path_to_signing_key.starts_with(actual_home));
 
         Ok(())
     }
