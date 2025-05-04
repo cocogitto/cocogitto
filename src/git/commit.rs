@@ -64,10 +64,9 @@ impl Repository {
             .expect("Invalid UTF-8 commit message")
             .to_string();
 
-        let key = self.signin_key().ok();
-
         let signature = if self.ssh_sign() {
             let program = self.ssh_program();
+            let key = self.signing_key_path().ok();
             ssh_sign_string(program, key, &commit_as_str)?
         } else if self.x509_sign() {
             let program = self.gpg_x509_program();
@@ -75,6 +74,7 @@ impl Repository {
             x509_gitsign(program, user, &commit_as_str)?
         } else {
             let program = self.gpg_program();
+            let key = self.signing_key().ok();
             gpg_sign_string(program, key, &commit_as_str)?
         };
 
@@ -154,16 +154,17 @@ fn gpg_sign_string(
 
 fn ssh_sign_string(
     program: String,
-    key: Option<String>,
+    key: Option<PathBuf>,
     content: &str,
 ) -> Result<String, Git2Error> {
     let Some(key) = key else {
         return Err(Git2Error::SshError("No ssh key found".to_string()));
     };
 
-    if !PathBuf::from(&key).exists() {
+    if !key.exists() {
         return Err(Git2Error::SshError(format!(
-            "Signing key not found in {key}"
+            "Signing key not found in {}",
+            key.display()
         )));
     }
 
@@ -173,7 +174,15 @@ fn ssh_sign_string(
     let buffer_file = buffer.to_string_lossy();
 
     Command::new(program)
-        .args(["-Y", "sign", "-n", "git", "-f", &key, buffer_file.as_ref()])
+        .args([
+            "-Y",
+            "sign",
+            "-n",
+            "git",
+            "-f",
+            key.to_string_lossy().as_ref(),
+            buffer_file.as_ref(),
+        ])
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null())

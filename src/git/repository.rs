@@ -1,5 +1,8 @@
-use std::fmt::{Debug, Formatter};
 use std::path::Path;
+use std::{
+    fmt::{Debug, Formatter},
+    path::PathBuf,
+};
 
 use crate::git::error::Git2Error;
 use git2::{
@@ -9,9 +12,14 @@ use git2::{
 pub(crate) struct Repository(pub(crate) Git2Repository);
 
 impl Repository {
-    pub(crate) fn signin_key(&self) -> Result<String, Git2Error> {
+    pub(crate) fn signing_key(&self) -> Result<String, Git2Error> {
         let config = self.0.config()?;
         config.get_string("user.signingKey").map_err(Into::into)
+    }
+
+    pub(crate) fn signing_key_path(&self) -> Result<PathBuf, Git2Error> {
+        let config = self.0.config()?;
+        config.get_path("user.signingKey").map_err(Into::into)
     }
 
     pub(crate) fn gpg_sign(&self) -> bool {
@@ -273,6 +281,26 @@ mod test {
 
         // Assert
         assert_that!(shorthand).is_equal_to(Some("master".to_string()));
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn signing_key_path_resolves_tilde() -> Result<()> {
+        // Arrange
+        let repo = git_init_no_gpg()?;
+
+        // update path to key
+        run_cmd!(
+            git config --local user.signingkey ~/.ssh/key.pub;
+        )?;
+
+        let path_to_signing_key = repo.signing_key_path().unwrap();
+
+        let home_env_var = if cfg!(windows) { "USERPROFILE" } else { "HOME" };
+        let actual_home = std::env::var(home_env_var).unwrap();
+
+        assert!(path_to_signing_key.starts_with(actual_home));
+
         Ok(())
     }
 }
