@@ -1,6 +1,6 @@
+use crate::get_config_path;
 use crate::git::repository::Repository;
 use crate::settings::Settings;
-use crate::CONFIG_PATH;
 use anyhow::anyhow;
 use log::info;
 use std::path::Path;
@@ -34,15 +34,20 @@ pub fn init<S: AsRef<Path> + ?Sized>(path: &S) -> anyhow::Result<()> {
     };
 
     let settings = Settings::default();
-    let settings_path = path.join(CONFIG_PATH);
+    let settings_path = path.join(get_config_path());
     if settings_path.exists() {
-        eprint!("Found {} in {:?}, Nothing to do", CONFIG_PATH, &path);
+        eprint!("Found {} in {:?}, Nothing to do", get_config_path(), &path);
         exit(1);
     } else {
         std::fs::write(
             &settings_path,
-            toml::to_string(&settings)
-                .map_err(|err| anyhow!("failed to serialize {}\n\ncause: {}", CONFIG_PATH, err))?,
+            toml::to_string(&settings).map_err(|err| {
+                anyhow!(
+                    "failed to serialize {}\n\ncause: {}",
+                    get_config_path(),
+                    err
+                )
+            })?,
         )
         .map_err(|err| {
             anyhow!(

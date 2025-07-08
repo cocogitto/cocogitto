@@ -8,9 +8,9 @@ use speculoos::assert_that;
 use speculoos::iter::ContainingIntoIterAssertions;
 use speculoos::option::OptionAssertions;
 
+use cocogitto::get_config_path;
 use cocogitto::git::tag::Tag;
 use cocogitto::settings::{MonoRepoPackage, Settings};
-use cocogitto::CONFIG_PATH;
 
 pub fn init_monorepo(settings: &mut Settings) -> Result<()> {
     let mut packages = HashMap::new();
@@ -148,6 +148,6 @@ pub fn git_log_head_sha() -> Result<String> {
 
 /// Create an empty `cog.toml` config file in the current directory
 pub fn create_empty_config() -> Result<()> {
-    std::fs::File::create(CONFIG_PATH)?;
+    std::fs::File::create(get_config_path())?;
     Ok(())
 }
