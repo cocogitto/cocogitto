@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::str::FromStr;
 
-use cocogitto::CONFIG_PATH;
+use cocogitto::DEFAULT_CONFIG_PATH;
 
 use crate::helpers::*;
 
@@ -44,7 +44,7 @@ fn init_existing_repo() -> Result<()> {
 fn fail_if_config_exist() -> Result<()> {
     // Arrange
     git_init_and_set_current_path("test_repo_existing")?;
-    std::fs::write(PathBuf::from_str(CONFIG_PATH)?, "[hooks]")?;
+    std::fs::write(PathBuf::from_str(DEFAULT_CONFIG_PATH)?, "[hooks]")?;
     git_commit("chore: test commit")?;
 
     // Act

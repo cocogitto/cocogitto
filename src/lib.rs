@@ -3,6 +3,7 @@ use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
+use std::sync::OnceLock;
 
 use anyhow::Result;
 
@@ -31,7 +32,22 @@ pub mod hook;
 pub mod log;
 pub mod settings;
 
-pub const CONFIG_PATH: &str = "cog.toml";
+pub const DEFAULT_CONFIG_PATH: &str = "cog.toml";
+static CONFIG_PATH: OnceLock<String> = OnceLock::new();
+
+pub fn get_config_path() -> &'static String {
+    if cfg!(test) || std::env::var("RUSTY_FORK_OCCURS").is_ok() {
+        CONFIG_PATH.get_or_init(|| DEFAULT_CONFIG_PATH.to_owned())
+    } else {
+        CONFIG_PATH.get().expect("config path to be set")
+    }
+}
+
+pub fn set_config_path(path: String) {
+    CONFIG_PATH
+        .set(path)
+        .expect("config path should not be set");
+}
 
 pub static SETTINGS: Lazy<Settings> = Lazy::new(|| {
     if let Ok(repo) = Repository::open(".") {

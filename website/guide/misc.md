@@ -120,3 +120,15 @@ Finally, if you need the command to print a version no matter the state of your 
 ❯ cog get-version --fallback 0.1.0
 0.1.0
 ```
+
+## Change path to config file
+
+By default, cocogitto uses the `cog.toml` file in a repo. Alternatively you can use `--config` to specify a path to the
+config file it should use.
+This allows you to move your config file wherever you want and specify an absolute path to it.
+
+For example to create a wrapper using Nix:
+
+```sh
+cocogitto --config /nix/store/...-cocogitto.toml $@
+```

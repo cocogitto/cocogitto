@@ -11,7 +11,7 @@ use cocogitto::conventional::version::IncrementCommand;
 
 use cocogitto::log::filter::{CommitFilter, CommitFilters};
 use cocogitto::log::output::Output;
-use cocogitto::{CocoGitto, CommitHook, SETTINGS};
+use cocogitto::{set_config_path, CocoGitto, CommitHook, DEFAULT_CONFIG_PATH, SETTINGS};
 
 use crate::commit::prepare_edit_message;
 use anyhow::{bail, Context, Result};
@@ -129,6 +129,11 @@ struct Cli {
     /// Silence all output, no matter the value of verbosity
     #[arg(long, short = 'q')]
     quiet: bool,
+
+    // NOTE: just here to show up in help, not used directly
+    /// Path to config file
+    #[arg(long = "config", default_value = DEFAULT_CONFIG_PATH)]
+    config: Option<String>,
 
     #[command(subcommand)]
     command: Command,
@@ -386,7 +391,28 @@ struct CommitArgs {
     update_files: bool,
 }
 
+/// Loads "--config" argument before loading the full CLI as other CLI commands
+/// require the config file (to load possible values)
+fn load_config_path() -> String {
+    let config_parser = clap::Command::new("bootstrap")
+        .disable_help_flag(true)
+        .ignore_errors(true)
+        .allow_external_subcommands(true)
+        .arg(clap::Arg::new("config").long("config").required(false));
+    let matches = config_parser.get_matches();
+
+    let config_path = matches
+        .get_one::<String>("config")
+        .map(|s| s.to_owned())
+        .unwrap_or_else(|| DEFAULT_CONFIG_PATH.to_owned());
+
+    config_path
+}
+
 fn main() -> Result<()> {
+    let config_path = load_config_path();
+    set_config_path(config_path);
+
     let cli = Cli::parse();
 
     init_logs(cli.verbose, cli.quiet);
