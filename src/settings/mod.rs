@@ -234,7 +234,7 @@ impl From<GitHookType> for &str {
 impl fmt::Display for GitHookType {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let value: &str = (*self).into();
-        write!(f, "{}", value)
+        write!(f, "{value}")
     }
 }
 

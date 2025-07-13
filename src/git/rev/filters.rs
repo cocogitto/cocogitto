@@ -26,7 +26,7 @@ impl PackagePathFilter {
         let include = {
             let mut builder = GlobSetBuilder::new();
             builder.add(
-                GlobBuilder::new(format!("{}/**", package_path).as_str())
+                GlobBuilder::new(format!("{package_path}/**").as_str())
                     .literal_separator(true)
                     .build()
                     .expect("glob should be valid"),

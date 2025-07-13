@@ -11,8 +11,8 @@ use itertools::Itertools;
 
 pub fn commit_types() -> PossibleValuesParser {
     let types = COMMITS_METADATA
-        .iter()
-        .map(|(commit_type, _)| -> &str { commit_type.as_ref() })
+        .keys()
+        .map(|commit_type| -> &str { commit_type.as_ref() })
         .sorted();
 
     types.into()

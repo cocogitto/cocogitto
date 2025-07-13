@@ -88,7 +88,7 @@ impl CocoGitto {
             if opts.skip_ci || opts.skip_ci_override.is_some() {
                 let skip_ci_pattern = opts.skip_ci_override.unwrap_or(SETTINGS.skip_ci.clone());
                 self.repository.commit(
-                    &format!("chore(version): bump packages {}", skip_ci_pattern),
+                    &format!("chore(version): bump packages {skip_ci_pattern}"),
                     sign,
                     true,
                 )?;

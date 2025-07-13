@@ -13,8 +13,8 @@ pub fn generate_manpages(out_dir: &Path) -> IoResult<()> {
 
     for mut subcmd in cog.get_subcommands().filter(|c| !c.is_hide_set()).cloned() {
         let name = subcmd.get_name();
-        let full_name = format!("cog-{}", name);
-        let man_name = format!("{}.1", full_name);
+        let full_name = format!("cog-{name}");
+        let man_name = format!("{full_name}.1");
 
         subcmd = subcmd.name(&full_name);
 
