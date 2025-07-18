@@ -82,3 +82,8 @@ required-features = ["docgen"]
 [[test]]
 name = "all"
 path = "tests/common.rs"
+
+[package.metadata.binstall]
+pkg-url = "{ repo }/releases/download/{ version }/{ name }-{ version }-{ target }.tar.gz"
+bin-dir = "{ target }/{ bin }{ binary-ext }"
+pkg-fmt = "tgz"
