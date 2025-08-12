@@ -2,47 +2,53 @@ use crate::git::error::{Git2Error, TagError};
 use crate::git::oid::OidOf;
 use crate::git::repository::Repository;
 use crate::git::tag::Tag;
-use once_cell::sync::{Lazy, OnceCell};
 use std::collections::BTreeMap;
-use std::sync::{Arc, Mutex, MutexGuard};
+use std::sync::{Mutex, MutexGuard};
 
-static REPO_CACHE: Lazy<Arc<Mutex<BTreeMap<String, OidOf>>>> =
-    Lazy::new(|| Arc::new(Mutex::new(BTreeMap::new())));
+static REPO_CACHE: Mutex<BTreeMap<String, Vec<OidOf>>> = Mutex::new(BTreeMap::new());
 
-static FIRST_COMMIT: OnceCell<OidOf> = OnceCell::new();
-
-pub(crate) fn get_cache(repository: &Repository) -> MutexGuard<'_, BTreeMap<String, OidOf>> {
+pub(crate) fn get_cache(repo: &Repository) -> MutexGuard<'_, BTreeMap<String, Vec<OidOf>>> {
     let mut cache = REPO_CACHE.lock().unwrap();
     if cache.is_empty() {
-        let head = repository.get_head_commit().expect("HEAD");
-        let first = FIRST_COMMIT.get_or_init(|| {
-            OidOf::FirstCommit(repository.get_first_commit().expect("first commit"))
-        });
+        build_cache(repo, &mut cache).expect("failed to construct tag cache");
+    }
+    cache
+}
 
-        cache.insert(head.id().to_string(), OidOf::Head(head.id()));
-        cache.insert(
-            first.to_string(),
-            FIRST_COMMIT.get().expect("first commit").clone(),
-        );
-
-        let tag_iter = repository.0.tag_names(None).expect("tags");
-
-        let tag_iter = tag_iter
-            .into_iter()
-            .flatten()
-            .filter_map(|tag| repository.resolve_tag(tag).ok());
-
-        for tag in tag_iter {
-            if let Some(oid) = tag.oid.as_ref() {
-                let oid = oid.to_string();
-                cache.insert(oid, OidOf::Tag(tag.clone()));
-            }
-
-            cache.insert(tag.to_string(), OidOf::Tag(tag));
-        }
+fn build_cache(
+    repo: &Repository,
+    cache: &mut BTreeMap<String, Vec<OidOf>>,
+) -> Result<(), Git2Error> {
+    if !cache.is_empty() {
+        return Ok(());
     }
 
-    cache
+    let mut add_entry = |key: String, value: OidOf| {
+        cache.entry(key).or_default().push(value);
+    };
+
+    // HEAD
+    let head = repo.get_head_commit()?.id();
+    add_entry(head.to_string(), OidOf::Head(head));
+
+    // First Commit
+    let first = OidOf::FirstCommit(repo.get_first_commit()?);
+    add_entry(first.to_string(), first);
+
+    // Tags
+    let tags = repo.0.tag_names(None)?;
+    let tags = tags
+        .into_iter()
+        .flatten()
+        .filter_map(|tag| repo.resolve_tag(tag).ok());
+    for tag in tags {
+        if let Some(oid) = &tag.oid {
+            add_entry(oid.to_string(), OidOf::Tag(tag.clone()));
+        }
+        add_entry(tag.to_string(), OidOf::Tag(tag))
+    }
+
+    Ok(())
 }
 
 impl Repository {
