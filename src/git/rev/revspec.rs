@@ -61,22 +61,43 @@ impl Repository {
     }
 
     pub(super) fn resolve_oid_of(&self, from: &str) -> Result<OidOf, Git2Error> {
+        self.resolve_oid_of_package(from, None)
+    }
+
+    pub(super) fn resolve_oid_of_package(
+        &self,
+        from: &str,
+        package: Option<&str>,
+    ) -> Result<OidOf, Git2Error> {
         let cache = get_cache(self);
 
-        let oid = cache
+        // note: `get` cannot be used as `starts_with` is used for comparison
+        let oids = cache
             .iter()
             .find(|(k, _)| k.starts_with(from))
             .map(|(_, v)| v);
 
-        match oid {
-            None => {
-                let object = self
-                    .0
-                    .revparse_single(from)
-                    .map_err(|_| Git2Error::UnknownRevision(from.to_string()))?;
-                Ok(OidOf::Other(object.id()))
-            }
-            Some(oid) => Ok(oid.clone()),
+        let oid = oids
+            .and_then(|v| {
+                v.iter()
+                    .filter(|oid| {
+                        if let OidOf::Tag(tag) = oid {
+                            tag.package.as_deref() == package
+                        } else {
+                            true
+                        }
+                    })
+                    .next_back()
+            })
+            .cloned();
+        if let Some(oid) = oid {
+            Ok(oid)
+        } else {
+            let object = self
+                .0
+                .revparse_single(from)
+                .map_err(|_| Git2Error::UnknownRevision(from.to_string()))?;
+            Ok(OidOf::Other(object.id()))
         }
     }
 }

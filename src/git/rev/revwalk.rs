@@ -14,7 +14,7 @@ impl Repository {
         pattern: &str,
         package: &str,
     ) -> Result<CommitIter<'_>, Git2Error> {
-        let mut commit_range = self.revwalk(pattern)?;
+        let mut commit_range = self.revwalk_pkg(pattern, Some(package))?;
         let mut commits = vec![];
         let package = SETTINGS.packages.get(package).expect("package exists");
         let package_path_filter = PackagePathFilter::from_package(package);
@@ -114,6 +114,14 @@ impl Repository {
 
     /// Return a commit range from a [`RevspecPattern2`]
     pub fn revwalk(&self, spec: &str) -> Result<CommitIter<'_>, Git2Error> {
+        self.revwalk_pkg(spec, None)
+    }
+
+    pub fn revwalk_pkg(
+        &self,
+        spec: &str,
+        package: Option<&str>,
+    ) -> Result<CommitIter<'_>, Git2Error> {
         let spec = self.revspec_from_str(spec)?;
 
         if spec.from() == spec.to() {
@@ -131,13 +139,13 @@ impl Repository {
         for oid in revwalk {
             let oid = oid?;
             // TODO: can we avoid allocating strings here ?
-            let oid_of = self.resolve_oid_of(&oid.to_string())?;
+            let oid_of = self.resolve_oid_of_package(&oid.to_string(), package)?;
             let commit = self.0.find_commit(oid)?;
             commits.push((oid_of, commit));
         }
 
         // TODO: can we avoid allocating strings here ?
-        let first_oid = self.resolve_oid_of(&spec.from().to_string())?;
+        let first_oid = self.resolve_oid_of_package(&spec.from().to_string(), package)?;
         let include_start = match &first_oid {
             OidOf::Head(_) | OidOf::FirstCommit(_) => true,
             OidOf::Tag(_) | OidOf::Other(_) => false,
