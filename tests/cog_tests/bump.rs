@@ -1005,3 +1005,105 @@ fn changelog_on_first_commit_with_tag_on_first_commit() -> Result<()> {
 
     Ok(())
 }
+
+#[sealed_test]
+fn bump_from_latest_pre_release() -> Result<()> {
+    // Arrange
+    git_init()?;
+    git_commit("chore: init")?;
+    git_commit("feat: feature 1")?;
+    git_tag("1.0.0-alpha.0")?;
+    git_commit("feat: feature 2")?;
+
+    // Act
+    Command::cargo_bin("cog")?
+        .arg("bump")
+        .arg("--auto")
+        .assert()
+        .success();
+
+    // Assert
+    assert_tag_exists("1.0.0")?;
+
+    Ok(())
+}
+
+#[sealed_test]
+fn bump_prerelease_from_latest_pre_release() -> Result<()> {
+    // Arrange
+    git_init()?;
+    git_commit("chore: init")?;
+    git_commit("feat: feature 1")?;
+    git_tag("1.0.0-alpha.0")?;
+    git_commit("feat: feature 2")?;
+
+    // Act
+    Command::cargo_bin("cog")?
+        .arg("bump")
+        .arg("--auto")
+        .arg("--pre")
+        .arg("beta.0")
+        .assert()
+        .success();
+
+    // Assert
+    assert_tag_exists("1.0.0-beta.0")?;
+
+    Ok(())
+}
+
+#[sealed_test]
+fn bump_from_latest_pre_release_monorepo() -> Result<()> {
+    // Arrange
+    git_init()?;
+    git_add("packages.pkg.path = \"pkg\"", "cog.toml")?;
+    git_commit("chore: init")?;
+    git_commit("feat: feature 1")?;
+    git_tag("1.0.0-alpha.0")?;
+    git_tag("pkg-1.0.0-alpha.0")?;
+    std::fs::create_dir("pkg")?;
+    git_add("fn main() {}", "pkg/main.rs")?;
+    git_commit("feat: feature 2")?;
+
+    // Act
+    Command::cargo_bin("cog")?
+        .arg("bump")
+        .arg("--auto")
+        .assert()
+        .success();
+
+    // Assert
+    assert_tag_exists("1.0.0")?;
+    assert_tag_exists("pkg-1.0.0")?;
+
+    Ok(())
+}
+
+#[sealed_test]
+fn bump_prerelease_from_latest_pre_release_monorepo() -> Result<()> {
+    // Arrange
+    git_init()?;
+    git_add("packages.pkg.path = \"pkg\"", "cog.toml")?;
+    git_commit("chore: init")?;
+    git_commit("feat: feature 1")?;
+    git_tag("1.0.0-alpha.0")?;
+    git_tag("pkg-1.0.0-alpha.0")?;
+    std::fs::create_dir("pkg")?;
+    git_add("fn main() {}", "pkg/main.rs")?;
+    git_commit("feat: feature 2")?;
+
+    // Act
+    Command::cargo_bin("cog")?
+        .arg("bump")
+        .arg("--auto")
+        .arg("--pre")
+        .arg("beta.0")
+        .assert()
+        .success();
+
+    // Assert
+    assert_tag_exists("1.0.0-beta.0")?;
+    assert_tag_exists("pkg-1.0.0-beta.0")?;
+
+    Ok(())
+}
