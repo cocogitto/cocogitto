@@ -1,7 +1,7 @@
 use anyhow::Result;
 use assert_cmd::Command;
 use chrono::Utc;
-use cmd_lib::run_cmd;
+use cmd_lib::{run_cmd, run_fun};
 use indoc::{formatdoc, indoc};
 use pretty_assertions::assert_eq;
 use sealed_test::prelude::*;
@@ -666,8 +666,7 @@ fn should_get_global_changelog() -> anyhow::Result<()> {
 
     Ok(())
 }
-//TODO
-/*// see: https://github.com/cocogitto/cocogitto/issues/359
+
 #[sealed_test]
 fn changelog_from_commit_range_should_be_the_same_as_changelog_from_tag_range() -> Result<()> {
     // Arrange
@@ -677,13 +676,14 @@ fn changelog_from_commit_range_should_be_the_same_as_changelog_from_tag_range() 
     let sha_0_1 = git_commit("feat: feature 2")?;
     let _ = git_tag("0.1.0");
     git_commit("feat: feature 3")?;
-    let sha_0_2 = git_commit("feat: feature 4")?;
 
     Command::cargo_bin("cog")?
         .arg("bump")
         .arg("--auto")
         .assert()
         .success();
+
+    let sha_0_2 = run_fun!(git log --format=%H -n 1)?;
 
     // Act
     let changelog_from_commit_range = Command::cargo_bin("cog")?
@@ -709,4 +709,3 @@ fn changelog_from_commit_range_should_be_the_same_as_changelog_from_tag_range() 
 
     Ok(())
 }
-*/
