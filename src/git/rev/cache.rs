@@ -33,11 +33,6 @@ pub(crate) fn get_cache(repository: &Repository) -> MutexGuard<'_, BTreeMap<Stri
             .filter_map(|tag| repository.resolve_tag(tag).ok());
 
         for tag in tag_iter {
-            if let Some(target) = tag.target.as_ref() {
-                let target = target.to_string();
-                cache.insert(target, OidOf::Tag(tag.clone()));
-            }
-
             if let Some(oid) = tag.oid.as_ref() {
                 let oid = oid.to_string();
                 cache.insert(oid, OidOf::Tag(tag.clone()));
@@ -58,9 +53,9 @@ impl Repository {
             .map(|reference| reference.target().unwrap())
             .map(|commit_oid| {
                 if let Ok(annotated_tag) = self.0.find_tag(commit_oid) {
-                    Tag::from_str(tag, Some(commit_oid), Some(annotated_tag.target_id()))
+                    Tag::from_str(tag, Some(annotated_tag.target_id()))
                 } else {
-                    Tag::from_str(tag, Some(commit_oid), None)
+                    Tag::from_str(tag, Some(commit_oid))
                 }
             })?
     }

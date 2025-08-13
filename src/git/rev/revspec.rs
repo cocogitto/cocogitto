@@ -43,7 +43,7 @@ impl Repository {
             };
 
             Ok(RevSpecPattern2::Range { from, to })
-        } else if let Ok(tag) = Tag::from_str(s, None, None) {
+        } else if let Ok(tag) = Tag::from_str(s, None) {
             let previous = self.get_previous_tag(&tag)?.map(OidOf::Tag);
 
             let previous = match previous {
@@ -117,7 +117,6 @@ mod test {
             prefix: None,
             version: Version::new(1, 0, 0),
             oid: Some(Oid::from_str(&commit_oid)?),
-            target: None,
         }));
 
         Ok(())

@@ -159,8 +159,8 @@ pub struct Tag {
     pub package: Option<String>,
     pub prefix: Option<String>,
     pub version: Version,
+    /// Oid of the commit pointed to by the tag
     pub oid: Option<Oid>,
-    pub target: Option<Oid>,
 }
 
 impl Ord for Tag {
@@ -211,7 +211,6 @@ impl Tag {
             prefix: SETTINGS.tag_prefix.clone(),
             version,
             oid: None,
-            target: None,
         }
     }
 
@@ -219,7 +218,7 @@ impl Tag {
         self.oid.as_ref()
     }
 
-    pub fn from_str(raw: &str, oid: Option<Oid>, target: Option<Oid>) -> Result<Tag, TagError> {
+    pub fn from_str(raw: &str, oid: Option<Oid>) -> Result<Tag, TagError> {
         let prefix = SETTINGS.tag_prefix.as_ref();
 
         let package_tag: Option<Tag> = SETTINGS
@@ -242,7 +241,6 @@ impl Tag {
                         prefix: SETTINGS.tag_prefix.clone(),
                         version,
                         oid,
-                        target,
                     })
             })
             .next();
@@ -261,7 +259,6 @@ impl Tag {
                 prefix: prefix.cloned(),
                 version,
                 oid,
-                target,
             })
         }
     }
@@ -323,17 +320,17 @@ mod test {
 
     #[test]
     fn should_compare_tags() -> Result<()> {
-        let v1_0_0 = Tag::from_str("1.0.0", None, None)?;
-        let v1_1_0 = Tag::from_str("1.1.0", None, None)?;
-        let v2_1_0 = Tag::from_str("2.1.0", None, None)?;
-        let v0_1_0 = Tag::from_str("0.1.0", None, None)?;
-        let v0_2_0 = Tag::from_str("0.2.0", None, None)?;
-        let v0_0_1 = Tag::from_str("0.0.1", None, None)?;
+        let v1_0_0 = Tag::from_str("1.0.0", None)?;
+        let v1_1_0 = Tag::from_str("1.1.0", None)?;
+        let v2_1_0 = Tag::from_str("2.1.0", None)?;
+        let v0_1_0 = Tag::from_str("0.1.0", None)?;
+        let v0_2_0 = Tag::from_str("0.2.0", None)?;
+        let v0_0_1 = Tag::from_str("0.0.1", None)?;
         assert_that!([v1_0_0, v1_1_0, v2_1_0, v0_1_0, v0_2_0, v0_0_1,]
             .iter()
             .max())
         .is_some()
-        .is_equal_to(&Tag::from_str("2.1.0", None, None)?);
+        .is_equal_to(&Tag::from_str("2.1.0", None)?);
 
         Ok(())
     }
@@ -381,30 +378,29 @@ mod test {
         let settings = toml::to_string(&settings)?;
         fs::write("cog.toml", settings)?;
 
-        let v1_0_0 = Tag::from_str("v1.0.0", None, None)?;
-        let v1_1_0 = Tag::from_str("v1.1.0", None, None)?;
-        let v2_1_0 = Tag::from_str("v2.1.0", None, None)?;
-        let v0_1_0 = Tag::from_str("v0.1.0", None, None)?;
-        let v0_2_0 = Tag::from_str("v0.2.0", None, None)?;
-        let v0_0_1 = Tag::from_str("v0.0.1", None, None)?;
+        let v1_0_0 = Tag::from_str("v1.0.0", None)?;
+        let v1_1_0 = Tag::from_str("v1.1.0", None)?;
+        let v2_1_0 = Tag::from_str("v2.1.0", None)?;
+        let v0_1_0 = Tag::from_str("v0.1.0", None)?;
+        let v0_2_0 = Tag::from_str("v0.2.0", None)?;
+        let v0_0_1 = Tag::from_str("v0.0.1", None)?;
         assert_that!([v1_0_0, v1_1_0, v2_1_0, v0_1_0, v0_2_0, v0_0_1,]
             .iter()
             .max())
         .is_some()
-        .is_equal_to(&Tag::from_str("2.1.0", None, None)?);
+        .is_equal_to(&Tag::from_str("2.1.0", None)?);
 
         Ok(())
     }
 
     #[test]
     fn should_get_tag_from_str() -> Result<()> {
-        let tag = Tag::from_str("1.0.0", None, None);
+        let tag = Tag::from_str("1.0.0", None);
         assert_that!(tag).is_ok().is_equal_to(Tag {
             package: None,
             prefix: None,
             version: Version::new(1, 0, 0),
             oid: None,
-            target: None,
         });
 
         Ok(())
@@ -422,14 +418,13 @@ mod test {
         let settings = toml::to_string(&settings)?;
         fs::write("cog.toml", settings)?;
 
-        let tag = Tag::from_str("v1.0.0", None, None);
+        let tag = Tag::from_str("v1.0.0", None);
 
         assert_that!(tag).is_ok().is_equal_to(Tag {
             package: None,
             prefix: Some("v".to_string()),
             version: Version::new(1, 0, 0),
             oid: None,
-            target: None,
         });
 
         Ok(())
@@ -449,14 +444,13 @@ mod test {
         let settings = toml::to_string(&settings)?;
         fs::write("cog.toml", settings)?;
 
-        let tag = Tag::from_str("one-1.0.0", None, None);
+        let tag = Tag::from_str("one-1.0.0", None);
 
         assert_that!(tag).is_ok().is_equal_to(Tag {
             package: Some("one".to_string()),
             prefix: None,
             version: Version::new(1, 0, 0),
             oid: None,
-            target: None,
         });
 
         Ok(())
@@ -477,14 +471,13 @@ mod test {
         let settings = toml::to_string(&settings)?;
         fs::write("cog.toml", settings)?;
 
-        let tag = Tag::from_str("one-v1.0.0", None, None);
+        let tag = Tag::from_str("one-v1.0.0", None);
 
         assert_that!(tag).is_ok().is_equal_to(Tag {
             package: Some("one".to_string()),
             prefix: Some("v".to_string()),
             version: Version::new(1, 0, 0),
             oid: None,
-            target: None,
         });
 
         Ok(())
@@ -506,14 +499,13 @@ mod test {
         let settings = toml::to_string(&settings)?;
         fs::write("cog.toml", settings)?;
 
-        let tag = Tag::from_str("one#v1.0.0", None, None);
+        let tag = Tag::from_str("one#v1.0.0", None);
 
         assert_that!(tag).is_ok().is_equal_to(Tag {
             package: Some("one".to_string()),
             prefix: Some("v".to_string()),
             version: Version::new(1, 0, 0),
             oid: None,
-            target: None,
         });
 
         Ok(())

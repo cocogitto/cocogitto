@@ -325,7 +325,7 @@ mod test {
     fn major_bump() -> Result<()> {
         // Arrange
         let repository = git_init_no_gpg()?;
-        let base_version = Tag::from_str("1.0.0", None, None)?;
+        let base_version = Tag::from_str("1.0.0", None)?;
 
         // Act
         let tag = base_version.bump(IncrementCommand::Major, &repository)?;
@@ -339,7 +339,7 @@ mod test {
     fn minor_bump() -> Result<()> {
         // Arrange
         let repository = git_init_no_gpg()?;
-        let base_version = Tag::from_str("1.0.0", None, None)?;
+        let base_version = Tag::from_str("1.0.0", None)?;
 
         // Act
         let tag = base_version.bump(IncrementCommand::Minor, &repository)?;
@@ -353,7 +353,7 @@ mod test {
     fn patch_bump() -> Result<()> {
         // Arrange
         let repository = git_init_no_gpg()?;
-        let base_version = Tag::from_str("1.0.0", None, None)?;
+        let base_version = Tag::from_str("1.0.0", None)?;
 
         // Act
         let tag = base_version.bump(IncrementCommand::Patch, &repository)?;
@@ -367,7 +367,7 @@ mod test {
     fn no_bump() -> Result<()> {
         // Arrange
         let repository = git_init_no_gpg()?;
-        let base_version = Tag::from_str("1.0.0", None, None)?;
+        let base_version = Tag::from_str("1.0.0", None)?;
 
         // Act
         let tag = base_version.bump(IncrementCommand::NoBump, &repository)?;
@@ -381,7 +381,7 @@ mod test {
     fn should_get_next_auto_version_patch() -> Result<()> {
         // Arrange
         let patch = Commit::commit_fixture(CommitType::BugFix, false);
-        let base_version = Tag::from_str("1.0.0", None, None)?;
+        let base_version = Tag::from_str("1.0.0", None)?;
 
         // Act
         let increment = base_version.version_increment_from_commit_history(&[patch]);
@@ -407,7 +407,7 @@ mod test {
         let build = Commit::commit_fixture(CommitType::Build, false);
         let ci = Commit::commit_fixture(CommitType::Ci, false);
 
-        let base_version = Tag::from_str("1.0.0", None, None)?;
+        let base_version = Tag::from_str("1.0.0", None)?;
 
         // Act
         let increment = base_version.version_increment_from_commit_history(&[
@@ -434,7 +434,7 @@ mod test {
     fn increment_minor_version_should_set_patch_to_zero() -> Result<()> {
         // Arrange
         let repository = git_init_no_gpg()?;
-        let version = Tag::from_str("1.1.1", None, None)?;
+        let version = Tag::from_str("1.1.1", None)?;
 
         // Act
         let tag = version.bump(IncrementCommand::Minor, &repository)?;
@@ -449,7 +449,7 @@ mod test {
     fn increment_major_version_should_set_minor_and_patch_to_zero() -> Result<()> {
         // Arrange
         let repository = git_init_no_gpg()?;
-        let version = Tag::from_str("1.1.1", None, None)?;
+        let version = Tag::from_str("1.1.1", None)?;
 
         // Act
         let tag = version.bump(IncrementCommand::Major, &repository)?;
@@ -464,7 +464,7 @@ mod test {
     fn increment_should_strip_metadata() -> Result<()> {
         // Arrange
         let repository = git_init_no_gpg()?;
-        let version = Tag::from_str("1.1.1-pre+10.1", None, None)?;
+        let version = Tag::from_str("1.1.1-pre+10.1", None)?;
 
         // Act
         let tag = version.bump(IncrementCommand::Patch, &repository)?;
@@ -480,7 +480,7 @@ mod test {
         // Arrange
         let feature = Commit::commit_fixture(CommitType::Feature, false);
         let breaking_change = Commit::commit_fixture(CommitType::Feature, true);
-        let base_version = Tag::from_str("1.0.0", None, None)?;
+        let base_version = Tag::from_str("1.0.0", None)?;
 
         // Act
         let version =
@@ -497,7 +497,7 @@ mod test {
         // Arrange
         let feature = Commit::commit_fixture(CommitType::Feature, false);
         let breaking_change = Commit::commit_fixture(CommitType::Feature, true);
-        let base_version = Tag::from_str("0.1.0", None, None)?;
+        let base_version = Tag::from_str("0.1.0", None)?;
 
         // Act
         let version =
@@ -514,7 +514,7 @@ mod test {
         // Arrange
         let patch = Commit::commit_fixture(CommitType::BugFix, false);
         let feature = Commit::commit_fixture(CommitType::Feature, false);
-        let base_version = Tag::from_str("0.1.0", None, None)?;
+        let base_version = Tag::from_str("0.1.0", None)?;
 
         // Act
         let version = base_version.version_increment_from_commit_history(&[patch, feature]);
@@ -541,7 +541,7 @@ mod test {
 
         let patch = Commit::commit_fixture(CommitType::BugFix, false);
         let feature = Commit::commit_fixture(CommitType::Custom("ex".to_string()), false);
-        let base_version = Tag::from_str("0.1.0", None, None)?;
+        let base_version = Tag::from_str("0.1.0", None)?;
 
         // Act
         let version = base_version.version_increment_from_commit_history(&[patch, feature]);
@@ -568,7 +568,7 @@ mod test {
 
         let patch = Commit::commit_fixture(CommitType::Chore, false);
         let feature = Commit::commit_fixture(CommitType::Custom("ex".to_string()), false);
-        let base_version = Tag::from_str("0.1.0", None, None)?;
+        let base_version = Tag::from_str("0.1.0", None)?;
 
         // Act
         let version = base_version.version_increment_from_commit_history(&[patch, feature]);
@@ -598,7 +598,7 @@ mod test {
 
         let patch = Commit::commit_fixture(CommitType::Chore, false);
         let feature = Commit::commit_fixture(CommitType::Performances, false);
-        let base_version = Tag::from_str("0.1.0", None, None)?;
+        let base_version = Tag::from_str("0.1.0", None)?;
 
         // Act
         let version = base_version.version_increment_from_commit_history(&[patch, feature]);
@@ -614,7 +614,7 @@ mod test {
         // Arrange
         let chore = Commit::commit_fixture(CommitType::Chore, false);
         let docs = Commit::commit_fixture(CommitType::Documentation, false);
-        let base_version = Tag::from_str("0.1.0", None, None)?;
+        let base_version = Tag::from_str("0.1.0", None)?;
 
         // Act
         let version = base_version.version_increment_from_commit_history(&[chore, docs]);
@@ -637,7 +637,7 @@ mod test {
         )?;
         git_tag("1.0.0")?;
 
-        let base_version = Tag::from_str("1.0.0", None, None)?;
+        let base_version = Tag::from_str("1.0.0", None)?;
 
         // Act
         let tag = base_version.get_monorepo_global_version_from_commit_history(&repository);
@@ -659,7 +659,7 @@ mod test {
             git add .;
             git commit -m "feat: feature package one";
         )?;
-        let base_version = Tag::from_str("0.1.0", None, None)?;
+        let base_version = Tag::from_str("0.1.0", None)?;
 
         // Act
         let tag = base_version.auto_global_bump(&repository, Some(Increment::Minor))?;
@@ -785,8 +785,8 @@ mod test {
         )?;
 
         // Act
-        let tag = Tag::from_str("0.1.0", None, None)?
-            .auto_global_bump(&repository, Some(Increment::Minor))?;
+        let tag =
+            Tag::from_str("0.1.0", None)?.auto_global_bump(&repository, Some(Increment::Minor))?;
 
         // Assert
         assert_that!(tag.version).is_equal_to(Version::new(0, 2, 0));
