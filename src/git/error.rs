@@ -52,6 +52,13 @@ pub enum TagError {
         pattern: Option<String>,
     },
     NoTag,
+    NotReachableFromHead {
+        tag: String,
+    },
+    NoCommit {
+        tag: String,
+        err: git2::Error,
+    },
 }
 
 impl StdError for TagError {}
@@ -72,6 +79,12 @@ impl TagError {
 
     pub fn semver(tag: &str, err: semver::Error) -> Self {
         TagError::SemVerError {
+            tag: tag.to_string(),
+            err,
+        }
+    }
+    pub fn no_commit(tag: &str, err: git2::Error) -> Self {
+        TagError::NotFound {
             tag: tag.to_string(),
             err,
         }
@@ -184,6 +197,13 @@ impl Display for TagError {
                     None => writeln!(f, "no tag found")?,
                     Some(pattern) => writeln!(f, "no tag matching pattern {pattern}")?,
                 }
+                writeln!(f, "\tcause: {err}")
+            }
+            TagError::NotReachableFromHead { tag } => {
+                writeln!(f, "tag {tag} is not reachable from HEAD")
+            }
+            TagError::NoCommit { tag, err } => {
+                writeln!(f, "tag {tag} does not point to a commit")?;
                 writeln!(f, "\tcause: {err}")
             }
         }
