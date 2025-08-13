@@ -88,7 +88,7 @@ mod test {
     #[test]
     fn should_serialize_tag() {
         let oid = Oid::from_str("1234567890").unwrap();
-        let tag = Tag::from_str("1.0.0", Some(oid), None).unwrap();
+        let tag = Tag::from_str("1.0.0", Some(oid)).unwrap();
 
         let result = serde_json::to_string(&tag);
 

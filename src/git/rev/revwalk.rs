@@ -496,9 +496,9 @@ mod test {
         // Arrange
         let repo = Repository::open(COCOGITTO_REPOSITORY)?;
         let v1_0_0 = Oid::from_str("549070fa99986b059cbaa9457b6b6f065bbec46b")?;
-        let _v1_0_0 = OidOf::Tag(Tag::from_str("1.0.0", Some(v1_0_0), None)?);
+        let _v1_0_0 = OidOf::Tag(Tag::from_str("1.0.0", Some(v1_0_0))?);
         let v3_0_0 = Oid::from_str("c6508e243e2816e2d2f58828ee0c6721502958dd")?;
-        let v3_0_0 = OidOf::Tag(Tag::from_str("3.0.0", Some(v3_0_0), None)?);
+        let v3_0_0 = OidOf::Tag(Tag::from_str("3.0.0", Some(v3_0_0))?);
 
         // Act
         let range = repo.revwalk("1.0.0..3.0.0")?;
@@ -527,7 +527,7 @@ mod test {
         };
 
         let v1_0_0 = Oid::from_str("549070fa99986b059cbaa9457b6b6f065bbec46b")?;
-        let _v1_0_0 = OidOf::Tag(Tag::from_str("1.0.0", Some(v1_0_0), None)?);
+        let _v1_0_0 = OidOf::Tag(Tag::from_str("1.0.0", Some(v1_0_0))?);
 
         // Act
         let range = repo.revwalk("1.0.0..")?;
@@ -545,9 +545,9 @@ mod test {
         // Arrange
         let repo = Repository::open(COCOGITTO_REPOSITORY)?;
         let v2_1_1 = Oid::from_str("9dcf728d2eef6b5986633dd52ecbe9e416234898")?;
-        let _v2_1_1 = OidOf::Tag(Tag::from_str("2.1.1", Some(v2_1_1), None)?);
+        let _v2_1_1 = OidOf::Tag(Tag::from_str("2.1.1", Some(v2_1_1))?);
         let v3_0_0 = Oid::from_str("c6508e243e2816e2d2f58828ee0c6721502958dd")?;
-        let v3_0_0 = OidOf::Tag(Tag::from_str("3.0.0", Some(v3_0_0), None)?);
+        let v3_0_0 = OidOf::Tag(Tag::from_str("3.0.0", Some(v3_0_0))?);
 
         // Act
         let range = repo.revwalk("2.1.1..3.0.0")?;

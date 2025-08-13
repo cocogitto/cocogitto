@@ -37,7 +37,7 @@ mod test {
         let statuses = repo.get_statuses()?.0;
 
         assert_that!(statuses).has_length(1);
-        repo.stash_failed_version(Tag::from_str("1.0.0", None, None)?)?;
+        repo.stash_failed_version(Tag::from_str("1.0.0", None)?)?;
 
         let statuses = repo.get_statuses()?.0;
         assert_that!(statuses).is_empty();
