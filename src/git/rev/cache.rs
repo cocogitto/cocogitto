@@ -1,4 +1,4 @@
-use crate::git::error::TagError;
+use crate::git::error::{Git2Error, TagError};
 use crate::git::oid::OidOf;
 use crate::git::repository::Repository;
 use crate::git::tag::Tag;
@@ -46,18 +46,24 @@ pub(crate) fn get_cache(repository: &Repository) -> MutexGuard<'_, BTreeMap<Stri
 }
 
 impl Repository {
-    fn resolve_tag(&self, tag: &str) -> Result<Tag, TagError> {
-        self.0
+    fn resolve_tag(&self, tag: &str) -> Result<Tag, Git2Error> {
+        let oid = self
+            .0
             .resolve_reference_from_short_name(tag)
-            .map_err(|err| TagError::not_found(tag, err))
-            .map(|reference| reference.target().unwrap())
-            .map(|commit_oid| {
-                if let Ok(annotated_tag) = self.0.find_tag(commit_oid) {
-                    Tag::from_str(tag, Some(annotated_tag.target_id()))
-                } else {
-                    Tag::from_str(tag, Some(commit_oid))
-                }
-            })?
+            .map_err(|err| TagError::not_found(tag, err))?
+            .peel_to_commit()
+            .map_err(|err| TagError::no_commit(tag, err))?
+            .id();
+
+        // check if tag is reachable from HEAD
+        let head = self.get_head_commit_oid()?;
+        if head != oid && !self.0.graph_descendant_of(head, oid)? {
+            return Err(Git2Error::TagError(TagError::NotReachableFromHead {
+                tag: tag.to_string(),
+            }));
+        }
+
+        Tag::from_str(tag, Some(oid)).map_err(Git2Error::TagError)
     }
 }
 
@@ -123,6 +129,25 @@ mod test {
 
         // Act
         let tag = repo.resolve_tag("the_taaaag");
+
+        // Assert
+        assert_that!(tag).is_err();
+        Ok(())
+    }
+
+    #[sealed_test]
+    fn dont_read_future_tag() -> anyhow::Result<()> {
+        // Arrange
+        let repo = git_init_no_gpg()?;
+        run_cmd!(
+            git commit --allow-empty -m "first commit";
+            git commit --allow-empty -m "second commit";
+            git tag 1.0.0;
+            git reset HEAD^
+        )?;
+
+        // Act
+        let tag = repo.resolve_tag("1.0.0");
 
         // Assert
         assert_that!(tag).is_err();
