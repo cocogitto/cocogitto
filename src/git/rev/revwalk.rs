@@ -71,7 +71,7 @@ impl Repository {
             .map(|package| &package.path)
             .collect();
 
-        for (oid_of, commit) in commit_range.into_iter().rev() {
+        for (oid_of, commit) in commit_range.into_iter() {
             let parent = commit.parent(0);
 
             // First commit is always included in monorepo global tag
