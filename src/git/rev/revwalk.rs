@@ -13,7 +13,7 @@ impl Repository {
         &self,
         pattern: &str,
         package: &str,
-    ) -> Result<CommitIter, Git2Error> {
+    ) -> Result<CommitIter<'_>, Git2Error> {
         let mut commit_range = self.revwalk(pattern)?;
         let mut commits = vec![];
         let package = SETTINGS.packages.get(package).expect("package exists");
@@ -62,7 +62,7 @@ impl Repository {
     pub fn get_commit_range_for_monorepo_global(
         &self,
         pattern: &str,
-    ) -> Result<CommitIter, Git2Error> {
+    ) -> Result<CommitIter<'_>, Git2Error> {
         let mut commit_range = self.revwalk(pattern)?;
         let mut commits = vec![];
         let package_paths: Vec<_> = SETTINGS
@@ -113,7 +113,7 @@ impl Repository {
     }
 
     /// Return a commit range from a [`RevspecPattern2`]
-    pub fn revwalk(&self, spec: &str) -> Result<CommitIter, Git2Error> {
+    pub fn revwalk(&self, spec: &str) -> Result<CommitIter<'_>, Git2Error> {
         let spec = self.revspec_from_str(spec)?;
         let mut revwalk = self.0.revwalk()?;
         revwalk.push_range(&spec.to_string())?;

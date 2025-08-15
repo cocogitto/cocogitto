@@ -2,7 +2,7 @@ use crate::git::repository::Repository;
 use git2::{Diff, DiffOptions, Object};
 
 impl Repository {
-    pub(crate) fn get_diff(&self, include_untracked: bool) -> Option<Diff> {
+    pub(crate) fn get_diff(&self, include_untracked: bool) -> Option<Diff<'_>> {
         let mut options = DiffOptions::new();
         options.include_untracked(include_untracked);
 
@@ -27,7 +27,7 @@ impl Repository {
         }
     }
 
-    fn get_head(&self) -> Option<Object> {
+    fn get_head(&self) -> Option<Object<'_>> {
         self.tree_to_treeish(Some(&"HEAD".to_string()))
             .ok()
             .flatten()

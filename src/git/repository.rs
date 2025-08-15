@@ -101,7 +101,7 @@ impl Repository {
         self.get_head_commit().map(|commit| commit.id())
     }
 
-    pub(crate) fn get_head_commit(&self) -> Result<Git2Commit, Git2Error> {
+    pub(crate) fn get_head_commit(&self) -> Result<Git2Commit<'_>, Git2Error> {
         let head_ref = self.0.head();
         match head_ref {
             Ok(head) => head.peel_to_commit().map_err(Git2Error::PeelToCommitError),
@@ -136,7 +136,7 @@ impl Repository {
     pub(crate) fn tree_to_treeish(
         &self,
         arg: Option<&String>,
-    ) -> Result<Option<Object>, git2::Error> {
+    ) -> Result<Option<Object<'_>>, git2::Error> {
         let arg = match arg {
             Some(s) => s,
             None => return Ok(None),
