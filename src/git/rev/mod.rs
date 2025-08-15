@@ -19,7 +19,7 @@ impl CommitIter<'_> {
         self.0.first().expect("non empty commit range").0.clone()
     }
 
-    pub fn iter_commits(&self) -> impl Iterator<Item = &Commit> {
+    pub fn iter_commits(&self) -> impl Iterator<Item = &'_ Commit<'_>> {
         self.0.iter().map(|(_, commit)| commit)
     }
 }
