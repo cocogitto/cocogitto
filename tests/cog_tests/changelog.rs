@@ -3,6 +3,7 @@ use assert_cmd::Command;
 use chrono::Utc;
 use cmd_lib::{run_cmd, run_fun};
 use indoc::{formatdoc, indoc};
+use itertools::Itertools;
 use pretty_assertions::assert_eq;
 use sealed_test::prelude::*;
 use std::fs;
@@ -11,6 +12,15 @@ use std::path::PathBuf;
 use cocogitto::settings::Settings;
 
 use crate::helpers::*;
+
+macro_rules! assert_doc_eq {
+    ($changelog:expr, $doc:literal $($arg:tt)*) => {
+        assert_eq!(
+            $changelog.split('\n').map(|line| line.trim()).join("\n"),
+            formatdoc!($doc $($arg)*).split('\n').map(|line| line.trim()).join("\n")
+        )
+    };
+}
 
 #[test]
 fn get_changelog_range() -> Result<()> {
@@ -29,40 +39,38 @@ fn get_changelog_range() -> Result<()> {
     let changelog = String::from_utf8_lossy(changelog.as_slice());
     let today = Utc::now().date_naive().to_string();
 
-    assert_eq!(
+    assert_doc_eq!(
         changelog.as_ref(),
-        formatdoc!(
-            "## 0.32.3 - {today}
-                #### Bug Fixes
-                - fix openssl missing in CD - (1c0d2e9) - oknozor
-                #### Documentation
-                - tag, conventional commit and license badges to readme - (da6f63d) - oknozor
+        "## 0.32.3 - {today}
+        #### Bug Fixes
+        - fix openssl missing in CD - (1c0d2e9) - oknozor
+        #### Documentation
+        - tag, conventional commit and license badges to readme - (da6f63d) - oknozor
 
-                - - -
+        - - -
 
-                ## 0.32.2 - {today}
-                #### Bug Fixes
-                - **(cd)** bump setup-rust-action to v1.3.3 - (5350b11) - *oknozor*
-                #### Documentation
-                - add corrections to README - (9a33516) - oknozor
+        ## 0.32.2 - {today}
+        #### Bug Fixes
+        - **(cd)** bump setup-rust-action to v1.3.3 - (5350b11) - *oknozor*
+        #### Documentation
+        - add corrections to README - (9a33516) - oknozor
 
-                - - -
+        - - -
 
-                ## 0.32.1 - {today}
-                #### Bug Fixes
-                - **(cd)** fix ci cross build command bin args - (7f04a98) - *oknozor*
-                #### Documentation
-                - rewritte readme completely - (b223f7b) - oknozor
-                #### Features
-                - move check edit to dedicated subcommand and fix rebase - (fc74207) - oknozor
-                - remove config commit on init existing repo - (1028d0b) - oknozor
-                #### Refactoring
-                - change config name to cog.toml - (d4aa61b) - oknozor
+        ## 0.32.1 - {today}
+        #### Bug Fixes
+        - **(cd)** fix ci cross build command bin args - (7f04a98) - *oknozor*
+        #### Documentation
+        - rewritte readme completely - (b223f7b) - oknozor
+        #### Features
+        - move check edit to dedicated subcommand and fix rebase - (fc74207) - oknozor
+        - remove config commit on init existing repo - (1028d0b) - oknozor
+        #### Refactoring
+        - change config name to cog.toml - (d4aa61b) - oknozor
 
 
-                ",
-            today = today
-        )
+        ",
+        today = today
     );
     Ok(())
 }
@@ -86,23 +94,21 @@ fn get_changelog_from_untagged_repo() -> Result<()> {
     let changelog = &changelog.stdout;
     let changelog = String::from_utf8_lossy(changelog.as_slice());
 
-    assert_eq!(
+    assert_doc_eq!(
         changelog.as_ref(),
-        formatdoc!(
-            "## Unreleased ({init}..{commit_three})
-                    #### Bug Fixes
-                    - bug fix - ({commit_three}) - Tom
-                    #### Features
-                    - **(taef)** feature - ({commit_two}) - Tom
-                    #### Miscellaneous Chores
-                    - init - ({init}) - Tom
+        "## Unreleased ({init}..{commit_three})
+        #### Bug Fixes
+        - bug fix - ({commit_three}) - Tom
+        #### Features
+        - **(taef)** feature - ({commit_two}) - Tom
+        #### Miscellaneous Chores
+        - init - ({init}) - Tom
 
 
-                    ",
-            init = &init[0..7],
-            commit_two = &commit_two[0..7],
-            commit_three = &commit_three[0..7]
-        )
+        ",
+        init = &init[0..7],
+        commit_two = &commit_two[0..7],
+        commit_three = &commit_three[0..7]
     );
     Ok(())
 }
@@ -128,28 +134,26 @@ fn get_changelog_from_tagged_repo() -> Result<()> {
     let changelog = String::from_utf8_lossy(changelog.as_slice());
     let today = Utc::now().date_naive().to_string();
 
-    assert_eq!(
+    assert_doc_eq!(
         changelog.as_ref(),
-        formatdoc!(
-            "## Unreleased ({commit_two}..{commit_two})
-                    #### Bug Fixes
-                    - bug fix - ({commit_two}) - Tom
+        "## Unreleased ({commit_two}..{commit_two})
+        #### Bug Fixes
+        - bug fix - ({commit_two}) - Tom
 
-                    - - -
+        - - -
 
-                    ## 1.0.0 - {today}
-                    #### Features
-                    - **(taef)** feature - ({commit_one}) - Tom
-                    #### Miscellaneous Chores
-                    - init - ({init}) - Tom
+        ## 1.0.0 - {today}
+        #### Features
+        - **(taef)** feature - ({commit_one}) - Tom
+        #### Miscellaneous Chores
+        - init - ({init}) - Tom
 
 
-                    ",
-            init = &init[0..7],
-            commit_one = &commit_one[0..7],
-            commit_two = &commit_two[0..7],
-            today = today
-        )
+        ",
+        init = &init[0..7],
+        commit_one = &commit_one[0..7],
+        commit_two = &commit_two[0..7],
+        today = today
     );
     Ok(())
 }
@@ -178,23 +182,21 @@ fn get_changelog_at_tag() -> Result<()> {
     let changelog = String::from_utf8_lossy(changelog.as_slice());
     let today = Utc::now().date_naive();
 
-    assert_eq!(
+    assert_doc_eq!(
         changelog.as_ref(),
-        formatdoc!(
-            "## 1.0.0 - {today}
-                    #### Features
-                    - **(taef)** feature - ({commit_one}) - Tom
-                    - feature 2 - ({commit_two}) - Tom
-                    #### Miscellaneous Chores
-                    - init - ({init}) - Tom
+        "## 1.0.0 - {today}
+        #### Features
+        - **(taef)** feature - ({commit_one}) - Tom
+        - feature 2 - ({commit_two}) - Tom
+        #### Miscellaneous Chores
+        - init - ({init}) - Tom
 
 
-                    ",
-            today = today,
-            init = &init[0..7],
-            commit_one = &commit_one[0..7],
-            commit_two = &commit_two[0..7]
-        )
+        ",
+        today = today,
+        init = &init[0..7],
+        commit_one = &commit_one[0..7],
+        commit_two = &commit_two[0..7]
     );
     Ok(())
 }
@@ -228,28 +230,26 @@ fn get_changelog_with_tag_prefix() -> Result<()> {
     let changelog = String::from_utf8_lossy(changelog.as_slice());
     let today = Utc::now().date_naive();
 
-    assert_eq!(
+    assert_doc_eq!(
         changelog.as_ref(),
-        formatdoc!(
-            "## Unreleased ({commit_two}..{commit_two})
-                    #### Bug Fixes
-                    - bug fix 1 - ({commit_two}) - Tom
+        "## Unreleased ({commit_two}..{commit_two})
+        #### Bug Fixes
+        - bug fix 1 - ({commit_two}) - Tom
 
-                    - - -
+        - - -
 
-                    ## v1.0.0 - {today}
-                    #### Features
-                    - feature 1 - ({commit_one}) - Tom
-                    #### Miscellaneous Chores
-                    - init - ({init}) - Tom
+        ## v1.0.0 - {today}
+        #### Features
+        - feature 1 - ({commit_one}) - Tom
+        #### Miscellaneous Chores
+        - init - ({init}) - Tom
 
 
-                    ",
-            today = today,
-            init = &init[0..7],
-            commit_one = &commit_one[0..7],
-            commit_two = &commit_two[0..7]
-        )
+        ",
+        today = today,
+        init = &init[0..7],
+        commit_one = &commit_one[0..7],
+        commit_two = &commit_two[0..7]
     );
 
     Ok(())
@@ -289,24 +289,22 @@ fn get_changelog_at_tag_prefix() -> Result<()> {
     let changelog = String::from_utf8_lossy(&changelog.stdout);
     let today = Utc::now().date_naive();
 
-    assert_eq!(
+    assert_doc_eq!(
         changelog.as_ref(),
-        formatdoc!(
-            "## v2.0.0 - {today}
-                    #### Bug Fixes
-                    - bug fix 1 - ({commit_three}) - Tom
-                    #### Features
-                    - feature 1 - ({commit_two}) - Tom
-                    #### Miscellaneous Chores
-                    - **(version)** v2.0.0 - ({commit_four}) - Tom
+        "## v2.0.0 - {today}
+        #### Bug Fixes
+        - bug fix 1 - ({commit_three}) - Tom
+        #### Features
+        - feature 1 - ({commit_two}) - Tom
+        #### Miscellaneous Chores
+        - **(version)** v2.0.0 - ({commit_four}) - Tom
 
 
-                    ",
-            today = today,
-            commit_two = &commit_two[0..7],
-            commit_three = &commit_three[0..7],
-            commit_four = &commit_four[0..7]
-        )
+        ",
+        today = today,
+        commit_two = &commit_two[0..7],
+        commit_three = &commit_three[0..7],
+        commit_four = &commit_four[0..7]
     );
     Ok(())
 }
@@ -334,36 +332,34 @@ fn get_changelog_from_tag_to_tagged_head() -> Result<()> {
     let changelog = changelog.get_output();
     let changelog = String::from_utf8_lossy(&changelog.stdout);
     let today = Utc::now().date_naive();
-    assert_eq!(
+    assert_doc_eq!(
         changelog.as_ref(),
-        formatdoc!(
-            "## 2.0.0 - {today}
-                #### Bug Fixes
-                - bug fix 1 - ({commit_four}) - Tom
-                #### Features
-                - feature 2 - ({commit_three}) - Tom
-                #### Miscellaneous Chores
-                - **(version)** 2.0.0 - ({commit_five}) - Tom
+        "## 2.0.0 - {today}
+        #### Bug Fixes
+        - bug fix 1 - ({commit_four}) - Tom
+        #### Features
+        - feature 2 - ({commit_three}) - Tom
+        #### Miscellaneous Chores
+        - **(version)** 2.0.0 - ({commit_five}) - Tom
 
-                - - -
+        - - -
 
-                ## 1.0.0 - {today}
-                #### Features
-                - feature 1 - ({commit_two}) - Tom
-                - start - ({commit_one}) - Tom
-                #### Miscellaneous Chores
-                - init - ({init}) - Tom
+        ## 1.0.0 - {today}
+        #### Features
+        - feature 1 - ({commit_two}) - Tom
+        - start - ({commit_one}) - Tom
+        #### Miscellaneous Chores
+        - init - ({init}) - Tom
 
 
-                ",
-            today = today,
-            init = &init[0..7],
-            commit_one = &commit_one[0..7],
-            commit_two = &commit_two[0..7],
-            commit_three = &commit_three[0..7],
-            commit_four = &commit_four[0..7],
-            commit_five = &commit_five[0..7],
-        )
+        ",
+        today = today,
+        init = &init[0..7],
+        commit_one = &commit_one[0..7],
+        commit_two = &commit_two[0..7],
+        commit_three = &commit_three[0..7],
+        commit_four = &commit_four[0..7],
+        commit_five = &commit_five[0..7],
     );
 
     Ok(())
@@ -393,23 +389,21 @@ fn get_changelog_is_unaffected_by_disable_changelog() -> Result<()> {
     let changelog = String::from_utf8_lossy(&changelog.stdout);
     let today = Utc::now().date_naive();
 
-    assert_eq!(
+    assert_doc_eq!(
         changelog.as_ref(),
-        formatdoc!(
-            "## 1.0.0 - {today}
-                #### Features
-                - feature 1 - ({commit_two}) - Tom
-                - start - ({commit_one}) - Tom
-                #### Miscellaneous Chores
-                - init - ({init}) - Tom
+        "## 1.0.0 - {today}
+        #### Features
+        - feature 1 - ({commit_two}) - Tom
+        - start - ({commit_one}) - Tom
+        #### Miscellaneous Chores
+        - init - ({init}) - Tom
 
 
-                ",
-            today = today,
-            init = &init[0..7],
-            commit_one = &commit_one[0..7],
-            commit_two = &commit_two[0..7],
-        )
+        ",
+        today = today,
+        init = &init[0..7],
+        commit_one = &commit_one[0..7],
+        commit_two = &commit_two[0..7],
     );
     Ok(())
 }
@@ -452,41 +446,40 @@ fn get_changelog_with_custom_template() -> Result<()> {
     let changelog = String::from_utf8_lossy(&changelog.stdout);
     let today = Utc::now().date_naive();
 
-    assert_eq!(
+    assert_doc_eq!(
         changelog.as_ref(),
-        formatdoc!(
-            "## [2.0.0](https://github.com/test/test/compare/1.0.0..2.0.0) - {today}
-            #### Bug Fixes
-            -  bug fix 1 - ([{commit_four_short}](https://github.com/test/test/commit/{commit_four})) - Tom
-            #### Features
-            -  feature 2 - ([{commit_three_short}](https://github.com/test/test/commit/{commit_three})) - Tom
-            #### Miscellaneous Chores
-            - **(version)** 2.0.0 - ([{commit_five_short}](https://github.com/test/test/commit/{commit_five})) - Tom
+        "## [2.0.0](https://github.com/test/test/compare/1.0.0..2.0.0) - {today}
+        #### Bug Fixes
+        -  bug fix 1 - ([{commit_four_short}](https://github.com/test/test/commit/{commit_four})) - Tom
+        #### Features
+        -  feature 2 - ([{commit_three_short}](https://github.com/test/test/commit/{commit_three})) - Tom
+        #### Miscellaneous Chores
+        - **(version)** 2.0.0 - ([{commit_five_short}](https://github.com/test/test/commit/{commit_five})) - Tom
 
-            - - -
+        - - -
 
-            ## [1.0.0](https://github.com/test/test/compare/{init}..1.0.0) - {today}
-            #### Features
-            -  feature 1 - ([{commit_two_short}](https://github.com/test/test/commit/{commit_two})) - Tom
-            - **(scope1)** start - ([{commit_one_short}](https://github.com/test/test/commit/{commit_one})) - Tom
-            #### Miscellaneous Chores
-            -  init - ([{init_commit}](https://github.com/test/test/commit/{init})) - Tom
+        ## [1.0.0](https://github.com/test/test/compare/{init}..1.0.0) - {today}
+        #### Features
+        -  feature 1 - ([{commit_two_short}](https://github.com/test/test/commit/{commit_two})) - Tom
+        - **(scope1)** start - ([{commit_one_short}](https://github.com/test/test/commit/{commit_one})) - Tom
+        #### Miscellaneous Chores
+        -  init - ([{init_commit}](https://github.com/test/test/commit/{init})) - Tom
 
 
-            ",
-            today = today,
-            init_commit = &init[0..7],
-            commit_one = &commit_one,
-            commit_one_short = &commit_one[0..7],
-            commit_two = &commit_two,
-            commit_two_short = &commit_two[0..7],
-            commit_three = &commit_three,
-            commit_three_short = &commit_three[0..7],
-            commit_four = &commit_four,
-            commit_four_short = &commit_four[0..7],
-            commit_five = &commit_five,
-            commit_five_short = &commit_five[0..7],
-        )
+        ",
+        today = today,
+        init = &init,
+        init_commit = &init[0..7],
+        commit_one = &commit_one,
+        commit_one_short = &commit_one[0..7],
+        commit_two = &commit_two,
+        commit_two_short = &commit_two[0..7],
+        commit_three = &commit_three,
+        commit_three_short = &commit_three[0..7],
+        commit_four = &commit_four,
+        commit_four_short = &commit_four[0..7],
+        commit_five = &commit_five,
+        commit_five_short = &commit_five[0..7],
     );
     Ok(())
 }
@@ -634,10 +627,7 @@ fn ensure_omit_from_changelog_is_honored() -> Result<()> {
 fn should_get_global_changelog() -> anyhow::Result<()> {
     // Arrange
     git_init()?;
-    run_cmd!(
-        mkdir -p packages/pkg1
-        mkdir -p packages/pkg2
-    )?;
+    mkdir(&["packages/pkg1", "packages/pkg1"])?;
 
     let cog = indoc!(
         r#"[changelog]

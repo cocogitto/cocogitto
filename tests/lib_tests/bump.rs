@@ -214,15 +214,14 @@ fn consecutive_package_bump_ok() -> Result<()> {
     let settings = toml::to_string(&settings)?;
 
     git_init()?;
+    mkdir(&["jenkins", "thumbor"])?;
     run_cmd!(
         echo Hello > README.md;
         git add .;
         git commit -m "first commit";
-        mkdir jenkins;
         echo "some jenkins stuff" > jenkins/file;
         git add .;
         git commit -m "feat(jenkins): add jenkins stuffs";
-        mkdir thumbor;
         echo "some thumbor stuff" > thumbor/file;
         git add .;
         git commit -m "feat(thumbor): add thumbor stuffs";
@@ -305,15 +304,14 @@ fn ordered_package_bump() -> Result<()> {
     let settings = toml::to_string(&settings)?;
 
     git_init()?;
+    mkdir(&["jenkins", "thumbor"])?;
     run_cmd!(
         echo Hello > README.md;
         git add .;
         git commit -m "chore: first commit";
-        mkdir jenkins;
         echo "some jenkins stuff" > jenkins/file;
         git add .;
         git commit -m "feat(jenkins): add jenkins stuffs";
-        mkdir thumbor;
         echo "some thumbor stuff" > thumbor/file;
         git add .;
         git commit -m "feat(thumbor): add thumbor stuffs";
@@ -420,15 +418,14 @@ fn auto_bump_package_only_ok() -> Result<()> {
     let settings = toml::to_string(&settings)?;
 
     git_init()?;
+    mkdir(&["jenkins", "thumbor"])?;
     run_cmd!(
         echo Hello > README.md;
         git add .;
         git commit -m "first commit";
-        mkdir jenkins;
         echo "some jenkins stuff" > jenkins/file;
         git add .;
         git commit -m "feat(jenkins): add jenkins stuffs";
-        mkdir thumbor;
         echo "some thumbor stuff" > thumbor/file;
         git add .;
         git commit -m "feat(thumbor): add thumbor stuffs";
@@ -492,15 +489,14 @@ fn auto_bump_global_only_ok() -> Result<()> {
     let settings = toml::to_string(&settings)?;
 
     git_init()?;
+    mkdir(&["jenkins", "thumbor"])?;
     run_cmd!(
         echo Hello > README.md;
         git add .;
         git commit -m "first commit";
-        mkdir jenkins;
         echo "some jenkins stuff" > jenkins/file;
         git add .;
         git commit -m "feat(jenkins): add jenkins stuffs";
-        mkdir thumbor;
         echo "some thumbor stuff" > thumbor/file;
         git add .;
         git commit -m "feat(thumbor): add thumbor stuffs";
@@ -704,15 +700,14 @@ fn bump_no_error_should_be_thrown_on_only_chore_docs_commit() -> Result<()> {
     let settings = toml::to_string(&settings)?;
 
     git_init()?;
+    mkdir(&["jenkins", "thumbor"])?;
     run_cmd!(
         echo Hello > README.md;
         git add .;
         git commit -m "first commit";
-        mkdir jenkins;
         echo "some jenkins stuff" > jenkins/file;
         git add .;
         git commit -m "feat(jenkins): add jenkins stuffs";
-        mkdir thumbor;
         echo "some thumbor stuff" > thumbor/file;
         git add .;
         git commit -m "feat(thumbor): add thumbor stuffs";
@@ -839,6 +834,7 @@ fn error_on_no_conventional_commits_found_for_package() -> Result<()> {
     let settings = toml::to_string(&settings)?;
 
     git_init()?;
+    mkdir(&["jenkins"])?;
     run_cmd!(
         echo Hello > README.md;
         git add .;
@@ -848,7 +844,6 @@ fn error_on_no_conventional_commits_found_for_package() -> Result<()> {
         git add .;
         git commit -m "chore: cog config";
 
-        mkdir jenkins;
         echo "some jenkins stuff" > jenkins/file;
         git add .;
         git commit -m "feat(jenkins): some jenkins stuff";
@@ -912,15 +907,14 @@ fn bump_with_unconventional_and_conventional_commits_found_for_packages() -> Res
     let settings = toml::to_string(&settings)?;
 
     git_init()?;
+    mkdir(&["jenkins", "thumbor"])?;
     run_cmd!(
         echo Hello > README.md;
         git add .;
         git commit -m "first commit";
-        mkdir jenkins;
         echo "unconventional jenkins stuff" > jenkins/file;
         git add .;
         git commit -m "unconventional jenkins stuff";
-        mkdir thumbor;
         echo "conventional thumbor stuff" > thumbor/file;
         git add .;
         git commit -m "feat(thumbor): conventional thumbor stuff";

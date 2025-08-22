@@ -395,6 +395,7 @@ fn should_error_on_disallowed_scope() -> Result<()> {
 }
 
 #[sealed_test]
+#[cfg(target_os = "linux")]
 fn should_run_git_hooks() -> Result<()> {
     git_init()?;
     git_add("content", "test_file")?;
@@ -425,6 +426,7 @@ fn should_run_git_hooks() -> Result<()> {
 }
 
 #[sealed_test]
+#[cfg(target_os = "linux")]
 fn should_run_pre_commit_hook_with_custom_hooks_path() -> Result<()> {
     git_init()?;
     git_add("content", "test_file")?;
