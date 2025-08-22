@@ -224,4 +224,11 @@ pub mod test_helpers {
         run_fun!(git tag $version;)?;
         Ok(())
     }
+
+    pub(crate) fn mkdir(dirs: &[&str]) -> anyhow::Result<()> {
+        for dir in dirs {
+            std::fs::create_dir_all(dir)?;
+        }
+        Ok(())
+    }
 }

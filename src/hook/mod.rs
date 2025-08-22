@@ -585,6 +585,7 @@ mod test {
     }
 
     #[sealed_test]
+    #[cfg(target_os = "linux")]
     fn parenthesis_in_hook_works() -> Result<()> {
         git_init_no_gpg()?;
 

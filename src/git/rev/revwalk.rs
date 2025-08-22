@@ -161,7 +161,7 @@ mod test {
     use crate::git::repository::Repository;
     use crate::git::tag::{Tag, TagLookUpOptions};
     use crate::settings::{MonoRepoPackage, Settings};
-    use crate::test_helpers::{commit, git_init_no_gpg, git_tag};
+    use crate::test_helpers::{commit, git_init_no_gpg, git_tag, mkdir};
 
     const COCOGITTO_REPOSITORY: &str = env!("CARGO_MANIFEST_DIR");
 
@@ -320,11 +320,12 @@ mod test {
 
         let settings = toml::to_string(&settings)?;
 
+        mkdir(&["one"])?;
+
         run_cmd!(
             echo $settings > cog.toml;
             git add .;
             git commit -m "chore: First commit";
-            mkdir one;
             echo changes > one/file;
             git add .;
             git commit -m "feat: package one";
@@ -462,9 +463,10 @@ mod test {
 
         let settings = toml::to_string(&settings)?;
 
+        mkdir(&["shared", "one/ignored"])?;
+
         run_cmd!(
             echo $settings > cog.toml;
-            mkdir -p shared one/ignored;
             git add .;
             git commit -m "chore: First commit";
         )?;
