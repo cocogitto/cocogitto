@@ -25,11 +25,11 @@ pub fn init_monorepo(settings: &mut Settings) -> Result<()> {
     let settings = toml::to_string(&settings)?;
 
     git_init()?;
+    mkdir(&["one"])?;
     run_cmd!(
         echo $settings > cog.toml;
         git add .;
         git commit -m "chore: first commit";
-        mkdir one;
         echo "changes" > one/file;
         git add .;
         git commit -m "feat: package one feature";
@@ -66,23 +66,27 @@ pub fn git_init_and_set_current_path(path: &str) -> Result<()> {
     Ok(())
 }
 
+pub fn mkdir(dirs: &[&str]) -> Result<()> {
+    for dir in dirs {
+        std::fs::create_dir_all(dir)?;
+    }
+    Ok(())
+}
+
 /// Can be used to make assertion on 'git status' output.
 pub fn git_status() -> Result<String> {
     run_fun!(git status).map_err(|e| anyhow!(e))
 }
 
 /// Write the given content to the provided path and add it to the git index
-pub fn git_add<S: AsRef<Path>>(content: &str, path: S) -> Result<()>
-where
-    S: ToString,
-{
-    let path = path.to_string();
-    run_cmd!(
-        echo "writing $content to $path";
-        echo $content > $path;
-        git add $path;
-    )
-    .map_err(|e| anyhow!(e))
+pub fn git_add(contents: &str, path: impl AsRef<Path>) -> Result<()> {
+    let path = path.as_ref();
+    println!("writing {contents} to {}", path.display());
+    if let Some(dir) = path.parent() {
+        std::fs::create_dir_all(dir)?;
+    }
+    std::fs::write(path, contents)?;
+    run_cmd!(git add $path;).map_err(|e| anyhow!(e))
 }
 
 /// Create an empty git commit and return its sha1

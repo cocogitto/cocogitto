@@ -769,6 +769,7 @@ fn disable_commit_creation_with_flag_standard_ok() -> Result<()> {
 }
 
 #[sealed_test]
+#[cfg(target_os = "linux")]
 fn disable_commit_creation_with_pre_bump_hooks_standard_ok() -> Result<()> {
     git_init()?;
 

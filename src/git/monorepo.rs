@@ -15,7 +15,7 @@ impl Repository {
 #[cfg(test)]
 mod test {
 
-    use crate::test_helpers::git_init_no_gpg;
+    use crate::test_helpers::{git_init_no_gpg, mkdir};
     use anyhow::Result;
     use cmd_lib::run_cmd;
     use indoc::formatdoc;
@@ -45,12 +45,12 @@ mod test {
 
         repo.commit("chore: init", false, false)?;
 
+        mkdir(&["one", "two"])?;
+
         run_cmd!(
-            mkdir one;
             echo "one" > one/file;
             git add .;
             git commit -m "feat: package one";
-            mkdir two;
             echo "two" > two/file;
             git add .;
             git commit -m "feat: package two";
