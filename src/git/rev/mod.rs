@@ -26,6 +26,10 @@ impl<'repo> CommitIter<'repo> {
     pub fn iter_commits(&self) -> impl Iterator<Item = &'_ Commit<'_>> {
         self.0.iter().map(|(_, commit)| commit)
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
 }
 
 impl<'repo> IntoIterator for CommitIter<'repo> {
