@@ -31,6 +31,9 @@ impl CocoGitto {
             let range = self
                 .repository
                 .get_commit_range_for_package(pattern, package_name)?;
+            if range.is_empty() {
+                continue;
+            }
 
             let from = Some(range.from_oid());
 
