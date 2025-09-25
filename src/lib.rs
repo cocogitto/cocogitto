@@ -37,9 +37,15 @@ static CONFIG_PATH: OnceLock<String> = OnceLock::new();
 
 pub fn get_config_path() -> &'static String {
     if cfg!(test) || std::env::var("RUSTY_FORK_OCCURS").is_ok() {
-        CONFIG_PATH.get_or_init(|| DEFAULT_CONFIG_PATH.to_owned())
+        CONFIG_PATH.get_or_init(|| {
+            std::env::var("COCOGITTO_CONFIG_PATH")
+                .unwrap_or_else(|_| DEFAULT_CONFIG_PATH.to_owned())
+        })
     } else {
-        CONFIG_PATH.get().expect("config path to be set")
+        CONFIG_PATH.get_or_init(|| {
+            std::env::var("COCOGITTO_CONFIG_PATH")
+                .unwrap_or_else(|_| DEFAULT_CONFIG_PATH.to_owned())
+        })
     }
 }
 
