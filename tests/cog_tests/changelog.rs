@@ -58,13 +58,13 @@ fn get_changelog_range() -> Result<()> {
         - - -
 
         ## 0.32.1 - {today}
+        #### Features
+        - move check edit to dedicated subcommand and fix rebase - (fc74207) - oknozor
+        - remove config commit on init existing repo - (1028d0b) - oknozor
         #### Bug Fixes
         - **(cd)** fix ci cross build command bin args - (7f04a98) - *oknozor*
         #### Documentation
         - rewritte readme completely - (b223f7b) - oknozor
-        #### Features
-        - move check edit to dedicated subcommand and fix rebase - (fc74207) - oknozor
-        - remove config commit on init existing repo - (1028d0b) - oknozor
         #### Refactoring
         - change config name to cog.toml - (d4aa61b) - oknozor
 
@@ -97,10 +97,10 @@ fn get_changelog_from_untagged_repo() -> Result<()> {
     assert_doc_eq!(
         changelog.as_ref(),
         "## Unreleased ({init}..{commit_three})
-        #### Bug Fixes
-        - bug fix - ({commit_three}) - Tom
         #### Features
         - **(taef)** feature - ({commit_two}) - Tom
+        #### Bug Fixes
+        - bug fix - ({commit_three}) - Tom
         #### Miscellaneous Chores
         - init - ({init}) - Tom
 
@@ -292,10 +292,10 @@ fn get_changelog_at_tag_prefix() -> Result<()> {
     assert_doc_eq!(
         changelog.as_ref(),
         "## v2.0.0 - {today}
-        #### Bug Fixes
-        - bug fix 1 - ({commit_three}) - Tom
         #### Features
         - feature 1 - ({commit_two}) - Tom
+        #### Bug Fixes
+        - bug fix 1 - ({commit_three}) - Tom
         #### Miscellaneous Chores
         - **(version)** v2.0.0 - ({commit_four}) - Tom
 
@@ -335,10 +335,10 @@ fn get_changelog_from_tag_to_tagged_head() -> Result<()> {
     assert_doc_eq!(
         changelog.as_ref(),
         "## 2.0.0 - {today}
-        #### Bug Fixes
-        - bug fix 1 - ({commit_four}) - Tom
         #### Features
         - feature 2 - ({commit_three}) - Tom
+        #### Bug Fixes
+        - bug fix 1 - ({commit_four}) - Tom
         #### Miscellaneous Chores
         - **(version)** 2.0.0 - ({commit_five}) - Tom
 

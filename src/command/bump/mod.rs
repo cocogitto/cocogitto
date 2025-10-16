@@ -126,7 +126,7 @@ fn ensure_tag_is_greater_than_previous(current: &Tag, next: &Tag) -> Result<()> 
         let comparison = format!("{current} <= {next}").red();
         let cause_key = "cause:".red();
         let cause = format!("{cause_key} version MUST be greater than current one: {comparison}");
-        bail!("{}:\n\t{}\n", "SemVer Error".red().to_string(), cause);
+        bail!("{}:\n\t{}\n", "SemVer Error".red(), cause);
     };
 
     Ok(())

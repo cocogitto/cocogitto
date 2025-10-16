@@ -343,6 +343,35 @@ fn bump_with_hook() -> Result<()> {
 
 #[sealed_test]
 #[cfg(target_os = "linux")]
+fn bump_with_hook_and_prefix() -> Result<()> {
+    // Arrange
+    git_init()?;
+    git_add(
+        r#"tag_prefix = "v"
+        pre_bump_hooks = ["touch {{version}}", "touch {{version_tag}}"]"#,
+        "cog.toml",
+    )?;
+    git_commit("chore: init")?;
+    git_tag("v1.0.0")?;
+    git_commit("feat: feature")?;
+
+    // Act
+    Command::cargo_bin("cog")?
+        .arg("bump")
+        .arg("--major")
+        // Assert
+        .assert()
+        .success();
+
+    assert_that!(Path::new("2.0.0")).exists();
+    assert_that!(Path::new("v2.0.0")).exists();
+    assert_tag_exists("v2.0.0")?;
+    assert_tag_does_not_exist("2.0.0")?;
+    Ok(())
+}
+
+#[sealed_test]
+#[cfg(target_os = "linux")]
 fn bump_with_profile_hook() -> Result<()> {
     // Arrange
     git_init()?;

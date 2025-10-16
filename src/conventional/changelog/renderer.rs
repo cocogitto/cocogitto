@@ -121,7 +121,6 @@ impl Renderer {
             let val = val.as_str().unwrap_or_default();
             let val = val.to_string();
 
-            // let entry = map.entry(val).or_insert_with(|| vec![]);
             let entry = map.entry(val).or_insert_with(Vec::new);
             entry.push(v);
         }
