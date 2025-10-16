@@ -133,6 +133,18 @@ release = { changelog_title = "Releases" }
 
 The above config would generate a `cog commit hotfix` and `cog commit release` subcommands following the same structure as the default ones.
 
+**Specify custom changelog ordering:**
+
+By default commit are ordered by type `feat`, `fix`, `perf`, `revert`, `docs`, `test`, `build`, `ci`, `refactor`, `chore`, `style` in changelogs.
+The order can be customized by specifying the `order` option in the commit object:
+
+```toml
+[commit_types]
+hotfix = { changelog_title = "Hotfixes", order = 0 }
+feat = { order = 2 }
+fix = { order = 1 }
+```
+
 **Overriding existing commit types:**
 
 Existing commit type can be overridden just like custom ones:
@@ -140,7 +152,7 @@ Existing commit type can be overridden just like custom ones:
 ```toml
 [commit_types]
 feat = { changelog_title = "➕ Additional features" }
-fix = { changelog_title = "🪲 Releases" }
+fix = { changelog_title = "🪲 Releases", order = 0 }
 ```
 
 **Omit commits from changelog:**
@@ -182,4 +194,3 @@ That said you can simply make Cocogitto ignore merge commits by setting the foll
 ```toml
 ignore_merge_commits = true
 ```
-
