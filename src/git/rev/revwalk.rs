@@ -115,6 +115,14 @@ impl Repository {
     /// Return a commit range from a [`RevspecPattern2`]
     pub fn revwalk(&self, spec: &str) -> Result<CommitIter<'_>, Git2Error> {
         let spec = self.revspec_from_str(spec)?;
+
+        if spec.from() == spec.to() {
+            let oid = *spec.from();
+            let oid_of = self.resolve_oid_of(&oid.to_string())?;
+            let commit = self.0.find_commit(oid)?;
+            return Ok(CommitIter::single(oid_of, commit));
+        }
+
         let mut revwalk = self.0.revwalk()?;
         revwalk.push_range(&spec.to_string())?;
 
