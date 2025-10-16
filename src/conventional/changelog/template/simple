@@ -8,9 +8,9 @@
     ## Unreleased ({{ from_shorthand ~ ".." ~ to_shorthand }})
 {% endif -%}
 
-{% for type, typed_commits in commits | sort(attribute="type")| group_by(attribute="type")-%}
-#### {{ type | upper_first }}
-{% for scope, scoped_commits in typed_commits | group_by(attribute="scope") -%}
+{% for value in commits | group_by_type -%}
+#### {{ value.0 | upper_first }}
+{% for scope, scoped_commits in value.1 | group_by(attribute="scope") -%}
 
 {% for commit in scoped_commits | sort(attribute="scope") -%}
 
@@ -26,7 +26,7 @@
 
 {% endfor -%}
 
-{%- for commit in typed_commits | unscoped -%}
+{%- for commit in value.1 | unscoped -%}
     {% if commit.author -%}
         {% set author = commit.author -%}
     {% else -%}

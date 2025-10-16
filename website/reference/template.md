@@ -130,20 +130,31 @@ In addition to the [tera built-in filters](https://keats.github.io/tera/docs/#bu
   * **Description:** filter unscoped commits from releases commits. Example:
   * **Example:**
   ```tera
-      {% for commit in commits | unscoped %}                                                                       
-          {% if commit.author %}                                                                                         
-              {% set author = "@" ~ commit.author %}                                                                     
-          {% else %}                                                                                                     
-              {% set author = commit.signature %}                                                                        
-          {% endif %}                                                                                                    
+      {% for commit in commits | unscoped %}
+          {% if commit.author %}
+              {% set author = "@" ~ commit.author %}
+          {% else %}
+              {% set author = commit.signature %}
+          {% endif %}
               - {{ commit.id }} - {{ commit.summary }} - {{ author }}
-      {% endfor %}    
+      {% endfor %}
   ```
+  - `group_by_type`
+    * **Description:** group commits by their conventional commit type and sort order
+    * **Example:**
+    ```tera
+       {% for type_group in commits | group_by_type %}
+           ### {{ type_group.0 | upper_first }}
+           {% for commit in type_group.1 %}
+               - {{ commit.summary }}
+           {% endfor %}
+       {% endfor %}
+    ```
 - `upper_first`
   * **Description:** capitalize the first letter of a string
   * **Example:**
   ```tera
-     {% for type, typed_commits in commits | sort(attribute="type")| group_by(attribute="type") %}                           
-      #### {{ type | upper_first }}
+     {% for commit_by_type in commits | group_by_type %}
+      #### {{ commit_by_type.0 | upper_first }}
      {% endfor %}
   ```
