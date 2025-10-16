@@ -954,3 +954,25 @@ fn bump_bug_fix() -> Result<()> {
 
     Ok(())
 }
+
+#[sealed_test]
+fn changelog_on_first_commit_with_tag_on_first_commit() -> Result<()> {
+    git_init()?;
+    git_commit("feat: init")?;
+
+    Command::cargo_bin("cog")?
+        .arg("bump")
+        .arg("--auto")
+        .arg("--disable-bump-commit")
+        .assert()
+        .success();
+
+    Command::cargo_bin("cog")?
+        .arg("changelog")
+        .arg("--at")
+        .arg("0.1.0")
+        .assert()
+        .success();
+
+    Ok(())
+}
