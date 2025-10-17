@@ -178,7 +178,7 @@ Also see [template reference](/reference/template).
             {% else %}
                 {% set author = commit.signature %}
             {% endif %}
-            - {{ commit.id }} - **({{ scope }})** {{ commit.summary }} - {{ author }}
+            - {{ commit.id }} - (**{{ scope }}**) {{ commit.summary }} - {{ author }}
         {% endfor %}
     {% endfor %}
     {% for commit in typed_commits | unscoped %}
@@ -191,4 +191,3 @@ Also see [template reference](/reference/template).
     {% endfor %}
 {% endfor %}
 ```
-

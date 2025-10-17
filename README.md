@@ -211,12 +211,12 @@ Output :
 
 #### Bug Fixes
 
-- **(parser)** handle lowercase identifier - (7521015) - *oknozor*
+- (**parser**)handle lowercase identifier - (7521015) - *oknozor*
 - handle unknown flag - (e2388dc) - oknozor
 
 #### Features
 
-- **(parser)** simple parser implementation - (0b25eb6) - *oknozor*
+- (**parser**)simple parser implementation - (0b25eb6) - *oknozor*
 - add a new cli flag - (ff84173) - oknozor
 
 #### Miscellaneous Chores
@@ -225,7 +225,7 @@ Output :
 
 #### Refactoring
 
-- **(parser)** use a parser interface instead of concrete impl - (ea24c36) - *oknozor*
+- (**parser**)use a parser interface instead of concrete impl - (ea24c36) - *oknozor*
 
 #### Tests
 

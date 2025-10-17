@@ -171,7 +171,7 @@ impl Commit {
     pub(crate) fn should_omit(&self) -> bool {
         COMMITS_METADATA
             .get(&self.conventional.commit_type)
-            .is_some_and(|config| config.omit_from_changelog())
+            .is_some_and(|config| config.omit_from_changelog() && !self.is_major_bump())
     }
 
     pub(crate) fn is_major_bump(&self) -> bool {

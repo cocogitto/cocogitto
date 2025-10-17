@@ -184,10 +184,10 @@ mod test {
             changelog,
             "## 1.0.0 - 2015-09-05
             #### Features
-            - **(parser)** implement the changelog generator - (17f7e23) - *oknozor*
+            - (**parser**) implement the changelog generator - (17f7e23) - *oknozor*
             - awesome feature - (17f7e23) - Paul Delafosse
             #### Bug Fixes
-            - **(parser)** fix parser implementation - (17f7e23) - *oknozor*
+            - (**parser**) fix parser implementation - (17f7e23) - *oknozor*
             "
         );
 
@@ -210,11 +210,11 @@ mod test {
         assert_doc_eq!(
             changelog,
             "#### Features
-            - 17f7e23081db15e9318aeb37529b1d473cf41cbe - **(parser)** implement the changelog generator - @oknozor
+            - 17f7e23081db15e9318aeb37529b1d473cf41cbe - (**parser**) implement the changelog generator - @oknozor
             - 17f7e23081db15e9318aeb37529b1d473cf41cbe - awesome feature - Paul Delafosse
 
             #### Bug Fixes
-            - 17f7e23081db15e9318aeb37529b1d473cf41cbe - **(parser)** fix parser implementation - @oknozor
+            - 17f7e23081db15e9318aeb37529b1d473cf41cbe - (**parser**) fix parser implementation - @oknozor
             "
         );
 
@@ -242,10 +242,10 @@ mod test {
             changelog,
             "## [1.0.0](https://github.com/cocogitto/cocogitto/compare/0.1.0..1.0.0) - 2015-09-05
             #### Features
-            - **(parser)** implement the changelog generator - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
+            - (**parser**) implement the changelog generator - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
             - awesome feature - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - Paul Delafosse
             #### Bug Fixes
-            - **(parser)** fix parser implementation - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
+            - (**parser**) fix parser implementation - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
             "
         );
 
@@ -275,10 +275,10 @@ mod test {
             - two bumped to 0.2.0
             ### Global changes
             #### Features
-            - **(parser)** implement the changelog generator - (17f7e23) - *oknozor*
+            - (**parser**) implement the changelog generator - (17f7e23) - *oknozor*
             - awesome feature - (17f7e23) - Paul Delafosse
             #### Bug Fixes
-            - **(parser)** fix parser implementation - (17f7e23) - *oknozor*
+            - (**parser**) fix parser implementation - (17f7e23) - *oknozor*
             "
         );
 
@@ -308,10 +308,10 @@ mod test {
             - two locked to 0.2.0
             ### Global changes
             #### Features
-            - **(parser)** implement the changelog generator - (17f7e23) - *oknozor*
+            - (**parser**) implement the changelog generator - (17f7e23) - *oknozor*
             - awesome feature - (17f7e23) - Paul Delafosse
             #### Bug Fixes
-            - **(parser)** fix parser implementation - (17f7e23) - *oknozor*
+            - (**parser**) fix parser implementation - (17f7e23) - *oknozor*
             "
         );
 
@@ -340,11 +340,11 @@ mod test {
             - two bumped to 0.2.0
             ### Global changes
             #### Features
-            - 17f7e23081db15e9318aeb37529b1d473cf41cbe - **(parser)** implement the changelog generator - @oknozor
+            - 17f7e23081db15e9318aeb37529b1d473cf41cbe - (**parser**) implement the changelog generator - @oknozor
             - 17f7e23081db15e9318aeb37529b1d473cf41cbe - awesome feature - Paul Delafosse
 
             #### Bug Fixes
-            - 17f7e23081db15e9318aeb37529b1d473cf41cbe - **(parser)** fix parser implementation - @oknozor
+            - 17f7e23081db15e9318aeb37529b1d473cf41cbe - (**parser**) fix parser implementation - @oknozor
             "
         );
 
@@ -373,11 +373,11 @@ mod test {
             - two locked to 0.2.0
             ### Global changes
             #### Features
-            - 17f7e23081db15e9318aeb37529b1d473cf41cbe - **(parser)** implement the changelog generator - @oknozor
+            - 17f7e23081db15e9318aeb37529b1d473cf41cbe - (**parser**) implement the changelog generator - @oknozor
             - 17f7e23081db15e9318aeb37529b1d473cf41cbe - awesome feature - Paul Delafosse
 
             #### Bug Fixes
-            - 17f7e23081db15e9318aeb37529b1d473cf41cbe - **(parser)** fix parser implementation - @oknozor
+            - 17f7e23081db15e9318aeb37529b1d473cf41cbe - (**parser**) fix parser implementation - @oknozor
             "
         );
 
@@ -411,10 +411,10 @@ mod test {
             - [0.2.0](crates/two) bumped to [0.2.0](https://github.com/cocogitto/cocogitto/compare/0.3.0..0.2.0)
             ### Global changes
             #### Features
-            - **(parser)** implement the changelog generator - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
+            - (**parser**) implement the changelog generator - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
             - awesome feature - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - Paul Delafosse
             #### Bug Fixes
-            - **(parser)** fix parser implementation - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
+            - (**parser**) fix parser implementation - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
             "
         );
 
@@ -440,10 +440,10 @@ mod test {
             changelog,
             "## 1.0.0 - 2015-09-05
             #### Features
-            - **(parser)** implement the changelog generator - (17f7e23) - *oknozor*
+            - (**parser**) implement the changelog generator - (17f7e23) - *oknozor*
             - awesome feature - (17f7e23) - Paul Delafosse
             #### Bug Fixes
-            - **(parser)** fix parser implementation - (17f7e23) - *oknozor*
+            - (**parser**) fix parser implementation - (17f7e23) - *oknozor*
             "
         );
 
@@ -468,11 +468,11 @@ mod test {
         assert_doc_eq!(
             changelog,
             "#### Features
-            - 17f7e23081db15e9318aeb37529b1d473cf41cbe - **(parser)** implement the changelog generator - @oknozor
+            - 17f7e23081db15e9318aeb37529b1d473cf41cbe - (**parser**) implement the changelog generator - @oknozor
             - 17f7e23081db15e9318aeb37529b1d473cf41cbe - awesome feature - Paul Delafosse
 
             #### Bug Fixes
-            - 17f7e23081db15e9318aeb37529b1d473cf41cbe - **(parser)** fix parser implementation - @oknozor
+            - 17f7e23081db15e9318aeb37529b1d473cf41cbe - (**parser**) fix parser implementation - @oknozor
             "
         );
 
@@ -502,10 +502,10 @@ mod test {
             changelog,
             "## [1.0.0](https://github.com/cocogitto/cocogitto/compare/0.1.0..1.0.0) - 2015-09-05
             #### Features
-            - **(parser)** implement the changelog generator - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
+            - (**parser**) implement the changelog generator - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
             - awesome feature - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - Paul Delafosse
             #### Bug Fixes
-            - **(parser)** fix parser implementation - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
+            - (**parser**) fix parser implementation - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
             "
         );
 
@@ -539,10 +539,10 @@ mod test {
             - [0.2.0](crates/two) locked to [0.2.0](https://github.com/cocogitto/cocogitto/tree/0.2.0)
             ### Global changes
             #### Features
-            - **(parser)** implement the changelog generator - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
+            - (**parser**) implement the changelog generator - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
             - awesome feature - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - Paul Delafosse
             #### Bug Fixes
-            - **(parser)** fix parser implementation - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
+            - (**parser**) fix parser implementation - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
             "
         );
 
