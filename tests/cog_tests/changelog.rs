@@ -966,3 +966,62 @@ fn chore_commit_with_breaking_change_should_be_displayed_in_changelog() -> Resul
     );
     Ok(())
 }
+
+#[sealed_test]
+fn changelog_monorepo_multi_versions() -> Result<()> {
+    // Arrange
+    git_init()?;
+    let today = Utc::now().date_naive();
+    run_cmd!(mkdir -p zz)?;
+
+    let cog = indoc!(
+        r#"
+        tag_prefix = "v"
+
+        [packages]
+        zz = { path = "zz" }
+        "#
+    );
+
+    git_add(cog, "cog.toml")?;
+    let sha_1 = git_commit_short("chore: init")?;
+    git_add("", "zz/lib.rs")?;
+    git_add("", "main.rs")?;
+    let sha_2 = git_commit_short("feat: add implementation")?;
+
+    let sha_3 = cog_bump_auto()?;
+
+    git_add(".", "zz/lib.rs")?;
+    git_add(".", "main.rs")?;
+    let sha_4 = git_commit_short("fix: combat nasty bug")?;
+
+    let sha_5 = cog_bump_auto()?;
+
+    // Act
+    Command::cargo_bin("cog")?
+        .arg("changelog")
+        // Assert
+        .assert()
+        .success()
+        .stdout(formatdoc!(
+            "## v0.1.1 - {today}
+            #### Bug Fixes
+            - combat nasty bug - ({sha_4}) - Tom
+            #### Miscellaneous Chores
+            - (**version**) v0.1.1 - ({sha_5}) - Tom
+
+            - - -
+
+            ## v0.1.0 - {today}
+            #### Features
+            - add implementation - ({sha_2}) - Tom
+            #### Miscellaneous Chores
+            - (**version**) v0.1.0 - ({sha_3}) - Tom
+            - init - ({sha_1}) - Tom
+
+
+            "
+        ));
+
+    Ok(())
+}
