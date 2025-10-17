@@ -3,19 +3,22 @@ use crate::conventional::commit::Commit;
 use crate::git::error::TagError;
 use crate::git::oid::OidOf;
 
+use crate::conventional::error::BumpError as ConvBumpError;
 use crate::conventional::version::IncrementCommand;
-use crate::git::tag::Tag;
+use crate::git::repository::Repository;
+use crate::git::tag::{Tag, TagLookUpOptions};
 use crate::hook::{Hook, HookVersion, Hooks};
 use crate::settings::{HookType, MonoRepoPackage, Settings};
 use crate::BumpError;
 use crate::{CocoGitto, COMMITS_METADATA, SETTINGS};
 use anyhow::Result;
-use anyhow::{anyhow, bail, ensure, Context};
+use anyhow::{bail, ensure, Context};
 use colored::Colorize;
 use conventional_commit_parser::commit::CommitType;
 use globset::Glob;
 use itertools::Itertools;
 use log::{error, info, warn};
+use semver::{BuildMetadata, Prerelease};
 use std::default::Default;
 use std::fmt;
 use std::fmt::Write;
@@ -53,6 +56,83 @@ pub struct PackageBumpOptions<'a> {
     pub skip_ci_override: Option<String>,
     pub skip_untracked: bool,
     pub disable_bump_commit: bool,
+}
+
+struct BumpResult {
+    current: Tag,
+    next: Tag,
+    had_commits: bool,
+}
+
+impl BumpResult {
+    fn no_change(&self) -> bool {
+        self.current.version == self.next.version
+    }
+}
+
+impl<'a> BumpOptions<'a> {
+    fn get_new_version(
+        &self,
+        repository: &Repository,
+        package: Option<&str>,
+        allow_empty: bool,
+        increment: Option<IncrementCommand>,
+    ) -> Result<BumpResult> {
+        let tag_opts = package.map(TagLookUpOptions::package).unwrap_or_default();
+        let current = match repository.get_latest_tag(tag_opts) {
+            Ok(tag) => tag,
+            Err(TagError::NoTag) => Tag::default(),
+            Err(other) => bail!(other),
+        };
+
+        let increment = increment.unwrap_or_else(|| self.increment.clone());
+        let (mut next, had_commits) = match current.bump(increment, repository) {
+            Ok(tag) => (tag, true),
+            Err(ConvBumpError::NoCommitFound) if allow_empty => (current.strip_metadata(), false),
+            Err(other) => bail!(other),
+        };
+
+        if let Some(pre_release) = self.pre_release {
+            next.version.pre = Prerelease::new(pre_release)?;
+        }
+
+        if let Some(build) = self.build {
+            next.version.build = BuildMetadata::new(build)?;
+        }
+
+        // ensure version doesn't decrease
+        if next < current {
+            bail!(
+                "{}:\n\t{} version MUST be greater than current one: {}\n",
+                "SemVer Error".red(),
+                "cause:".red(),
+                format!("{next} <= {current}").red(),
+            );
+        }
+
+        Ok(BumpResult {
+            current,
+            next,
+            had_commits,
+        })
+    }
+}
+
+impl<'a> PackageBumpOptions<'a> {
+    fn common(&self) -> BumpOptions<'a> {
+        BumpOptions {
+            increment: self.increment.clone(),
+            pre_release: self.pre_release,
+            build: self.build,
+            hooks_config: self.hooks_config,
+            annotated: self.annotated.clone(),
+            dry_run: self.dry_run,
+            skip_ci: self.skip_ci,
+            skip_ci_override: self.skip_ci_override.clone(),
+            skip_untracked: self.skip_untracked,
+            disable_bump_commit: self.disable_bump_commit,
+        }
+    }
 }
 
 struct HookRunOptions<'a> {
@@ -118,25 +198,6 @@ impl<'a> HookRunOptions<'a> {
         self.package_name = Some(name);
         self.package = Some(package);
         self
-    }
-}
-
-fn ensure_tag_is_greater_than_previous(current: &Tag, next: &Tag) -> Result<()> {
-    if next < current {
-        let comparison = format!("{current} <= {next}").red();
-        let cause_key = "cause:".red();
-        let cause = format!("{cause_key} version MUST be greater than current one: {comparison}");
-        bail!("{}:\n\t{}\n", "SemVer Error".red(), cause);
-    };
-
-    Ok(())
-}
-
-fn tag_or_fallback_to_zero(tag: Result<Tag, TagError>) -> Result<Tag> {
-    match tag {
-        Ok(ref tag) => Ok(tag.clone()),
-        Err(TagError::NoTag) => Ok(Tag::default()),
-        Err(err) => Err(anyhow!(err)),
     }
 }
 

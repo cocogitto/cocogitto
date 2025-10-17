@@ -11,7 +11,7 @@ use crate::git::oid::OidOf;
 use crate::git::repository::Repository;
 use crate::SETTINGS;
 
-#[derive(Debug, Default)]
+#[derive(Copy, Clone, Debug, Default)]
 pub struct TagLookUpOptions<'a> {
     include_pre_release: bool,
     package_name: Option<&'a str>,
