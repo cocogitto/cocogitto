@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::anyhow;
 use anyhow::Result;
+use assert_cmd::Command;
 use cmd_lib::{run_cmd, run_fun};
 use speculoos::assert_that;
 use speculoos::iter::ContainingIntoIterAssertions;
@@ -98,6 +99,15 @@ pub fn git_commit(message: &str) -> Result<String> {
     .map_err(|e| anyhow!(e))
 }
 
+/// Create an empty git commit and return the short sha1
+pub fn git_commit_short(message: &str) -> Result<String> {
+    run_fun!(
+        git commit --allow-empty -q -m $message;
+        git log --format=%h -n 1;
+    )
+    .map_err(|e| anyhow!(e))
+}
+
 pub fn git_tag(tag: &str) -> Result<()> {
     run_cmd!(
         git tag $tag;
@@ -154,4 +164,14 @@ pub fn git_log_head_sha() -> Result<String> {
 pub fn create_empty_config() -> Result<()> {
     std::fs::File::create(get_config_path())?;
     Ok(())
+}
+
+/// Run `cog bump -a` and return the short sha1 of the created commit
+pub fn cog_bump_auto() -> Result<String> {
+    Command::cargo_bin("cog")?
+        .arg("bump")
+        .arg("--auto")
+        .assert()
+        .success();
+    Ok(run_fun!(git log --format=%h -n 1)?)
 }
