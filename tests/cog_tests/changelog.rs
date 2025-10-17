@@ -51,7 +51,7 @@ fn get_changelog_range() -> Result<()> {
 
         ## 0.32.2 - {today}
         #### Bug Fixes
-        - **(cd)** bump setup-rust-action to v1.3.3 - (5350b11) - *oknozor*
+        - (**cd**) bump setup-rust-action to v1.3.3 - (5350b11) - *oknozor*
         #### Documentation
         - add corrections to README - (9a33516) - oknozor
 
@@ -62,7 +62,7 @@ fn get_changelog_range() -> Result<()> {
         - move check edit to dedicated subcommand and fix rebase - (fc74207) - oknozor
         - remove config commit on init existing repo - (1028d0b) - oknozor
         #### Bug Fixes
-        - **(cd)** fix ci cross build command bin args - (7f04a98) - *oknozor*
+        - (**cd**) fix ci cross build command bin args - (7f04a98) - *oknozor*
         #### Documentation
         - rewritte readme completely - (b223f7b) - oknozor
         #### Refactoring
@@ -98,7 +98,7 @@ fn get_changelog_from_untagged_repo() -> Result<()> {
         changelog.as_ref(),
         "## Unreleased ({init}..{commit_three})
         #### Features
-        - **(taef)** feature - ({commit_two}) - Tom
+        - (**taef**) feature - ({commit_two}) - Tom
         #### Bug Fixes
         - bug fix - ({commit_three}) - Tom
         #### Miscellaneous Chores
@@ -144,7 +144,7 @@ fn get_changelog_from_tagged_repo() -> Result<()> {
 
         ## 1.0.0 - {today}
         #### Features
-        - **(taef)** feature - ({commit_one}) - Tom
+        - (**taef**) feature - ({commit_one}) - Tom
         #### Miscellaneous Chores
         - init - ({init}) - Tom
 
@@ -186,7 +186,7 @@ fn get_changelog_at_tag() -> Result<()> {
         changelog.as_ref(),
         "## 1.0.0 - {today}
         #### Features
-        - **(taef)** feature - ({commit_one}) - Tom
+        - (**taef**) feature - ({commit_one}) - Tom
         - feature 2 - ({commit_two}) - Tom
         #### Miscellaneous Chores
         - init - ({init}) - Tom
@@ -297,7 +297,7 @@ fn get_changelog_at_tag_prefix() -> Result<()> {
         #### Bug Fixes
         - bug fix 1 - ({commit_three}) - Tom
         #### Miscellaneous Chores
-        - **(version)** v2.0.0 - ({commit_four}) - Tom
+        - (**version**) v2.0.0 - ({commit_four}) - Tom
 
 
         ",
@@ -340,7 +340,7 @@ fn get_changelog_from_tag_to_tagged_head() -> Result<()> {
         #### Bug Fixes
         - bug fix 1 - ({commit_four}) - Tom
         #### Miscellaneous Chores
-        - **(version)** 2.0.0 - ({commit_five}) - Tom
+        - (**version**) 2.0.0 - ({commit_five}) - Tom
 
         - - -
 
@@ -917,5 +917,52 @@ fn changelog_from_commit_range_should_be_the_same_as_changelog_from_tag_range() 
     // Assert
     pretty_assertions::assert_eq!(changelog_from_commit_range, changelog_from_tag_range);
 
+    Ok(())
+}
+
+#[sealed_test]
+fn chore_commit_with_breaking_change_should_be_displayed_in_changelog() -> Result<()> {
+    // Arrange
+    git_init()?;
+    let cog_toml = indoc!(
+        "[commit_types]
+        chore = { omit_from_changelog = true }"
+    );
+    git_add(cog_toml, "cog.toml")?;
+    let _ = git_commit("chore: init")?;
+    let commit_one = git_commit("feat: feature")?;
+    git_tag("1.0.0")?;
+    let commit_two = git_commit("chore!: breaking change in chore")?;
+
+    // Act
+    let changelog = Command::cargo_bin("cog")?
+        .arg("changelog")
+        // Assert
+        .assert()
+        .success();
+
+    let changelog = changelog.get_output();
+    let changelog = &changelog.stdout;
+    let changelog = String::from_utf8_lossy(changelog.as_slice());
+    let today = Utc::now().date_naive().to_string();
+
+    assert_doc_eq!(
+        changelog.as_ref(),
+        r#"## Unreleased ({commit_two}..{commit_two})
+        #### Miscellaneous Chores
+        - <span style="background-color: #d73a49; color: white; padding: 2px 6px; border-radius: 3px; font-weight: bold; font-size: 0.85em;">BREAKING</span>breaking change in chore - ({commit_two}) - Tom
+
+        - - -
+
+        ## 1.0.0 - {today}
+        #### Features
+        - feature - ({commit_one}) - Tom
+
+
+        "#,
+        commit_one = &commit_one[0..7],
+        commit_two = &commit_two[0..7],
+        today = today
+    );
     Ok(())
 }

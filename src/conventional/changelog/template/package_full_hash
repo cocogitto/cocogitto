@@ -8,7 +8,12 @@
     {% else -%}
         {% set author = commit.signature -%}
     {% endif -%}
-    - {{ commit.id }} - **({{ scope }})** {{ commit.summary }} - {{ author }}
+    {% if commit.breaking_change -%}
+        {% set breaking_badge = "![BREAKING](https://img.shields.io/badge/BREAKING-red) " -%}
+    {% else -%}
+        {% set breaking_badge = "" -%}
+    {% endif -%}
+    - {{ breaking_badge }}{{ commit.id }} - (**{{ scope }}**) {{ commit.summary }} - {{ author }}
 {% endfor -%}
 
 {% endfor -%}
@@ -20,7 +25,12 @@
     {% else -%}
         {% set author = commit.signature -%}
     {% endif -%}
-        - {{ commit.id }} - {{ commit.summary }} - {{ author }}
+    {% if commit.breaking_change -%}
+        {% set breaking_badge = "![BREAKING](https://img.shields.io/badge/BREAKING-red) " -%}
+    {% else -%}
+        {% set breaking_badge = "" -%}
+    {% endif -%}
+    - {{ breaking_badge }}{{ commit.id }} - {{ commit.summary }} - {{ author }}
 
 {% endfor -%}
 

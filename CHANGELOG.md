@@ -385,7 +385,7 @@ All notable changes to this project will be documented in this file. See [conven
 
 ## [4.1.0](https://github.com/cocogitto/cocogitto/compare/4.0.1..4.1.0) - 2022-01-18
 #### Bug Fixes
-- **(parser)** bump parser to 0.9.4 to support windows escape sequences in commit footers - ([415ec37](https://github.com/cocogitto/cocogitto/commit/415ec37921500bc375eb27b70722352fcd11d53b)) - [@oknozor](https://github.com/oknozor)
+- (**parser**)bump parser to 0.9.4 to support windows escape sequences in commit footers - ([415ec37](https://github.com/cocogitto/cocogitto/commit/415ec37921500bc375eb27b70722352fcd11d53b)) - [@oknozor](https://github.com/oknozor)
 - support annotated tags in cog check -l - ([66faca2](https://github.com/cocogitto/cocogitto/commit/66faca2312282108e50746cf2df1b8831e304122)) - [@lukehsiao](https://github.com/lukehsiao)
 - ignore comment lines in cog verify - ([2f25f5e](https://github.com/cocogitto/cocogitto/commit/2f25f5ea6e9b96882a11a271aad20db0ee420ffb)) - [@lukehsiao](https://github.com/lukehsiao)
 #### Continuous Integration
