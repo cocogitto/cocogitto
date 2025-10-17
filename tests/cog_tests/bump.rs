@@ -1107,3 +1107,42 @@ fn bump_prerelease_from_latest_pre_release_monorepo() -> Result<()> {
 
     Ok(())
 }
+
+#[sealed_test]
+fn bump_prerelease_ignore_packages() -> Result<()> {
+    // Arrange
+    git_init()?;
+    git_add(
+        indoc! {
+            r#"
+            [packages.a]
+            path = "a"
+
+            [packages.b]
+            path = "b"
+            "#
+        },
+        "cog.toml",
+    )?;
+    git_commit("chore: init")?;
+    git_tag("1.0.0")?;
+    git_tag("a-1.0.0")?;
+    git_tag("b-1.0.0")?;
+    git_add(".", "global")?;
+    git_add(".", "a/file")?;
+    git_commit("feat: do stuff")?;
+
+    // Act
+    Command::cargo_bin("cog")?
+        .arg("bump")
+        .arg("--auto")
+        .arg("--pre")
+        .arg("rc.1")
+        .assert()
+        .success();
+
+    // Assert
+    assert_tag_exists("1.1.0-rc.1")?;
+    assert_tag_exists("a-1.1.0-rc.1")?;
+    assert_tag_does_not_exist("b-1.0.0-rc.1")
+}
