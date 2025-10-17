@@ -539,30 +539,32 @@ impl CocoGitto {
             }
 
             let tag = Tag::create(next_version.version, Some(package_name.to_string()));
-            let pattern = self.get_bump_revspec(&old);
 
             let package = SETTINGS
                 .packages
                 .get(package_name.as_str())
                 .expect("package exists");
 
-            let changelog = self.get_package_changelog_with_target_version(
-                &pattern,
-                tag.clone(),
-                package_name.as_str(),
-            )?;
+            if !SETTINGS.disable_changelog {
+                let pattern = self.get_bump_revspec(&old);
+                let changelog = self.get_package_changelog_with_target_version(
+                    &pattern,
+                    tag.clone(),
+                    package_name.as_str(),
+                )?;
 
-            changelog.pretty_print_bump_summary()?;
+                changelog.pretty_print_bump_summary()?;
 
-            let path = package.changelog_path();
-            let template = SETTINGS.get_package_changelog_template()?;
+                let path = package.changelog_path();
+                let template = SETTINGS.get_package_changelog_template()?;
 
-            let additional_context = ReleaseType::Package(PackageContext {
-                package_name: package_name.as_ref(),
-            });
+                let additional_context = ReleaseType::Package(PackageContext {
+                    package_name: package_name.as_ref(),
+                });
 
-            changelog.write_to_file(&path, template, additional_context)?;
-            info!("\tChangelog updated {:?}", path);
+                changelog.write_to_file(&path, template, additional_context)?;
+                info!("\tChangelog updated {:?}", path);
+            }
 
             let old_version = self
                 .repository
