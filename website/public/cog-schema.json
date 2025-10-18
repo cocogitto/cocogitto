@@ -307,6 +307,16 @@
             "null"
           ],
           "default": null
+        },
+        "order": {
+          "description": "Specify a sort order attribute for this commit type.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "default": null,
+          "minimum": 0
         }
       }
     },

@@ -331,6 +331,10 @@ path = "CHANGELOG.md"
 - **Description :** Do not display this commit type in changelogs.
 - **Type :** `Boolean | Null`
 
+### `order`
+- **Description :** Specify a sort order attribute for this commit type.
+- **Type :** `Integer | Null`
+
 
 ## GitHook
 - **Description :** A GitHook can be defined either as a script string that will be executed directly,
