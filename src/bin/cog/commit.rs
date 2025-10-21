@@ -34,8 +34,8 @@ pub fn edit_message<P: AsRef<Path>>(
     path: P,
     breaking: bool,
 ) -> Result<(Option<String>, Option<String>, bool)> {
-    let template = fs::read_to_string(path.as_ref())?;
-    let edited = edit::edit(template)?;
+    edit::edit_file(path.as_ref())?;
+    let edited = fs::read_to_string(path.as_ref())?;
 
     if edited.lines().all(|line| {
         let trimmed = line.trim_start();
