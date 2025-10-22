@@ -548,6 +548,7 @@ mod test {
                             is_breaking_change: false,
                         },
                         author: "Paul Delafosse".to_string(),
+                        committer: "Paul Delafosse".to_string(),
                         date: NaiveDateTime::parse_from_str(
                             "2015-09-05 23:56:04",
                             "%Y-%m-%d %H:%M:%S",

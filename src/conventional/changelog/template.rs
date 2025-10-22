@@ -1,8 +1,12 @@
 use crate::conventional::changelog::context::{RemoteContext, ToContext};
 use crate::conventional::changelog::error::ChangelogError;
 use crate::conventional::changelog::release::Release;
+use crate::conventional::prodiver::github::GitHubProvider;
+use crate::conventional::prodiver::GitProvider;
+use crate::git::commit;
 
 use super::filter;
+use std::collections::{HashMap, HashSet};
 use std::io;
 use std::path::PathBuf;
 use tera::{Context, Tera};
@@ -35,6 +39,8 @@ pub struct Template {
     pub tera: Tera,
     pub context: Context,
     pub kind: TemplateKind,
+    pub remote_context: Option<RemoteContext>,
+    pub git_provider: Option<Box<dyn GitProvider>>,
 }
 
 impl Template {
@@ -56,28 +62,60 @@ impl Template {
         tera.register_filter("unscoped", filter::unscoped);
         tera.register_filter("group_by_type", filter::group_by_type);
 
+        let git_provider: Option<Box<dyn GitProvider>> = match template {
+            TemplateKind::Github => Some(Box::new(GitHubProvider::default())),
+            _ => None,
+        };
+
         Ok(Template {
             context,
             kind: template,
             tera,
+            git_provider,
         })
     }
 
-    pub fn render(&mut self, version: Release) -> Result<String, tera::Error> {
-        let mut release = self.render_release(&version)?;
+    pub fn render(&mut self, mut version: Release) -> Result<String, ChangelogError> {
+        let mut release = self.render_release(&mut version)?;
         let mut version = version;
-        while let Some(previous) = version.previous.map(|v| *v) {
+        while let Some(mut previous) = version.previous.map(|v| *v) {
             release.push_str("\n- - -\n\n");
-            release.push_str(self.render_release(&previous)?.as_str());
+            release.push_str(self.render_release(&mut previous)?.as_str());
             version = previous;
         }
 
         Ok(release)
     }
 
-    fn render_release(&mut self, version: &Release) -> Result<String, tera::Error> {
+    fn render_release(&mut self, version: &mut Release) -> Result<String, ChangelogError> {
+        if let Some((git_provider, remote_context)) = self.git_provider.zip(self.remote_context) {
+            let mut contributor_map: HashMap<String, String> = HashMap::new();
+            let owner = &remote_context.owner;
+            let repo = &remote_context.repository;
+
+            for commit in &mut version.commits {
+                if let Some(username) = contributor_map.get(&commit.commit.author) {
+                    // TODO: add committer
+                    commit.author_username = Some(username.as_str());
+                } else {
+                    let github_authors =
+                        git_provider.get_commit_contributors(owner, repo, &commit.commit.oid)?;
+
+                    if let Some(author) = github_authors.author {
+                        contributor_map.insert(commit.commit.author.clone(), author);
+                    }
+
+                    if let Some(committer) = github_authors.committer {
+                        contributor_map.insert(commit.commit.committer.clone(), committer);
+                    }
+                }
+            }
+        }
+
         self.push_context(version);
-        self.tera.render(self.kind.name(), &self.context)
+        self.tera
+            .render(self.kind.name(), &self.context)
+            .map_err(Into::into)
     }
 
     pub(crate) fn push_context(&mut self, context: impl ToContext) {
@@ -88,9 +126,14 @@ impl Template {
         self.context.extend(context.to_context());
         self
     }
+
+    pub(crate) fn with_remote_context(mut self, context: RemoteContext) -> Self {
+        self.remote_context = Some(context);
+        self
+    }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Eq, PartialEq)]
 pub enum TemplateKind {
     #[default]
     Default,

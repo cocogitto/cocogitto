@@ -33,7 +33,7 @@ impl Release<'_> {
         self,
         template: Template,
         context: ReleaseType,
-    ) -> Result<String, tera::Error> {
+    ) -> Result<String, ChangelogError> {
         let mut template = match context {
             ReleaseType::Standard => template,
             ReleaseType::MonoRepo(context) => template.with_context(context),

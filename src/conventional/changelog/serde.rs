@@ -123,6 +123,7 @@ mod test {
                     is_breaking_change: false,
                 },
                 author: "Jean Michel Doudou".to_string(),
+                committer: "Jean Michel Doudou".to_string(),
                 date: Utc::now().naive_utc(),
             },
         };

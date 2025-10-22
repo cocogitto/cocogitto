@@ -6,9 +6,9 @@ use crate::{conventional::changelog::release::Release, git::oid::OidOf};
 /// A wrapper to append remote repository information to template context
 #[derive(Debug)]
 pub struct RemoteContext {
-    remote: String,
-    repository: String,
-    owner: String,
+    pub remote: String,
+    pub repository: String,
+    pub owner: String,
 }
 
 #[derive(Debug)]
@@ -84,6 +84,12 @@ impl RemoteContext {
 }
 
 impl ToContext for &Release<'_> {
+    fn to_context(&self) -> Context {
+        Context::from_serialize(self).expect("Valid release")
+    }
+}
+
+impl ToContext for &mut Release<'_> {
     fn to_context(&self) -> Context {
         Context::from_serialize(self).expect("Valid release")
     }
