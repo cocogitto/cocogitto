@@ -290,11 +290,7 @@ impl CocoGitto {
     }
 
     /// The target version is not created yet when generating the changelog.
-    pub fn get_changelog_with_target_version(
-        &self,
-        pattern: &str,
-        tag: Tag,
-    ) -> Result<Release<'_>> {
+    pub fn get_changelog_with_target_version(&self, pattern: &str, tag: Tag) -> Result<Release> {
         let commit_range = self.repository.revwalk(pattern)?;
         let mut release = Release::try_from(commit_range)?;
         release.version = OidOf::Tag(tag);
@@ -307,7 +303,7 @@ impl CocoGitto {
         pattern: &str,
         tag: Tag,
         package: &str,
-    ) -> Result<Release<'_>> {
+    ) -> Result<Release> {
         let commit_range = self
             .repository
             .get_commit_range_for_package(pattern, package)?;
@@ -323,7 +319,7 @@ impl CocoGitto {
         pattern: &str,
         from: OidOf,
         tag: Tag,
-    ) -> Result<Release<'_>> {
+    ) -> Result<Release> {
         let commit_range = self
             .repository
             .get_commit_range_for_monorepo_global(pattern)?;
@@ -430,7 +426,7 @@ impl CocoGitto {
     }
 }
 
-impl Release<'_> {
+impl Release {
     fn pretty_print_bump_summary(&self) -> Result<(), fmt::Error> {
         let conventional_commits: Vec<&Commit> = self
             .commits

@@ -13,6 +13,9 @@ pub(crate) mod release;
 pub(crate) mod serde;
 pub mod template;
 
+#[cfg(test)]
+pub mod tests;
+
 const CHANGELOG_SEPARATOR: &str = "- - -";
 
 const DEFAULT_HEADER: &str =
@@ -28,12 +31,12 @@ pub enum ReleaseType<'a> {
     Package(PackageContext<'a>),
 }
 
-impl Release<'_> {
+impl Release {
     pub fn into_markdown(
         self,
         template: Template,
         context: ReleaseType,
-    ) -> Result<String, tera::Error> {
+    ) -> Result<String, ChangelogError> {
         let mut template = match context {
             ReleaseType::Standard => template,
             ReleaseType::MonoRepo(context) => template.with_context(context),

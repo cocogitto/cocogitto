@@ -15,7 +15,7 @@ impl Serialize for Tag {
     }
 }
 
-impl Serialize for ChangelogCommit<'_> {
+impl Serialize for ChangelogCommit {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -51,6 +51,7 @@ impl Serialize for ChangelogCommit<'_> {
         commit.serialize_field("summary", &self.commit.conventional.summary)?;
         commit.serialize_field("body", &self.commit.conventional.body)?;
         commit.serialize_field("type_order", type_order)?;
+        commit.serialize_field("co_authors", &self.co_authors)?;
         commit.serialize_field(
             "breaking_change",
             &self.commit.conventional.is_breaking_change,
@@ -107,7 +108,8 @@ mod test {
     #[test]
     fn should_serialize_commit() {
         let commit = ChangelogCommit {
-            author_username: Some("Jm Doudou"),
+            committer_username: Some("Jm Doudou".to_string()),
+            author_username: Some("Jm Doudou".to_string()),
             commit: Commit {
                 oid: "1234567890".to_string(),
                 conventional: ConventionalCommit {
@@ -123,8 +125,11 @@ mod test {
                     is_breaking_change: false,
                 },
                 author: "Jean Michel Doudou".to_string(),
+                committer: "Jean Michel Doudou".to_string(),
                 date: Utc::now().naive_utc(),
             },
+            co_authors: vec![],
+            github_closes_numbers: vec![],
         };
 
         let result = serde_json::to_string(&commit);

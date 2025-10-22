@@ -1,8 +1,11 @@
 use crate::conventional::changelog::context::{RemoteContext, ToContext};
 use crate::conventional::changelog::error::ChangelogError;
-use crate::conventional::changelog::release::Release;
+use crate::conventional::changelog::release::{ChangelogFooter, Release};
+use crate::conventional::prodiver::github::GitHubProvider;
+use crate::conventional::prodiver::GitProvider;
 
 use super::filter;
+use std::collections::HashMap;
 use std::io;
 use std::path::PathBuf;
 use tera::{Context, Tera};
@@ -13,8 +16,10 @@ const REMOTE_TEMPLATE: &[u8] = include_bytes!("template/remote.tera");
 const REMOTE_TEMPLATE_NAME: &str = "remote";
 const FULL_HASH_TEMPLATE: &[u8] = include_bytes!("template/full_hash.tera");
 const FULL_HASH_TEMPLATE_NAME: &str = "full_hash";
-const GITHUB_TEMPLATE: &[u8] = include_bytes!("template/github");
+const GITHUB_TEMPLATE: &[u8] = include_bytes!("template/github.tera");
 const GITHUB_TEMPLATE_NAME: &str = "github";
+const GITHUB_TEMPLATE_UNIFIED_NAME: &str = "unified_github";
+const UNIFIED_GITHUB_TEMPLATE: &[u8] = include_bytes!("template/unified_github.tera");
 
 pub const MACROS_TEMPLATE: &[u8] = include_bytes!("template/macro/macros.tera");
 pub const MACROS_TEMPLATE_NAME: &str = "macros";
@@ -45,16 +50,19 @@ pub struct Template {
     pub tera: Tera,
     pub context: Context,
     pub kind: TemplateKind,
+    pub remote_context: Option<RemoteContext>,
+    pub git_provider: Option<Box<dyn GitProvider>>,
 }
 
 impl Template {
     pub fn from_arg(
         value: &str,
         remote_context: Option<RemoteContext>,
+        unified: bool,
     ) -> Result<Self, ChangelogError> {
-        let template = TemplateKind::from_arg(value)?;
+        let template = TemplateKind::from_arg(value, unified)?;
         let mut context = Context::default();
-        if let Some(remote) = remote_context {
+        if let Some(remote) = &remote_context {
             context.extend(remote.to_context());
         }
 
@@ -66,28 +74,86 @@ impl Template {
         tera.register_filter("unscoped", filter::unscoped);
         tera.register_filter("group_by_type", filter::group_by_type);
 
+        let git_provider: Option<Box<dyn GitProvider>> = match template {
+            TemplateKind::Github => Some(Box::new(GitHubProvider::default())),
+            _ => None,
+        };
+
         Ok(Template {
             context,
             kind: template,
             tera,
+            git_provider,
+            remote_context,
         })
     }
 
-    pub fn render(&mut self, version: Release) -> Result<String, tera::Error> {
-        let mut release = self.render_release(&version)?;
+    pub fn render(&mut self, mut version: Release) -> Result<String, ChangelogError> {
+        let mut contributor_map = HashMap::new();
+        let mut release = self.render_release(&mut version, &mut contributor_map)?;
         let mut version = version;
-        while let Some(previous) = version.previous.map(|v| *v) {
+        while let Some(mut previous) = version.previous.map(|v| *v) {
             release.push_str("\n- - -\n\n");
-            release.push_str(self.render_release(&previous)?.as_str());
+            release.push_str(
+                self.render_release(&mut previous, &mut contributor_map)?
+                    .as_str(),
+            );
             version = previous;
         }
 
         Ok(release)
     }
 
-    fn render_release(&mut self, version: &Release) -> Result<String, tera::Error> {
+    fn render_release(
+        &mut self,
+        version: &mut Release,
+        contributor_map: &mut HashMap<String, String>,
+    ) -> Result<String, ChangelogError> {
+        if let (Some(git_provider), Some(remote_context)) =
+            (self.git_provider.as_ref(), self.remote_context.as_ref())
+        {
+            let owner = &remote_context.owner;
+            let repo = &remote_context.repository;
+
+            for commit in &mut version.commits {
+                if let Some(username) = contributor_map.get(&commit.commit.author) {
+                    // TODO: add committer
+                    commit.author_username = Some(username.clone());
+                } else {
+                    let github_authors =
+                        git_provider.get_commit_contributors(owner, repo, &commit.commit.oid)?;
+
+                    if let Some(author) = github_authors.author {
+                        contributor_map.insert(commit.commit.author.clone(), author.clone());
+                        commit.author_username = Some(author);
+                    }
+
+                    if let Some(committer) = github_authors.committer {
+                        contributor_map.insert(commit.commit.committer.clone(), committer);
+                    }
+                }
+
+                // TODO: handle when co-author not in committer or commit author
+                commit.co_authors = commit
+                    .commit
+                    .conventional
+                    .footers
+                    .iter()
+                    .map(ChangelogFooter::from)
+                    .filter_map(|footer| match footer {
+                        ChangelogFooter::GithubCoAuthoredBy { user } => Some(user.to_string()),
+                        _ => None,
+                    })
+                    .filter_map(|author| contributor_map.get(&author))
+                    .cloned()
+                    .collect::<Vec<_>>();
+            }
+        }
+
         self.push_context(version);
-        self.tera.render(self.kind.name(), &self.context)
+        self.tera
+            .render(self.kind.name(), &self.context)
+            .map_err(Into::into)
     }
 
     pub(crate) fn push_context(&mut self, context: impl ToContext) {
@@ -100,13 +166,14 @@ impl Template {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Eq, PartialEq)]
 pub enum TemplateKind {
     #[default]
     Default,
     FullHash,
     Remote,
     Github,
+    GithubUnified,
     PackageDefault,
     PackageFullHash,
     PackageRemote,
@@ -121,20 +188,30 @@ pub enum TemplateKind {
 
 impl TemplateKind {
     /// Returns either a predefined template or a custom template
-    fn from_arg(value: &str) -> Result<Self, ChangelogError> {
+    fn from_arg(value: &str, unified: bool) -> Result<Self, ChangelogError> {
         match value {
-            DEFAULT_TEMPLATE_NAME => Ok(TemplateKind::Default),
-            REMOTE_TEMPLATE_NAME => Ok(TemplateKind::Remote),
-            FULL_HASH_TEMPLATE_NAME => Ok(TemplateKind::FullHash),
+            DEFAULT_TEMPLATE_NAME if !unified => Ok(TemplateKind::Default),
+            DEFAULT_TEMPLATE_NAME | UNIFIED_DEFAULT_TEMPLATE_NAME => {
+                Ok(TemplateKind::UnifiedDefault)
+            }
+
+            REMOTE_TEMPLATE_NAME if !unified => Ok(TemplateKind::Remote),
+            REMOTE_TEMPLATE_NAME | UNIFIED_REMOTE_TEMPLATE_NAME => Ok(TemplateKind::UnifiedRemote),
+
+            FULL_HASH_TEMPLATE_NAME if !unified => Ok(TemplateKind::FullHash),
+            FULL_HASH_TEMPLATE_NAME | UNIFIED_FULL_HASH_TEMPLATE_NAME => {
+                Ok(TemplateKind::UnifiedFullHash)
+            }
+
+            GITHUB_TEMPLATE_NAME if !unified => Ok(TemplateKind::Github),
+            GITHUB_TEMPLATE_NAME | GITHUB_TEMPLATE_UNIFIED_NAME => Ok(TemplateKind::GithubUnified),
+
             PACKAGE_DEFAULT_TEMPLATE_NAME => Ok(TemplateKind::PackageDefault),
             PACKAGE_REMOTE_TEMPLATE_NAME => Ok(TemplateKind::PackageRemote),
             PACKAGE_FULL_HASH_TEMPLATE_NAME => Ok(TemplateKind::PackageFullHash),
             MONOREPO_DEFAULT_TEMPLATE_NAME => Ok(TemplateKind::MonorepoDefault),
             MONOREPO_REMOTE_TEMPLATE_NAME => Ok(TemplateKind::MonorepoRemote),
             MONOREPO_FULL_HASH_TEMPLATE_NAME => Ok(TemplateKind::MonorepoFullHash),
-            UNIFIED_DEFAULT_TEMPLATE_NAME => Ok(TemplateKind::UnifiedDefault),
-            UNIFIED_REMOTE_TEMPLATE_NAME => Ok(TemplateKind::UnifiedRemote),
-            UNIFIED_FULL_HASH_TEMPLATE_NAME => Ok(TemplateKind::UnifiedFullHash),
             path => {
                 let path = PathBuf::from(path);
                 if !path.exists() {
@@ -158,6 +235,7 @@ impl TemplateKind {
             TemplateKind::MonorepoRemote => Ok(MONOREPO_REMOTE_TEMPLATE.to_vec()),
             TemplateKind::MonorepoFullHash => Ok(MONOREPO_FULL_HASH_TEMPLATE.to_vec()),
             TemplateKind::Github => Ok(GITHUB_TEMPLATE.to_vec()),
+            TemplateKind::GithubUnified => Ok(UNIFIED_GITHUB_TEMPLATE.to_vec()),
             TemplateKind::UnifiedDefault => Ok(UNIFIED_DEFAULT_TEMPLATE.to_vec()),
             TemplateKind::UnifiedRemote => Ok(UNIFIED_REMOTE_TEMPLATE.to_vec()),
             TemplateKind::UnifiedFullHash => Ok(UNIFIED_FULL_HASH_TEMPLATE.to_vec()),
@@ -177,6 +255,7 @@ impl TemplateKind {
             TemplateKind::MonorepoRemote => MONOREPO_REMOTE_TEMPLATE_NAME,
             TemplateKind::MonorepoFullHash => MONOREPO_FULL_HASH_TEMPLATE_NAME,
             TemplateKind::Github => GITHUB_TEMPLATE_NAME,
+            TemplateKind::GithubUnified => GITHUB_TEMPLATE_UNIFIED_NAME,
             TemplateKind::UnifiedDefault => UNIFIED_DEFAULT_TEMPLATE_NAME,
             TemplateKind::UnifiedRemote => UNIFIED_REMOTE_TEMPLATE_NAME,
             TemplateKind::UnifiedFullHash => UNIFIED_FULL_HASH_TEMPLATE_NAME,

@@ -412,13 +412,13 @@ pub struct AuthorSetting {
     pub username: String,
 }
 
-pub fn commit_username(author: &str) -> Option<&'static str> {
+pub fn commit_username(author: &str) -> Option<String> {
     SETTINGS
         .changelog
         .authors
         .iter()
         .find(|author_map| author_map.signature == author)
-        .map(|author| author.username.as_str())
+        .map(|author| author.username.clone())
 }
 
 pub fn changelog_path() -> &'static PathBuf {
@@ -517,7 +517,7 @@ impl Settings {
         let context = self.get_template_context();
         let template = self.changelog.template.as_deref().unwrap_or("default");
 
-        Template::from_arg(template, context)
+        Template::from_arg(template, context, false)
     }
 
     pub fn get_package_changelog_template(&self) -> Result<Template, ChangelogError> {
@@ -534,7 +534,7 @@ impl Settings {
             template => template,
         };
 
-        Template::from_arg(template, context)
+        Template::from_arg(template, context, false)
     }
 
     pub fn get_monorepo_changelog_template(&self) -> Result<Template, ChangelogError> {
@@ -551,7 +551,7 @@ impl Settings {
             template => template,
         };
 
-        Template::from_arg(template, context)
+        Template::from_arg(template, context, false)
     }
 
     pub fn monorepo_separator(&self) -> Option<&str> {

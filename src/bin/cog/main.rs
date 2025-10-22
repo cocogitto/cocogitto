@@ -573,6 +573,7 @@ fn main() -> Result<()> {
             };
 
             conv_commit::verify(
+                None,
                 author,
                 &commit_message,
                 ignore_merge_commits,
@@ -666,9 +667,9 @@ fn main() -> Result<()> {
                 .or_else(|| SETTINGS.get_template_context());
             let template = template.as_ref().or(SETTINGS.changelog.template.as_ref());
             let template = if let Some(template) = template {
-                Template::from_arg(template, context)?
+                Template::from_arg(template, context, unified)?
             } else {
-                Template::from_arg("default", context)?
+                Template::from_arg("default", context, unified)?
             };
 
             // TODO: fallback to tag here

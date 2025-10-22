@@ -1,3 +1,11 @@
+{% macro co_authors_list(co_authors) %}
+    {% if co_authors | length > 0 -%}
+      Co-authored-by:
+      {% for co_author in co_authors -%}
+          [@{{ co_author }}](https://github.com/{{ co_author }})
+      {% endfor -%}
+    {% endif -%}
+{% endmacro co_authors_list %}
 {% for value in commits | group_by_type-%}
 
 #### {{ value.0 | upper_first }}
@@ -19,17 +27,7 @@
         {% set breaking_badge = "" -%}
     {% endif -%}
     - {{ breaking_badge }}(**{{ scope }}**) {{ commit.summary }} - ([{{shorthand}}]({{ commit_link }})) - {{ author }}
-    {% if commit.footers -%}
-    {% for footer in commit.footers -%}
-            {% if footer.type == "github_co_authored_by" -%}
-                <br/>  Co-authored-by: [@{{ footer.user }}](https://github.com/{{ footer.user }})
-            {% elif footer.type == "github_closes" -%}
-                <br/>  Closes: [{{ footer.gh_reference }}](https://github.com/{{ footer.gh_reference }})
-            {% elif footer.type == "footer" -%}
-                <br/>  {{ footer.token }}: {{ footer.content }}
-            {% endif -%}
-    {% endfor -%}
-    {% endif -%}
+    {{ co_authors_list(commit.co_authors) }}
 {% endfor -%}
 
 {% endfor -%}
@@ -50,18 +48,7 @@
         {% set breaking_badge = "" -%}
     {% endif -%}
     - {{ breaking_badge }}{{ commit.summary }} - ([{{shorthand}}]({{ commit_link }})) - {{ author }}
-
-    {% if commit.footers -%}
-    {% for footer in commit.footers -%}
-    {% if footer.type == "github_co_authored_by" -%}
-                <br/>  Co-authored-by: [@{{ footer.user }}](https://github.com/{{ footer.user }})
-            {% elif footer.type == "github_closes" -%}
-                <br/>  Closes: [{{ footer.gh_reference }}](https://github.com/{{ footer.gh_reference }})
-            {% elif footer.type == "footer" -%}
-                <br/>  {{ footer.token }}: {{ footer.content }}
-            {% endif -%}
-    {% endfor -%}
-    {% endif -%}
+    {{ co_authors_list(commit.co_authors) }}
 {% endfor -%}
 
 {% endfor -%}
