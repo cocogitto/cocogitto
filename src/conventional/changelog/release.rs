@@ -1,12 +1,11 @@
-use chrono::{NaiveDateTime, Utc};
-use conventional_commit_parser::commit::Footer;
-use serde::Serialize;
-
 use crate::conventional::commit::Commit;
 use crate::git::oid::OidOf;
 use crate::git::rev::CommitIter;
 use crate::{settings, SETTINGS};
+use chrono::{NaiveDateTime, Utc};
 use colored::Colorize;
+use conventional_commit_parser::commit::{Footer, Separator};
+use serde::Serialize;
 
 use crate::conventional::changelog::error::ChangelogError;
 use log::warn;
@@ -114,36 +113,52 @@ impl From<Commit> for ChangelogCommit<'_> {
 }
 
 #[derive(Serialize)]
-pub struct ChangelogFooter<'a> {
-    token: &'a str,
-    content: &'a str,
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum ChangelogFooter<'a> {
+    GithubCoAuthoredBy { user: &'a str },
+    GithubCloses { gh_reference: &'a str },
+    Footer { token: &'a str, content: &'a str },
 }
 
 impl<'a> From<&'a Footer> for ChangelogFooter<'a> {
     fn from(footer: &'a Footer) -> Self {
-        Self {
-            token: footer.token.as_str(),
-            content: footer.content.as_str(),
+        match footer.token.as_str().to_lowercase().as_str() {
+            "co-authored-by" if footer.token_separator == Separator::Colon => {
+                Self::GithubCoAuthoredBy {
+                    user: footer.content.as_str(),
+                }
+            }
+            "close" | "closes" | "closed" | "fix" | "fixes" | "fixed" | "resolve" | "resolves"
+            | "resolved"
+                if footer.token_separator == Separator::Hash =>
+            {
+                Self::GithubCloses {
+                    gh_reference: footer.content.as_str(),
+                }
+            }
+            _ => Self::Footer {
+                token: &footer.content.as_str(),
+                content: footer.content.as_str(),
+            },
         }
     }
 }
 
 #[cfg(test)]
 mod test {
-    use anyhow::Result;
     use chrono::NaiveDateTime;
-    use conventional_commit_parser::commit::{CommitType, ConventionalCommit, Footer};
+    use conventional_commit_parser::commit::{CommitType, ConventionalCommit, Footer, Separator};
     use git2::Oid;
     use indoc::indoc;
     use itertools::Itertools;
     use pretty_assertions::assert_eq;
     use speculoos::prelude::*;
 
-    use crate::conventional::changelog::release::{ChangelogCommit, Release};
-    use crate::conventional::changelog::renderer::Renderer;
-    use crate::conventional::changelog::template::{
-        MonoRepoContext, PackageBumpContext, PackageContext, RemoteContext, Template, TemplateKind,
+    use crate::conventional::changelog::context::{
+        MonoRepoContext, PackageBumpContext, RemoteContext,
     };
+    use crate::conventional::changelog::release::{ChangelogCommit, Release};
+    use crate::conventional::changelog::template::Template;
     use crate::conventional::commit::Commit;
     use crate::git::oid::OidOf;
     use crate::git::repository::Repository;
@@ -159,6 +174,37 @@ mod test {
         };
     }
 
+    macro_rules! changelog_test {
+        (
+            $test_name:ident,
+            $release_fixture:expr,
+            $template:expr,
+            $expected:literal $(,)?
+        ) => {
+            #[test]
+            fn $test_name() -> anyhow::Result<()> {
+                let release = $release_fixture.build();
+                let changelog = $template.render(release)?;
+                assert_doc_eq!(changelog, $expected);
+                Ok(())
+            }
+        };
+        (
+            $test_name:ident,
+            $release_fixture:expr,
+            $template:expr,
+            $expected:literal,
+            $context:expr $(,)?
+        ) => {
+            #[test]
+            fn $test_name() -> anyhow::Result<()> {
+                let release = $release_fixture.build();
+                let changelog = $template.with_context($context).render(release)?;
+                assert_doc_eq!(changelog, $expected);
+                Ok(())
+            }
+        };
+    }
     #[test]
     fn should_get_a_release() -> anyhow::Result<()> {
         let repo = Repository::open(".")?;
@@ -170,385 +216,209 @@ mod test {
         Ok(())
     }
 
+    changelog_test!(
+        should_render_default_template,
+        ReleaseFixture::default(),
+        Template::from_arg("default", None)?,
+        "## 1.0.0 - 2015-09-05
+        #### Features
+        - (**parser**) implement the changelog generator - (17f7e23) - *oknozor*
+        - awesome feature - (17f7e23) - Paul Delafosse
+        #### Bug Fixes
+        - (**parser**) fix parser implementation - (17f7e23) - *oknozor*
+        "
+    );
+
+    changelog_test!(
+        should_render_full_hash_template,
+        ReleaseFixture::default(),
+        Template::from_arg("full_hash", default_remote_context())?,
+        "#### Features
+        - 17f7e23081db15e9318aeb37529b1d473cf41cbe - (**parser**) implement the changelog generator - @oknozor
+        - 17f7e23081db15e9318aeb37529b1d473cf41cbe - awesome feature - Paul Delafosse
+
+        #### Bug Fixes
+        - 17f7e23081db15e9318aeb37529b1d473cf41cbe - (**parser**) fix parser implementation - @oknozor
+        "
+    );
+
+    changelog_test!(
+        should_render_github_template,
+        ReleaseFixture::default(),
+        Template::from_arg("remote", default_remote_context())?,
+        "## [1.0.0](https://github.com/cocogitto/cocogitto/compare/0.1.0..1.0.0) - 2015-09-05
+        #### Features
+        - (**parser**) implement the changelog generator - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
+        - awesome feature - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - Paul Delafosse
+        #### Bug Fixes
+        - (**parser**) fix parser implementation - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
+        "
+    );
+
+    changelog_test!(
+        should_render_template_monorepo,
+        ReleaseFixture::default(),
+        Template::from_arg("monorepo_default", default_remote_context())?
+            .with_context(monorepo_context()),
+        "## 1.0.0 - 2015-09-05
+        ### Package updates
+        - one bumped to 0.1.0
+        - two bumped to 0.2.0
+        ### Global changes
+        #### Features
+        - (**parser**) implement the changelog generator - (17f7e23) - *oknozor*
+        - awesome feature - (17f7e23) - Paul Delafosse
+        #### Bug Fixes
+        - (**parser**) fix parser implementation - (17f7e23) - *oknozor*
+        "
+    );
+
+    changelog_test!(
+        should_render_template_monorepo_for_manual_bump,
+        ReleaseFixture::default(),
+        Template::from_arg("monorepo_default", None)?.with_context(default_pacakage_context()),
+        "## 1.0.0 - 2015-09-05
+        ### Packages
+        - one locked to 0.1.0
+        - two locked to 0.2.0
+        ### Global changes
+        #### Features
+        - (**parser**) implement the changelog generator - (17f7e23) - *oknozor*
+        - awesome feature - (17f7e23) - Paul Delafosse
+        #### Bug Fixes
+        - (**parser**) fix parser implementation - (17f7e23) - *oknozor*
+        "
+    );
+
+    changelog_test!(
+        should_render_full_hash_template_monorepo,
+        ReleaseFixture::default(),
+        Template::from_arg("monorepo_full_hash", default_remote_context())?
+            .with_context(monorepo_context()),
+        "### Package updates
+        - one bumped to 0.1.0
+        - two bumped to 0.2.0
+        ### Global changes
+        #### Features
+        - 17f7e23081db15e9318aeb37529b1d473cf41cbe - (**parser**) implement the changelog generator - @oknozor
+        - 17f7e23081db15e9318aeb37529b1d473cf41cbe - awesome feature - Paul Delafosse
+
+        #### Bug Fixes
+        - 17f7e23081db15e9318aeb37529b1d473cf41cbe - (**parser**) fix parser implementation - @oknozor
+        "
+    );
+
+    changelog_test!(
+        should_render_full_hash_template_manual_monorepo,
+        ReleaseFixture::default(),
+        Template::from_arg("monorepo_full_hash", default_remote_context())?
+            .with_context(default_pacakage_context()),
+        "### Packages
+        - one locked to 0.1.0
+        - two locked to 0.2.0
+        ### Global changes
+        #### Features
+        - 17f7e23081db15e9318aeb37529b1d473cf41cbe - (**parser**) implement the changelog generator - @oknozor
+        - 17f7e23081db15e9318aeb37529b1d473cf41cbe - awesome feature - Paul Delafosse
+
+        #### Bug Fixes
+        - 17f7e23081db15e9318aeb37529b1d473cf41cbe - (**parser**) fix parser implementation - @oknozor
+        "
+    );
+
+    changelog_test!(
+        should_render_remote_template_monorepo,
+        ReleaseFixture::default(),
+        Template::from_arg("monorepo_remote", default_remote_context())?
+            .with_context(monorepo_context()),
+        "## [1.0.0](https://github.com/cocogitto/cocogitto/compare/0.1.0..1.0.0) - 2015-09-05
+        ### Package updates
+        - [0.1.0](crates/one) bumped to [0.1.0](https://github.com/cocogitto/cocogitto/compare/0.2.0..0.1.0)
+        - [0.2.0](crates/two) bumped to [0.2.0](https://github.com/cocogitto/cocogitto/compare/0.3.0..0.2.0)
+        ### Global changes
+        #### Features
+        - (**parser**) implement the changelog generator - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
+        - awesome feature - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - Paul Delafosse
+        #### Bug Fixes
+        - (**parser**) fix parser implementation - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
+        "
+    );
+
+    changelog_test!(
+        should_render_template_package,
+        ReleaseFixture::default(),
+        Template::from_arg("package_default", default_remote_context())?,
+        "## 1.0.0 - 2015-09-05
+        #### Features
+        - (**parser**) implement the changelog generator - (17f7e23) - *oknozor*
+        - awesome feature - (17f7e23) - Paul Delafosse
+        #### Bug Fixes
+        - (**parser**) fix parser implementation - (17f7e23) - *oknozor*
+        "
+    );
+
+    changelog_test!(
+        should_render_full_hash_template_package,
+        ReleaseFixture::default(),
+        Template::from_arg("full_hash", default_remote_context())?,
+        "#### Features
+        - 17f7e23081db15e9318aeb37529b1d473cf41cbe - (**parser**) implement the changelog generator - @oknozor
+        - 17f7e23081db15e9318aeb37529b1d473cf41cbe - awesome feature - Paul Delafosse
+
+        #### Bug Fixes
+        - 17f7e23081db15e9318aeb37529b1d473cf41cbe - (**parser**) fix parser implementation - @oknozor
+        "
+    );
+
+    changelog_test!(
+        should_render_remote_template_package,
+        ReleaseFixture::default(),
+        Template::from_arg("package_remote", default_remote_context())?,
+        "## [1.0.0](https://github.com/cocogitto/cocogitto/compare/0.1.0..1.0.0) - 2015-09-05
+        #### Features
+        - (**parser**) implement the changelog generator - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
+        - awesome feature - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - Paul Delafosse
+        #### Bug Fixes
+        - (**parser**) fix parser implementation - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
+        "
+    );
+
+    changelog_test!(
+        should_render_remote_template_monorepo_for_manual_bump,
+        ReleaseFixture::default(),
+        Template::from_arg("monorepo_remote", default_remote_context())?
+            .with_context(default_pacakage_context()),
+        "## [1.0.0](https://github.com/cocogitto/cocogitto/compare/0.1.0..1.0.0) - 2015-09-05
+        ### Packages
+        - [0.1.0](crates/one) locked to [0.1.0](https://github.com/cocogitto/cocogitto/tree/0.1.0)
+        - [0.2.0](crates/two) locked to [0.2.0](https://github.com/cocogitto/cocogitto/tree/0.2.0)
+        ### Global changes
+        #### Features
+        - (**parser**) implement the changelog generator - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
+        - awesome feature - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - Paul Delafosse
+        #### Bug Fixes
+        - (**parser**) fix parser implementation - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
+        "
+    );
+
     #[test]
-    fn should_render_default_template() -> Result<()> {
-        // Arrange
-        let release = Release::fixture();
-        let mut renderer = Renderer::default();
+    fn should_render_github_footers() -> anyhow::Result<()> {
+        let release = ReleaseFixture::builder()
+            .with_commit(CommitFixture::default().with_footer(
+                "Co-authored-by",
+                "Toml Bombadil <tom.bombadil@lorien.com>",
+                Separator::Colon,
+            ))
+            .build();
 
-        // Act
-        let changelog = renderer.render(release)?;
-
-        // Assert
-        assert_doc_eq!(
-            changelog,
-            "## 1.0.0 - 2015-09-05
-            #### Features
-            - (**parser**) implement the changelog generator - (17f7e23) - *oknozor*
-            - awesome feature - (17f7e23) - Paul Delafosse
-            #### Bug Fixes
-            - (**parser**) fix parser implementation - (17f7e23) - *oknozor*
-            "
-        );
-
+        let changelog = Template::from_arg("github", default_remote_context())?.render(release)?;
+        assert_doc_eq!(changelog, "");
         Ok(())
     }
 
-    #[test]
-    fn should_render_full_hash_template() -> Result<()> {
-        // Arrange
-        let release = Release::fixture();
-        let mut renderer = Renderer::try_new(Template {
-            remote_context: None,
-            kind: TemplateKind::FullHash,
-        })?;
-
-        // Act
-        let changelog = renderer.render(release)?;
-
-        // Assert
-        assert_doc_eq!(
-            changelog,
-            "#### Features
-            - 17f7e23081db15e9318aeb37529b1d473cf41cbe - (**parser**) implement the changelog generator - @oknozor
-            - 17f7e23081db15e9318aeb37529b1d473cf41cbe - awesome feature - Paul Delafosse
-
-            #### Bug Fixes
-            - 17f7e23081db15e9318aeb37529b1d473cf41cbe - (**parser**) fix parser implementation - @oknozor
-            "
-        );
-
-        Ok(())
+    pub struct ReleaseFixture<'a> {
+        pub release: Release<'a>,
     }
-
-    #[test]
-    fn should_render_github_template() -> Result<()> {
-        // Arrange
-        let release = Release::fixture();
-        let mut renderer = Renderer::try_new(Template {
-            remote_context: RemoteContext::try_new(
-                Some("github.com".into()),
-                Some("cocogitto".into()),
-                Some("cocogitto".into()),
-            ),
-            kind: TemplateKind::Remote,
-        })?;
-
-        // Act
-        let changelog = renderer.render(release)?;
-
-        // Assert
-        assert_doc_eq!(
-            changelog,
-            "## [1.0.0](https://github.com/cocogitto/cocogitto/compare/0.1.0..1.0.0) - 2015-09-05
-            #### Features
-            - (**parser**) implement the changelog generator - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
-            - awesome feature - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - Paul Delafosse
-            #### Bug Fixes
-            - (**parser**) fix parser implementation - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
-            "
-        );
-
-        Ok(())
-    }
-
-    #[test]
-    fn should_render_template_monorepo() -> Result<()> {
-        // Arrange
-        let release = Release::fixture();
-        let renderer = Renderer::try_new(Template {
-            remote_context: None,
-            kind: TemplateKind::MonorepoDefault,
-        })?;
-
-        let mut renderer = monorepo_renderer(renderer)?;
-
-        // Act
-        let changelog = renderer.render(release)?;
-
-        // Assert
-        assert_doc_eq!(
-            changelog,
-            "## 1.0.0 - 2015-09-05
-            ### Package updates
-            - one bumped to 0.1.0
-            - two bumped to 0.2.0
-            ### Global changes
-            #### Features
-            - (**parser**) implement the changelog generator - (17f7e23) - *oknozor*
-            - awesome feature - (17f7e23) - Paul Delafosse
-            #### Bug Fixes
-            - (**parser**) fix parser implementation - (17f7e23) - *oknozor*
-            "
-        );
-
-        Ok(())
-    }
-
-    #[test]
-    fn should_render_template_monorepo_for_manual_bump() -> Result<()> {
-        // Arrange
-        let release = Release::fixture();
-        let renderer = Renderer::try_new(Template {
-            remote_context: None,
-            kind: TemplateKind::MonorepoDefault,
-        })?;
-
-        let mut renderer = monorepo_manual_bump_renderer(renderer)?;
-
-        // Act
-        let changelog = renderer.render(release)?;
-
-        // Assert
-        assert_doc_eq!(
-            changelog,
-            "## 1.0.0 - 2015-09-05
-            ### Packages
-            - one locked to 0.1.0
-            - two locked to 0.2.0
-            ### Global changes
-            #### Features
-            - (**parser**) implement the changelog generator - (17f7e23) - *oknozor*
-            - awesome feature - (17f7e23) - Paul Delafosse
-            #### Bug Fixes
-            - (**parser**) fix parser implementation - (17f7e23) - *oknozor*
-            "
-        );
-
-        Ok(())
-    }
-
-    #[test]
-    fn should_render_full_hash_template_monorepo() -> Result<()> {
-        // Arrange
-        let release = Release::fixture();
-        let renderer = Renderer::try_new(Template {
-            remote_context: None,
-            kind: TemplateKind::MonorepoFullHash,
-        })?;
-
-        let mut renderer = monorepo_renderer(renderer)?;
-
-        // Act
-        let changelog = renderer.render(release)?;
-
-        // Assert
-        assert_doc_eq!(
-            changelog,
-            "### Package updates
-            - one bumped to 0.1.0
-            - two bumped to 0.2.0
-            ### Global changes
-            #### Features
-            - 17f7e23081db15e9318aeb37529b1d473cf41cbe - (**parser**) implement the changelog generator - @oknozor
-            - 17f7e23081db15e9318aeb37529b1d473cf41cbe - awesome feature - Paul Delafosse
-
-            #### Bug Fixes
-            - 17f7e23081db15e9318aeb37529b1d473cf41cbe - (**parser**) fix parser implementation - @oknozor
-            "
-        );
-
-        Ok(())
-    }
-
-    #[test]
-    fn should_render_full_hash_template_manual_monorepo() -> Result<()> {
-        // Arrange
-        let release = Release::fixture();
-        let renderer = Renderer::try_new(Template {
-            remote_context: None,
-            kind: TemplateKind::MonorepoFullHash,
-        })?;
-
-        let mut renderer = monorepo_manual_bump_renderer(renderer)?;
-
-        // Act
-        let changelog = renderer.render(release)?;
-
-        // Assert
-        assert_doc_eq!(
-            changelog,
-            "### Packages
-            - one locked to 0.1.0
-            - two locked to 0.2.0
-            ### Global changes
-            #### Features
-            - 17f7e23081db15e9318aeb37529b1d473cf41cbe - (**parser**) implement the changelog generator - @oknozor
-            - 17f7e23081db15e9318aeb37529b1d473cf41cbe - awesome feature - Paul Delafosse
-
-            #### Bug Fixes
-            - 17f7e23081db15e9318aeb37529b1d473cf41cbe - (**parser**) fix parser implementation - @oknozor
-            "
-        );
-
-        Ok(())
-    }
-
-    #[test]
-    fn should_render_remote_template_monorepo() -> Result<()> {
-        // Arrange
-        let release = Release::fixture();
-        let renderer = Renderer::try_new(Template {
-            remote_context: RemoteContext::try_new(
-                Some("github.com".into()),
-                Some("cocogitto".into()),
-                Some("cocogitto".into()),
-            ),
-            kind: TemplateKind::MonorepoRemote,
-        })?;
-
-        let mut renderer = monorepo_renderer(renderer)?;
-
-        // Act
-        let changelog = renderer.render(release)?;
-
-        // Assert
-        assert_doc_eq!(
-            changelog,
-            "## [1.0.0](https://github.com/cocogitto/cocogitto/compare/0.1.0..1.0.0) - 2015-09-05
-            ### Package updates
-            - [0.1.0](crates/one) bumped to [0.1.0](https://github.com/cocogitto/cocogitto/compare/0.2.0..0.1.0)
-            - [0.2.0](crates/two) bumped to [0.2.0](https://github.com/cocogitto/cocogitto/compare/0.3.0..0.2.0)
-            ### Global changes
-            #### Features
-            - (**parser**) implement the changelog generator - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
-            - awesome feature - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - Paul Delafosse
-            #### Bug Fixes
-            - (**parser**) fix parser implementation - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
-            "
-        );
-
-        Ok(())
-    }
-
-    #[test]
-    fn should_render_template_package() -> Result<()> {
-        // Arrange
-        let release = Release::fixture();
-        let renderer = Renderer::try_new(Template {
-            remote_context: None,
-            kind: TemplateKind::PackageDefault,
-        })?;
-
-        let mut renderer = package_renderer(renderer)?;
-
-        // Act
-        let changelog = renderer.render(release)?;
-
-        // Assert
-        assert_doc_eq!(
-            changelog,
-            "## 1.0.0 - 2015-09-05
-            #### Features
-            - (**parser**) implement the changelog generator - (17f7e23) - *oknozor*
-            - awesome feature - (17f7e23) - Paul Delafosse
-            #### Bug Fixes
-            - (**parser**) fix parser implementation - (17f7e23) - *oknozor*
-            "
-        );
-
-        Ok(())
-    }
-
-    #[test]
-    fn should_render_full_hash_template_package() -> Result<()> {
-        // Arrange
-        let release = Release::fixture();
-        let renderer = Renderer::try_new(Template {
-            remote_context: None,
-            kind: TemplateKind::PackageFullHash,
-        })?;
-
-        let mut renderer = package_renderer(renderer)?;
-
-        // Act
-        let changelog = renderer.render(release)?;
-
-        // Assert
-        assert_doc_eq!(
-            changelog,
-            "#### Features
-            - 17f7e23081db15e9318aeb37529b1d473cf41cbe - (**parser**) implement the changelog generator - @oknozor
-            - 17f7e23081db15e9318aeb37529b1d473cf41cbe - awesome feature - Paul Delafosse
-
-            #### Bug Fixes
-            - 17f7e23081db15e9318aeb37529b1d473cf41cbe - (**parser**) fix parser implementation - @oknozor
-            "
-        );
-
-        Ok(())
-    }
-
-    #[test]
-    fn should_render_remote_template_package() -> Result<()> {
-        // Arrange
-        let release = Release::fixture();
-        let renderer = Renderer::try_new(Template {
-            remote_context: RemoteContext::try_new(
-                Some("github.com".into()),
-                Some("cocogitto".into()),
-                Some("cocogitto".into()),
-            ),
-            kind: TemplateKind::PackageRemote,
-        })?;
-
-        let mut renderer = package_renderer(renderer)?;
-
-        // Act
-        let changelog = renderer.render(release)?;
-
-        // Assert
-        assert_doc_eq!(
-            changelog,
-            "## [1.0.0](https://github.com/cocogitto/cocogitto/compare/0.1.0..1.0.0) - 2015-09-05
-            #### Features
-            - (**parser**) implement the changelog generator - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
-            - awesome feature - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - Paul Delafosse
-            #### Bug Fixes
-            - (**parser**) fix parser implementation - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
-            "
-        );
-
-        Ok(())
-    }
-
-    #[test]
-    fn should_render_remote_template_monorepo_for_manual_bump() -> Result<()> {
-        // Arrange
-        let release = Release::fixture();
-        let renderer = Renderer::try_new(Template {
-            remote_context: RemoteContext::try_new(
-                Some("github.com".into()),
-                Some("cocogitto".into()),
-                Some("cocogitto".into()),
-            ),
-            kind: TemplateKind::MonorepoRemote,
-        })?;
-
-        let mut renderer = monorepo_manual_bump_renderer(renderer)?;
-
-        // Act
-        let changelog = renderer.render(release)?;
-
-        // Assert
-        assert_doc_eq!(
-            changelog,
-            "## [1.0.0](https://github.com/cocogitto/cocogitto/compare/0.1.0..1.0.0) - 2015-09-05
-            ### Packages
-            - [0.1.0](crates/one) locked to [0.1.0](https://github.com/cocogitto/cocogitto/tree/0.1.0)
-            - [0.2.0](crates/two) locked to [0.2.0](https://github.com/cocogitto/cocogitto/tree/0.2.0)
-            ### Global changes
-            #### Features
-            - (**parser**) implement the changelog generator - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
-            - awesome feature - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - Paul Delafosse
-            #### Bug Fixes
-            - (**parser**) fix parser implementation - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
-            "
-        );
-
-        Ok(())
-    }
-
     #[test]
     fn should_render_unified_default() -> Result<()> {
         // Arrange
@@ -605,7 +475,7 @@ mod test {
             #### Features
             - 17f7e23081db15e9318aeb37529b1d473cf41cbe - (**parser**) implement the changelog generator - @oknozor
             - 17f7e23081db15e9318aeb37529b1d473cf41cbe - awesome feature - Paul Delafosse
-            
+
             #### Bug Fixes
             - 17f7e23081db15e9318aeb37529b1d473cf41cbe - (**parser**) fix parser implementation - @oknozor
             "
@@ -655,156 +525,241 @@ mod test {
             let date =
                 NaiveDateTime::parse_from_str("2015-09-05 23:56:04", "%Y-%m-%d %H:%M:%S").unwrap();
 
-            let paul_delafosse = "Paul Delafosse";
-            let a_commit_hash = "17f7e23081db15e9318aeb37529b1d473cf41cbe";
-            let version = Tag::from_str(
-                "1.0.0",
-                Some(Oid::from_str("9bb5facac5724bc81385fdd740fedbb49056da00").unwrap()),
-            )
-            .unwrap();
-            let from = Tag::from_str(
-                "0.1.0",
-                Some(Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap()),
-            )
-            .unwrap();
-            Release {
-                version: OidOf::Tag(version),
-                from: OidOf::Tag(from),
-                date,
-                commits: vec![
-                    ChangelogCommit {
-                        author_username: Some("oknozor"),
-                        commit: Commit {
-                            oid: a_commit_hash.to_string(),
-                            conventional: ConventionalCommit {
-                                commit_type: CommitType::BugFix,
-                                scope: Some("parser".to_string()),
-                                summary: "fix parser implementation".to_string(),
-                                body: Some("the body".to_string()),
-                                footers: vec![Footer {
-                                    token: "token".to_string(),
-                                    content: "content".to_string(),
-                                    ..Default::default()
-                                }],
-                                is_breaking_change: false,
-                            },
-                            author: paul_delafosse.to_string(),
-                            date,
+    impl<'a> ReleaseFixture<'a> {
+        fn builder() -> ReleaseFixture<'a> {
+            ReleaseFixture {
+                release: Release {
+                    version: OidOf::Tag(
+                        Tag::from_str(
+                            "1.0.0",
+                            Some(
+                                Oid::from_str("9bb5facac5724bc81385fdd740fedbb49056da00").unwrap(),
+                            ),
+                        )
+                        .unwrap(),
+                    ),
+                    from: OidOf::Tag(
+                        Tag::from_str(
+                            "0.1.0",
+                            Some(
+                                Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap(),
+                            ),
+                        )
+                        .unwrap(),
+                    ),
+                    date: NaiveDateTime::parse_from_str("2015-09-05 23:56:04", "%Y-%m-%d %H:%M:%S")
+                        .unwrap(),
+                    commits: vec![],
+                    previous: None,
+                },
+            }
+        }
+
+        fn build(self) -> Release<'a> {
+            self.release
+        }
+
+        fn with_commit(mut self, commit: CommitFixture<'a>) -> Self {
+            self.release.commits.push(commit.build());
+            self
+        }
+    }
+
+    impl<'a> Default for ReleaseFixture<'a> {
+        fn default() -> Self {
+            return ReleaseFixture::builder()
+                .with_commit(
+                    CommitFixture::default()
+                        .with_scope("parser")
+                        .with_commit_type(CommitType::Feature)
+                        .with_username("oknozor")
+                        .with_message("implement the changelog generator"),
+                )
+                .with_commit(
+                    CommitFixture::default()
+                        .with_message("awesome feature")
+                        .with_commit_type(CommitType::Feature),
+                )
+                .with_commit(
+                    CommitFixture::default()
+                        .with_scope("parser")
+                        .with_username("oknozor")
+                        .with_message("fix parser implementation"),
+                );
+        }
+    }
+
+    struct CommitFixture<'a> {
+        changelog: ChangelogCommit<'a>,
+    }
+
+    impl<'a> CommitFixture<'a> {
+        fn with_commit_type(mut self, commit_type: CommitType) -> Self {
+            self.changelog.commit.conventional.commit_type = commit_type;
+            self
+        }
+
+        fn with_username(mut self, author: &'a str) -> Self {
+            self.changelog.author_username = Some(author);
+            self
+        }
+
+        fn with_scope(mut self, scope: &str) -> Self {
+            self.changelog.commit.conventional.scope = Some(scope.to_string());
+            self
+        }
+
+        fn with_message(mut self, message: &str) -> Self {
+            self.changelog.commit.conventional.summary = message.to_string();
+            self
+        }
+
+        fn with_footer(mut self, token: &str, content: &str, token_separator: Separator) -> Self {
+            self.changelog.commit.conventional.footers.push(Footer {
+                token: token.to_string(),
+                content: content.to_string(),
+                token_separator,
+            });
+            self
+        }
+
+        fn with_breaking(mut self) -> Self {
+            self.changelog.commit.conventional.is_breaking_change = true;
+            self
+        }
+
+        fn build(self) -> ChangelogCommit<'a> {
+            self.changelog
+        }
+    }
+
+    impl Default for CommitFixture<'_> {
+        fn default() -> Self {
+            Self {
+                changelog: ChangelogCommit {
+                    author_username: None,
+                    commit: Commit {
+                        oid: "17f7e23081db15e9318aeb37529b1d473cf41cbe".to_string(),
+                        conventional: ConventionalCommit {
+                            commit_type: CommitType::BugFix,
+                            scope: None,
+                            summary: "fix parser implementation".to_string(),
+                            body: None,
+                            footers: vec![Footer {
+                                token: "token".to_string(),
+                                content: "content".to_string(),
+                                ..Default::default()
+                            }],
+                            is_breaking_change: false,
                         },
+                        author: "Paul Delafosse".to_string(),
+                        date: NaiveDateTime::parse_from_str(
+                            "2015-09-05 23:56:04",
+                            "%Y-%m-%d %H:%M:%S",
+                        )
+                        .unwrap(),
                     },
-                    ChangelogCommit {
-                        author_username: None,
-                        commit: Commit {
-                            oid: a_commit_hash.to_string(),
-                            conventional: ConventionalCommit {
-                                commit_type: CommitType::Feature,
-                                scope: None,
-                                summary: "awesome feature".to_string(),
-                                body: Some("the body".to_string()),
-                                footers: vec![Footer {
-                                    token: "token".to_string(),
-                                    content: "content".to_string(),
-                                    ..Default::default()
-                                }],
-                                is_breaking_change: false,
-                            },
-                            author: paul_delafosse.to_string(),
-                            date,
-                        },
-                    },
-                    ChangelogCommit {
-                        author_username: Some("oknozor"),
-                        commit: Commit {
-                            oid: a_commit_hash.to_string(),
-                            conventional: ConventionalCommit {
-                                commit_type: CommitType::Feature,
-                                scope: Some("parser".to_string()),
-                                summary: "implement the changelog generator".to_string(),
-                                body: Some("the body".to_string()),
-                                footers: vec![Footer {
-                                    token: "token".to_string(),
-                                    content: "content".to_string(),
-                                    ..Default::default()
-                                }],
-                                is_breaking_change: false,
-                            },
-                            author: "James Delleck".to_string(),
-                            date,
-                        },
-                    },
-                ],
-                previous: None,
+                },
             }
         }
     }
 
-    fn monorepo_renderer(renderer: Renderer) -> Result<Renderer> {
-        let renderer = renderer.with_monorepo_context(MonoRepoContext {
+    fn monorepo_context<'a>() -> MonoRepoContext<'a> {
+        MonoRepoContext {
             package_lock: false,
             packages: vec![
                 PackageBumpContext {
                     package_name: "one",
                     package_path: "crates/one",
-                    version: OidOf::Tag(Tag::from_str(
-                        "0.1.0",
-                        Some(Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap()),
-                    )?),
-                    from: Some(OidOf::Tag(Tag::from_str(
-                        "0.2.0",
-                        Some(Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap()),
-                    )?)),
+                    version: OidOf::Tag(
+                        Tag::from_str(
+                            "0.1.0",
+                            Some(
+                                Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap(),
+                            ),
+                        )
+                        .unwrap(),
+                    ),
+                    from: Some(OidOf::Tag(
+                        Tag::from_str(
+                            "0.2.0",
+                            Some(
+                                Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap(),
+                            ),
+                        )
+                        .unwrap(),
+                    )),
                 },
                 PackageBumpContext {
                     package_name: "two",
                     package_path: "crates/two",
-                    version: OidOf::Tag(Tag::from_str(
-                        "0.2.0",
-                        Some(Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap()),
-                    )?),
-                    from: Some(OidOf::Tag(Tag::from_str(
-                        "0.3.0",
-                        Some(Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap()),
-                    )?)),
+                    version: OidOf::Tag(
+                        Tag::from_str(
+                            "0.2.0",
+                            Some(
+                                Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap(),
+                            ),
+                        )
+                        .unwrap(),
+                    ),
+                    from: Some(OidOf::Tag(
+                        Tag::from_str(
+                            "0.3.0",
+                            Some(
+                                Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap(),
+                            ),
+                        )
+                        .unwrap(),
+                    )),
                 },
             ],
-        });
-
-        Ok(renderer)
+        }
     }
 
-    fn monorepo_manual_bump_renderer(renderer: Renderer) -> Result<Renderer> {
-        let renderer = renderer.with_monorepo_context(MonoRepoContext {
+    fn default_pacakage_context<'a>() -> MonoRepoContext<'a> {
+        MonoRepoContext {
             package_lock: true,
             packages: vec![
                 PackageBumpContext {
                     package_name: "one",
                     package_path: "crates/one",
-                    version: OidOf::Tag(Tag::from_str(
-                        "0.1.0",
-                        Some(Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap()),
-                    )?),
+                    version: OidOf::Tag(
+                        Tag::from_str(
+                            "0.1.0",
+                            Some(
+                                Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap(),
+                            ),
+                        )
+                        .unwrap(),
+                    ),
                     from: None,
                 },
                 PackageBumpContext {
                     package_name: "two",
                     package_path: "crates/two",
-                    version: OidOf::Tag(Tag::from_str(
-                        "0.2.0",
-                        Some(Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap()),
-                    )?),
+                    version: OidOf::Tag(
+                        Tag::from_str(
+                            "0.2.0",
+                            Some(
+                                Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap(),
+                            ),
+                        )
+                        .unwrap(),
+                    ),
                     from: None,
                 },
             ],
-        });
-
-        Ok(renderer)
+        }
     }
 
-    fn package_renderer(renderer: Renderer) -> Result<Renderer> {
-        let renderer = renderer.with_package_context(PackageContext {
-            package_name: "one",
-        });
-
-        Ok(renderer)
+    fn default_remote_context() -> Option<RemoteContext> {
+        Some(
+            RemoteContext::try_new(
+                Some("github.com".into()),
+                Some("cocogitto".into()),
+                Some("cocogitto".into()),
+            )
+            .unwrap(),
+        )
     }
 }

@@ -4,7 +4,8 @@ mod mangen;
 use std::fs;
 use std::path::PathBuf;
 
-use cocogitto::conventional::changelog::template::{RemoteContext, Template};
+use cocogitto::conventional::changelog::context::RemoteContext;
+use cocogitto::conventional::changelog::template::Template;
 use cocogitto::conventional::changelog::ReleaseType;
 use cocogitto::conventional::commit as conv_commit;
 use cocogitto::conventional::version::IncrementCommand;
@@ -667,7 +668,7 @@ fn main() -> Result<()> {
             let template = if let Some(template) = template {
                 Template::from_arg(template, context)?
             } else {
-                Template::fallback(unified)
+                Template::from_arg("default", context)?
             };
 
             // TODO: fallback to tag here

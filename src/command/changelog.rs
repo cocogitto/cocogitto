@@ -1,6 +1,6 @@
+use crate::conventional::changelog::context::MonoRepoContext;
+use crate::conventional::changelog::context::PackageBumpContext;
 use crate::conventional::changelog::release::Release;
-use crate::conventional::changelog::template::MonoRepoContext;
-use crate::conventional::changelog::template::PackageBumpContext;
 use crate::conventional::changelog::template::Template;
 
 use crate::conventional::changelog::ReleaseType;
