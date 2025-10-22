@@ -1,11 +1,11 @@
+use crate::conventional::changelog::context::{RemoteContext, ToContext};
 use crate::conventional::changelog::error::ChangelogError;
+use crate::conventional::changelog::release::Release;
 
-use serde::Serialize;
-
-use crate::git::oid::OidOf;
+use super::filter;
 use std::io;
 use std::path::PathBuf;
-use tera::Context;
+use tera::{Context, Tera};
 
 const DEFAULT_TEMPLATE: &[u8] = include_bytes!("template/simple");
 const DEFAULT_TEMPLATE_NAME: &str = "default";
@@ -13,6 +13,8 @@ const REMOTE_TEMPLATE: &[u8] = include_bytes!("template/remote");
 const REMOTE_TEMPLATE_NAME: &str = "remote";
 const FULL_HASH_TEMPLATE: &[u8] = include_bytes!("template/full_hash");
 const FULL_HASH_TEMPLATE_NAME: &str = "full_hash";
+const GITHUB_TEMPLATE: &[u8] = include_bytes!("template/github");
+const GITHUB_TEMPLATE_NAME: &str = "github";
 
 const PACKAGE_DEFAULT_TEMPLATE: &[u8] = include_bytes!("template/package_simple");
 const PACKAGE_DEFAULT_TEMPLATE_NAME: &str = "package_default";
@@ -28,20 +30,63 @@ const MONOREPO_REMOTE_TEMPLATE_NAME: &str = "monorepo_remote";
 const MONOREPO_FULL_HASH_TEMPLATE: &[u8] = include_bytes!("template/monorepo_full_hash");
 const MONOREPO_FULL_HASH_TEMPLATE_NAME: &str = "monorepo_full_hash";
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct Template {
-    pub remote_context: Option<RemoteContext>,
+    pub tera: Tera,
+    pub context: Context,
     pub kind: TemplateKind,
 }
 
 impl Template {
-    pub fn from_arg(value: &str, context: Option<RemoteContext>) -> Result<Self, ChangelogError> {
+    pub fn from_arg(
+        value: &str,
+        remote_context: Option<RemoteContext>,
+    ) -> Result<Self, ChangelogError> {
         let template = TemplateKind::from_arg(value)?;
+        let mut context = Context::default();
+        if let Some(remote) = remote_context {
+            context.extend(remote.to_context());
+        }
+
+        let mut tera = Tera::default();
+        let content = template.get()?;
+        let content = String::from_utf8_lossy(content.as_slice());
+        tera.add_raw_template(template.name(), content.as_ref())?;
+        tera.register_filter("upper_first", filter::upper_first_filter);
+        tera.register_filter("unscoped", filter::unscoped);
+        tera.register_filter("group_by_type", filter::group_by_type);
 
         Ok(Template {
-            remote_context: context,
+            context,
             kind: template,
+            tera,
         })
+    }
+
+    pub fn render(&mut self, version: Release) -> Result<String, tera::Error> {
+        let mut release = self.render_release(&version)?;
+        let mut version = version;
+        while let Some(previous) = version.previous.map(|v| *v) {
+            release.push_str("\n- - -\n\n");
+            release.push_str(self.render_release(&previous)?.as_str());
+            version = previous;
+        }
+
+        Ok(release)
+    }
+
+    fn render_release(&mut self, version: &Release) -> Result<String, tera::Error> {
+        self.push_context(version);
+        self.tera.render(self.kind.name(), &self.context)
+    }
+
+    pub(crate) fn push_context(&mut self, context: impl ToContext) {
+        self.context.extend(context.to_context());
+    }
+
+    pub(crate) fn with_context(mut self, context: impl ToContext) -> Self {
+        self.context.extend(context.to_context());
+        self
     }
 }
 
@@ -51,6 +96,7 @@ pub enum TemplateKind {
     Default,
     FullHash,
     Remote,
+    Github,
     PackageDefault,
     PackageFullHash,
     PackageRemote,
@@ -95,6 +141,7 @@ impl TemplateKind {
             TemplateKind::MonorepoDefault => Ok(MONOREPO_DEFAULT_TEMPLATE.to_vec()),
             TemplateKind::MonorepoRemote => Ok(MONOREPO_REMOTE_TEMPLATE.to_vec()),
             TemplateKind::MonorepoFullHash => Ok(MONOREPO_FULL_HASH_TEMPLATE.to_vec()),
+            TemplateKind::Github => Ok(GITHUB_TEMPLATE.to_vec()),
             TemplateKind::Custom(path) => std::fs::read(path),
         }
     }
@@ -110,87 +157,8 @@ impl TemplateKind {
             TemplateKind::MonorepoDefault => MONOREPO_DEFAULT_TEMPLATE_NAME,
             TemplateKind::MonorepoRemote => MONOREPO_REMOTE_TEMPLATE_NAME,
             TemplateKind::MonorepoFullHash => MONOREPO_FULL_HASH_TEMPLATE_NAME,
+            TemplateKind::Github => GITHUB_TEMPLATE_NAME,
             TemplateKind::Custom(_) => "custom_template",
-        }
-    }
-}
-
-/// A wrapper to append remote repository information to template context
-#[derive(Debug)]
-pub struct RemoteContext {
-    remote: String,
-    repository: String,
-    owner: String,
-}
-
-#[derive(Debug)]
-pub struct MonoRepoContext<'a> {
-    pub package_lock: bool,
-    pub packages: Vec<PackageBumpContext<'a>>,
-}
-
-#[derive(Debug, Serialize)]
-pub struct PackageBumpContext<'a> {
-    pub package_name: &'a str,
-    pub package_path: &'a str,
-    pub version: OidOf,
-    pub from: Option<OidOf>,
-}
-
-#[derive(Debug)]
-pub struct PackageContext<'a> {
-    pub package_name: &'a str,
-}
-
-pub(crate) trait ToContext {
-    fn to_context(&self) -> Context;
-}
-
-impl ToContext for MonoRepoContext<'_> {
-    fn to_context(&self) -> Context {
-        let mut context = tera::Context::new();
-        context.insert("package_lock", &self.package_lock);
-        context.insert("packages", &self.packages);
-        context
-    }
-}
-
-impl ToContext for PackageContext<'_> {
-    fn to_context(&self) -> Context {
-        let mut context = tera::Context::new();
-        context.insert("package_name", &self.package_name);
-        context
-    }
-}
-
-impl ToContext for RemoteContext {
-    fn to_context(&self) -> Context {
-        let mut context = tera::Context::new();
-        context.insert("platform", &format!("https://{}", self.remote.as_str()));
-        context.insert("owner", self.owner.as_str());
-        context.insert(
-            "repository_url",
-            &format!("https://{}/{}/{}", self.remote, self.owner, self.repository),
-        );
-
-        context
-    }
-}
-
-impl RemoteContext {
-    pub fn try_new(
-        remote: Option<String>,
-        repository: Option<String>,
-        owner: Option<String>,
-    ) -> Option<Self> {
-        match (remote, repository, owner) {
-            (Some(remote), Some(repository), Some(owner)) => Some(Self {
-                remote,
-                repository,
-                owner,
-            }),
-            (None, None, None) => None,
-            _ => panic!("Changelog remote context should be set. Missing one of 'remote', 'repository', 'owner' in changelog configuration")
         }
     }
 }

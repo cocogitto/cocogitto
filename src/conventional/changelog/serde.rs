@@ -55,7 +55,7 @@ impl Serialize for ChangelogCommit<'_> {
             "breaking_change",
             &self.commit.conventional.is_breaking_change,
         )?;
-        commit.serialize_field("footer", footers)?;
+        commit.serialize_field("footers", footers)?;
         commit.end()
     }
 }
@@ -130,5 +130,20 @@ mod test {
         let result = serde_json::to_string(&commit);
 
         assert_that!(result).is_ok();
+    }
+
+    use crate::conventional::changelog::release::ChangelogFooter;
+
+    #[test]
+    fn should_serialize_changelog_footer() {
+        let footer = ChangelogFooter::GithubCloses {
+            gh_reference: "123",
+        };
+
+        let result = serde_json::to_string(&footer);
+
+        assert_that!(result)
+            .is_ok()
+            .is_equal_to(r#"{"type":"github_closes","gh_reference":"123"}"#.to_string());
     }
 }
