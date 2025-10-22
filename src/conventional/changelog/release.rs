@@ -11,15 +11,15 @@ use crate::conventional::changelog::error::ChangelogError;
 use log::warn;
 
 #[derive(Debug, Serialize)]
-pub struct Release<'a> {
+pub struct Release {
     pub version: OidOf,
     pub from: OidOf,
     pub date: NaiveDateTime,
-    pub commits: Vec<ChangelogCommit<'a>>,
-    pub previous: Option<Box<Release<'a>>>,
+    pub commits: Vec<ChangelogCommit>,
+    pub previous: Option<Box<Release>>,
 }
 
-impl TryFrom<CommitIter<'_>> for Release<'_> {
+impl TryFrom<CommitIter<'_>> for Release {
     type Error = ChangelogError;
 
     fn try_from(commits: CommitIter<'_>) -> Result<Self, Self::Error> {
@@ -96,18 +96,20 @@ impl TryFrom<CommitIter<'_>> for Release<'_> {
 }
 
 #[derive(Debug)]
-pub struct ChangelogCommit<'a> {
-    pub author_username: Option<&'a str>,
+pub struct ChangelogCommit {
+    pub author_username: Option<String>,
+    pub committer_username: Option<String>,
     pub commit: Commit,
 }
 
-impl From<Commit> for ChangelogCommit<'_> {
+impl From<Commit> for ChangelogCommit {
     fn from(commit: Commit) -> Self {
         let author_username = settings::commit_username(&commit.author);
 
         ChangelogCommit {
             author_username,
             commit,
+            committer_username: None,
         }
     }
 }
@@ -401,6 +403,14 @@ mod test {
         "
     );
 
+    changelog_test!(
+        should_render_github_changelog,
+        ReleaseFixture::cocogitto(),
+        Template::from_arg("github", default_remote_context())?,
+        "
+        "
+    );
+
     #[test]
     fn should_render_github_footers() -> anyhow::Result<()> {
         let release = ReleaseFixture::builder()
@@ -416,12 +426,12 @@ mod test {
         Ok(())
     }
 
-    pub struct ReleaseFixture<'a> {
-        pub release: Release<'a>,
+    pub struct ReleaseFixture {
+        pub release: Release,
     }
 
-    impl<'a> ReleaseFixture<'a> {
-        fn builder() -> ReleaseFixture<'a> {
+    impl<'a> ReleaseFixture {
+        fn builder() -> ReleaseFixture {
             ReleaseFixture {
                 release: Release {
                     version: OidOf::Tag(
@@ -450,17 +460,17 @@ mod test {
             }
         }
 
-        fn build(self) -> Release<'a> {
+        fn build(self) -> Release {
             self.release
         }
 
-        fn with_commit(mut self, commit: CommitFixture<'a>) -> Self {
+        fn with_commit(mut self, commit: CommitFixture) -> Self {
             self.release.commits.push(commit.build());
             self
         }
     }
 
-    impl<'a> Default for ReleaseFixture<'a> {
+    impl Default for ReleaseFixture {
         fn default() -> Self {
             return ReleaseFixture::builder()
                 .with_commit(
@@ -484,18 +494,49 @@ mod test {
         }
     }
 
-    struct CommitFixture<'a> {
-        changelog: ChangelogCommit<'a>,
+    impl ReleaseFixture {
+        fn cocogitto() -> Self {
+            return ReleaseFixture::builder()
+                .with_commit(
+                    CommitFixture::default()
+                        .with_scope("parser")
+                        .with_author("Paul Delafosse")
+                        .with_commit_type(CommitType::Feature)
+                        .with_sha("9d14c0b967598780d2acd9e281bcf2ee4d0e9fd7")
+                        .with_message("implement the changelog generator"),
+                )
+                .with_commit(
+                    CommitFixture::default()
+                        .with_sha("cc0e64d2c1e075ac9b782258783212b4d7917892")
+                        .with_author("Lindner, Bernhard")
+                        .with_message("awesome feature")
+                        .with_commit_type(CommitType::Feature),
+                );
+        }
     }
 
-    impl<'a> CommitFixture<'a> {
+    struct CommitFixture {
+        changelog: ChangelogCommit,
+    }
+
+    impl CommitFixture {
+        fn with_sha(mut self, sha: &str) -> Self {
+            self.changelog.commit.oid = sha.to_string();
+            self
+        }
+
         fn with_commit_type(mut self, commit_type: CommitType) -> Self {
             self.changelog.commit.conventional.commit_type = commit_type;
             self
         }
 
-        fn with_username(mut self, author: &'a str) -> Self {
-            self.changelog.author_username = Some(author);
+        fn with_author(mut self, author: &str) -> Self {
+            self.changelog.commit.author = author.to_string();
+            self
+        }
+
+        fn with_username(mut self, author: &str) -> Self {
+            self.changelog.author_username = Some(author.to_string());
             self
         }
 
@@ -523,15 +564,16 @@ mod test {
             self
         }
 
-        fn build(self) -> ChangelogCommit<'a> {
+        fn build(self) -> ChangelogCommit {
             self.changelog
         }
     }
 
-    impl Default for CommitFixture<'_> {
+    impl Default for CommitFixture {
         fn default() -> Self {
             Self {
                 changelog: ChangelogCommit {
+                    committer_username: None,
                     author_username: None,
                     commit: Commit {
                         oid: "17f7e23081db15e9318aeb37529b1d473cf41cbe".to_string(),

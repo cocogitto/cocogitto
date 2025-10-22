@@ -83,13 +83,13 @@ impl RemoteContext {
     }
 }
 
-impl ToContext for &Release<'_> {
+impl ToContext for &Release {
     fn to_context(&self) -> Context {
         Context::from_serialize(self).expect("Valid release")
     }
 }
 
-impl ToContext for &mut Release<'_> {
+impl ToContext for &mut Release {
     fn to_context(&self) -> Context {
         Context::from_serialize(self).expect("Valid release")
     }

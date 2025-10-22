@@ -28,7 +28,7 @@ pub enum ReleaseType<'a> {
     Package(PackageContext<'a>),
 }
 
-impl Release<'_> {
+impl Release {
     pub fn into_markdown(
         self,
         template: Template,

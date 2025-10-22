@@ -412,13 +412,13 @@ pub struct AuthorSetting {
     pub username: String,
 }
 
-pub fn commit_username(author: &str) -> Option<&'static str> {
+pub fn commit_username(author: &str) -> Option<String> {
     SETTINGS
         .changelog
         .authors
         .iter()
         .find(|author_map| author_map.signature == author)
-        .map(|author| author.username.as_str())
+        .map(|author| author.username.clone())
 }
 
 pub fn changelog_path() -> &'static PathBuf {

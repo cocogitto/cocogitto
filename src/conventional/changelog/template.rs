@@ -50,7 +50,7 @@ impl Template {
     ) -> Result<Self, ChangelogError> {
         let template = TemplateKind::from_arg(value)?;
         let mut context = Context::default();
-        if let Some(remote) = remote_context {
+        if let Some(remote) = &remote_context {
             context.extend(remote.to_context());
         }
 
@@ -72,6 +72,7 @@ impl Template {
             kind: template,
             tera,
             git_provider,
+            remote_context,
         })
     }
 
@@ -88,21 +89,27 @@ impl Template {
     }
 
     fn render_release(&mut self, version: &mut Release) -> Result<String, ChangelogError> {
-        if let Some((git_provider, remote_context)) = self.git_provider.zip(self.remote_context) {
+        if let (Some(git_provider), Some(remote_context)) =
+            (self.git_provider.as_ref(), self.remote_context.as_ref())
+        {
             let mut contributor_map: HashMap<String, String> = HashMap::new();
             let owner = &remote_context.owner;
             let repo = &remote_context.repository;
 
             for commit in &mut version.commits {
+                println!("{:?}", commit.commit.oid);
+                // Check for author username
                 if let Some(username) = contributor_map.get(&commit.commit.author) {
                     // TODO: add committer
-                    commit.author_username = Some(username.as_str());
+                    commit.author_username = Some(username.clone());
                 } else {
                     let github_authors =
                         git_provider.get_commit_contributors(owner, repo, &commit.commit.oid)?;
 
                     if let Some(author) = github_authors.author {
-                        contributor_map.insert(commit.commit.author.clone(), author);
+                        println!("{:?}", author);
+                        contributor_map.insert(commit.commit.author.clone(), author.clone());
+                        commit.author_username = Some(author);
                     }
 
                     if let Some(committer) = github_authors.committer {
@@ -110,6 +117,8 @@ impl Template {
                     }
                 }
             }
+
+            println!("{:?}", contributor_map);
         }
 
         self.push_context(version);
@@ -124,11 +133,6 @@ impl Template {
 
     pub(crate) fn with_context(mut self, context: impl ToContext) -> Self {
         self.context.extend(context.to_context());
-        self
-    }
-
-    pub(crate) fn with_remote_context(mut self, context: RemoteContext) -> Self {
-        self.remote_context = Some(context);
         self
     }
 }
@@ -162,6 +166,7 @@ impl TemplateKind {
             MONOREPO_DEFAULT_TEMPLATE_NAME => Ok(TemplateKind::MonorepoDefault),
             MONOREPO_REMOTE_TEMPLATE_NAME => Ok(TemplateKind::MonorepoRemote),
             MONOREPO_FULL_HASH_TEMPLATE_NAME => Ok(TemplateKind::MonorepoFullHash),
+            GITHUB_TEMPLATE_NAME => Ok(TemplateKind::Github),
             path => {
                 let path = PathBuf::from(path);
                 if !path.exists() {

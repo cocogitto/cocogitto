@@ -546,6 +546,7 @@ fn main() -> Result<()> {
             };
 
             conv_commit::verify(
+                None,
                 author,
                 &commit_message,
                 ignore_merge_commits,

@@ -64,8 +64,8 @@ mod tests {
         );
 
         assert_that!(result).is_ok_containing(Committers {
-            author: Some("oknozor".to_string()),
-            committer: Some("ba-lidnner".to_string()),
+            committer: Some("oknozor".to_string()),
+            author: Some("ba-lindner".to_string()),
         });
     }
 }
