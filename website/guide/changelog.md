@@ -191,3 +191,51 @@ Also see [template reference](/reference/template).
     {% endfor %}
 {% endfor %}
 ```
+### Using predefined macros
+
+Cocogitto provides built-in Tera macros to help you format changelog entries in your custom templates. All macros are available in a single [`macros.tera`](https://github.com/cocogitto/cocogitto/blob/main/src/conventional/changelog/template/macro/macros.tera) file.
+
+You can use these macros in your template by importing them at the top of your Tera file:
+
+```tera
+{% import "macros" as macros %}
+```
+
+The macros module provides three different formatting functions for rendering commits:
+
+#### Available macros
+
+- **macros::simple(commit)**
+  Provides a minimal format with short commit hashes and basic author formatting.
+  Example output:
+  ```
+  - (**hello**) say hello to the galaxy - (da4af95) - *oknozor*
+  ```
+
+- **macros::remote(commit)**
+  Generates links to commits and authors for repositories hosted on platforms like GitHub.
+  Example output:
+  ```
+  - (**hello**) say hello to the galaxy - ([da4af95](https://github.com/oknozor/cocogitto/commit/da4af95b223bb8942ffd289d1a62d930c80d7bbd)) - [@oknozor](https://github.com/oknozor)
+  ```
+
+- **macros::fullhash(commit)**
+  Renders the full commit hash, scope, summary, and author.
+  Example output:
+  ```
+  - da4af95b223bb8942ffd289d1a62d930c80d7bbd - (**hello**) say hello to the galaxy - @oknozor
+  ```
+
+#### Example: Using the `remote` macro in your template
+
+```tera
+{% import "macros" as macros %}
+
+#### Features
+
+{% for commit in commits | filter(attribute="type", value="feat") %}
+    {{ macros::remote(commit=commit) }}
+{% endfor %}
+```
+
+You can choose the macro that best fits your workflow or mix different macros in the same template. For more details, see the [macros file in the source directory](https://github.com/cocogitto/cocogitto/blob/main/src/conventional/changelog/template/macro/macros.tera).

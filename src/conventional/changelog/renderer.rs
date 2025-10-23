@@ -4,7 +4,8 @@ use tera::{dotted_pointer, to_value, try_get_value, Context, Tera, Value};
 
 use crate::conventional::changelog::release::Release;
 use crate::conventional::changelog::template::{
-    MonoRepoContext, PackageContext, RemoteContext, Template, ToContext,
+    MonoRepoContext, PackageContext, RemoteContext, Template, ToContext, MACROS_TEMPLATE,
+    MACROS_TEMPLATE_NAME,
 };
 
 #[derive(Debug)]
@@ -26,10 +27,15 @@ impl Renderer {
         let content = template.kind.get()?;
         let content = String::from_utf8_lossy(content.as_slice());
 
+        tera.add_raw_template(
+            MACROS_TEMPLATE_NAME,
+            String::from_utf8_lossy(MACROS_TEMPLATE).as_ref(),
+        )?;
         tera.add_raw_template(template.kind.name(), content.as_ref())?;
         tera.register_filter("upper_first", Self::upper_first_filter);
         tera.register_filter("unscoped", Self::unscoped);
         tera.register_filter("group_by_type", Self::group_by_type);
+        tera.check_macro_files()?;
 
         Ok(Renderer {
             tera,

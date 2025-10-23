@@ -4,6 +4,29 @@ For a detailed guide on how to write a template changelog refer to [tera's docum
 
 You can also take a look at the [built-in templates](https://github.com/cocogitto/cocogitto/tree/main/src/conventional/changelog/template) in cocogitto repository.
 
+### Built-in macros
+
+Cocogitto provides built-in Tera macros to help format changelog entries in your templates. All macros are available in a single `macros.tera` file located in `src/conventional/changelog/template/macro/`.
+
+Available macro functions:
+- `simple(commit)` — minimal format with short hash
+- `remote(commit)` — format with links to commits and authors
+- `fullhash(commit)` — format with full commit hash
+
+Import the macros in your template with:
+
+```tera
+{% import "macros" as macros %}
+```
+
+Then use, for example:
+
+```tera
+{{ macros::remote(commit=commit) }}
+{{ macros::simple(commit=commit) }}
+{{ macros::fullhash(commit=commit) }}
+```
+
 ## Context
 
 ### Release

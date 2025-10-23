@@ -14,6 +14,9 @@ const REMOTE_TEMPLATE_NAME: &str = "remote";
 const FULL_HASH_TEMPLATE: &[u8] = include_bytes!("template/full_hash.tera");
 const FULL_HASH_TEMPLATE_NAME: &str = "full_hash";
 
+pub const MACROS_TEMPLATE: &[u8] = include_bytes!("template/macro/macros.tera");
+pub const MACROS_TEMPLATE_NAME: &str = "macros";
+
 const PACKAGE_DEFAULT_TEMPLATE: &[u8] = include_bytes!("template/package_simple.tera");
 const PACKAGE_DEFAULT_TEMPLATE_NAME: &str = "package_default";
 const PACKAGE_REMOTE_TEMPLATE: &[u8] = include_bytes!("template/package_remote.tera");

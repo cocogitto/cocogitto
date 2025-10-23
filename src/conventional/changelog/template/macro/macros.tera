@@ -1,0 +1,47 @@
+{%- macro simple(commit) -%}
+  {%-if commit.author -%}
+      {% set author = "*" ~ commit.author  ~ "*" -%}
+  {% else -%}
+      {% set author = commit.signature -%}
+  {% endif -%}
+
+  {% set shorthand = commit.id | truncate(length=7, end="") -%}
+  {% if commit.breaking_change -%}
+      {% set breaking_badge = '<span style="background-color: #d73a49; color: white; padding: 2px 6px; border-radius: 3px; font-weight: bold; font-size: 0.85em;">BREAKING</span>' -%}
+  {% else -%}
+      {% set breaking_badge = "" -%}
+  {% endif -%}
+  - {{ breaking_badge }}{%if commit.scope %}(**{{ commit.scope }}**) {% endif %}{{ commit.summary }} - ({{shorthand}}) - {{ author }}
+{%- endmacro simple -%}
+
+{%- macro remote(commit) -%}
+  {% if commit.author and repository_url -%}
+      {% set author = "@" ~ commit.author -%}
+      {% set author_link = platform ~ "/" ~ commit.author -%}
+      {% set author = "[" ~ author ~ "](" ~ author_link ~ ")" -%}
+  {% else -%}
+      {% set author = commit.signature -%}
+  {% endif -%}
+  {% set commit_link = repository_url ~ "/commit/" ~ commit.id -%}
+  {% set shorthand = commit.id | truncate(length=7, end="") -%}
+  {% if commit.breaking_change -%}
+      {% set breaking_badge = "![BREAKING](https://img.shields.io/badge/BREAKING-red) " -%}
+  {% else -%}
+      {% set breaking_badge = "" -%}
+  {% endif -%}
+  - {{ breaking_badge }}{%if commit.scope %}(**{{ commit.scope }}**) {% endif %}{{ commit.summary }} - ([{{shorthand}}]({{ commit_link }})) - {{ author }}
+{%- endmacro remote -%}
+
+{%- macro fullhash(commit) -%}
+    {% if commit.author -%}
+        {% set author = "@" ~ commit.author -%}
+    {% else -%}
+        {% set author = commit.signature -%}
+    {% endif -%}
+    {% if commit.breaking_change -%}
+        {% set breaking_badge = "![BREAKING](https://img.shields.io/badge/BREAKING-red) " -%}
+    {% else -%}
+        {% set breaking_badge = "" -%}
+    {% endif -%}
+    - {{ breaking_badge }}{{ commit.id }}{% if commit.scope %} - (**{{ commit.scope }}**) {% else %} - {% endif %}{{ commit.summary }} - {{ author }}
+{%- endmacro fullhash -%}

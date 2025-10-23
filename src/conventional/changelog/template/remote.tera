@@ -1,3 +1,4 @@
+{% import "macros" as macros %}
 {% if version.tag and from.tag -%}
     ## [{{ version.tag }}]({{repository_url ~ "/compare/" ~ from.tag ~ ".." ~ version.tag}}) - {{ date | date(format="%Y-%m-%d") }}
 {% elif version.tag and from.id -%}
@@ -16,43 +17,12 @@
 
 #### {{ value.0 | upper_first }}
 {% for scope, scoped_commits in value.1 | group_by(attribute="scope") -%}
-
 {% for commit in scoped_commits | sort(attribute="scope") -%}
-    {% if commit.author and repository_url -%}
-        {% set author = "@" ~ commit.author -%}
-        {% set author_link = platform ~ "/" ~ commit.author -%}
-        {% set author = "[" ~ author ~ "](" ~ author_link ~ ")" -%}
-    {% else -%}
-        {% set author = commit.signature -%}
-    {% endif -%}
-    {% set commit_link = repository_url ~ "/commit/" ~ commit.id -%}
-    {% set shorthand = commit.id | truncate(length=7, end="") -%}
-    {% if commit.breaking_change -%}
-        {% set breaking_badge = "![BREAKING](https://img.shields.io/badge/BREAKING-red) " -%}
-    {% else -%}
-        {% set breaking_badge = "" -%}
-    {% endif -%}
-    - {{ breaking_badge }}(**{{ scope }}**) {{ commit.summary }} - ([{{shorthand}}]({{ commit_link }})) - {{ author }}
+{{macros::remote(commit=commit)}}
 {% endfor -%}
-
 {% endfor -%}
 
 {% for commit in value.1 | unscoped -%}
-    {% if commit.author and repository_url -%}
-        {% set author = "@" ~ commit.author -%}
-        {% set author_link = platform ~ "/" ~ commit.author -%}
-        {% set author = "[" ~ author ~ "](" ~ author_link ~ ")" -%}
-    {% else -%}
-        {% set author = commit.signature -%}
-    {% endif -%}
-    {% set commit_link = repository_url ~ "/commit/" ~ commit.id -%}
-    {% set shorthand = commit.id | truncate(length=7, end="") -%}
-    {% if commit.breaking_change -%}
-        {% set breaking_badge = "![BREAKING](https://img.shields.io/badge/BREAKING-red) " -%}
-    {% else -%}
-        {% set breaking_badge = "" -%}
-    {% endif -%}
-    - {{ breaking_badge }}{{ commit.summary }} - ([{{shorthand}}]({{ commit_link }})) - {{ author }}
+{{macros::remote(commit=commit)}}
 {% endfor -%}
-
 {% endfor -%}

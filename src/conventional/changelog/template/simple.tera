@@ -1,3 +1,4 @@
+{% import "macros" as macros %}
 {% if version.tag -%}
     ## {{ version.tag }} - {{ date | date(format="%Y-%m-%d") }}
 {% else -%}
@@ -9,42 +10,13 @@
 {% endif -%}
 
 {% for value in commits | group_by_type -%}
-#### {{ value.0 | upper_first }}
+  #### {{ value.0 | upper_first }}
 {% for scope, scoped_commits in value.1 | group_by(attribute="scope") -%}
-
 {% for commit in scoped_commits | sort(attribute="scope") -%}
-
-    {% if commit.author -%}
-        {% set author = "*" ~ commit.author  ~ "*" -%}
-    {% else -%}
-        {% set author = commit.signature -%}
-    {% endif -%}
-
-    {% set shorthand = commit.id | truncate(length=7, end="") -%}
-    {% if commit.breaking_change -%}
-        {% set breaking_badge = '<span style="background-color: #d73a49; color: white; padding: 2px 6px; border-radius: 3px; font-weight: bold; font-size: 0.85em;">BREAKING</span>' -%}
-    {% else -%}
-        {% set breaking_badge = "" -%}
-    {% endif -%}
-    - {{ breaking_badge }}(**{{ scope }}**) {{ commit.summary }} - ({{shorthand}}) - {{ author }}
+{{macros::simple(commit=commit)}}
 {% endfor -%}
-
 {% endfor -%}
-
-{%- for commit in value.1 | unscoped -%}
-    {% if commit.author -%}
-        {% set author = commit.author -%}
-    {% else -%}
-        {% set author = commit.signature -%}
-    {% endif -%}
-
-    {% set shorthand = commit.id | truncate(length=7, end="") -%}
-    {% if commit.breaking_change -%}
-        {% set breaking_badge = '<span style="background-color: #d73a49; color: white; padding: 2px 6px; border-radius: 3px; font-weight: bold; font-size: 0.85em;">BREAKING</span>' -%}
-    {% else -%}
-        {% set breaking_badge = "" -%}
-    {% endif -%}
-    - {{ breaking_badge }}{{ commit.summary }} - ({{ shorthand }}) - {{ author }}
+{% for commit in value.1 | unscoped -%}
+{{macros::simple(commit=commit)}}
 {% endfor -%}
-
 {% endfor -%}
