@@ -3,12 +3,13 @@ use std::fmt;
 use std::fmt::Formatter;
 use std::path::PathBuf;
 
+use crate::conventional::changelog::context::RemoteContext;
 use crate::conventional::commit::CommitConfig;
 use crate::git::repository::Repository;
 use crate::{get_config_path, SETTINGS};
 
 use crate::conventional::changelog::error::ChangelogError;
-use crate::conventional::changelog::template::{RemoteContext, Template};
+use crate::conventional::changelog::template::Template;
 use crate::hook::Hooks;
 use crate::settings::error::SettingError;
 use config::{Config, File, FileFormat};
@@ -411,13 +412,13 @@ pub struct AuthorSetting {
     pub username: String,
 }
 
-pub fn commit_username(author: &str) -> Option<&'static str> {
+pub fn commit_username(author: &str) -> Option<String> {
     SETTINGS
         .changelog
         .authors
         .iter()
         .find(|author_map| author_map.signature == author)
-        .map(|author| author.username.as_str())
+        .map(|author| author.username.clone())
 }
 
 pub fn changelog_path() -> &'static PathBuf {
@@ -506,9 +507,7 @@ impl Settings {
 
     pub fn get_template_context(&self) -> Option<RemoteContext> {
         let remote = self.changelog.remote.as_ref().cloned();
-
         let repository = self.changelog.repository.as_ref().cloned();
-
         let owner = self.changelog.owner.as_ref().cloned();
 
         RemoteContext::try_new(remote, repository, owner)
