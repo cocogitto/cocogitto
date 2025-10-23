@@ -51,6 +51,7 @@ impl Serialize for ChangelogCommit {
         commit.serialize_field("summary", &self.commit.conventional.summary)?;
         commit.serialize_field("body", &self.commit.conventional.body)?;
         commit.serialize_field("type_order", type_order)?;
+        commit.serialize_field("co_authors", &self.co_authors)?;
         commit.serialize_field(
             "breaking_change",
             &self.commit.conventional.is_breaking_change,
@@ -127,6 +128,8 @@ mod test {
                 committer: "Jean Michel Doudou".to_string(),
                 date: Utc::now().naive_utc(),
             },
+            co_authors: vec![],
+            github_closes_numbers: vec![],
         };
 
         let result = serde_json::to_string(&commit);

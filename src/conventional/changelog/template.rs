@@ -1,12 +1,11 @@
 use crate::conventional::changelog::context::{RemoteContext, ToContext};
 use crate::conventional::changelog::error::ChangelogError;
-use crate::conventional::changelog::release::Release;
+use crate::conventional::changelog::release::{ChangelogFooter, Release};
 use crate::conventional::prodiver::github::GitHubProvider;
 use crate::conventional::prodiver::GitProvider;
-use crate::git::commit;
 
 use super::filter;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::io;
 use std::path::PathBuf;
 use tera::{Context, Tera};
@@ -77,28 +76,33 @@ impl Template {
     }
 
     pub fn render(&mut self, mut version: Release) -> Result<String, ChangelogError> {
-        let mut release = self.render_release(&mut version)?;
+        let mut contributor_map = HashMap::new();
+        let mut release = self.render_release(&mut version, &mut contributor_map)?;
         let mut version = version;
         while let Some(mut previous) = version.previous.map(|v| *v) {
             release.push_str("\n- - -\n\n");
-            release.push_str(self.render_release(&mut previous)?.as_str());
+            release.push_str(
+                self.render_release(&mut previous, &mut contributor_map)?
+                    .as_str(),
+            );
             version = previous;
         }
 
         Ok(release)
     }
 
-    fn render_release(&mut self, version: &mut Release) -> Result<String, ChangelogError> {
+    fn render_release(
+        &mut self,
+        version: &mut Release,
+        contributor_map: &mut HashMap<String, String>,
+    ) -> Result<String, ChangelogError> {
         if let (Some(git_provider), Some(remote_context)) =
             (self.git_provider.as_ref(), self.remote_context.as_ref())
         {
-            let mut contributor_map: HashMap<String, String> = HashMap::new();
             let owner = &remote_context.owner;
             let repo = &remote_context.repository;
 
             for commit in &mut version.commits {
-                println!("{:?}", commit.commit.oid);
-                // Check for author username
                 if let Some(username) = contributor_map.get(&commit.commit.author) {
                     // TODO: add committer
                     commit.author_username = Some(username.clone());
@@ -107,7 +111,6 @@ impl Template {
                         git_provider.get_commit_contributors(owner, repo, &commit.commit.oid)?;
 
                     if let Some(author) = github_authors.author {
-                        println!("{:?}", author);
                         contributor_map.insert(commit.commit.author.clone(), author.clone());
                         commit.author_username = Some(author);
                     }
@@ -116,9 +119,22 @@ impl Template {
                         contributor_map.insert(commit.commit.committer.clone(), committer);
                     }
                 }
-            }
 
-            println!("{:?}", contributor_map);
+                // TODO: handle when co-author not in committer or commit author
+                commit.co_authors = commit
+                    .commit
+                    .conventional
+                    .footers
+                    .iter()
+                    .map(ChangelogFooter::from)
+                    .filter_map(|footer| match footer {
+                        ChangelogFooter::GithubCoAuthoredBy { user } => Some(user.to_string()),
+                        _ => None,
+                    })
+                    .filter_map(|author| contributor_map.get(&author))
+                    .cloned()
+                    .collect::<Vec<_>>();
+            }
         }
 
         self.push_context(version);

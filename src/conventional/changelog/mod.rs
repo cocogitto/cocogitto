@@ -13,6 +13,9 @@ pub(crate) mod release;
 pub(crate) mod serde;
 pub mod template;
 
+#[cfg(test)]
+pub mod tests;
+
 const CHANGELOG_SEPARATOR: &str = "- - -";
 
 const DEFAULT_HEADER: &str =
