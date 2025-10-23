@@ -7,25 +7,25 @@ use std::io;
 use std::path::PathBuf;
 use tera::Context;
 
-const DEFAULT_TEMPLATE: &[u8] = include_bytes!("template/simple");
+const DEFAULT_TEMPLATE: &[u8] = include_bytes!("template/simple.tera");
 const DEFAULT_TEMPLATE_NAME: &str = "default";
-const REMOTE_TEMPLATE: &[u8] = include_bytes!("template/remote");
+const REMOTE_TEMPLATE: &[u8] = include_bytes!("template/remote.tera");
 const REMOTE_TEMPLATE_NAME: &str = "remote";
-const FULL_HASH_TEMPLATE: &[u8] = include_bytes!("template/full_hash");
+const FULL_HASH_TEMPLATE: &[u8] = include_bytes!("template/full_hash.tera");
 const FULL_HASH_TEMPLATE_NAME: &str = "full_hash";
 
-const PACKAGE_DEFAULT_TEMPLATE: &[u8] = include_bytes!("template/package_simple");
+const PACKAGE_DEFAULT_TEMPLATE: &[u8] = include_bytes!("template/package_simple.tera");
 const PACKAGE_DEFAULT_TEMPLATE_NAME: &str = "package_default";
-const PACKAGE_REMOTE_TEMPLATE: &[u8] = include_bytes!("template/package_remote");
+const PACKAGE_REMOTE_TEMPLATE: &[u8] = include_bytes!("template/package_remote.tera");
 const PACKAGE_REMOTE_TEMPLATE_NAME: &str = "package_remote";
-const PACKAGE_FULL_HASH_TEMPLATE: &[u8] = include_bytes!("template/package_full_hash");
+const PACKAGE_FULL_HASH_TEMPLATE: &[u8] = include_bytes!("template/package_full_hash.tera");
 const PACKAGE_FULL_HASH_TEMPLATE_NAME: &str = "package_full_hash";
 
-const MONOREPO_DEFAULT_TEMPLATE: &[u8] = include_bytes!("template/monorepo_simple");
+const MONOREPO_DEFAULT_TEMPLATE: &[u8] = include_bytes!("template/monorepo_simple.tera");
 const MONOREPO_DEFAULT_TEMPLATE_NAME: &str = "monorepo_default";
-const MONOREPO_REMOTE_TEMPLATE: &[u8] = include_bytes!("template/monorepo_remote");
+const MONOREPO_REMOTE_TEMPLATE: &[u8] = include_bytes!("template/monorepo_remote.tera");
 const MONOREPO_REMOTE_TEMPLATE_NAME: &str = "monorepo_remote";
-const MONOREPO_FULL_HASH_TEMPLATE: &[u8] = include_bytes!("template/monorepo_full_hash");
+const MONOREPO_FULL_HASH_TEMPLATE: &[u8] = include_bytes!("template/monorepo_full_hash.tera");
 const MONOREPO_FULL_HASH_TEMPLATE_NAME: &str = "monorepo_full_hash";
 
 #[derive(Debug, Default)]
