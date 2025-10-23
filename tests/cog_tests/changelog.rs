@@ -43,9 +43,9 @@ fn get_changelog_range() -> Result<()> {
         changelog.as_ref(),
         "## 0.32.3 - {today}
         #### Bug Fixes
-        - fix openssl missing in CD - (1c0d2e9) - oknozor
+        - fix openssl missing in CD - (1c0d2e9) - *oknozor*
         #### Documentation
-        - tag, conventional commit and license badges to readme - (da6f63d) - oknozor
+        - tag, conventional commit and license badges to readme - (da6f63d) - *oknozor*
 
         - - -
 
@@ -53,20 +53,20 @@ fn get_changelog_range() -> Result<()> {
         #### Bug Fixes
         - (**cd**) bump setup-rust-action to v1.3.3 - (5350b11) - *oknozor*
         #### Documentation
-        - add corrections to README - (9a33516) - oknozor
+        - add corrections to README - (9a33516) - *oknozor*
 
         - - -
 
         ## 0.32.1 - {today}
         #### Features
-        - move check edit to dedicated subcommand and fix rebase - (fc74207) - oknozor
-        - remove config commit on init existing repo - (1028d0b) - oknozor
+        - move check edit to dedicated subcommand and fix rebase - (fc74207) - *oknozor*
+        - remove config commit on init existing repo - (1028d0b) - *oknozor*
         #### Bug Fixes
         - (**cd**) fix ci cross build command bin args - (7f04a98) - *oknozor*
         #### Documentation
-        - rewritte readme completely - (b223f7b) - oknozor
+        - rewritte readme completely - (b223f7b) - *oknozor*
         #### Refactoring
-        - change config name to cog.toml - (d4aa61b) - oknozor
+        - change config name to cog.toml - (d4aa61b) - *oknozor*
 
 
         ",
@@ -998,30 +998,44 @@ fn changelog_monorepo_multi_versions() -> Result<()> {
     let sha_5 = cog_bump_auto()?;
 
     // Act
-    Command::cargo_bin("cog")?
+    let result = Command::cargo_bin("cog")?
         .arg("changelog")
         // Assert
         .assert()
-        .success()
-        .stdout(formatdoc!(
+        .success();
+
+    let changelog = result.get_output();
+    let changelog = &changelog.stdout;
+    let changelog = String::from_utf8_lossy(changelog.as_slice());
+
+    assert_eq!(
+        changelog,
+        format!(
             "## v0.1.1 - {today}
-            #### Bug Fixes
-            - combat nasty bug - ({sha_4}) - Tom
-            #### Miscellaneous Chores
-            - (**version**) v0.1.1 - ({sha_5}) - Tom
+#### Bug Fixes
+- combat nasty bug - ({sha_4}) - Tom
+#### Miscellaneous Chores
+- (**version**) v0.1.1 - ({sha_5}) - Tom
 
-            - - -
+- - -
 
-            ## v0.1.0 - {today}
-            #### Features
-            - add implementation - ({sha_2}) - Tom
-            #### Miscellaneous Chores
-            - (**version**) v0.1.0 - ({sha_3}) - Tom
-            - init - ({sha_1}) - Tom
+## v0.1.0 - {today}
+#### Features
+- add implementation - ({sha_2}) - Tom
+#### Miscellaneous Chores
+- (**version**) v0.1.0 - ({sha_3}) - Tom
+- init - ({sha_1}) - Tom
 
 
-            "
-        ));
+",
+            today = today,
+            sha_1 = sha_1,
+            sha_2 = sha_2,
+            sha_3 = sha_3,
+            sha_4 = sha_4,
+            sha_5 = sha_5,
+        )
+    );
 
     Ok(())
 }

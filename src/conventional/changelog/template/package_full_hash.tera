@@ -1,37 +1,14 @@
+{% import "macros" as macros %}
 {% for value in commits | group_by_type -%}
 #### {{ value.0 | upper_first }}
 {% for scope, scoped_commits in value.1 | group_by(attribute="scope") -%}
-
 {% for commit in scoped_commits | sort(attribute="scope") -%}
-    {% if commit.author -%}
-        {% set author = "@" ~ commit.author -%}
-    {% else -%}
-        {% set author = commit.signature -%}
-    {% endif -%}
-    {% if commit.breaking_change -%}
-        {% set breaking_badge = "![BREAKING](https://img.shields.io/badge/BREAKING-red) " -%}
-    {% else -%}
-        {% set breaking_badge = "" -%}
-    {% endif -%}
-    - {{ breaking_badge }}{{ commit.id }} - (**{{ scope }}**) {{ commit.summary }} - {{ author }}
+{{macros::fullhash(commit=commit)}}
 {% endfor -%}
-
 {% endfor -%}
 
 {% for commit in value.1 | unscoped -%}
-
-    {% if commit.author -%}
-        {% set author = "@" ~ commit.author -%}
-    {% else -%}
-        {% set author = commit.signature -%}
-    {% endif -%}
-    {% if commit.breaking_change -%}
-        {% set breaking_badge = "![BREAKING](https://img.shields.io/badge/BREAKING-red) " -%}
-    {% else -%}
-        {% set breaking_badge = "" -%}
-    {% endif -%}
-    - {{ breaking_badge }}{{ commit.id }} - {{ commit.summary }} - {{ author }}
+{{macros::fullhash(commit=commit)}}
 
 {% endfor -%}
-
 {% endfor -%}
