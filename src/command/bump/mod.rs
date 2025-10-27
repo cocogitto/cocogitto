@@ -40,6 +40,7 @@ pub struct BumpOptions<'a> {
     pub skip_ci_override: Option<String>,
     pub skip_untracked: bool,
     pub disable_bump_commit: bool,
+    pub include_packages: bool,
 }
 
 #[derive(Default)]
@@ -146,6 +147,7 @@ impl<'a> PackageBumpOptions<'a> {
             skip_ci_override: self.skip_ci_override.clone(),
             skip_untracked: self.skip_untracked,
             disable_bump_commit: self.disable_bump_commit,
+            include_packages: false,
         }
     }
 }

@@ -334,6 +334,7 @@ fn ordered_package_bump() -> Result<()> {
         skip_ci_override: None,
         skip_untracked: false,
         disable_bump_commit: false,
+        include_packages: false,
     })?;
 
     // Assert

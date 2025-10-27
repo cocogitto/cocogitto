@@ -39,18 +39,19 @@ pub struct PackageData {
 
 impl CocoGitto {
     pub fn create_monorepo_version(&mut self, opts: BumpOptions) -> Result<()> {
-        match opts.increment {
-            IncrementCommand::Auto => {
-                if SETTINGS.generate_mono_repository_global_tag {
-                    self.create_monorepo_version_auto(opts)
-                } else {
-                    if opts.annotated.is_some() {
-                        warn!("--annotated flag is not supported for package bumps without a global tag");
-                    }
-                    self.create_all_package_version_auto(opts)
+        if opts.increment == IncrementCommand::Auto || opts.include_packages {
+            if SETTINGS.generate_mono_repository_global_tag {
+                self.create_monorepo_version_auto(opts)
+            } else {
+                if opts.annotated.is_some() {
+                    warn!(
+                        "--annotated flag is not supported for package bumps without a global tag"
+                    );
                 }
+                self.create_all_package_version_auto(opts)
             }
-            _ => self.create_monorepo_version_manual(opts),
+        } else {
+            self.create_monorepo_version_manual(opts)
         }
     }
 
@@ -133,7 +134,10 @@ impl CocoGitto {
             return Ok(());
         }
 
-        let increment = if SETTINGS.generate_mono_repository_package_tags {
+        // Manual bump with `--include-packages` -> don't override increment command
+        let increment = if opts.increment != IncrementCommand::Auto {
+            opts.increment.clone()
+        } else if SETTINGS.generate_mono_repository_package_tags {
             // Get the greatest package increment among public api packages
             IncrementCommand::AutoMonoRepoGlobal(
                 bumps
@@ -422,12 +426,14 @@ impl CocoGitto {
         packages.sort_by(|a, b| a.1.bump_order.cmp(&b.1.bump_order));
 
         for (package_name, package) in packages {
-            let bump_res = opts.get_new_version(
-                &self.repository,
-                Some(package_name),
-                true,
-                Some(IncrementCommand::AutoPackage(package_name.to_string())),
-            )?;
+            let increment = if opts.increment != IncrementCommand::Auto {
+                opts.increment.clone()
+            } else {
+                IncrementCommand::AutoPackage(package_name.to_string())
+            };
+
+            let bump_res =
+                opts.get_new_version(&self.repository, Some(package_name), true, Some(increment))?;
             if bump_res.no_change() || !bump_res.had_commits {
                 continue;
             }
