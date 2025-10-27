@@ -1146,3 +1146,57 @@ fn bump_prerelease_ignore_packages() -> Result<()> {
     assert_tag_exists("a-1.1.0-rc.1")?;
     assert_tag_does_not_exist("b-1.0.0-rc.1")
 }
+
+#[sealed_test]
+fn major_bump_with_packages() -> Result<()> {
+    // Arrange
+    git_init()?;
+    git_add(
+        indoc! {
+            r#"
+            [packages.a]
+            path = "a"
+
+            [packages.b]
+            path = "b"
+            "#
+        },
+        "cog.toml",
+    )?;
+    git_commit("chore: init")?;
+    git_tag("0.1.0")?;
+    git_tag("a-0.1.0")?;
+    git_tag("b-0.1.0")?;
+
+    git_add(".", "a/feat")?;
+    git_add(".", "b/feat")?;
+    git_add(".", "feat")?;
+    git_commit("feat: release 1.0")?;
+
+    // Act
+    Command::cargo_bin("cog")?
+        .arg("bump")
+        .arg("--major")
+        .arg("--include-packages")
+        .assert()
+        .success();
+
+    // Assert
+    assert_tag_exists("1.0.0")?;
+    assert_tag_exists("a-1.0.0")?;
+    assert_tag_exists("b-1.0.0")?;
+
+    Ok(())
+}
+
+#[sealed_test]
+fn auto_bump_conflicts_with_include_packages() -> Result<()> {
+    Command::cargo_bin("cog")?
+        .arg("bump")
+        .arg("--auto")
+        .arg("--include-packages")
+        .assert()
+        .failure();
+
+    Ok(())
+}
