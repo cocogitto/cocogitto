@@ -1107,3 +1107,56 @@ fn unified_changelog() -> Result<()> {
 
     Ok(())
 }
+
+#[sealed_test]
+fn monorepo_changelog_default_template() -> Result<()> {
+    // Arrange
+    git_init()?;
+    let today = Utc::now().date_naive();
+    let cog = indoc!(
+        r#"
+        [packages]
+        pkg = { path = "pkg" }
+        "#
+    );
+    git_add(cog, "cog.toml")?;
+    let sha_1 = git_commit_short("chore: init")?;
+    git_add(".", "pkg/feat")?;
+    git_commit("feat(pkg): implement pkg")?;
+    git_add(".", "global/fix")?;
+    git_add(".", "pkg/fix")?;
+    let sha_2 = git_commit_short("fix: everything")?;
+    git_tag("0.1.0")?;
+    git_tag("pkg-0.1.0")?;
+
+    // Act
+    let result = Command::cargo_bin("cog")?
+        .arg("changelog")
+        // Assert
+        .assert()
+        .success();
+
+    let changelog = String::from_utf8_lossy(&result.get_output().stdout);
+
+    assert_eq!(
+        changelog,
+        formatdoc! {
+            r#"
+            ## 0.1.0 - {today}
+            ### Package updates
+            - pkg bumped to pkg-0.1.0
+            ### Global changes
+            #### Bug Fixes
+            - everything - ({sha_2}) - Tom
+            #### Miscellaneous Chores
+            - init - ({sha_1}) - Tom
+
+
+            "#,
+            today = today,
+            sha_1 = sha_1,
+        }
+    );
+
+    Ok(())
+}
