@@ -9,7 +9,9 @@ editLink: true
 Let's assume the following history:
 
 ```git
-* e3ff26a - (HEAD -> master) feat!: implement parser specification <Paul Delafosse>
+* 22db158 - (HEAD -> main, tag: 0.2.0) refactor(hello): say hello to the martians <Paul Delafosse>
+* da4af95 - feat(hello): say hello to the galaxy <Paul Delafosse>
+* e3ff26a - (tag: 0.1.0) feat: implement parser specification <Paul Delafosse>
 * 78dedea - feat: a commit <Paul Delafosse>
 * c361eea - feat: say hello to the world <Paul Delafosse>
 * 6d014b4 - chore: initial commit <Paul Delafosse>
@@ -23,24 +25,20 @@ cog changelog
 
 ```markdown
 ## 0.2.0 - 2021-11-10
-
 #### Features
-
-- **(hello)** say hello to the galaxy - (da4af95) - Paul Delafosse
-
+- (**hello**) say hello to the galaxy - (da4af95) - Paul Delafosse
 #### Refactoring
-
-- **(hello)** say hello to the martians - (22db158) - Paul Delafosse
+- (**hello**) say hello to the martians - (22db158) - Paul Delafosse
 
 ---
 
 ## 0.1.0 - 2021-11-10
-
 #### Features
-
 - implement parser specification - (e3ff26a) - Paul Delafosse
 - a commit - (78dedea) - Paul Delafosse
 - say hello to the world - (c361eea) - Paul Delafosse
+#### Miscellaneous Chores
+- initial commit - (6d014b4) - Paul Delafosse
 ```
 
 As you can see above a changelog is generated for each semver compliant tag.
@@ -59,7 +57,7 @@ cog changelog 8806a5..1.0.0
 cog changelog 8806a55..
 
 # From first commit to `1.0.0`
-cog changelog 8806a5..1.0.0
+cog changelog ..1.0.0
 ```
 
 :::
@@ -83,19 +81,15 @@ cog changelog --template full_hash
 
 ```markdown
 #### Features
-
-- da4af95b223bb8942ffd289d1a62d930c80d7bbd - **(hello)** say hello to the galaxy - @oknozor
-
+- da4af95b223bb8942ffd289d1a62d930c80d7bbd - (**hello**) say hello to the galaxy - @oknozor
 #### Refactoring
-
-- 22db158f6c75aa5e9e7d4ed4a5b5af7b147453d7 - **(hello)** say hello to the martians - @oknozor
+- 22db158f6c75aa5e9e7d4ed4a5b5af7b147453d7 - (**hello**) say hello to the martians - @oknozor
 
 ---
 
 #### Features
-
 - e3ff26a8247b9690ce241e9843eea595bcac8d06 - implement parser specification - @oknozor
-- 78dedeaf5e7222cd338627f7ee982e271a3f9a4c - a commit - Paul Delafosse
+- 78dedeaf5e7222cd338627f7ee982e271a3f9a4c - a commit - @oknozor
 - c361eeae958a0a28041aecfed10091dc0e6768dd - say hello to the world - @oknozor
 ```
 
@@ -116,20 +110,18 @@ by their GitHub username. To do that you need to tell cocogitto about your contr
 A template generating links for web platform hosted repository.
 
 ```bash
-cog changelog --at 0.1.0 -t remote --remote github.com --owner oknozor --repository  cocogitto
+cog changelog --at 0.1.0 -t remote --remote github.com --owner cocogitto --repository  cocogitto
 ```
 
 As you can see below a changelog is generated with full links to issues, tags, diff and usernames according
 to the provided remote, owner and repository flags.
 
 ```markdown
-## [0.1.0](https://github.com/oknozor/cocogitto/compare/6d014b40f552fc1ad08f574fe33355175b0783ff..0.1.0) - 2021-11-11
-
+## [0.1.0](https://github.com/cocogitto/cocogitto/compare/6d014b40f552fc1ad08f574fe33355175b0783ff..0.1.0) - 2021-11-11
 #### Features
-
 - implement parser specification - ([e3ff26a](https://github.com/oknozor/cocogitto/commit/e3ff26a8247b9690ce241e9843eea595bcac8d06)) - [@oknozor](https://github.com/oknozor)
-- a commit - ([78dedea](https://github.com/oknozor/cocogitto/commit/78dedeaf5e7222cd338627f7ee982e271a3f9a4c)) - [@oknozor](https://github.com/oknozor)
-- say hello to the world - ([c361eea](https://github.com/oknozor/cocogitto/commit/c361eeae958a0a28041aecfed10091dc0e6768dd)) - [@oknozor](https://github.com/oknozor)
+- a commit - ([78dedea](https://github.com/cocogitto/cocogitto/commit/78dedeaf5e7222cd338627f7ee982e271a3f9a4c)) - [@oknozor](https://github.com/oknozor)
+- say hello to the world - ([c361eea](https://github.com/cocogitto/cocogitto/commit/c361eeae958a0a28041aecfed10091dc0e6768dd)) - [@oknozor](https://github.com/oknozor)
 ```
 
 ::: tip
@@ -202,7 +194,7 @@ While package changelogs are equivalent to standard changelogs, both monorepo an
 ## Custom templates
 
 If you are not happy with the default you can create your own changelog template.
-Internally cocogitto uses [tera](https://tera.netlify.app/) template engine to render changelogs.
+Internally cocogitto uses [tera](https://keats.github.io/tera/) template engine to render changelogs.
 
 Also see [template reference](/reference/template).
 
@@ -257,7 +249,7 @@ The macros module provides three different formatting functions for rendering co
   Generates links to commits and authors for repositories hosted on platforms like GitHub.
   Example output:
   ```
-  - (**hello**) say hello to the galaxy - ([da4af95](https://github.com/oknozor/cocogitto/commit/da4af95b223bb8942ffd289d1a62d930c80d7bbd)) - [@oknozor](https://github.com/oknozor)
+  - (**hello**) say hello to the galaxy - ([da4af95](https://github.com/cocogitto/cocogitto/commit/da4af95b223bb8942ffd289d1a62d930c80d7bbd)) - [@oknozor](https://github.com/oknozor)
   ```
 
 - **macros::fullhash(commit)**
