@@ -100,7 +100,7 @@ Current version:
 5.3.1
 ```
 
-To silence the additional info and get only the version use the `-v` flag:
+To silence the additional info and get only the version use the `-v` flag (note that the flag is before `get-version`):
 
 ```bash
 ❯ cog -v get-version
@@ -110,15 +110,33 @@ To silence the additional info and get only the version use the `-v` flag:
 If working on a monorepo you can also specify the target package:
 
 ```bash
-❯ cog -v get-version --package gill-db
+❯ cog get-version --package gill-db
+Current version:
 0.1.0
 ```
 
-Finally, if you need the command to print a version no matter the state of your repository, you can provide a fallback:
+If you need the command to print a version no matter the state of your repository, you can provide a fallback:
 
 ```bash
 ❯ cog get-version --fallback 0.1.0
+Current version:
 0.1.0
+```
+
+To include prerelease versions, use the `--include-prereleases` flag:
+
+```bash
+❯ cog get-version --include-prereleases
+Current version:
+0.2.0-alpha.1
+```
+
+To print the full tag name, use the `--tag` flag:
+
+```bash
+❯ cog get-version --tag
+Current version:
+v0.1.0
 ```
 
 ## Change path to config file
