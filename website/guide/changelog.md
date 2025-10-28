@@ -158,6 +158,47 @@ authors = [
 
 :::
 
+## Monorepo changelogs
+
+Inside a monorepo, there are three types of changelogs:
+
+* **Package** changelogs display all changes made to one specific package.
+  These are generated during `cog bump`.
+* **Monorepo** changelogs display all changes outside of any specific package (global changes).
+  These are generated during `cog bump` and with `cog changelog`.
+* **Unified** changelogs display all changes, regardless of packages.
+  These are generated with `cog changelog --unified`.
+
+Each of the built-in templates (`default`, `full_hash`, `remote`) is available in four variants:
+standard (no monorepo), package, monorepo and unified.
+While package changelogs are equivalent to standard changelogs, both monorepo and unified changelogs additionally show bumps to packages:
+
+```markdown
+## 0.2.0 - 2021-11-10
+### Package updates
+- planets updated to planets-0.1.1
+- galaxy updated to galaxy-0.1.0
+### Global changes
+#### Features
+- (**hello**) say hello to the galaxy - (da4af95) - Paul Delafosse
+#### Refactoring
+- (**hello**) say hello to the martians - (22db158) - Paul Delafosse
+
+---
+
+## 0.1.0 - 2021-11-10
+### Package updates
+- stars updated to stars-0.1.0
+- planets updated to planets-0.1.0
+### Global changes
+#### Features
+- implement solar system - (e3ff26a) - Paul Delafosse
+- a commit - (78dedea) - Paul Delafosse
+- say hello to the world - (c361eea) - Paul Delafosse
+```
+
+:::
+
 ## Custom templates
 
 If you are not happy with the default you can create your own changelog template.

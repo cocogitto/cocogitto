@@ -1,4 +1,5 @@
 use crate::conventional::changelog::error::ChangelogError;
+use crate::SETTINGS;
 
 use serde::Serialize;
 
@@ -31,6 +32,13 @@ const MONOREPO_REMOTE_TEMPLATE_NAME: &str = "monorepo_remote";
 const MONOREPO_FULL_HASH_TEMPLATE: &[u8] = include_bytes!("template/monorepo_full_hash.tera");
 const MONOREPO_FULL_HASH_TEMPLATE_NAME: &str = "monorepo_full_hash";
 
+const UNIFIED_DEFAULT_TEMPLATE: &[u8] = include_bytes!("template/unified_simple.tera");
+const UNIFIED_DEFAULT_TEMPLATE_NAME: &str = "unified_default";
+const UNIFIED_REMOTE_TEMPLATE: &[u8] = include_bytes!("template/unified_remote.tera");
+const UNIFIED_REMOTE_TEMPLATE_NAME: &str = "unified_remote";
+const UNIFIED_FULL_HASH_TEMPLATE: &[u8] = include_bytes!("template/unified_full_hash.tera");
+const UNIFIED_FULL_HASH_TEMPLATE_NAME: &str = "unified_full_hash";
+
 #[derive(Debug, Default)]
 pub struct Template {
     pub remote_context: Option<RemoteContext>,
@@ -46,6 +54,20 @@ impl Template {
             kind: template,
         })
     }
+
+    pub fn fallback(unified: bool) -> Self {
+        let kind = if SETTINGS.packages.is_empty() {
+            TemplateKind::Default
+        } else if unified {
+            TemplateKind::UnifiedDefault
+        } else {
+            TemplateKind::MonorepoDefault
+        };
+        Self {
+            kind,
+            remote_context: None,
+        }
+    }
 }
 
 #[derive(Debug, Default)]
@@ -60,6 +82,9 @@ pub enum TemplateKind {
     MonorepoDefault,
     MonorepoFullHash,
     MonorepoRemote,
+    UnifiedDefault,
+    UnifiedFullHash,
+    UnifiedRemote,
     Custom(PathBuf),
 }
 
@@ -76,6 +101,9 @@ impl TemplateKind {
             MONOREPO_DEFAULT_TEMPLATE_NAME => Ok(TemplateKind::MonorepoDefault),
             MONOREPO_REMOTE_TEMPLATE_NAME => Ok(TemplateKind::MonorepoRemote),
             MONOREPO_FULL_HASH_TEMPLATE_NAME => Ok(TemplateKind::MonorepoFullHash),
+            UNIFIED_DEFAULT_TEMPLATE_NAME => Ok(TemplateKind::UnifiedDefault),
+            UNIFIED_REMOTE_TEMPLATE_NAME => Ok(TemplateKind::UnifiedRemote),
+            UNIFIED_FULL_HASH_TEMPLATE_NAME => Ok(TemplateKind::UnifiedFullHash),
             path => {
                 let path = PathBuf::from(path);
                 if !path.exists() {
@@ -98,6 +126,9 @@ impl TemplateKind {
             TemplateKind::MonorepoDefault => Ok(MONOREPO_DEFAULT_TEMPLATE.to_vec()),
             TemplateKind::MonorepoRemote => Ok(MONOREPO_REMOTE_TEMPLATE.to_vec()),
             TemplateKind::MonorepoFullHash => Ok(MONOREPO_FULL_HASH_TEMPLATE.to_vec()),
+            TemplateKind::UnifiedDefault => Ok(UNIFIED_DEFAULT_TEMPLATE.to_vec()),
+            TemplateKind::UnifiedRemote => Ok(UNIFIED_REMOTE_TEMPLATE.to_vec()),
+            TemplateKind::UnifiedFullHash => Ok(UNIFIED_FULL_HASH_TEMPLATE.to_vec()),
             TemplateKind::Custom(path) => std::fs::read(path),
         }
     }
@@ -113,6 +144,9 @@ impl TemplateKind {
             TemplateKind::MonorepoDefault => MONOREPO_DEFAULT_TEMPLATE_NAME,
             TemplateKind::MonorepoRemote => MONOREPO_REMOTE_TEMPLATE_NAME,
             TemplateKind::MonorepoFullHash => MONOREPO_FULL_HASH_TEMPLATE_NAME,
+            TemplateKind::UnifiedDefault => UNIFIED_DEFAULT_TEMPLATE_NAME,
+            TemplateKind::UnifiedRemote => UNIFIED_REMOTE_TEMPLATE_NAME,
+            TemplateKind::UnifiedFullHash => UNIFIED_FULL_HASH_TEMPLATE_NAME,
             TemplateKind::Custom(_) => "custom_template",
         }
     }

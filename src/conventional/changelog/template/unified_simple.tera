@@ -1,0 +1,43 @@
+{% import "macros" as macros %}
+{% if version.tag -%}
+    ## {{ version.tag }} - {{ date | date(format="%Y-%m-%d") }}
+{% else -%}
+    {% set from = commits | last -%}
+    {% set to = version.id-%}
+    {% set from_shorthand = from.id | truncate(length=7, end="") -%}
+    {% set to_shorthand = to | truncate(length=7, end="") -%}
+    ## Unreleased ({{ from_shorthand ~ ".." ~ to_shorthand }})
+{% endif -%}
+
+{% if package_lock -%}
+### Packages
+{% for package in packages -%}
+
+{% if package.version.tag -%}
+- {{ package.package_name }} locked to {{ package.version.tag }}
+{% endif -%}
+
+{% endfor -%}
+
+{% else -%}
+### Package updates
+{% for package in packages -%}
+
+{% if package.version.tag -%}
+- {{ package.package_name }} bumped to {{ package.version.tag }}
+{% endif -%}
+{% endfor -%}
+{%- endif -%}
+
+### All changes
+{% for value in commits | group_by_type-%}
+#### {{ value.0 | upper_first }}
+{% for scope, scoped_commits in value.1 | group_by(attribute="scope") -%}
+{% for commit in scoped_commits | sort(attribute="scope") -%}
+{{macros::simple(commit=commit)}}
+{% endfor -%}
+{% endfor -%}
+{% for commit in value.1 | unscoped -%}
+{{macros::simple(commit=commit)}}
+{% endfor -%}
+{% endfor -%}

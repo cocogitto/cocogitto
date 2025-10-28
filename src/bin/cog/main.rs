@@ -241,6 +241,10 @@ enum Command {
         /// Name of the repository used during template generation
         #[arg(long, requires_all = ["owner", "remote"])]
         repository: Option<String>,
+
+        /// Combine package and global changes into one changelog
+        #[arg(short, long)]
+        unified: bool,
     },
 
     /// Get current version
@@ -630,6 +634,7 @@ fn main() -> Result<()> {
             remote,
             owner,
             repository,
+            unified,
         } => {
             let cocogitto = CocoGitto::get()?;
 
@@ -639,7 +644,7 @@ fn main() -> Result<()> {
             let template = if let Some(template) = template {
                 Template::from_arg(template, context)?
             } else {
-                Template::default()
+                Template::fallback(unified)
             };
 
             // TODO: fallback to tag here
@@ -648,7 +653,7 @@ fn main() -> Result<()> {
                 Some(at) => cocogitto.get_changelog_at_tag(&at, template)?,
                 None => {
                     if !SETTINGS.packages.is_empty() {
-                        cocogitto.get_monorepo_changelog(pattern, template)?
+                        cocogitto.get_monorepo_changelog(pattern, template, unified)?
                     } else {
                         let changelog = cocogitto.get_changelog(pattern, true)?;
                         changelog.into_markdown(template, ReleaseType::Standard)?
