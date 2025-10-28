@@ -12,6 +12,8 @@ impl CocoGitto {
         &self,
         fallback: Option<String>,
         package: Option<String>,
+        include_prereleases: bool,
+        print_tag: bool,
     ) -> Result<()> {
         let fallback = match fallback {
             Some(input) => match Version::parse(&input) {
@@ -24,18 +26,26 @@ impl CocoGitto {
             None => None,
         };
 
-        let options = TagLookUpOptions::default();
-        let current_tag = match package {
-            Some(pkg) => self
-                .repository
-                .get_latest_tag(TagLookUpOptions::package(&pkg)),
-            None => self.repository.get_latest_tag(options),
+        let mut options = if let Some(pkg) = &package {
+            TagLookUpOptions::package(pkg)
+        } else {
+            TagLookUpOptions::default()
         };
+        if include_prereleases {
+            options = options.include_pre_release();
+        }
+        let current_tag = self.repository.get_latest_tag(options);
 
         let current_version = match current_tag {
-            Ok(tag) => tag.version,
+            Ok(tag) => {
+                if print_tag {
+                    tag.to_string()
+                } else {
+                    tag.version.to_string()
+                }
+            }
             Err(TagError::NoTag) => match fallback {
-                Some(input) => input,
+                Some(version) => version.to_string(),
                 None => bail!("No version yet"),
             },
             Err(err) => bail!("{}", err),
