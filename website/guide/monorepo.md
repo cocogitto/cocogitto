@@ -9,14 +9,14 @@ Instead of the [standard bump steps](#automatic-versioning) using `cog bump --au
 perform the following actions:
 
 1. Calculate next version for each package based on commits that changes the package content.
-2. Calculate a global version based on the created package versions and the commit that does not belong to a specific package.
-3. Execute global pre-bump hooks.
-4. Execute per package pre-bump hooks.
+2. Calculate a global version based on the created package versions and the commits that do not belong to a specific package.
+3. Append global changes and a list of package version to `/CHANGELOG.md`.
+4. Execute global pre-bump hooks.
 5. Append the changes for each package to `{package_path}/CHANGELOG.md`.
-6. Append global changes and a list of package version to `/CHANGELOG.md`.
+6. Execute per package pre-bump hooks.
 7. Create a version commit containing changes made during the previous steps.
-8. Create global git tag on the version commit.
-9. Create a tag for each new package version on the version commit.
+8. Create a tag for each new package version on the version commit.
+9. Create global git tag on the version commit.
 10. Execute per package post-bump hooks.
 11. Execute global post-bump hooks.
 
@@ -80,7 +80,7 @@ package-c = { path = "packages/c" } # No explicit order specified
 
 This is particularly useful when you have dependencies between packages and need to ensure they are versioned in a specific order. Tags will be created according to the specified bump order, which can be important for deployment processes or dependency management.
 
-If `bump_order` is not specified for a package, those packages will be processed after packages with explicit ordering.
+If `bump_order` is not specified for a package, those packages will be processed before packages with explicit ordering.
 
 ### Packages hooks
 
