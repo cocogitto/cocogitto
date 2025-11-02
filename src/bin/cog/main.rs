@@ -669,7 +669,7 @@ fn main() -> Result<()> {
             let template = if let Some(template) = template {
                 Template::from_arg(template, context, unified)?
             } else {
-                Template::from_arg("default", context, unified)?
+                Template::fallback(unified)
             };
 
             // TODO: fallback to tag here

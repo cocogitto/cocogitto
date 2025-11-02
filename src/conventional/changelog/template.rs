@@ -3,6 +3,7 @@ use crate::conventional::changelog::error::ChangelogError;
 use crate::conventional::changelog::release::{ChangelogFooter, Release};
 use crate::conventional::prodiver::github::GitHubProvider;
 use crate::conventional::prodiver::GitProvider;
+use crate::SETTINGS;
 
 use super::filter;
 use std::collections::HashMap;
@@ -20,9 +21,6 @@ const GITHUB_TEMPLATE: &[u8] = include_bytes!("template/github.tera");
 const GITHUB_TEMPLATE_NAME: &str = "github";
 const GITHUB_TEMPLATE_UNIFIED_NAME: &str = "unified_github";
 const UNIFIED_GITHUB_TEMPLATE: &[u8] = include_bytes!("template/unified_github.tera");
-
-pub const MACROS_TEMPLATE: &[u8] = include_bytes!("template/macro/macros.tera");
-pub const MACROS_TEMPLATE_NAME: &str = "macros";
 
 const PACKAGE_DEFAULT_TEMPLATE: &[u8] = include_bytes!("template/package_simple.tera");
 const PACKAGE_DEFAULT_TEMPLATE_NAME: &str = "package_default";
@@ -45,13 +43,14 @@ const UNIFIED_REMOTE_TEMPLATE_NAME: &str = "unified_remote";
 const UNIFIED_FULL_HASH_TEMPLATE: &[u8] = include_bytes!("template/unified_full_hash.tera");
 const UNIFIED_FULL_HASH_TEMPLATE_NAME: &str = "unified_full_hash";
 
+pub const MACROS_TEMPLATE: &[u8] = include_bytes!("template/macro/macros.tera");
+pub const MACROS_TEMPLATE_NAME: &str = "macros";
+
 #[derive(Debug)]
 pub struct Template {
-    pub tera: Tera,
     pub context: Context,
     pub kind: TemplateKind,
     pub remote_context: Option<RemoteContext>,
-    pub git_provider: Option<Box<dyn GitProvider>>,
 }
 
 impl Template {
@@ -60,42 +59,44 @@ impl Template {
         remote_context: Option<RemoteContext>,
         unified: bool,
     ) -> Result<Self, ChangelogError> {
-        let template = TemplateKind::from_arg(value, unified)?;
+        let kind = TemplateKind::from_arg(value, unified)?;
         let mut context = Context::default();
         if let Some(remote) = &remote_context {
             context.extend(remote.to_context());
         }
 
-        let mut tera = Tera::default();
-        let content = template.get()?;
-        let content = String::from_utf8_lossy(content.as_slice());
-        tera.add_raw_template(template.name(), content.as_ref())?;
-        tera.register_filter("upper_first", filter::upper_first_filter);
-        tera.register_filter("unscoped", filter::unscoped);
-        tera.register_filter("group_by_type", filter::group_by_type);
-
-        let git_provider: Option<Box<dyn GitProvider>> = match template {
-            TemplateKind::Github => Some(Box::new(GitHubProvider::default())),
-            _ => None,
-        };
-
         Ok(Template {
             context,
-            kind: template,
-            tera,
-            git_provider,
+            kind,
             remote_context,
         })
     }
 
+    pub fn fallback(unified: bool) -> Self {
+        let kind = if SETTINGS.packages.is_empty() {
+            TemplateKind::Default
+        } else if unified {
+            TemplateKind::UnifiedDefault
+        } else {
+            TemplateKind::MonorepoDefault
+        };
+        Self {
+            kind,
+            context: Context::default(),
+            remote_context: None,
+        }
+    }
+
     pub fn render(&mut self, mut version: Release) -> Result<String, ChangelogError> {
+        let (tera, git_provider) = self.init_tera()?;
         let mut contributor_map = HashMap::new();
-        let mut release = self.render_release(&mut version, &mut contributor_map)?;
+        let mut release =
+            self.render_release(&mut version, &mut contributor_map, &tera, &git_provider)?;
         let mut version = version;
         while let Some(mut previous) = version.previous.map(|v| *v) {
             release.push_str("\n- - -\n\n");
             release.push_str(
-                self.render_release(&mut previous, &mut contributor_map)?
+                self.render_release(&mut previous, &mut contributor_map, &tera, &git_provider)?
                     .as_str(),
             );
             version = previous;
@@ -104,13 +105,38 @@ impl Template {
         Ok(release)
     }
 
+    fn init_tera(&self) -> Result<(Tera, Option<Box<dyn GitProvider>>), ChangelogError> {
+        let mut tera = Tera::default();
+        let content = self.kind.get()?;
+        let content = String::from_utf8_lossy(content.as_slice());
+        tera.add_raw_template(
+            MACROS_TEMPLATE_NAME,
+            String::from_utf8_lossy(MACROS_TEMPLATE).as_ref(),
+        )?;
+        tera.add_raw_template(self.kind.name(), content.as_ref())?;
+        tera.register_filter("upper_first", filter::upper_first_filter);
+        tera.register_filter("unscoped", filter::unscoped);
+        tera.register_filter("group_by_type", filter::group_by_type);
+        tera.check_macro_files()?;
+        let git_provider: Option<Box<dyn GitProvider>> = match self.kind {
+            TemplateKind::Github | TemplateKind::GithubUnified => {
+                Some(Box::new(GitHubProvider::default()))
+            }
+            _ => None,
+        };
+
+        Ok((tera, git_provider))
+    }
+
     fn render_release(
         &mut self,
         version: &mut Release,
         contributor_map: &mut HashMap<String, String>,
+        tera: &Tera,
+        git_provider: &Option<Box<dyn GitProvider>>,
     ) -> Result<String, ChangelogError> {
         if let (Some(git_provider), Some(remote_context)) =
-            (self.git_provider.as_ref(), self.remote_context.as_ref())
+            (git_provider.as_ref(), self.remote_context.as_ref())
         {
             let owner = &remote_context.owner;
             let repo = &remote_context.repository;
@@ -151,8 +177,7 @@ impl Template {
         }
 
         self.push_context(version);
-        self.tera
-            .render(self.kind.name(), &self.context)
+        tera.render(self.kind.name(), &self.context)
             .map_err(Into::into)
     }
 
@@ -209,6 +234,7 @@ impl TemplateKind {
             PACKAGE_DEFAULT_TEMPLATE_NAME => Ok(TemplateKind::PackageDefault),
             PACKAGE_REMOTE_TEMPLATE_NAME => Ok(TemplateKind::PackageRemote),
             PACKAGE_FULL_HASH_TEMPLATE_NAME => Ok(TemplateKind::PackageFullHash),
+
             MONOREPO_DEFAULT_TEMPLATE_NAME => Ok(TemplateKind::MonorepoDefault),
             MONOREPO_REMOTE_TEMPLATE_NAME => Ok(TemplateKind::MonorepoRemote),
             MONOREPO_FULL_HASH_TEMPLATE_NAME => Ok(TemplateKind::MonorepoFullHash),

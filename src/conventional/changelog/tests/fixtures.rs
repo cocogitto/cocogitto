@@ -232,7 +232,7 @@ pub fn monorepo_context<'a>() -> MonoRepoContext<'a> {
     }
 }
 
-pub fn default_pacakage_context<'a>() -> MonoRepoContext<'a> {
+pub fn default_package_context<'a>() -> MonoRepoContext<'a> {
     MonoRepoContext {
         package_lock: true,
         packages: vec![
