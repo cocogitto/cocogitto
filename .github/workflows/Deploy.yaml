@@ -222,3 +222,17 @@ jobs:
           --push --platform linux/amd64,linux/arm/v7,linux/arm64/v8 \
           -f docker/Dockerfile \
           -t ghcr.io/cocogitto/cog:${{ github.ref_name }} .
+
+  dispatch-release:
+    needs: [upload_to_release]
+    name: Dispatch release to org repositories
+    runs-on: ubuntu-latest
+    if: ${{ github.ref_type == 'tag' }}
+    steps:
+      - name: Repository Dispatch
+        uses: peter-evans/repository-dispatch@v4
+        with:
+          token: ${{secrets.RELEASE_TOKEN}}
+          repository: cocogitto/cocogitto-action
+          event-type: cocogitto-released
+          client-payload: '{"version": "${{ github.ref_name }}", "sha": "${{ github.sha }}"}'
