@@ -2,6 +2,26 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## [6.5.0](https://github.com/cocogitto/cocogitto/compare/ad5f0eaf811d98b123ca31cdb92f6019e0576dfa..6.5.0) - 2025-11-02
+#### Bug Fixes
+- set filetype for commit edit message - ([9d14c0b](https://github.com/cocogitto/cocogitto/commit/9d14c0b967598780d2acd9e281bcf2ee4d0e9fd7)) - [@oknozor](https://github.com/oknozor)
+- correctly handle bumping from prerelease - ([5628b0c](https://github.com/cocogitto/cocogitto/commit/5628b0c0071acba95dbec603d171dc9c92cf5b19)) - [@ba-lindner](https://github.com/ba-lindner)
+#### Continuous Integration
+- add dispatch release to cocogitto-action - ([9330f2b](https://github.com/cocogitto/cocogitto/commit/9330f2b0241746e425724cf4cc76675ce7a5104c)) - [@oknozor](https://github.com/oknozor)
+#### Documentation
+- **(bump)** fix monorepo bump docs - ([3cf84ae](https://github.com/cocogitto/cocogitto/commit/3cf84ae84967d1381b1713970cfbfa985b328fc8)) - [@ba-lindner](https://github.com/ba-lindner)
+- **(changelog)** update changelog docs to show current template output - ([2ee784e](https://github.com/cocogitto/cocogitto/commit/2ee784ea125c79f429bcc0eed38ba911488e4799)) - [@ba-lindner](https://github.com/ba-lindner)
+#### Features
+- **(bump)** add --include-packages option to allow manual bump for all monorepo versions - ([6f61a58](https://github.com/cocogitto/cocogitto/commit/6f61a58f06f57c793df26b5be8d2addecca10748)) - [@ba-lindner](https://github.com/ba-lindner)
+- **(get-version)** add options to print full tag and include prerelease versions - ([55fb7f0](https://github.com/cocogitto/cocogitto/commit/55fb7f0dc0d2a8f44c2ca11db90bc1bc0275895b)) - [@ba-lindner](https://github.com/ba-lindner)
+- add option to combine package and global changes into one changelog - ([12fe810](https://github.com/cocogitto/cocogitto/commit/12fe810c12ece8507ee0ffb629d960d6dc626308)) - [@ba-lindner](https://github.com/ba-lindner)
+- add builtin macros for tera templates - ([cba4101](https://github.com/cocogitto/cocogitto/commit/cba4101b0da710656a9dfdf19f7135a4085ba8e4)) - [@oknozor](https://github.com/oknozor)
+#### Refactoring
+- **(changelog)** add tera extension to template files - ([075d5a1](https://github.com/cocogitto/cocogitto/commit/075d5a1e49d71467ddf4bf5c9694b555b9f63a53)) - [@oknozor](https://github.com/oknozor)
+- unify getting next version for bump - ([fa1dcce](https://github.com/cocogitto/cocogitto/commit/fa1dcce47c4fd5e50946ff63913d281e77be6d93)) - [@ba-lindner](https://github.com/ba-lindner)
+
+- - -
+
 ## [6.4.0](https://github.com/cocogitto/cocogitto/compare/c8e46aa2b28ff1bad94852b1abbec568adbff5aa..6.4.0) - 2025-10-18
 #### Bug Fixes
 - respect disable_changelog setting for package changelogs - ([d6ac8bf](https://github.com/cocogitto/cocogitto/commit/d6ac8bf253b1f3dc6082af91c82039c13d5acc1a)) - Lindner, Bernhard
