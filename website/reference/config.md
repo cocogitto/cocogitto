@@ -13,6 +13,7 @@ The config reference list all value that can be set in the `cog.toml` file at th
  # Basic settings
  from_latest_tag = true
  ignore_merge_commits = true
+ tag_prefix = "v"
 
  # Changelog settings
  [changelog]
@@ -205,7 +206,7 @@ skip_untracked = false
 ## `tag_prefix`
 - **Description :** Set a tag prefix value for cocogitto. For instance if you have a `v`
  as a tag prefix, cocogitto will generate versions starting with `v` and
- commands like `cog changelog` will pick only those versions.
+ commands like `cog changelog` will pick only those versions. **Note: This is a required setting**
 - **Type :** `String | Null`
 
 ## AuthorSetting
