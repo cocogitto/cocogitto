@@ -1,0 +1,27 @@
+{% import "macros" as macros %}
+{% if package_lock -%}
+### Packages
+{% for package in packages -%}
+- {{ package.package_name }} locked to {{ package.version.tag }}
+{% endfor -%}
+{% else -%}
+### Package updates
+{% for package in packages -%}
+- {{ package.package_name }} bumped to {{ package.version.tag }}
+{% endfor -%}
+{% endif -%}
+
+### All changes
+{% for value in commits | group_by_type -%}
+#### {{ value.0 | upper_first }}
+{% for scope, scoped_commits in value.1 | group_by(attribute="scope") -%}
+{% for commit in scoped_commits | sort(attribute="scope") -%}
+{{macros::fullhash(commit=commit)}}
+{% endfor -%}
+{% endfor -%}
+
+{% for commit in value.1 | unscoped -%}
+{{macros::fullhash(commit=commit)}}
+
+{% endfor -%}
+{% endfor -%}

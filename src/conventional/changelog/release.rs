@@ -549,6 +549,107 @@ mod test {
         Ok(())
     }
 
+    #[test]
+    fn should_render_unified_default() -> Result<()> {
+        // Arrange
+        let release = Release::fixture();
+
+        let renderer = Renderer::try_new(Template {
+            remote_context: None,
+            kind: TemplateKind::UnifiedDefault,
+        })?;
+        let mut renderer = monorepo_renderer(renderer)?;
+
+        // Act
+        let changelog = renderer.render(release)?;
+
+        // Assert
+        assert_doc_eq!(
+            changelog,
+            "## 1.0.0 - 2015-09-05
+            ### Package updates
+            - one bumped to 0.1.0
+            - two bumped to 0.2.0
+            ### All changes
+            #### Features
+            - (**parser**) implement the changelog generator - (17f7e23) - *oknozor*
+            - awesome feature - (17f7e23) - Paul Delafosse
+            #### Bug Fixes
+            - (**parser**) fix parser implementation - (17f7e23) - *oknozor*
+            "
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn should_render_unified_full_hash() -> Result<()> {
+        // Arrange
+        let release = Release::fixture();
+
+        let renderer = Renderer::try_new(Template {
+            remote_context: None,
+            kind: TemplateKind::UnifiedFullHash,
+        })?;
+        let mut renderer = monorepo_renderer(renderer)?;
+
+        // Act
+        let changelog = renderer.render(release)?;
+
+        // Assert
+        assert_doc_eq!(changelog,
+            "### Package updates
+            - one bumped to 0.1.0
+            - two bumped to 0.2.0
+            ### All changes
+            #### Features
+            - 17f7e23081db15e9318aeb37529b1d473cf41cbe - (**parser**) implement the changelog generator - @oknozor
+            - 17f7e23081db15e9318aeb37529b1d473cf41cbe - awesome feature - Paul Delafosse
+            
+            #### Bug Fixes
+            - 17f7e23081db15e9318aeb37529b1d473cf41cbe - (**parser**) fix parser implementation - @oknozor
+            "
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn should_render_unified_remote() -> Result<()> {
+        // Arrange
+        let release = Release::fixture();
+
+        let renderer = Renderer::try_new(Template {
+            remote_context: RemoteContext::try_new(
+                Some("github.com".into()),
+                Some("cocogitto".into()),
+                Some("cocogitto".into()),
+            ),
+            kind: TemplateKind::UnifiedRemote,
+        })?;
+        let mut renderer = monorepo_renderer(renderer)?;
+
+        // Act
+        let changelog = renderer.render(release)?;
+
+        // Assert
+        assert_doc_eq!(changelog,
+            "## [1.0.0](https://github.com/cocogitto/cocogitto/compare/0.1.0..1.0.0) - 2015-09-05
+            ### Package updates
+            - [0.1.0](crates/one) bumped to [0.1.0](https://github.com/cocogitto/cocogitto/compare/0.2.0..0.1.0)
+            - [0.2.0](crates/two) bumped to [0.2.0](https://github.com/cocogitto/cocogitto/compare/0.3.0..0.2.0)
+            ### All changes
+            #### Features
+            - (**parser**) implement the changelog generator - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
+            - awesome feature - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - Paul Delafosse
+            #### Bug Fixes
+            - (**parser**) fix parser implementation - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
+            "
+        );
+
+        Ok(())
+    }
+
     impl Release<'_> {
         pub fn fixture() -> Release<'static> {
             let date =

@@ -241,6 +241,10 @@ enum Command {
         /// Name of the repository used during template generation
         #[arg(long, requires_all = ["owner", "remote"])]
         repository: Option<String>,
+
+        /// Combine package and global changes into one changelog
+        #[arg(short, long)]
+        unified: bool,
     },
 
     /// Get current version
@@ -252,6 +256,14 @@ enum Command {
         /// Specify which package to get the version for in a monorepo.
         #[arg(long, value_parser = packages())]
         package: Option<String>,
+
+        /// Include prerelease versions
+        #[arg(short, long)]
+        include_prereleases: bool,
+
+        /// Print full tag
+        #[arg(short, long)]
+        tag: bool,
     },
 
     /// Commit changelog from latest tag to HEAD and create new tag
@@ -316,6 +328,13 @@ enum Command {
         /// Disable the creation of the bump commit
         #[arg(long = "disable-bump-commit")]
         disable_bump_commit: bool,
+
+        /// Also bump packages on manual bump
+        ///
+        /// Overrides the default behaviour for --patch, --minor, --major and --version to only
+        /// bump the global version for monorepos. Useful to bump to version 1.0.0.
+        #[arg(long, conflicts_with = "auto")]
+        include_packages: bool,
     },
 
     /// Install cog config files
@@ -418,9 +437,14 @@ fn main() -> Result<()> {
     init_logs(cli.verbose, cli.quiet);
 
     match cli.command {
-        Command::GetVersion { fallback, package } => {
+        Command::GetVersion {
+            fallback,
+            package,
+            include_prereleases,
+            tag,
+        } => {
             let cocogitto = CocoGitto::get()?;
-            cocogitto.get_latest_version(fallback, package)?
+            cocogitto.get_latest_version(fallback, package, include_prereleases, tag)?
         }
         Command::Bump {
             version,
@@ -438,6 +462,7 @@ fn main() -> Result<()> {
             skip_ci_override,
             skip_untracked,
             disable_bump_commit,
+            include_packages,
         } => {
             let mut cocogitto = CocoGitto::get()?;
             let is_monorepo = !SETTINGS.packages.is_empty();
@@ -495,6 +520,7 @@ fn main() -> Result<()> {
                             skip_ci_override,
                             skip_untracked,
                             disable_bump_commit,
+                            include_packages,
                         };
 
                         cocogitto.create_monorepo_version(opts)?
@@ -512,6 +538,7 @@ fn main() -> Result<()> {
                     skip_ci_override,
                     skip_untracked,
                     disable_bump_commit,
+                    include_packages,
                 };
                 cocogitto.create_version(opts)?
             }
@@ -630,6 +657,7 @@ fn main() -> Result<()> {
             remote,
             owner,
             repository,
+            unified,
         } => {
             let cocogitto = CocoGitto::get()?;
 
@@ -639,7 +667,7 @@ fn main() -> Result<()> {
             let template = if let Some(template) = template {
                 Template::from_arg(template, context)?
             } else {
-                Template::default()
+                Template::fallback(unified)
             };
 
             // TODO: fallback to tag here
@@ -648,7 +676,7 @@ fn main() -> Result<()> {
                 Some(at) => cocogitto.get_changelog_at_tag(&at, template)?,
                 None => {
                     if !SETTINGS.packages.is_empty() {
-                        cocogitto.get_monorepo_changelog(pattern, template)?
+                        cocogitto.get_monorepo_changelog(pattern, template, unified)?
                     } else {
                         let changelog = cocogitto.get_changelog(pattern, true)?;
                         changelog.into_markdown(template, ReleaseType::Standard)?

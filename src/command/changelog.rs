@@ -18,14 +18,20 @@ impl CocoGitto {
         Release::try_from(commit_range).map_err(Into::into)
     }
 
-    pub fn get_monorepo_changelog(&self, pattern: &str, template: Template) -> Result<String> {
+    pub fn get_monorepo_changelog(
+        &self,
+        pattern: &str,
+        template: Template,
+        unified: bool,
+    ) -> Result<String> {
         let mut packages = vec![];
 
-        let package_data: Vec<(&String, String)> = SETTINGS
+        let mut package_data: Vec<(&String, String)> = SETTINGS
             .packages
             .iter()
             .map(|(name, p)| (name, p.path.to_string_lossy().to_string()))
             .collect();
+        package_data.sort_by_key(|&(name, _)| name);
 
         for (package_name, package_path) in package_data.iter() {
             let range = self
@@ -53,9 +59,12 @@ impl CocoGitto {
             packages,
         };
 
-        let commit_range = self
-            .repository
-            .get_commit_range_for_monorepo_global(pattern)?;
+        let commit_range = if unified {
+            self.repository.revwalk(pattern)?
+        } else {
+            self.repository
+                .get_commit_range_for_monorepo_global(pattern)?
+        };
 
         let changelog = Release::try_from(commit_range)?;
         changelog
