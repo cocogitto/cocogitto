@@ -26,7 +26,7 @@ post_bump_hooks = [
     "git push",
     "git push origin {{version}}",
     "cargo package",
-   # "cargo publish"
+    "cargo publish"
 ]
 
 # A custom named bump profile, the inner post/pre bump hook will be used
