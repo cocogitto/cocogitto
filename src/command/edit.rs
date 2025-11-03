@@ -98,6 +98,7 @@ impl CocoGitto {
                         let ignore_merge_commit = SETTINGS.ignore_merge_commits;
                         let ignore_fixup_commit = SETTINGS.ignore_fixup_commits;
                         match verify(
+                            None,
                             self.repository.get_author().ok(),
                             &new_message,
                             ignore_merge_commit,
