@@ -147,7 +147,7 @@ impl<'a> From<&'a Footer> for ChangelogFooter<'a> {
                 }
             }
             _ => Self::Footer {
-                token: &footer.content.as_str(),
+                token: footer.content.as_str(),
                 content: footer.content.as_str(),
             },
         }

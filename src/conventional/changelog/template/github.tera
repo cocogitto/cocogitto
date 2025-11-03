@@ -27,7 +27,7 @@
         {% set breaking_badge = "" -%}
     {% endif -%}
     - {{ breaking_badge }}(**{{ scope }}**) {{ commit.summary }} - ([{{shorthand}}]({{ commit_link }})) - {{ author }}
-    {{ co_authors_list(commit.co_authors) }}
+    {{ self::co_authors_list(co_authors=commit.co_authors) }}
 {% endfor -%}
 
 {% endfor -%}
@@ -48,7 +48,7 @@
         {% set breaking_badge = "" -%}
     {% endif -%}
     - {{ breaking_badge }}{{ commit.summary }} - ([{{shorthand}}]({{ commit_link }})) - {{ author }}
-    {{ co_authors_list(commit.co_authors) }}
+    {{ self::co_authors_list(co_authors=commit.co_authors) }}
 {% endfor -%}
 
 {% endfor -%}
