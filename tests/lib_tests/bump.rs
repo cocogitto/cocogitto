@@ -389,6 +389,91 @@ fn should_ignore_latest_prerelease_tag() -> Result<()> {
 }
 
 #[sealed_test]
+fn increment_pre_release_alpha_1() -> Result<()> {
+    // Arrange
+    git_init()?;
+    git_commit("chore: first commit")?;
+    git_commit("feat: add a feature commit")?;
+
+    // Act
+    let mut cocogitto = CocoGitto::get()?;
+    cocogitto.create_version(BumpOptions {
+        pre_release: Some("alpha.*"),
+        ..Default::default()
+    })?;
+
+    assert_latest_tag("0.1.0-alpha.1")?;
+
+    Ok(())
+}
+
+#[sealed_test]
+fn increment_pre_release_alpha_2() -> Result<()> {
+    // Arrange
+    git_init()?;
+    git_commit("chore: first commit")?;
+    git_commit("feat: add a feature commit")?;
+    git_tag("0.1.0-alpha.1")?;
+    git_commit("feat: more features")?;
+
+    // Act
+    let mut cocogitto = CocoGitto::get()?;
+    cocogitto.create_version(BumpOptions {
+        pre_release: Some("alpha.*"),
+        ..Default::default()
+    })?;
+
+    assert_latest_tag("0.1.0-alpha.2")?;
+
+    Ok(())
+}
+
+#[sealed_test]
+fn increment_pre_release_beta_1() -> Result<()> {
+    // Arrange
+    git_init()?;
+    git_commit("chore: first commit")?;
+    git_commit("feat: add a feature commit")?;
+    git_tag("0.1.0-alpha.1")?;
+    git_commit("feat: more features")?;
+    git_tag("0.1.0-alpha.2")?;
+
+    // Act
+    let mut cocogitto = CocoGitto::get()?;
+    cocogitto.create_version(BumpOptions {
+        pre_release: Some("beta.*"),
+        ..Default::default()
+    })?;
+
+    assert_latest_tag("0.1.0-beta.1")?;
+
+    Ok(())
+}
+
+#[sealed_test]
+fn increment_pre_release_new_feature_alpha_1() -> Result<()> {
+    // Arrange
+    git_init()?;
+    git_commit("chore: first commit")?;
+    git_commit("feat: add a feature commit")?;
+    git_tag("0.1.0")?;
+    git_commit("fix: fix a bug")?;
+    git_tag("0.1.1-alpha.1")?;
+    git_commit("feat: more features")?;
+
+    // Act
+    let mut cocogitto = CocoGitto::get()?;
+    cocogitto.create_version(BumpOptions {
+        pre_release: Some("alpha.*"),
+        ..Default::default()
+    })?;
+
+    assert_latest_tag("0.2.0-alpha.1")?;
+
+    Ok(())
+}
+
+#[sealed_test]
 fn auto_bump_package_only_ok() -> Result<()> {
     // Arrange
     let mut packages = HashMap::new();
