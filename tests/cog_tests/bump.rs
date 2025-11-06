@@ -299,6 +299,26 @@ fn pre_release_bump() -> Result<()> {
 }
 
 #[sealed_test]
+fn pre_release_bump_auto() -> Result<()> {
+    git_init()?;
+    git_commit("chore: init")?;
+    git_tag("1.0.0")?;
+    git_commit("feat: feature")?;
+
+    Command::cargo_bin("cog")?
+        .arg("bump")
+        .arg("--major")
+        .arg("--pre")
+        .arg("alpha.*")
+        .assert()
+        .success();
+
+    assert_that!(Path::new("CHANGELOG.md")).exists();
+    assert_tag_exists("2.0.0-alpha.1")?;
+    Ok(())
+}
+
+#[sealed_test]
 fn build_release_bump() -> Result<()> {
     git_init()?;
     git_commit("chore: init")?;
@@ -1052,6 +1072,81 @@ fn bump_prerelease_from_latest_pre_release() -> Result<()> {
     Ok(())
 }
 
+#[sealed_test]
+fn bump_prerelease_from_latest_pre_release_auto() -> Result<()> {
+    // Arrange
+    git_init()?;
+    git_commit("chore: init")?;
+    git_commit("feat: feature 1")?;
+    git_tag("1.0.0-alpha.1")?;
+    git_commit("feat: feature 2")?;
+
+    // Act
+    Command::cargo_bin("cog")?
+        .arg("bump")
+        .arg("--auto")
+        .arg("--pre")
+        .arg("alpha.*")
+        .assert()
+        .success();
+
+    // Assert
+    assert_tag_exists("1.0.0-alpha.2")?;
+
+    Ok(())
+}
+
+#[sealed_test]
+fn bump_prerelease_from_latest_pre_release_auto_2() -> Result<()> {
+    // Arrange
+    git_init()?;
+    git_commit("chore: init")?;
+    git_commit("feat: feature 1")?;
+    git_tag("1.0.0")?;
+    git_commit("feat: feature 2")?;
+
+    // Act
+    Command::cargo_bin("cog")?
+        .arg("bump")
+        .arg("--auto")
+        .arg("--pre")
+        .arg("alpha.*")
+        .assert()
+        .success();
+
+    // Assert
+    assert_tag_exists("1.1.0-alpha.1")?;
+
+    Ok(())
+}
+
+#[sealed_test]
+fn bump_prerelease_from_latest_pre_release_auto_3() -> Result<()> {
+    // Arrange
+    git_init()?;
+    git_commit("chore: init")?;
+    git_commit("feat: feature 1")?;
+    git_tag("1.0.0")?;
+    git_commit("fix: fix 1")?;
+    git_tag("1.0.1-alpha.1")?;
+    git_commit("fix: fix 2")?;
+    git_tag("1.0.1-alpha.2")?;
+    git_commit("feat: feature 2")?;
+
+    // Act
+    Command::cargo_bin("cog")?
+        .arg("bump")
+        .arg("--auto")
+        .arg("--pre")
+        .arg("alpha.*")
+        .assert()
+        .success();
+
+    // Assert
+    assert_tag_exists("1.1.0-alpha.1")?;
+
+    Ok(())
+}
 #[sealed_test]
 fn bump_from_latest_pre_release_monorepo() -> Result<()> {
     // Arrange
