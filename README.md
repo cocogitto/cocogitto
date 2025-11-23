@@ -113,6 +113,12 @@ pacman -S cocogitto
 cargo install --locked cocogitto
 ```
 
+#### [Mise](https://github.com/jdx/mise)
+
+```shell
+mise use -g cocogitto@latest
+```
+
 #### NixOS
 
 ```shell
