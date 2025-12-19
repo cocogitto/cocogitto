@@ -7,7 +7,7 @@ pub mod filters;
 pub mod revspec;
 pub mod revwalk;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CommitIter<'repo>(Vec<(OidOf, Commit<'repo>)>);
 
 impl<'repo> CommitIter<'repo> {
