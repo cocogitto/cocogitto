@@ -1160,3 +1160,28 @@ fn monorepo_changelog_default_template() -> Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn should_render_github_changelog() -> anyhow::Result<()> {
+    let result = Command::cargo_bin("cog")?
+        .arg("changelog")
+        .arg("-t")
+        .arg("github")
+        .arg("--at")
+        .arg("6.4.0")
+        // Assert
+        .assert()
+        .success();
+
+    let changelog = String::from_utf8_lossy(&result.get_output().stdout);
+
+    assert_eq!(
+        changelog,
+        formatdoc! {
+            r#"
+            "#,
+        }
+    );
+
+    Ok(())
+}
