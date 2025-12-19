@@ -149,6 +149,19 @@ fn should_ignore_merge_commit_via_config() -> Result<()> {
     Ok(())
 }
 
+#[test]
+fn should_not_ignore_fixup_commit_by_default() -> Result<()> {
+    // Arrange + Act
+    Command::cargo_bin("cog")?
+        .arg("verify")
+        .arg("fixup! this commit is wrong")
+        // Assert
+        .assert()
+        .failure();
+
+    Ok(())
+}
+
 #[sealed_test(files = ["tests/assets/commit_message.txt"])]
 fn verify_file_ok() -> Result<()> {
     // Arrange
