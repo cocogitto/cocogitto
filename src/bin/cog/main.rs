@@ -358,6 +358,9 @@ enum Command {
         overwrite: bool,
     },
 
+    /// Print statistics about the repository
+    Stats,
+
     /// Generate shell completions
     GenerateCompletions {
         /// Shell to generate completions for
@@ -775,6 +778,10 @@ fn main() -> Result<()> {
 
             cocogitto.conventional_commit(opts)?;
             cocogitto.run_commit_hook(CommitHook::PostCommit)?;
+        }
+        Command::Stats => {
+            let cocogitto = CocoGitto::get()?;
+            cocogitto.stats()?;
         }
     }
 
