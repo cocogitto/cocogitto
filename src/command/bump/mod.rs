@@ -1,3 +1,4 @@
+use crate::command::bump::prerelease::increment_prerelease;
 use crate::conventional::changelog::release::Release;
 use crate::conventional::commit::Commit;
 use crate::git::error::TagError;
@@ -26,6 +27,7 @@ use std::process::exit;
 
 mod monorepo;
 mod package;
+mod prerelease;
 mod standard;
 
 #[derive(Default)]
@@ -108,6 +110,12 @@ impl<'a> BumpOptions<'a> {
 
         if current.version != next.version {
             if let Some(pre_release) = self.pre_release {
+                let pre_release = if pre_release.contains("*") {
+                    &increment_prerelease(&current_prerelease, &next, pre_release)?
+                } else {
+                    pre_release
+                };
+
                 next.version.pre = Prerelease::new(pre_release)?;
             }
 
