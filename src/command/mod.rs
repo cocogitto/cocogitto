@@ -7,3 +7,4 @@ pub mod get_version;
 pub mod git_hooks;
 pub mod init;
 pub mod log;
+pub mod stats;

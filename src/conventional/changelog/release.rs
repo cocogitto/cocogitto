@@ -20,6 +20,40 @@ pub struct Release<'a> {
     pub previous: Option<Box<Release<'a>>>,
 }
 
+pub struct ReleaseIterator<'a> {
+    current: Option<Release<'a>>,
+}
+
+impl<'a> ReleaseIterator<'a> {
+    pub fn new(release: Release<'a>) -> Self {
+        Self {
+            current: Some(release),
+        }
+    }
+}
+
+impl<'a> Iterator for ReleaseIterator<'a> {
+    type Item = Release<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.current.take().map(|mut release| {
+            if let Some(prev) = release.previous.take() {
+                self.current = Some(*prev);
+            }
+            release
+        })
+    }
+}
+
+impl<'a> IntoIterator for Release<'a> {
+    type Item = Release<'a>;
+    type IntoIter = ReleaseIterator<'a>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        ReleaseIterator::new(self)
+    }
+}
+
 impl TryFrom<CommitIter<'_>> for Release<'_> {
     type Error = ChangelogError;
 
@@ -605,7 +639,7 @@ mod test {
             #### Features
             - 17f7e23081db15e9318aeb37529b1d473cf41cbe - (**parser**) implement the changelog generator - @oknozor
             - 17f7e23081db15e9318aeb37529b1d473cf41cbe - awesome feature - Paul Delafosse
-            
+
             #### Bug Fixes
             - 17f7e23081db15e9318aeb37529b1d473cf41cbe - (**parser**) fix parser implementation - @oknozor
             "
