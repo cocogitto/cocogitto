@@ -51,7 +51,12 @@ impl TryFrom<CommitIter<'_>> for Release<'_> {
                     .as_ref()
                     .map(|current: &Release| current.version.clone())
                     .unwrap_or(release.last().unwrap().0.clone()),
-                date: Utc::now().naive_local(),
+                date: chrono::DateTime::from_timestamp(
+                    release.first().unwrap().1.time().seconds(),
+                    0,
+                )
+                .map(|dt| dt.naive_utc())
+                .unwrap_or_else(|| Utc::now().naive_utc()),
                 commits: release
                     .iter()
                     .filter(|(_commit, commit)| commit.message().is_some())
@@ -605,7 +610,7 @@ mod test {
             #### Features
             - 17f7e23081db15e9318aeb37529b1d473cf41cbe - (**parser**) implement the changelog generator - @oknozor
             - 17f7e23081db15e9318aeb37529b1d473cf41cbe - awesome feature - Paul Delafosse
-            
+
             #### Bug Fixes
             - 17f7e23081db15e9318aeb37529b1d473cf41cbe - (**parser**) fix parser implementation - @oknozor
             "
