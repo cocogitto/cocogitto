@@ -14,7 +14,7 @@ use speculoos::prelude::*;
 #[sealed_test]
 fn init_empty_repo_in_target_dir() -> Result<()> {
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("init")
         .arg("test_repo")
         .assert()
@@ -32,7 +32,7 @@ fn init_existing_repo() -> Result<()> {
     git_commit("chore: test commit")?;
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("init")
         // Assert
         .assert()
@@ -48,7 +48,7 @@ fn fail_if_config_exist() -> Result<()> {
     git_commit("chore: test commit")?;
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("init")
         .arg("test_repo_existing")
         // Assert
@@ -63,7 +63,7 @@ fn fail_if_config_exist() -> Result<()> {
 #[sealed_test]
 fn init_current_dir_with_no_arg() -> Result<()> {
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("init")
         // Assert
         .assert()

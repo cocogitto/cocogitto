@@ -14,7 +14,7 @@ fn cog_check_ok() -> Result<()> {
     git_commit("fix: bug fix")?;
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("check")
         // Assert
         .assert()
@@ -32,7 +32,7 @@ fn cog_check_failure() -> Result<()> {
     git_commit("fix: bug fix")?;
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("check")
         // Assert
         .assert()
@@ -52,7 +52,7 @@ fn cog_check_from_latest_tag_ok() -> Result<()> {
     git_commit("fix: bug fix")?;
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("check")
         .arg("--from-latest-tag")
         // Assert
@@ -74,7 +74,7 @@ fn cog_check_from_latest_tag_failure() -> Result<()> {
     git_commit("toto: africa")?;
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("check")
         .arg("--from-latest-tag")
         // Assert
@@ -94,7 +94,7 @@ fn cog_check_commit_range_ok() -> Result<()> {
     let range = format!("{range_start}..{range_end}");
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("check")
         .arg(range)
         // Assert
@@ -116,7 +116,7 @@ fn cog_check_commit_range_failure() -> Result<()> {
     let range = format!("{range_start}..{range_end}");
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("check")
         .arg(range)
         // Assert
@@ -131,7 +131,7 @@ fn cog_check_from_latest_tag_and_commit_range_failure() -> Result<()> {
     // Arrange
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("check")
         .arg("--from-latest-tag")
         .arg("abcdef..fedcba")
@@ -162,7 +162,7 @@ fn cog_valid_commit_scopes() -> Result<()> {
     std::fs::write("cog.toml", settings)?;
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("check")
         // Assert
         .assert()
@@ -189,7 +189,7 @@ fn cog_invalid_commit_scopes() -> Result<()> {
     std::fs::write("cog.toml", settings)?;
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("check")
         // Assert
         .assert()
