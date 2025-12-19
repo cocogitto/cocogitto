@@ -152,7 +152,7 @@ fn should_ignore_merge_commit_via_config() -> Result<()> {
 #[test]
 fn should_not_ignore_fixup_commit_by_default() -> Result<()> {
     // Arrange + Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("verify")
         .arg("fixup! this commit is wrong")
         // Assert
@@ -245,7 +245,7 @@ fn verify_stdin_ok() -> Result<()> {
     );
 
     // Act
-    let mut cmd = Command::cargo_bin("cog")?;
+    let mut cmd = Command::new(assert_cmd::cargo_bin!("cog"));
     cmd.arg("verify")
         .arg("--file")
         .arg("-")
@@ -279,7 +279,7 @@ fn verify_stdin_fails() -> Result<()> {
     let message = "invalid message";
 
     // Act
-    let mut cmd = Command::cargo_bin("cog")?;
+    let mut cmd = Command::new(assert_cmd::cargo_bin!("cog"));
     cmd.arg("verify")
         .arg("--file")
         .arg("-")
