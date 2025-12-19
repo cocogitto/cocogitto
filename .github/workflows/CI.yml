@@ -4,9 +4,19 @@ on:
   push:
     branches:
       - main
+    paths:
+      - "**.rs"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/CI.yml"
   pull_request:
     branches:
       - main
+    paths:
+      - "**.rs"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/CI.yml"
 
 env:
   CARGO_TERM_COLOR: always
@@ -29,7 +39,7 @@ jobs:
             conventional_commit_check: true
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            force_lf: true
+            force_lf: truhow to update the CI to trigger test, lint and build only when the rust crate is modified ?e
           - os: ubuntu-latest
             target: armv7-unknown-linux-musleabihf
           - os: ubuntu-latest
