@@ -17,7 +17,7 @@ fn commit_ok() -> Result<()> {
     git_add("content", "test_file")?;
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("commit")
         .arg("feat")
         .arg("this is a commit message")
@@ -31,7 +31,7 @@ fn commit_ok() -> Result<()> {
 #[sealed_test]
 fn commit_fail_if_not_a_repository() -> Result<()> {
     // Act
-    let output = Command::cargo_bin("cog")?
+    let output = Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("commit")
         .arg("feat")
         .arg("this is a commit message")
@@ -66,7 +66,7 @@ fn unstaged_changes_commit_err() -> Result<()> {
     std::fs::write("test_file", "content")?;
 
     // Act
-    let output = Command::cargo_bin("cog")?
+    let output = Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("commit")
         .arg("feat")
         .arg("this is a commit message")
@@ -97,7 +97,7 @@ fn untracked_changes_commit_ok() -> Result<()> {
     std::fs::write("untracked", "content")?;
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("commit")
         .arg("feat")
         .arg("this is a commit message")
@@ -114,7 +114,7 @@ fn empty_commit_err() -> Result<()> {
     git_init()?;
 
     // Act
-    let output = Command::cargo_bin("cog")?
+    let output = Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("commit")
         .arg("feat")
         .arg("this is a commit message")
@@ -139,7 +139,7 @@ fn commit_with_default_skip_ci_ok() -> Result<()> {
     git_add("content", "test_file")?;
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("commit")
         .arg("--skip-ci")
         .arg("feat")
@@ -167,7 +167,7 @@ fn commit_with_cog_toml_defined_skip_ci_ok() -> Result<()> {
     git_add("skip_ci = \"[ci-skip]\" ", "cog.toml")?;
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("commit")
         .arg("--skip-ci")
         .arg("feat")
@@ -195,7 +195,7 @@ fn commit_with_skip_ci_override_option_takes_precedence() -> Result<()> {
     git_add("skip_ci = \"[ci-skip]\" ", "cog.toml")?;
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("commit")
         .arg("--skip-ci-override")
         .arg("[skip-ci-override]")
@@ -225,7 +225,7 @@ fn add_option_git_commit_ok() -> Result<()> {
         echo "dot file" > .dotfile;
     )?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("commit")
         .arg("-a")
         .arg("feat")
@@ -260,7 +260,7 @@ fn update_option_git_commit_ok() -> Result<()> {
         echo "new file" > new_file;
     )?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("commit")
         .arg("-u")
         .arg("feat")
@@ -295,7 +295,7 @@ fn should_error_on_disabled_commit_error() -> Result<()> {
     fs::write("cog.toml", settings)?;
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("commit")
         .arg("perf")
         .arg("fails at the speed of light")
@@ -314,7 +314,7 @@ fn allow_arbitrary_scope_when_not_constrained() -> Result<()> {
 
     fs::write("cog.toml", "")?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("commit")
         .arg("test")
         .arg("arbitrary commit scopes are allowed")
@@ -336,7 +336,7 @@ fn empty_scopes_disallow_scopes() -> Result<()> {
     "#;
     fs::write("cog.toml", settings)?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("commit")
         .arg("test")
         .arg("scopes are disabled")
@@ -361,7 +361,7 @@ fn only_allow_defined_scope() -> Result<()> {
     "#;
     fs::write("cog.toml", settings)?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("commit")
         .arg("test")
         .arg("only one valid scope")
@@ -381,7 +381,7 @@ fn should_error_on_disallowed_scope() -> Result<()> {
     "#;
     fs::write("cog.toml", settings)?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("commit")
         .arg("feat")
         .arg("fails due to invalid commit scope")
@@ -411,7 +411,7 @@ fn should_run_git_hooks() -> Result<()> {
        chmod +x .git/hooks/post-commit;
     )?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("commit")
         .arg("feat")
         .arg("test commit")
@@ -444,7 +444,7 @@ fn should_run_pre_commit_hook_with_custom_hooks_path() -> Result<()> {
        chmod +x .husky/post-commit;
     )?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("commit")
         .arg("feat")
         .arg("test commit")

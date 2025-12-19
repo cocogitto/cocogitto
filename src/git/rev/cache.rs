@@ -2,7 +2,7 @@ use crate::git::error::{Git2Error, TagError};
 use crate::git::oid::OidOf;
 use crate::git::repository::Repository;
 use crate::git::tag::Tag;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 use std::sync::{Mutex, MutexGuard};
 
 static REPO_CACHE: Mutex<BTreeMap<String, Vec<OidOf>>> = Mutex::new(BTreeMap::new());
@@ -35,13 +35,36 @@ fn build_cache(
     let first = OidOf::FirstCommit(repo.get_first_commit()?);
     add_entry(first.to_string(), first);
 
-    // Tags
+    // Tags, now performant
+    // first, list all tags
     let tags = repo.0.tag_names(None)?;
     let tags = tags
         .into_iter()
         .flatten()
-        .filter_map(|tag| repo.resolve_tag(tag).ok());
-    for tag in tags {
+        .filter_map(|tag| repo.resolve_tag(tag).ok())
+        .filter_map(|tag| Some((tag.oid?, tag)));
+
+    // use a hashmap to easily access by oid
+    let mut tag_map = HashMap::<_, Vec<_>>::new();
+    for (oid, tag) in tags {
+        tag_map.entry(oid).or_default().push(tag);
+    }
+
+    // create revwalk for `..` (all commits reachable from HEAD)
+    let mut tags_from_head = Vec::new();
+    let mut revwalk = repo.0.revwalk()?;
+    revwalk.push_head()?;
+
+    // filter tags by those reachable from HEAD
+    for oid in revwalk {
+        let oid = oid?;
+        if let Some(tags) = tag_map.remove(&oid) {
+            tags_from_head.extend(tags);
+        }
+    }
+
+    // actually add tags to cache
+    for tag in tags_from_head {
         if let Some(oid) = &tag.oid {
             add_entry(oid.to_string(), OidOf::Tag(tag.clone()));
         }
@@ -60,14 +83,6 @@ impl Repository {
             .peel_to_commit()
             .map_err(|err| TagError::no_commit(tag, err))?
             .id();
-
-        // check if tag is reachable from HEAD
-        let head = self.get_head_commit_oid()?;
-        if head != oid && !self.0.graph_descendant_of(head, oid)? {
-            return Err(Git2Error::TagError(TagError::NotReachableFromHead {
-                tag: tag.to_string(),
-            }));
-        }
 
         Tag::from_str(tag, Some(oid)).map_err(Git2Error::TagError)
     }
@@ -153,10 +168,11 @@ mod test {
         )?;
 
         // Act
-        let tag = repo.resolve_tag("1.0.0");
+        let cache = get_cache(&repo);
+        let tag = cache.get("1.0.0");
 
         // Assert
-        assert_that!(tag).is_err();
+        assert_that!(tag).is_none();
         Ok(())
     }
 }

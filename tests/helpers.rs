@@ -168,7 +168,7 @@ pub fn create_empty_config() -> Result<()> {
 
 /// Run `cog bump -a` and return the short sha1 of the created commit
 pub fn cog_bump_auto() -> Result<String> {
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .assert()

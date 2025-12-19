@@ -20,7 +20,7 @@ fn getting_changelog_from_tags_should_produce_the_same_range_either_from_tags_or
     git_commit("feat: feature 3")?;
     git_commit("feat: feature 4")?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .assert()
@@ -81,7 +81,7 @@ fn from_commit_should_be_drained() -> Result<()> {
     git_commit("feat: feature 3")?;
     let unttaged_sha = git_commit("feat: feature 4")?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .assert()
