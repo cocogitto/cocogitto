@@ -25,7 +25,7 @@ macro_rules! assert_doc_eq {
 #[test]
 fn get_changelog_range() -> Result<()> {
     // Act
-    let changelog = Command::cargo_bin("cog")?
+    let changelog = Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("changelog")
         .arg("0.30.0..0.32.3")
         .arg("-t")
@@ -84,7 +84,7 @@ fn get_changelog_from_untagged_repo() -> Result<()> {
     let commit_three = git_commit("fix: bug fix")?;
 
     // Act
-    let changelog = Command::cargo_bin("cog")?
+    let changelog = Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("changelog")
         // Assert
         .assert()
@@ -123,7 +123,7 @@ fn get_changelog_from_tagged_repo() -> Result<()> {
     let commit_two = git_commit("fix: bug fix")?;
 
     // Act
-    let changelog = Command::cargo_bin("cog")?
+    let changelog = Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("changelog")
         // Assert
         .assert()
@@ -169,7 +169,7 @@ fn get_changelog_at_tag() -> Result<()> {
     let _ = git_commit("fix: bug fix")?;
 
     // Act
-    let changelog = Command::cargo_bin("cog")?
+    let changelog = Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("changelog")
         .arg("--at")
         .arg("1.0.0")
@@ -219,7 +219,7 @@ fn get_changelog_with_tag_prefix() -> Result<()> {
     let commit_two = git_commit("fix: bug fix 1")?;
 
     // Act
-    let changelog = Command::cargo_bin("cog")?
+    let changelog = Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("changelog")
         // Assert
         .assert()
@@ -277,7 +277,7 @@ fn get_changelog_at_tag_prefix() -> Result<()> {
     let _ = git_commit("feat: end")?;
 
     // Act
-    let changelog = Command::cargo_bin("cog")?
+    let changelog = Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("changelog")
         .arg("--at")
         .arg("v2.0.0")
@@ -323,7 +323,7 @@ fn get_changelog_from_tag_to_tagged_head() -> Result<()> {
     git_tag("2.0.0")?;
 
     // Act
-    let changelog = Command::cargo_bin("cog")?
+    let changelog = Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("changelog")
         // Assert
         .assert()
@@ -379,7 +379,7 @@ fn get_changelog_is_unaffected_by_disable_changelog() -> Result<()> {
     git_tag("1.0.0")?;
 
     // Act
-    let changelog = Command::cargo_bin("cog")?
+    let changelog = Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("changelog")
         // Assert
         .assert()
@@ -434,7 +434,7 @@ fn get_changelog_with_custom_template() -> Result<()> {
     git_tag("2.0.0")?;
 
     // Act
-    let changelog = Command::cargo_bin("cog")?
+    let changelog = Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("changelog")
         .arg("-t")
         .arg(template)
@@ -501,7 +501,7 @@ fn should_ignore_merge_commit() -> Result<()> {
     )?;
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("changelog")
         // Assert
         .assert()
@@ -526,7 +526,7 @@ fn should_not_ignore_fixup_commit() -> Result<()> {
     )?;
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("changelog")
         // Assert
         .assert()
@@ -551,7 +551,7 @@ fn should_ignore_fixup_commit() -> Result<()> {
     )?;
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("changelog")
         // Assert
         .assert()
@@ -586,7 +586,7 @@ fn ensure_omit_from_changelog_is_honored() -> Result<()> {
         git_tag("1.0.0")?,
     );
 
-    let changelog = Command::cargo_bin("cog")?
+    let changelog = Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("changelog")
         // Assert
         .assert()
@@ -605,7 +605,7 @@ fn ensure_omit_from_changelog_is_honored() -> Result<()> {
 
     run_cmd!(echo $cog_toml > cog.toml;)?;
 
-    let changelog = Command::cargo_bin("cog")?
+    let changelog = Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("changelog")
         // Assert
         .assert()
@@ -647,7 +647,7 @@ fn should_get_global_changelog() -> anyhow::Result<()> {
     git_add("pkg2", "packages/pkg2/README.md")?;
     let _ = git_commit("feat: package 2 fix")?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("changelog")
         .arg("--template")
         .arg("monorepo_default")
@@ -698,7 +698,7 @@ fn order_from_changelog() -> Result<()> {
         git_commit("fix: bug fix 1")?,
     );
 
-    let changelog = Command::cargo_bin("cog")?
+    let changelog = Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("changelog")
         .arg("-t")
         .arg("template.md")
@@ -733,7 +733,7 @@ fn order_from_changelog() -> Result<()> {
 
     run_cmd!(echo $cog_toml > cog.toml;)?;
 
-    let changelog = Command::cargo_bin("cog")?
+    let changelog = Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("changelog")
         .arg("-t")
         .arg("template.md")
@@ -808,7 +808,7 @@ fn group_by_type() -> Result<()> {
         git_commit("fix: bug fix 1")?,
     );
 
-    let changelog = Command::cargo_bin("cog")?
+    let changelog = Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("changelog")
         .arg("-t")
         .arg("template.md")
@@ -843,7 +843,7 @@ fn group_by_type() -> Result<()> {
 
     run_cmd!(echo $cog_toml > cog.toml;)?;
 
-    let changelog = Command::cargo_bin("cog")?
+    let changelog = Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("changelog")
         .arg("-t")
         .arg("template.md")
@@ -887,7 +887,7 @@ fn changelog_from_commit_range_should_be_the_same_as_changelog_from_tag_range() 
     let _ = git_tag("0.1.0");
     git_commit("feat: feature 3")?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .assert()
@@ -896,7 +896,7 @@ fn changelog_from_commit_range_should_be_the_same_as_changelog_from_tag_range() 
     let sha_0_2 = run_fun!(git log --format=%H -n 1)?;
 
     // Act
-    let changelog_from_commit_range = Command::cargo_bin("cog")?
+    let changelog_from_commit_range = Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("changelog")
         .arg(&format!("{sha_0_1}..{sha_0_2}"))
         .assert()
@@ -905,7 +905,7 @@ fn changelog_from_commit_range_should_be_the_same_as_changelog_from_tag_range() 
     let changelog_from_commit_range =
         String::from_utf8_lossy(&changelog_from_commit_range.get_output().stdout);
 
-    let changelog_from_tag_range = Command::cargo_bin("cog")?
+    let changelog_from_tag_range = Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("changelog")
         .arg(&"0.1.0..0.2.0".to_string())
         .assert()
@@ -935,7 +935,7 @@ fn chore_commit_with_breaking_change_should_be_displayed_in_changelog() -> Resul
     let commit_two = git_commit("chore!: breaking change in chore")?;
 
     // Act
-    let changelog = Command::cargo_bin("cog")?
+    let changelog = Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("changelog")
         // Assert
         .assert()
@@ -998,7 +998,7 @@ fn changelog_monorepo_multi_versions() -> Result<()> {
     let sha_5 = cog_bump_auto()?;
 
     // Act
-    let result = Command::cargo_bin("cog")?
+    let result = Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("changelog")
         // ignore package bumps until they are fixed
         .arg("-t")
@@ -1069,7 +1069,7 @@ fn unified_changelog() -> Result<()> {
     git_tag("b-1.0.0")?;
 
     // Act
-    let result = Command::cargo_bin("cog")?
+    let result = Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("changelog")
         .arg("--unified")
         // Assert
@@ -1130,7 +1130,7 @@ fn monorepo_changelog_default_template() -> Result<()> {
     git_tag("pkg-0.1.0")?;
 
     // Act
-    let result = Command::cargo_bin("cog")?
+    let result = Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("changelog")
         // Assert
         .assert()

@@ -23,7 +23,7 @@ fn verify_ok() -> Result<()> {
     );
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("verify")
         .arg(message)
         // Assert
@@ -49,7 +49,7 @@ fn verify_with_scope() -> Result<()> {
     );
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("verify")
         .arg(message)
         // Assert
@@ -65,7 +65,7 @@ fn verify_fails() -> Result<()> {
     let message = "invalid message";
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("verify")
         .arg(message)
         // Assert
@@ -81,7 +81,7 @@ fn verify_with_unknown_commit_type_fails() -> Result<()> {
     let message = "toto: la totomobile";
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("verify")
         .arg(message)
         // Assert
@@ -97,7 +97,7 @@ fn should_not_ignore_merge_commit_by_default() -> Result<()> {
     let message = "Merge toto into titi";
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("verify")
         .arg(message)
         // Assert
@@ -113,7 +113,7 @@ fn should_ignore_merge_commit_with_ignore_flag() -> Result<()> {
     let message = "Merge toto into titi";
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("verify")
         .arg("--ignore-merge-commits")
         .arg(message)
@@ -139,12 +139,25 @@ fn should_ignore_merge_commit_via_config() -> Result<()> {
     let message = "Merge toto into titi";
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("verify")
         .arg(message)
         // Assert
         .assert()
         .success();
+
+    Ok(())
+}
+
+#[test]
+fn should_not_ignore_fixup_commit_by_default() -> Result<()> {
+    // Arrange + Act
+    Command::cargo_bin("cog")?
+        .arg("verify")
+        .arg("fixup! this commit is wrong")
+        // Assert
+        .assert()
+        .failure();
 
     Ok(())
 }
@@ -163,7 +176,7 @@ fn verify_file_ok() -> Result<()> {
     );
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("verify")
         .arg("--file")
         .arg("commit_message.txt")
@@ -178,7 +191,7 @@ fn verify_file_ok() -> Result<()> {
 #[test]
 fn verify_with_not_existing_file_fails() -> Result<()> {
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("verify")
         .arg("--file")
         .arg("not_existing_file.txt")
@@ -203,13 +216,89 @@ fn verify_with_unreadable_file_fails() -> Result<()> {
     fs::set_permissions(file_name, perms)?;
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("verify")
         .arg("--file")
         .arg(file_name)
         // Assert
         .assert()
         .failure();
+
+    Ok(())
+}
+
+#[sealed_test]
+fn verify_stdin_ok() -> Result<()> {
+    use std::io::Write;
+    use std::process::Stdio;
+
+    // Arrange
+    git_init()?;
+    let message = "feat(grid): Add lightcycle battles to the grid";
+    let expected = indoc!(
+        "Add lightcycle battles to the grid (not committed) - now
+            \tAuthor: Tom
+            \tType: feat
+            \tScope: grid
+
+            ",
+    );
+
+    // Act
+    let mut cmd = Command::cargo_bin("cog")?;
+    cmd.arg("verify")
+        .arg("--file")
+        .arg("-")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+
+    let mut child = cmd.spawn()?;
+
+    // Write to stdin
+    {
+        let stdin = child.stdin.as_mut().expect("Failed to open stdin");
+        stdin.write_all(message.as_bytes())?;
+    }
+
+    let output = child.wait_with_output()?;
+
+    // Assert
+    assert!(output.status.success());
+    assert_eq!(String::from_utf8_lossy(&output.stderr), expected);
+
+    Ok(())
+}
+
+#[test]
+fn verify_stdin_fails() -> Result<()> {
+    use std::io::Write;
+    use std::process::Stdio;
+
+    // Arrange
+    let message = "invalid message";
+
+    // Act
+    let mut cmd = Command::cargo_bin("cog")?;
+    cmd.arg("verify")
+        .arg("--file")
+        .arg("-")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+
+    let mut child = cmd.spawn()?;
+
+    // Write to stdin
+    {
+        let stdin = child.stdin.as_mut().expect("Failed to open stdin");
+        stdin.write_all(message.as_bytes())?;
+    }
+
+    let output = child.wait_with_output()?;
+
+    // Assert
+    assert!(!output.status.success());
 
     Ok(())
 }
