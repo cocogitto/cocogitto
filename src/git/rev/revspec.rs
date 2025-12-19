@@ -79,15 +79,13 @@ impl Repository {
 
         let oid = oids
             .and_then(|v| {
-                v.iter()
-                    .filter(|oid| {
-                        if let OidOf::Tag(tag) = oid {
-                            tag.package.as_deref() == package
-                        } else {
-                            true
-                        }
-                    })
-                    .next_back()
+                v.iter().rfind(|oid| {
+                    if let OidOf::Tag(tag) = oid {
+                        tag.package.as_deref() == package
+                    } else {
+                        true
+                    }
+                })
             })
             .cloned();
         if let Some(oid) = oid {
