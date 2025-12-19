@@ -2,6 +2,7 @@ mod commit;
 mod mangen;
 
 use std::fs;
+use std::io::{self, Read};
 use std::path::PathBuf;
 
 use cocogitto::conventional::changelog::template::{RemoteContext, Template};
@@ -200,9 +201,9 @@ enum Command {
         #[arg(group = "verify_input")]
         message: Option<String>,
 
-        /// Read message from the specified file
+        /// Read message from the specified file (use '-' to read from stdin)
         #[arg(short, long, group = "verify_input")]
-        file: Option<PathBuf>,
+        file: Option<String>,
 
         /// Ignore merge commit messages
         #[arg(short, long)]
@@ -558,13 +559,23 @@ fn main() -> Result<()> {
             let commit_message = match (message, file) {
                 (Some(message), None) => message,
                 (None, Some(file_path)) => {
-                    if !file_path.exists() {
-                        bail!("File {file_path:#?} does not exist");
-                    }
+                    if file_path == "-" {
+                        // Read from stdin
+                        let mut buffer = String::new();
+                        io::stdin()
+                            .read_to_string(&mut buffer)
+                            .context("Could not read from stdin")?;
+                        buffer
+                    } else {
+                        let path = PathBuf::from(&file_path);
+                        if !path.exists() {
+                            bail!("File {file_path:#?} does not exist");
+                        }
 
-                    match fs::read_to_string(file_path) {
-                        Err(e) => bail!("Could not read the file ({e})"),
-                        Ok(msg) => msg,
+                        match fs::read_to_string(&path) {
+                            Err(e) => bail!("Could not read the file ({e})"),
+                            Ok(msg) => msg,
+                        }
                     }
                 }
                 (None, None) => unreachable!(),

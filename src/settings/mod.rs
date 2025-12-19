@@ -112,7 +112,7 @@ impl Default for Settings {
         Self {
             from_latest_tag: false,
             ignore_merge_commits: false,
-            ignore_fixup_commits: true,
+            ignore_fixup_commits: false,
             disable_changelog: false,
             disable_bump_commit: false,
             generate_mono_repository_global_tag: true,

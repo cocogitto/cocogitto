@@ -21,3 +21,29 @@ Caused by:
       |
       = expected scope or type_separator
 ```
+
+## Reading from a file
+
+You can also verify a commit message from a file:
+
+```bash
+❯ cog verify --file commit_message.txt
+```
+
+## Reading from stdin
+
+To read from stdin, use `-` as the file argument:
+
+```bash
+❯ echo "feat(grid): Add lightcycle battles to the grid" | cog verify --file -
+Add lightcycle battles to the grid (not committed) - now
+	Author: Kevin Flynn
+	Type: feat
+	Scope: grid
+```
+
+This is particularly useful in CI/CD pipelines or when integrating with other tools:
+
+```bash
+❯ git log -1 --pretty=%B | cog verify --file -
+```

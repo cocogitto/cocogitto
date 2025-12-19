@@ -149,6 +149,19 @@ fn should_ignore_merge_commit_via_config() -> Result<()> {
     Ok(())
 }
 
+#[test]
+fn should_not_ignore_fixup_commit_by_default() -> Result<()> {
+    // Arrange + Act
+    Command::cargo_bin("cog")?
+        .arg("verify")
+        .arg("fixup! this commit is wrong")
+        // Assert
+        .assert()
+        .failure();
+
+    Ok(())
+}
+
 #[sealed_test(files = ["tests/assets/commit_message.txt"])]
 fn verify_file_ok() -> Result<()> {
     // Arrange
@@ -210,6 +223,82 @@ fn verify_with_unreadable_file_fails() -> Result<()> {
         // Assert
         .assert()
         .failure();
+
+    Ok(())
+}
+
+#[sealed_test]
+fn verify_stdin_ok() -> Result<()> {
+    use std::io::Write;
+    use std::process::Stdio;
+
+    // Arrange
+    git_init()?;
+    let message = "feat(grid): Add lightcycle battles to the grid";
+    let expected = indoc!(
+        "Add lightcycle battles to the grid (not committed) - now
+            \tAuthor: Tom
+            \tType: feat
+            \tScope: grid
+
+            ",
+    );
+
+    // Act
+    let mut cmd = Command::cargo_bin("cog")?;
+    cmd.arg("verify")
+        .arg("--file")
+        .arg("-")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+
+    let mut child = cmd.spawn()?;
+
+    // Write to stdin
+    {
+        let stdin = child.stdin.as_mut().expect("Failed to open stdin");
+        stdin.write_all(message.as_bytes())?;
+    }
+
+    let output = child.wait_with_output()?;
+
+    // Assert
+    assert!(output.status.success());
+    assert_eq!(String::from_utf8_lossy(&output.stderr), expected);
+
+    Ok(())
+}
+
+#[test]
+fn verify_stdin_fails() -> Result<()> {
+    use std::io::Write;
+    use std::process::Stdio;
+
+    // Arrange
+    let message = "invalid message";
+
+    // Act
+    let mut cmd = Command::cargo_bin("cog")?;
+    cmd.arg("verify")
+        .arg("--file")
+        .arg("-")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+
+    let mut child = cmd.spawn()?;
+
+    // Write to stdin
+    {
+        let stdin = child.stdin.as_mut().expect("Failed to open stdin");
+        stdin.write_all(message.as_bytes())?;
+    }
+
+    let output = child.wait_with_output()?;
+
+    // Assert
+    assert!(!output.status.success());
 
     Ok(())
 }
