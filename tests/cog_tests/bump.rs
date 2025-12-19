@@ -18,7 +18,7 @@ fn auto_bump_from_start_ok() -> Result<()> {
     git_commit("feat(taef): feature")?;
     git_commit("fix: bug fix")?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .assert()
@@ -40,7 +40,7 @@ fn auto_bump_minor_from_latest_tag() -> Result<()> {
     git_commit("feat: feature 1")?;
     git_commit("feat: feature 2")?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .assert()
@@ -62,7 +62,7 @@ fn auto_bump_dry_run_from_latest_tag() -> Result<()> {
     git_commit("feat: feature 1")?;
     git_commit("feat: feature 2")?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .arg("--dry-run")
@@ -86,7 +86,7 @@ fn auto_bump_major_from_latest_tag() -> Result<()> {
     git_commit("feat!: feature 1")?;
     git_commit("feat: feature 2")?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .assert()
@@ -109,7 +109,7 @@ fn auto_bump_with_prefix() -> Result<()> {
     git_commit("feat!: feature 1")?;
     git_commit("feat: feature 2")?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .assert()
@@ -128,7 +128,7 @@ fn disable_changelog_disables_changelog_generation() -> Result<()> {
     git_commit("feat: add a feature commit")?;
     git_tag("1.0.0")?;
     git_commit("feat: add another feature commit")?;
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .assert()
@@ -147,7 +147,7 @@ fn disable_changelog_disables_changelog_generation_for_monorepos() -> Result<()>
         ..Default::default()
     };
     init_monorepo(&mut settings)?;
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .assert()
@@ -167,7 +167,7 @@ fn disable_changelog_disables_changelog_generation_for_packages() -> Result<()> 
     };
     init_monorepo(&mut settings)?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .arg("--package")
@@ -191,7 +191,7 @@ fn auto_bump_patch_from_latest_tag() -> Result<()> {
     git_commit("fix: fix 1")?;
     git_commit("fix: fix 2")?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .assert()
@@ -214,7 +214,7 @@ fn auto_bump_respect_semver_sorting() -> Result<()> {
     git_commit("fix: fix 1")?;
     git_commit("fix: fix 2")?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .assert()
@@ -232,7 +232,7 @@ fn minor_bump() -> Result<()> {
     git_tag("1.0.0")?;
     git_commit("feat: feature")?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--minor")
         .assert()
@@ -250,7 +250,7 @@ fn major_bump() -> Result<()> {
     git_tag("1.0.0")?;
     git_commit("feat: feature")?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--major")
         .assert()
@@ -268,7 +268,7 @@ fn patch_bump() -> Result<()> {
     git_tag("1.0.0")?;
     git_commit("feat: feature")?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--patch")
         .assert()
@@ -285,7 +285,7 @@ fn pre_release_bump() -> Result<()> {
     git_tag("1.0.0")?;
     git_commit("feat: feature")?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--major")
         .arg("--pre")
@@ -305,7 +305,7 @@ fn build_release_bump() -> Result<()> {
     git_tag("1.0.0")?;
     git_commit("feat: feature")?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--major")
         .arg("--build")
@@ -329,7 +329,7 @@ fn bump_with_hook() -> Result<()> {
     git_commit("feat: feature")?;
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--major")
         // Assert
@@ -356,7 +356,7 @@ fn bump_with_hook_and_prefix() -> Result<()> {
     git_commit("feat: feature")?;
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--major")
         // Assert
@@ -390,7 +390,7 @@ fn bump_with_profile_hook() -> Result<()> {
     git_commit("feat: feature")?;
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--hook-profile")
         .arg("custom")
@@ -408,7 +408,7 @@ fn bump_with_profile_hook() -> Result<()> {
 fn monorepo_dry_run() -> Result<()> {
     init_monorepo(&mut Settings::default())?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .arg("--dry-run")
@@ -429,7 +429,7 @@ fn monorepo_dry_run() -> Result<()> {
 fn package_dry_run() -> Result<()> {
     init_monorepo(&mut Settings::default())?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .arg("--package")
@@ -452,7 +452,7 @@ fn uncommitted_changes_should_throw_error_by_default() -> Result<()> {
         echo two > two;
     )?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .arg("--dry-run")
@@ -476,7 +476,7 @@ fn uncommitted_changes_should_not_throw_error_with_option() -> Result<()> {
         echo "other changes" > one/file;
     )?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .arg("--dry-run")
@@ -497,7 +497,7 @@ fn bump_package_with_default_skip_ci_ok() -> Result<()> {
     };
     init_monorepo(&mut settings)?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .arg("--skip-ci")
@@ -522,7 +522,7 @@ fn bump_package_with_cog_toml_defined_skip_ci_ok() -> Result<()> {
     };
     init_monorepo(&mut settings)?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .arg("--skip-ci")
@@ -547,7 +547,7 @@ fn bump_package_with_skip_ci_override_option_takes_precedence() -> Result<()> {
     };
     init_monorepo(&mut settings)?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .arg("--skip-ci-override")
@@ -571,7 +571,7 @@ fn bump_standard_repository_with_default_skip_ci_ok() -> Result<()> {
     git_commit("chore: init")?;
     git_commit("feat: feature")?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--skip-ci")
         .arg("--auto")
@@ -592,7 +592,7 @@ fn bump_standard_repository_with_cog_toml_defined_skip_ci_ok() -> Result<()> {
     git_add("skip_ci = \"[ci-skip]\"", "cog.toml")?;
     git_commit("feat: feature")?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--skip-ci")
         .arg("--auto")
@@ -613,7 +613,7 @@ fn bump_standard_repository_skip_ci_override_option_takes_precedence() -> Result
     git_add("skip_ci = \"[ci-skip]\"", "cog.toml")?;
     git_commit("feat: feature")?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--skip-ci-override")
         .arg("[ci-skip-override]")
@@ -635,7 +635,7 @@ fn bump_monorepo_with_default_skip_ci_ok() -> Result<()> {
     };
     init_monorepo(&mut settings)?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .arg("--skip-ci")
@@ -657,7 +657,7 @@ fn bump_monorepo_manual_increment_with_default_skip_ci_ok() -> Result<()> {
     };
     init_monorepo(&mut settings)?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--minor")
         .arg("--skip-ci")
@@ -680,7 +680,7 @@ fn bump_monorepo_with_cog_toml_defined_skip_ci_ok() -> Result<()> {
     };
     init_monorepo(&mut settings)?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .arg("--skip-ci")
@@ -704,7 +704,7 @@ fn bump_monorepo_skip_ci_override_option_takes_precedence() -> Result<()> {
 
     init_monorepo(&mut settings)?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .arg("--skip-ci-override")
@@ -728,7 +728,7 @@ fn bump_only_package_with_default_skip_ci_ok() -> Result<()> {
     };
     init_monorepo(&mut settings)?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .arg("--skip-ci")
@@ -753,7 +753,7 @@ fn disable_commit_creation_with_config_standard_ok() -> Result<()> {
     git_commit("chore: init")?;
     git_commit("feat: feature")?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .assert()
@@ -778,7 +778,7 @@ fn disable_commit_creation_with_flag_standard_ok() -> Result<()> {
     git_commit("chore: init")?;
     git_commit("feat: feature")?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .arg("--disable-bump-commit")
@@ -810,7 +810,7 @@ fn disable_commit_creation_with_pre_bump_hooks_standard_ok() -> Result<()> {
     git_commit("chore: init")?;
     git_commit("feat: feature")?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .arg("--disable-bump-commit")
@@ -846,7 +846,7 @@ fn override_default_commit() -> Result<()> {
     git_commit("feat: feature")?;
     git_commit("fix: fix")?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .assert()
@@ -865,7 +865,7 @@ fn disable_commit_creation_monorepo_ok() -> Result<()> {
     };
     init_monorepo(&mut settings)?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .assert()
@@ -892,7 +892,7 @@ fn disable_commit_creation_package_ok() -> Result<()> {
     };
     init_monorepo(&mut settings)?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .arg("--package")
@@ -920,7 +920,7 @@ fn bump_repeatedly() -> Result<()> {
     git_commit("feat: first commit")?;
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .arg("--build")
@@ -930,7 +930,7 @@ fn bump_repeatedly() -> Result<()> {
 
     run_cmd!(git reset --hard HEAD^)?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .arg("--build")
@@ -940,7 +940,7 @@ fn bump_repeatedly() -> Result<()> {
 
     run_cmd!(git reset --hard HEAD^)?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .arg("--build")
@@ -972,7 +972,7 @@ fn bump_bug_fix() -> Result<()> {
     git_commit("fix: important bug fix")?;
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .assert()
@@ -989,14 +989,14 @@ fn changelog_on_first_commit_with_tag_on_first_commit() -> Result<()> {
     git_init()?;
     git_commit("feat: init")?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .arg("--disable-bump-commit")
         .assert()
         .success();
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("changelog")
         .arg("--at")
         .arg("0.1.0")
@@ -1016,7 +1016,7 @@ fn bump_from_latest_pre_release() -> Result<()> {
     git_commit("feat: feature 2")?;
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .assert()
@@ -1038,7 +1038,7 @@ fn bump_prerelease_from_latest_pre_release() -> Result<()> {
     git_commit("feat: feature 2")?;
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .arg("--pre")
@@ -1066,7 +1066,7 @@ fn bump_from_latest_pre_release_monorepo() -> Result<()> {
     git_commit("feat: feature 2")?;
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .assert()
@@ -1093,7 +1093,7 @@ fn bump_prerelease_from_latest_pre_release_monorepo() -> Result<()> {
     git_commit("feat: feature 2")?;
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .arg("--pre")
@@ -1133,7 +1133,7 @@ fn bump_prerelease_ignore_packages() -> Result<()> {
     git_commit("feat: do stuff")?;
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .arg("--pre")
@@ -1174,7 +1174,7 @@ fn major_bump_with_packages() -> Result<()> {
     git_commit("feat: release 1.0")?;
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--major")
         .arg("--include-packages")
@@ -1191,7 +1191,7 @@ fn major_bump_with_packages() -> Result<()> {
 
 #[sealed_test]
 fn auto_bump_conflicts_with_include_packages() -> Result<()> {
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .arg("--include-packages")

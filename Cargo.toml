@@ -55,7 +55,7 @@ maplit = "1.0.2"
 indexmap = { version = "2.11.4", features = ["serde"] }
 
 [dev-dependencies]
-assert_cmd = "2.0"
+assert_cmd = "2.1.1"
 predicates = "3.1.0"
 indoc = "2.0.4"
 speculoos = "0.12.0"
