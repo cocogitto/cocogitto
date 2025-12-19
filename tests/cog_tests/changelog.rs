@@ -37,11 +37,10 @@ fn get_changelog_range() -> Result<()> {
     let changelog = changelog.get_output();
     let changelog = &changelog.stdout;
     let changelog = String::from_utf8_lossy(changelog.as_slice());
-    let today = Utc::now().date_naive().to_string();
 
     assert_doc_eq!(
         changelog.as_ref(),
-        "## 0.32.3 - {today}
+        "## 0.32.3 - 2020-09-30
         #### Bug Fixes
         - fix openssl missing in CD - (1c0d2e9) - *oknozor*
         #### Documentation
@@ -49,7 +48,7 @@ fn get_changelog_range() -> Result<()> {
 
         - - -
 
-        ## 0.32.2 - {today}
+        ## 0.32.2 - 2020-09-30
         #### Bug Fixes
         - (**cd**) bump setup-rust-action to v1.3.3 - (5350b11) - *oknozor*
         #### Documentation
@@ -57,7 +56,7 @@ fn get_changelog_range() -> Result<()> {
 
         - - -
 
-        ## 0.32.1 - {today}
+        ## 0.32.1 - 2020-09-30
         #### Features
         - move check edit to dedicated subcommand and fix rebase - (fc74207) - *oknozor*
         - remove config commit on init existing repo - (1028d0b) - *oknozor*
@@ -70,7 +69,6 @@ fn get_changelog_range() -> Result<()> {
 
 
         ",
-        today = today
     );
     Ok(())
 }
