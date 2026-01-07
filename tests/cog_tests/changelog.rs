@@ -1164,7 +1164,7 @@ fn should_render_github_changelog() -> anyhow::Result<()> {
     let result = Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("changelog")
         .arg("-t")
-        .arg("github")
+        .arg("remote")
         .arg("--at")
         .arg("6.4.0")
         // Assert

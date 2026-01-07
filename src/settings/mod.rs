@@ -142,7 +142,7 @@ impl Default for Settings {
 /// Represents the different types of Git hooks that can be configured.
 ///
 /// This enum defines all the standard Git hook types that can be used
-
+/// in the configuration. Each variant corresponds to a specific Git hook
 /// that gets triggered at different points in Git's execution.
 ///
 ///  **Example :**

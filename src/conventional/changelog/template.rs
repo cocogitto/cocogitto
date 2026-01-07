@@ -15,10 +15,6 @@ const REMOTE_TEMPLATE: &[u8] = include_bytes!("template/remote.tera");
 const REMOTE_TEMPLATE_NAME: &str = "remote";
 const FULL_HASH_TEMPLATE: &[u8] = include_bytes!("template/full_hash.tera");
 const FULL_HASH_TEMPLATE_NAME: &str = "full_hash";
-const GITHUB_TEMPLATE: &[u8] = include_bytes!("template/github.tera");
-const GITHUB_TEMPLATE_NAME: &str = "github";
-const GITHUB_TEMPLATE_UNIFIED_NAME: &str = "unified_github";
-const UNIFIED_GITHUB_TEMPLATE: &[u8] = include_bytes!("template/unified_github.tera");
 
 const PACKAGE_DEFAULT_TEMPLATE: &[u8] = include_bytes!("template/package_simple.tera");
 const PACKAGE_DEFAULT_TEMPLATE_NAME: &str = "package_default";
@@ -188,8 +184,6 @@ pub enum TemplateKind {
     Default,
     FullHash,
     Remote,
-    Github,
-    GithubUnified,
     PackageDefault,
     PackageFullHash,
     PackageRemote,
@@ -218,9 +212,6 @@ impl TemplateKind {
             FULL_HASH_TEMPLATE_NAME | UNIFIED_FULL_HASH_TEMPLATE_NAME => {
                 Ok(TemplateKind::UnifiedFullHash)
             }
-
-            GITHUB_TEMPLATE_NAME if !unified => Ok(TemplateKind::Github),
-            GITHUB_TEMPLATE_NAME | GITHUB_TEMPLATE_UNIFIED_NAME => Ok(TemplateKind::GithubUnified),
 
             PACKAGE_DEFAULT_TEMPLATE_NAME => Ok(TemplateKind::PackageDefault),
             PACKAGE_REMOTE_TEMPLATE_NAME => Ok(TemplateKind::PackageRemote),
@@ -251,8 +242,6 @@ impl TemplateKind {
             TemplateKind::MonorepoDefault => Ok(MONOREPO_DEFAULT_TEMPLATE.to_vec()),
             TemplateKind::MonorepoRemote => Ok(MONOREPO_REMOTE_TEMPLATE.to_vec()),
             TemplateKind::MonorepoFullHash => Ok(MONOREPO_FULL_HASH_TEMPLATE.to_vec()),
-            TemplateKind::Github => Ok(GITHUB_TEMPLATE.to_vec()),
-            TemplateKind::GithubUnified => Ok(UNIFIED_GITHUB_TEMPLATE.to_vec()),
             TemplateKind::UnifiedDefault => Ok(UNIFIED_DEFAULT_TEMPLATE.to_vec()),
             TemplateKind::UnifiedRemote => Ok(UNIFIED_REMOTE_TEMPLATE.to_vec()),
             TemplateKind::UnifiedFullHash => Ok(UNIFIED_FULL_HASH_TEMPLATE.to_vec()),
@@ -271,8 +260,6 @@ impl TemplateKind {
             TemplateKind::MonorepoDefault => MONOREPO_DEFAULT_TEMPLATE_NAME,
             TemplateKind::MonorepoRemote => MONOREPO_REMOTE_TEMPLATE_NAME,
             TemplateKind::MonorepoFullHash => MONOREPO_FULL_HASH_TEMPLATE_NAME,
-            TemplateKind::Github => GITHUB_TEMPLATE_NAME,
-            TemplateKind::GithubUnified => GITHUB_TEMPLATE_UNIFIED_NAME,
             TemplateKind::UnifiedDefault => UNIFIED_DEFAULT_TEMPLATE_NAME,
             TemplateKind::UnifiedRemote => UNIFIED_REMOTE_TEMPLATE_NAME,
             TemplateKind::UnifiedFullHash => UNIFIED_FULL_HASH_TEMPLATE_NAME,

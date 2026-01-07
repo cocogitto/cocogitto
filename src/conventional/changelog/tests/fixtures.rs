@@ -282,7 +282,7 @@ pub fn remote_context_with_github_provider() -> Option<RemoteContext> {
             Some("github.com".into()),
             Some("cocogitto".into()),
             Some("cocogitto".into()),
-            None,
+            Some(crate::settings::GitProvider::Github),
         )
         .unwrap(),
     )
