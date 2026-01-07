@@ -87,6 +87,8 @@ jobs:
 
       - name: Collect coverage data
         if: ${{matrix.coverage}}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: cargo llvm-cov nextest --lcov --output-path lcov.info
 
       - name: Upload coverage to Codecov
@@ -100,6 +102,8 @@ jobs:
       - name: Test
         if: ${{ ! matrix.coverage }}
         uses: actions-rs/cargo@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           command: nextest
           args: run
