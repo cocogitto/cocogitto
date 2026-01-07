@@ -1,3 +1,12 @@
+{% macro co_authors_list(co_authors) %}
+    {% if co_authors | length > 0 -%}
+      Co-authored-by:
+      {% for co_author in co_authors %}
+      - [@{{ co_author }}](https://github.com/{{ co_author }})
+      {% endfor -%}
+    {% endif -%}
+{% endmacro co_authors_list %}
+
 {%- macro simple(commit) -%}
   {%-if commit.author -%}
       {% set author = "*" ~ commit.author  ~ "*" -%}
@@ -45,3 +54,21 @@
     {% endif -%}
     - {{ breaking_badge }}{{ commit.id }}{% if commit.scope %} - (**{{ commit.scope }}**) {% else %} - {% endif %}{{ commit.summary }} - {{ author }}
 {%- endmacro fullhash -%}
+
+{%- macro github(commit) -%}
+  {% if commit.author and repository_url -%}
+      {% set author = "@" ~ commit.author -%}
+      {% set author_link = platform ~ "/" ~ commit.author -%}
+      {% set author = "[" ~ author ~ "](" ~ author_link ~ ")" -%}
+  {% else -%}
+      {% set author = commit.signature -%}
+  {% endif -%}
+  {% set commit_link = repository_url ~ "/commit/" ~ commit.id -%}
+  {% set shorthand = commit.id | truncate(length=7, end="") -%}
+  {% if commit.breaking_change -%}
+      {% set breaking_badge = "![BREAKING](https://img.shields.io/badge/BREAKING-red) " -%}
+  {% else -%}
+      {% set breaking_badge = "" -%}
+  {% endif -%}
+  - {{ breaking_badge }}{%if commit.scope %}(**{{ commit.scope }}**) {% endif %}{{ commit.summary }} - ([{{shorthand}}]({{ commit_link }})) - {{ author }} {{ self::co_authors_list(co_authors=commit.co_authors) }}
+{%- endmacro remote -%}

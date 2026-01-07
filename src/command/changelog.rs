@@ -1,6 +1,6 @@
+use crate::conventional::changelog::context::MonoRepoContext;
+use crate::conventional::changelog::context::PackageBumpContext;
 use crate::conventional::changelog::release::Release;
-use crate::conventional::changelog::template::MonoRepoContext;
-use crate::conventional::changelog::template::PackageBumpContext;
 use crate::conventional::changelog::template::Template;
 
 use crate::conventional::changelog::ReleaseType;
@@ -13,7 +13,7 @@ impl CocoGitto {
     /// ## Get a changelog between two oids
     /// - `from` default value:latest tag or else first commit
     /// - `to` default value:`HEAD` or else first commit
-    pub fn get_changelog(&self, pattern: &str, _with_child_releases: bool) -> Result<Release<'_>> {
+    pub fn get_changelog(&self, pattern: &str, _with_child_releases: bool) -> Result<Release> {
         let commit_range = self.repository.revwalk(pattern)?;
         Release::try_from(commit_range).map_err(Into::into)
     }

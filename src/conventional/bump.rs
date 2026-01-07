@@ -316,6 +316,7 @@ mod test {
                     footers: vec![],
                 },
                 author: "".to_string(),
+                committer: "".to_string(),
                 date: Utc::now().naive_local(),
             }
         }

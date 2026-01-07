@@ -1,12 +1,9 @@
 use crate::command::bump::{BumpOptions, HookRunOptions};
-
-use crate::conventional::changelog::template::{
+use crate::conventional::changelog::context::{
     MonoRepoContext, PackageBumpContext, PackageContext,
 };
 use crate::conventional::changelog::ReleaseType;
-
 use crate::conventional::version::{Increment, IncrementCommand};
-
 use crate::git::error::TagError;
 use crate::git::tag::{Tag, TagLookUpOptions};
 use crate::hook::HookVersion;

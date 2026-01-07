@@ -71,6 +71,7 @@ template = "remote"
 remote = "github.com"
 repository = "cocogitto"
 owner = "cocogitto"
+provider = "github"
 
 # Optional contributor list
 # intended to map git signature to remote username

@@ -1,12 +1,13 @@
+use crate::conventional::changelog::context::{RemoteContext, ToContext};
 use crate::conventional::changelog::error::ChangelogError;
+use crate::conventional::changelog::release::{ChangelogFooter, Release};
 use crate::SETTINGS;
 
-use serde::Serialize;
-
-use crate::git::oid::OidOf;
+use super::filter;
+use std::collections::HashMap;
 use std::io;
 use std::path::PathBuf;
-use tera::Context;
+use tera::{Context, Tera};
 
 const DEFAULT_TEMPLATE: &[u8] = include_bytes!("template/simple.tera");
 const DEFAULT_TEMPLATE_NAME: &str = "default";
@@ -14,9 +15,10 @@ const REMOTE_TEMPLATE: &[u8] = include_bytes!("template/remote.tera");
 const REMOTE_TEMPLATE_NAME: &str = "remote";
 const FULL_HASH_TEMPLATE: &[u8] = include_bytes!("template/full_hash.tera");
 const FULL_HASH_TEMPLATE_NAME: &str = "full_hash";
-
-pub const MACROS_TEMPLATE: &[u8] = include_bytes!("template/macro/macros.tera");
-pub const MACROS_TEMPLATE_NAME: &str = "macros";
+const GITHUB_TEMPLATE: &[u8] = include_bytes!("template/github.tera");
+const GITHUB_TEMPLATE_NAME: &str = "github";
+const GITHUB_TEMPLATE_UNIFIED_NAME: &str = "unified_github";
+const UNIFIED_GITHUB_TEMPLATE: &[u8] = include_bytes!("template/unified_github.tera");
 
 const PACKAGE_DEFAULT_TEMPLATE: &[u8] = include_bytes!("template/package_simple.tera");
 const PACKAGE_DEFAULT_TEMPLATE_NAME: &str = "package_default";
@@ -39,19 +41,32 @@ const UNIFIED_REMOTE_TEMPLATE_NAME: &str = "unified_remote";
 const UNIFIED_FULL_HASH_TEMPLATE: &[u8] = include_bytes!("template/unified_full_hash.tera");
 const UNIFIED_FULL_HASH_TEMPLATE_NAME: &str = "unified_full_hash";
 
-#[derive(Debug, Default)]
+pub const MACROS_TEMPLATE: &[u8] = include_bytes!("template/macro/macros.tera");
+pub const MACROS_TEMPLATE_NAME: &str = "macros";
+
+#[derive(Debug)]
 pub struct Template {
-    pub remote_context: Option<RemoteContext>,
+    pub context: Context,
     pub kind: TemplateKind,
+    pub remote_context: Option<RemoteContext>,
 }
 
 impl Template {
-    pub fn from_arg(value: &str, context: Option<RemoteContext>) -> Result<Self, ChangelogError> {
-        let template = TemplateKind::from_arg(value)?;
+    pub fn from_arg(
+        value: &str,
+        remote_context: Option<RemoteContext>,
+        unified: bool,
+    ) -> Result<Self, ChangelogError> {
+        let kind = TemplateKind::from_arg(value, unified)?;
+        let mut context = Context::default();
+        if let Some(remote) = &remote_context {
+            context.extend(remote.to_context());
+        }
 
         Ok(Template {
-            remote_context: context,
-            kind: template,
+            context,
+            kind,
+            remote_context,
         })
     }
 
@@ -65,17 +80,116 @@ impl Template {
         };
         Self {
             kind,
+            context: Context::default(),
             remote_context: None,
         }
     }
+
+    pub fn render(&mut self, mut version: Release) -> Result<String, ChangelogError> {
+        let tera = self.init_tera()?;
+        let mut contributor_map = HashMap::new();
+        let mut release = self.render_release(&mut version, &mut contributor_map, &tera)?;
+        let mut version = version;
+        while let Some(mut previous) = version.previous.map(|v| *v) {
+            release.push_str("\n- - -\n\n");
+            release.push_str(
+                self.render_release(&mut previous, &mut contributor_map, &tera)?
+                    .as_str(),
+            );
+            version = previous;
+        }
+
+        Ok(release)
+    }
+
+    fn init_tera(&self) -> Result<Tera, ChangelogError> {
+        let mut tera = Tera::default();
+        let content = self.kind.get()?;
+        let content = String::from_utf8_lossy(content.as_slice());
+        tera.add_raw_template(
+            MACROS_TEMPLATE_NAME,
+            String::from_utf8_lossy(MACROS_TEMPLATE).as_ref(),
+        )?;
+        tera.add_raw_template(self.kind.name(), content.as_ref())?;
+        tera.register_filter("upper_first", filter::upper_first_filter);
+        tera.register_filter("unscoped", filter::unscoped);
+        tera.register_filter("group_by_type", filter::group_by_type);
+        tera.register_filter("contributors", filter::unique_contributors);
+        tera.check_macro_files()?;
+
+        Ok(tera)
+    }
+
+    fn render_release(
+        &mut self,
+        version: &mut Release,
+        contributor_map: &mut HashMap<String, String>,
+        tera: &Tera,
+    ) -> Result<String, ChangelogError> {
+        if let Some(remote_context) = self.remote_context.as_ref() {
+            let owner = &remote_context.owner;
+            let repo = &remote_context.repository;
+
+            for commit in &mut version.commits {
+                if let Some(username) = contributor_map.get(&commit.commit.author) {
+                    commit.author_username = Some(username.clone());
+                } else {
+                    let github_authors = remote_context.provider.as_deref().map(|provider| {
+                        provider.get_commit_contributors(repo, owner, &commit.commit.oid)
+                    });
+
+                    if let Some(Ok(github_authors)) = github_authors {
+                        if let Some(author) = github_authors.author {
+                            contributor_map.insert(commit.commit.author.clone(), author.clone());
+                            commit.author_username = Some(author);
+                        }
+
+                        if let Some(committer) = github_authors.committer {
+                            contributor_map.insert(commit.commit.committer.clone(), committer);
+                        }
+                    }
+                }
+
+                // TODO: handle when co-author not in committer or commit author
+                commit.co_authors = commit
+                    .commit
+                    .conventional
+                    .footers
+                    .iter()
+                    .map(ChangelogFooter::from)
+                    .filter_map(|footer| match footer {
+                        ChangelogFooter::GithubCoAuthoredBy { user } => Some(user.to_string()),
+                        _ => None,
+                    })
+                    .filter_map(|author| contributor_map.get(&author))
+                    .cloned()
+                    .collect::<Vec<_>>();
+            }
+        }
+
+        self.push_context(version);
+        tera.render(self.kind.name(), &self.context)
+            .map_err(Into::into)
+    }
+
+    pub(crate) fn push_context(&mut self, context: impl ToContext) {
+        self.context.extend(context.to_context());
+    }
+
+    pub(crate) fn with_context(mut self, context: impl ToContext) -> Self {
+        self.context.extend(context.to_context());
+        self
+    }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Eq, PartialEq)]
 pub enum TemplateKind {
     #[default]
     Default,
     FullHash,
     Remote,
+    Github,
+    GithubUnified,
     PackageDefault,
     PackageFullHash,
     PackageRemote,
@@ -90,20 +204,31 @@ pub enum TemplateKind {
 
 impl TemplateKind {
     /// Returns either a predefined template or a custom template
-    fn from_arg(value: &str) -> Result<Self, ChangelogError> {
+    fn from_arg(value: &str, unified: bool) -> Result<Self, ChangelogError> {
         match value {
-            DEFAULT_TEMPLATE_NAME => Ok(TemplateKind::Default),
-            REMOTE_TEMPLATE_NAME => Ok(TemplateKind::Remote),
-            FULL_HASH_TEMPLATE_NAME => Ok(TemplateKind::FullHash),
+            DEFAULT_TEMPLATE_NAME if !unified => Ok(TemplateKind::Default),
+            DEFAULT_TEMPLATE_NAME | UNIFIED_DEFAULT_TEMPLATE_NAME => {
+                Ok(TemplateKind::UnifiedDefault)
+            }
+
+            REMOTE_TEMPLATE_NAME if !unified => Ok(TemplateKind::Remote),
+            REMOTE_TEMPLATE_NAME | UNIFIED_REMOTE_TEMPLATE_NAME => Ok(TemplateKind::UnifiedRemote),
+
+            FULL_HASH_TEMPLATE_NAME if !unified => Ok(TemplateKind::FullHash),
+            FULL_HASH_TEMPLATE_NAME | UNIFIED_FULL_HASH_TEMPLATE_NAME => {
+                Ok(TemplateKind::UnifiedFullHash)
+            }
+
+            GITHUB_TEMPLATE_NAME if !unified => Ok(TemplateKind::Github),
+            GITHUB_TEMPLATE_NAME | GITHUB_TEMPLATE_UNIFIED_NAME => Ok(TemplateKind::GithubUnified),
+
             PACKAGE_DEFAULT_TEMPLATE_NAME => Ok(TemplateKind::PackageDefault),
             PACKAGE_REMOTE_TEMPLATE_NAME => Ok(TemplateKind::PackageRemote),
             PACKAGE_FULL_HASH_TEMPLATE_NAME => Ok(TemplateKind::PackageFullHash),
+
             MONOREPO_DEFAULT_TEMPLATE_NAME => Ok(TemplateKind::MonorepoDefault),
             MONOREPO_REMOTE_TEMPLATE_NAME => Ok(TemplateKind::MonorepoRemote),
             MONOREPO_FULL_HASH_TEMPLATE_NAME => Ok(TemplateKind::MonorepoFullHash),
-            UNIFIED_DEFAULT_TEMPLATE_NAME => Ok(TemplateKind::UnifiedDefault),
-            UNIFIED_REMOTE_TEMPLATE_NAME => Ok(TemplateKind::UnifiedRemote),
-            UNIFIED_FULL_HASH_TEMPLATE_NAME => Ok(TemplateKind::UnifiedFullHash),
             path => {
                 let path = PathBuf::from(path);
                 if !path.exists() {
@@ -126,6 +251,8 @@ impl TemplateKind {
             TemplateKind::MonorepoDefault => Ok(MONOREPO_DEFAULT_TEMPLATE.to_vec()),
             TemplateKind::MonorepoRemote => Ok(MONOREPO_REMOTE_TEMPLATE.to_vec()),
             TemplateKind::MonorepoFullHash => Ok(MONOREPO_FULL_HASH_TEMPLATE.to_vec()),
+            TemplateKind::Github => Ok(GITHUB_TEMPLATE.to_vec()),
+            TemplateKind::GithubUnified => Ok(UNIFIED_GITHUB_TEMPLATE.to_vec()),
             TemplateKind::UnifiedDefault => Ok(UNIFIED_DEFAULT_TEMPLATE.to_vec()),
             TemplateKind::UnifiedRemote => Ok(UNIFIED_REMOTE_TEMPLATE.to_vec()),
             TemplateKind::UnifiedFullHash => Ok(UNIFIED_FULL_HASH_TEMPLATE.to_vec()),
@@ -144,90 +271,12 @@ impl TemplateKind {
             TemplateKind::MonorepoDefault => MONOREPO_DEFAULT_TEMPLATE_NAME,
             TemplateKind::MonorepoRemote => MONOREPO_REMOTE_TEMPLATE_NAME,
             TemplateKind::MonorepoFullHash => MONOREPO_FULL_HASH_TEMPLATE_NAME,
+            TemplateKind::Github => GITHUB_TEMPLATE_NAME,
+            TemplateKind::GithubUnified => GITHUB_TEMPLATE_UNIFIED_NAME,
             TemplateKind::UnifiedDefault => UNIFIED_DEFAULT_TEMPLATE_NAME,
             TemplateKind::UnifiedRemote => UNIFIED_REMOTE_TEMPLATE_NAME,
             TemplateKind::UnifiedFullHash => UNIFIED_FULL_HASH_TEMPLATE_NAME,
             TemplateKind::Custom(_) => "custom_template",
-        }
-    }
-}
-
-/// A wrapper to append remote repository information to template context
-#[derive(Debug)]
-pub struct RemoteContext {
-    remote: String,
-    repository: String,
-    owner: String,
-}
-
-#[derive(Debug)]
-pub struct MonoRepoContext<'a> {
-    pub package_lock: bool,
-    pub packages: Vec<PackageBumpContext<'a>>,
-}
-
-#[derive(Debug, Serialize)]
-pub struct PackageBumpContext<'a> {
-    pub package_name: &'a str,
-    pub package_path: &'a str,
-    pub version: OidOf,
-    pub from: Option<OidOf>,
-}
-
-#[derive(Debug)]
-pub struct PackageContext<'a> {
-    pub package_name: &'a str,
-}
-
-pub(crate) trait ToContext {
-    fn to_context(&self) -> Context;
-}
-
-impl ToContext for MonoRepoContext<'_> {
-    fn to_context(&self) -> Context {
-        let mut context = tera::Context::new();
-        context.insert("package_lock", &self.package_lock);
-        context.insert("packages", &self.packages);
-        context
-    }
-}
-
-impl ToContext for PackageContext<'_> {
-    fn to_context(&self) -> Context {
-        let mut context = tera::Context::new();
-        context.insert("package_name", &self.package_name);
-        context
-    }
-}
-
-impl ToContext for RemoteContext {
-    fn to_context(&self) -> Context {
-        let mut context = tera::Context::new();
-        context.insert("platform", &format!("https://{}", self.remote.as_str()));
-        context.insert("owner", self.owner.as_str());
-        context.insert(
-            "repository_url",
-            &format!("https://{}/{}/{}", self.remote, self.owner, self.repository),
-        );
-
-        context
-    }
-}
-
-impl RemoteContext {
-    pub fn try_new(
-        remote: Option<String>,
-        repository: Option<String>,
-        owner: Option<String>,
-    ) -> Option<Self> {
-        match (remote, repository, owner) {
-            (Some(remote), Some(repository), Some(owner)) => Some(Self {
-                remote,
-                repository,
-                owner,
-            }),
-            (None, None, None) => None,
-            _ => panic!("Changelog remote context should be set. Missing one of 'remote', 'repository', 'owner' in changelog configuration")
         }
     }
 }

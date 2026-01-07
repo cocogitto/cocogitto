@@ -5,7 +5,8 @@ use std::fs;
 use std::io::{self, Read};
 use std::path::PathBuf;
 
-use cocogitto::conventional::changelog::template::{RemoteContext, Template};
+use cocogitto::conventional::changelog::context::RemoteContext;
+use cocogitto::conventional::changelog::template::Template;
 use cocogitto::conventional::changelog::ReleaseType;
 use cocogitto::conventional::commit as conv_commit;
 use cocogitto::conventional::version::IncrementCommand;
@@ -22,7 +23,7 @@ use clap_complete::{shells, Generator};
 use clap_complete_nushell::Nushell;
 use cocogitto::command::bump::{BumpOptions, PackageBumpOptions};
 use cocogitto::command::commit::CommitOptions;
-use cocogitto::settings::GitHookType;
+use cocogitto::settings::{GitHookType, GitProvider};
 
 fn hook_profiles() -> PossibleValuesParser {
     let profiles = SETTINGS
@@ -242,6 +243,10 @@ enum Command {
         /// Name of the repository used during template generation
         #[arg(long, requires_all = ["owner", "remote"])]
         repository: Option<String>,
+
+        /// Optional git provider to use during template generation
+        #[arg(long, requires_all = ["owner", "remote", "repository"], value_enum)]
+        provider: Option<GitProvider>,
 
         /// Combine package and global changes into one changelog
         #[arg(short, long)]
@@ -583,6 +588,7 @@ fn main() -> Result<()> {
             };
 
             conv_commit::verify(
+                None,
                 author,
                 &commit_message,
                 ignore_merge_commits,
@@ -668,15 +674,16 @@ fn main() -> Result<()> {
             remote,
             owner,
             repository,
+            provider,
             unified,
         } => {
             let cocogitto = CocoGitto::get()?;
 
-            let context = RemoteContext::try_new(remote, repository, owner)
+            let context = RemoteContext::try_new(remote, repository, owner, provider)
                 .or_else(|| SETTINGS.get_template_context());
             let template = template.as_ref().or(SETTINGS.changelog.template.as_ref());
             let template = if let Some(template) = template {
-                Template::from_arg(template, context)?
+                Template::from_arg(template, context, unified)?
             } else {
                 Template::fallback(unified)
             };

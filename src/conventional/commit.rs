@@ -15,8 +15,10 @@ pub struct Commit {
     pub oid: String,
     pub conventional: ConventionalCommit,
     pub author: String,
+    pub committer: String,
     pub date: NaiveDateTime,
 }
+
 /// # CommitConfig
 /// Configurations to create new conventional commit types or override behaviors of the existing ones.
 #[cfg_attr(feature = "docgen", derive(cog_schemars::JsonSchema))]
@@ -111,6 +113,7 @@ impl Commit {
         let message = commit.message();
         let git2_message = message.unwrap().to_owned();
         let author = commit.author().name().unwrap_or("").to_string();
+        let committer = commit.committer().name().unwrap_or("").to_string();
 
         let message = git2_message.trim_end().trim_start();
         let conventional_commit = conventional_commit_parser::parse(message);
@@ -122,6 +125,7 @@ impl Commit {
                     conventional: message,
                     author,
                     date,
+                    committer,
                 };
 
                 if let (Some(scopes), Some(scope)) =
@@ -295,6 +299,7 @@ impl Ord for Commit {
 }
 
 pub fn verify(
+    committer: Option<String>,
     author: Option<String>,
     message: &str,
     ignore_merge_commit: bool,
@@ -341,6 +346,7 @@ pub fn verify(
                         conventional: commit,
                         date: Utc::now().naive_utc(),
                         author: author.unwrap_or_else(|| "Unknown".to_string()),
+                        committer: committer.unwrap_or_else(|| "Unknown".to_string()),
                     }
                 );
                 Ok(())
@@ -443,7 +449,7 @@ mod test {
         let message = "feat(database): add postgresql driver";
 
         // Act
-        let result = verify(Some("toml".into()), message, false, false);
+        let result = verify(None, Some("toml".into()), message, false, false);
 
         // Assert
         assert_that!(result).is_ok();
@@ -461,7 +467,7 @@ mod test {
         );
 
         // Act
-        let result = verify(Some("toml".into()), message, false, false);
+        let result = verify(None, Some("toml".into()), message, false, false);
 
         // Assert
         assert_that!(result).is_ok();
@@ -473,7 +479,7 @@ mod test {
         let message = "feat add postgresql driver";
 
         // Act
-        let result = verify(Some("toml".into()), message, false, false);
+        let result = verify(None, Some("toml".into()), message, false, false);
 
         // Assert
         assert_that!(result).is_err();
@@ -485,7 +491,7 @@ mod test {
         let message = "post: add postgresql driver";
 
         // Act
-        let result = verify(Some("toml".into()), message, false, false);
+        let result = verify(None, Some("toml".into()), message, false, false);
 
         // Assert
         assert_that!(result).is_err();
@@ -506,7 +512,7 @@ mod test {
             "
         );
 
-        let outcome = verify(None, message, false, false);
+        let outcome = verify(None, None, message, false, false);
 
         assert_that!(outcome).is_ok();
         Ok(())
@@ -525,7 +531,7 @@ mod test {
                 footers: vec![],
                 is_breaking_change: false,
             },
-
+            committer: "".to_string(),
             author: "".to_string(),
             date: DateTime::from_timestamp(0, 0).unwrap().naive_utc(),
         };
@@ -550,7 +556,7 @@ mod test {
                 footers: vec![],
                 is_breaking_change: false,
             },
-
+            committer: "".to_string(),
             author: "".to_string(),
             date: DateTime::from_timestamp(0, 0).unwrap().naive_utc(),
         };

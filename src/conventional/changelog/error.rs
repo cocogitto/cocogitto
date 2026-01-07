@@ -9,6 +9,7 @@ pub enum ChangelogError {
     TeraError(tera::Error),
     WriteError(io::Error),
     SeparatorNotFound(PathBuf),
+    Http(reqwest::Error),
     EmptyRelease,
 }
 
@@ -30,6 +31,7 @@ impl Display for ChangelogError {
                 path.as_path().display()
             ),
             ChangelogError::EmptyRelease => writeln!(f, "No commit found to create a changelog",),
+            ChangelogError::Http(error) => writeln!(f, "HTTP error: {error}"),
         }
     }
 }
@@ -43,6 +45,12 @@ impl From<io::Error> for ChangelogError {
 impl From<tera::Error> for ChangelogError {
     fn from(err: tera::Error) -> Self {
         Self::TeraError(err)
+    }
+}
+
+impl From<reqwest::Error> for ChangelogError {
+    fn from(err: reqwest::Error) -> Self {
+        Self::Http(err)
     }
 }
 

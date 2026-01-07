@@ -3,14 +3,16 @@ use std::fmt;
 use std::fmt::Formatter;
 use std::path::PathBuf;
 
+use crate::conventional::changelog::context::RemoteContext;
 use crate::conventional::commit::CommitConfig;
 use crate::git::repository::Repository;
 use crate::{get_config_path, SETTINGS};
 
 use crate::conventional::changelog::error::ChangelogError;
-use crate::conventional::changelog::template::{RemoteContext, Template};
+use crate::conventional::changelog::template::Template;
 use crate::hook::Hooks;
 use crate::settings::error::SettingError;
+use clap::ValueEnum;
 use config::{Config, File, FileFormat};
 use conventional_commit_parser::commit::CommitType;
 use maplit::hashmap;
@@ -140,7 +142,7 @@ impl Default for Settings {
 /// Represents the different types of Git hooks that can be configured.
 ///
 /// This enum defines all the standard Git hook types that can be used
-/// in the configuration. Each variant corresponds to a specific Git hook
+
 /// that gets triggered at different points in Git's execution.
 ///
 ///  **Example :**
@@ -373,6 +375,27 @@ pub struct Changelog {
     pub repository: Option<String>,
     /// Author mappings for changelog generation
     pub authors: AuthorSettings,
+    /// When specified, `cog changelog` will try to resolve author profile over http, using the specified provider.
+    pub provider: Option<GitProvider>,
+}
+
+/// # GitProvider
+/// Represents the different Git providers that can be used for changelog generation.
+///
+/// This enum defines the supported Git providers that can be used to resolve author
+/// profiles when generating changelogs. Each variant corresponds to a specific
+/// Git hosting service that provides APIs for user information.
+///
+///  **Example :**
+/// ```toml
+/// [changelog]
+/// git_provider = "github"
+/// ```
+#[cfg_attr(feature = "docgen", derive(cog_schemars::JsonSchema))]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Serialize, Deserialize, ValueEnum)]
+#[non_exhaustive]
+pub enum GitProvider {
+    Github,
 }
 
 impl Default for Changelog {
@@ -385,6 +408,7 @@ impl Default for Changelog {
             owner: None,
             repository: None,
             authors: vec![],
+            provider: None,
         }
     }
 }
@@ -411,13 +435,13 @@ pub struct AuthorSetting {
     pub username: String,
 }
 
-pub fn commit_username(author: &str) -> Option<&'static str> {
+pub fn commit_username(author: &str) -> Option<String> {
     SETTINGS
         .changelog
         .authors
         .iter()
         .find(|author_map| author_map.signature == author)
-        .map(|author| author.username.as_str())
+        .map(|author| author.username.clone())
 }
 
 pub fn changelog_path() -> &'static PathBuf {
@@ -506,19 +530,18 @@ impl Settings {
 
     pub fn get_template_context(&self) -> Option<RemoteContext> {
         let remote = self.changelog.remote.as_ref().cloned();
-
         let repository = self.changelog.repository.as_ref().cloned();
-
         let owner = self.changelog.owner.as_ref().cloned();
+        let provider = self.changelog.provider.as_ref().cloned();
 
-        RemoteContext::try_new(remote, repository, owner)
+        RemoteContext::try_new(remote, repository, owner, provider)
     }
 
     pub fn get_changelog_template(&self) -> Result<Template, ChangelogError> {
         let context = self.get_template_context();
         let template = self.changelog.template.as_deref().unwrap_or("default");
 
-        Template::from_arg(template, context)
+        Template::from_arg(template, context, false)
     }
 
     pub fn get_package_changelog_template(&self) -> Result<Template, ChangelogError> {
@@ -535,7 +558,7 @@ impl Settings {
             template => template,
         };
 
-        Template::from_arg(template, context)
+        Template::from_arg(template, context, false)
     }
 
     pub fn get_monorepo_changelog_template(&self) -> Result<Template, ChangelogError> {
@@ -552,7 +575,7 @@ impl Settings {
             template => template,
         };
 
-        Template::from_arg(template, context)
+        Template::from_arg(template, context, false)
     }
 
     pub fn monorepo_separator(&self) -> Option<&str> {
