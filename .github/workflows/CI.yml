@@ -65,12 +65,13 @@ jobs:
           git config --global user.email github-actions@github.com
           git config --global user.name github-actions
 
-      - name: Conventional commit check
-        if: ${{matrix.conventional_commit_check }}
-        uses: cocogitto/cocogitto-action@v3
-        with:
-          git-user: "github-actions"
-          git-user-email: "github-actions@github.com"
+      # Disabled until next release because (Settings.changelog.provider) breaks the current action
+      # - name: Conventional commit check
+      #   if: ${{matrix.conventional_commit_check }}
+      #   uses: cocogitto/cocogitto-action@v3
+      #   with:
+      #     git-user: "github-actions"
+      #     git-user-email: "github-actions@github.com"
 
       - name: Install stable toolchain
         uses: actions-rs/toolchain@v1
