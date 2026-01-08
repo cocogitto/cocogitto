@@ -3,24 +3,22 @@ use semver::Version;
 
 use crate::git::tag::Tag;
 
-/**
- * Increments a pre-release version based on a pattern.
- *
- * For example, given "alpha.2" and the pattern "alpha.*", it increments to "alpha.3".
- *
- * If the pre-release version doesn't match the pattern, it starts a new sequence based on the
- * pattern.
- *
- * For example, given "alpha.2" and the pattern "beta.*", it returns "beta.1".
- *
- * If the next version is greater than the current pre-release expected, it starts a new sequence.
- * For example, if the current pre-release is 1.2.3-alpha.1 and the next version is 2.0.0, then the
- * next pre-release would be 2.0.0-alpha.1 (not 2.0.0-alpha.2).
- *
- * - current_prerelease The latest pre-release version
- * - next The next version
- * - pattern The exact pre-release label or pattern, for example "alpha.1" or "alpha.*"
- * */
+/// Increments a pre-release version based on a pattern.
+///
+/// For example, given "alpha.2" and the pattern "alpha.*", it increments to "alpha.3".
+///
+/// If the pre-release version doesn't match the pattern, it starts a new sequence based on the
+/// pattern.
+///
+/// For example, given "alpha.2" and the pattern "beta.*", it returns "beta.1".
+///
+/// If the next version is greater than the current pre-release expected, it starts a new sequence.
+/// For example, if the current pre-release is 1.2.3-alpha.1 and the next version is 2.0.0, then the
+/// next pre-release would be 2.0.0-alpha.1 (not 2.0.0-alpha.2).
+///
+/// - current_prerelease The latest pre-release version
+/// - next The next version
+/// - prerelease The pre-release pattern, for example "alpha.*"
 pub(super) fn increment_prerelease(
     current_prerelease: &Option<Tag>,
     next: &Tag,
