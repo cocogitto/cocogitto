@@ -67,7 +67,10 @@ pub(super) fn increment_prerelease(
     }
 
     // Try to extract the numeric identifier
-    let num = &pre_to_increment[prefix.len()..pre_to_increment.len() - suffix.len()];
+    let num = pre_to_increment
+        .strip_prefix(prefix)
+        .and_then(|s| s.strip_suffix(suffix))
+        .unwrap_or("");
     let Ok(num) = num.parse::<u64>() else {
         return Ok(initial_prerelease);
     };
