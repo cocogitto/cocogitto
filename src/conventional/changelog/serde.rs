@@ -15,7 +15,7 @@ impl Serialize for Tag {
     }
 }
 
-impl Serialize for ChangelogCommit<'_> {
+impl Serialize for ChangelogCommit {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -107,7 +107,7 @@ mod test {
     #[test]
     fn should_serialize_commit() {
         let commit = ChangelogCommit {
-            author_username: Some("Jm Doudou"),
+            author_username: Some("Jm Doudou".to_string()),
             commit: Commit {
                 oid: "1234567890".to_string(),
                 conventional: ConventionalCommit {

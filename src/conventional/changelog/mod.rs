@@ -1,17 +1,21 @@
+use crate::conventional::changelog::context::{MonoRepoContext, PackageContext};
 use crate::conventional::changelog::release::Release;
-use crate::conventional::changelog::renderer::Renderer;
 
 use crate::conventional::changelog::error::ChangelogError;
-use crate::conventional::changelog::template::{MonoRepoContext, PackageContext, Template};
+use crate::conventional::changelog::template::Template;
 
 use std::fs;
 use std::path::Path;
 
+pub mod context;
 pub mod error;
+pub mod filters;
 pub(crate) mod release;
-pub(crate) mod renderer;
 pub(crate) mod serde;
 pub mod template;
+
+#[cfg(test)]
+pub mod tests;
 
 const CHANGELOG_SEPARATOR: &str = "- - -";
 
@@ -28,21 +32,19 @@ pub enum ReleaseType<'a> {
     Package(PackageContext<'a>),
 }
 
-impl Release<'_> {
+impl Release {
     pub fn into_markdown(
         self,
         template: Template,
         context: ReleaseType,
-    ) -> Result<String, tera::Error> {
-        let renderer = Renderer::try_new(template)?;
-
-        let mut renderer = match context {
-            ReleaseType::Standard => renderer,
-            ReleaseType::MonoRepo(context) => renderer.with_monorepo_context(context),
-            ReleaseType::Package(context) => renderer.with_package_context(context),
+    ) -> Result<String, ChangelogError> {
+        let mut template = match context {
+            ReleaseType::Standard => template,
+            ReleaseType::MonoRepo(context) => template.with_context(context),
+            ReleaseType::Package(context) => template.with_context(context),
         };
 
-        renderer.render(self)
+        template.render(self)
     }
 
     pub fn write_to_file<S: AsRef<Path>>(
