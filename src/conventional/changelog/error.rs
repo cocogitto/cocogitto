@@ -9,6 +9,7 @@ pub enum ChangelogError {
     TeraError(tera::Error),
     WriteError(io::Error),
     SeparatorNotFound(PathBuf),
+    JsonError(serde_json::Error),
     EmptyRelease,
 }
 
@@ -29,6 +30,9 @@ impl Display for ChangelogError {
                 "cannot find default separator '- - -' in {}",
                 path.as_path().display()
             ),
+            ChangelogError::JsonError(err) => {
+                writeln!(f, "failed to serialize json context: \n\t{err}")
+            }
             ChangelogError::EmptyRelease => writeln!(f, "No commit found to create a changelog",),
         }
     }
@@ -43,6 +47,12 @@ impl From<io::Error> for ChangelogError {
 impl From<tera::Error> for ChangelogError {
     fn from(err: tera::Error) -> Self {
         Self::TeraError(err)
+    }
+}
+
+impl From<serde_json::Error> for ChangelogError {
+    fn from(err: serde_json::Error) -> Self {
+        Self::JsonError(err)
     }
 }
 

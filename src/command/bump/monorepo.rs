@@ -162,8 +162,8 @@ impl CocoGitto {
         let mut template_context = vec![];
         for bump in &bumps {
             template_context.push(PackageBumpContext {
-                package_name: &bump.package_name,
-                package_path: &bump.package_path,
+                package_name: bump.package_name.clone(),
+                package_path: bump.package_path.clone(),
                 version: OidOf::Tag(bump.new_version.prefixed_tag.clone()),
                 from: Some(
                     bump.old_version
@@ -305,8 +305,8 @@ impl CocoGitto {
         let mut template_context = vec![];
         for bump in &bumps {
             template_context.push(PackageBumpContext {
-                package_name: &bump.package_name,
-                package_path: &bump.package_path,
+                package_name: bump.package_name.clone(),
+                package_path: bump.package_path.clone(),
                 version: OidOf::Tag(bump.version.clone()),
                 from: None,
             })
@@ -489,7 +489,7 @@ impl CocoGitto {
                 let template = SETTINGS.get_package_changelog_template()?;
 
                 let additional_context = ReleaseType::Package(PackageContext {
-                    package_name: package_name.as_ref(),
+                    package_name: package_name.clone(),
                 });
 
                 changelog.write_to_file(&path, template, additional_context)?;

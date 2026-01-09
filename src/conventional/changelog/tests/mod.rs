@@ -1,6 +1,5 @@
 pub mod fixtures;
 
-use conventional_commit_parser::commit::Separator;
 use indoc::indoc;
 use itertools::Itertools;
 use pretty_assertions::assert_eq;
@@ -9,8 +8,7 @@ use speculoos::prelude::*;
 use crate::conventional::changelog::release::Release;
 use crate::conventional::changelog::template::Template;
 use crate::conventional::changelog::tests::fixtures::{
-    default_package_context, default_remote_context, monorepo_context, CommitFixture,
-    ReleaseFixture,
+    default_package_context, default_remote_context, monorepo_context, ReleaseFixture,
 };
 use crate::git::repository::Repository;
 

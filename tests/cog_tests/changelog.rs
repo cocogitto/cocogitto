@@ -996,7 +996,7 @@ fn changelog_monorepo_multi_versions() -> Result<()> {
     let sha_5 = cog_bump_auto()?;
 
     // Act
-    let result = Command::new(assert_cmd::cargo_bin!("cog"))
+    let result = Command::new(assert_cmd::cargo_bin!("cog")c)
         .arg("changelog")
         // ignore package bumps until they are fixed
         .arg("-t")

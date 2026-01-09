@@ -80,17 +80,24 @@ impl Template {
         }
     }
 
+    pub fn json_context(self, version: Release) -> Result<String, ChangelogError> {
+        serde_json::to_string_pretty(&version).map_err(Into::into)
+    }
+
     pub fn render(&mut self, mut version: Release) -> Result<String, ChangelogError> {
         let tera = self.init_tera()?;
-        let mut release = self.render_release(&mut version, &tera)?;
-        let mut version = version;
-        while let Some(mut previous) = version.previous.map(|v| *v) {
-            release.push_str("\n- - -\n\n");
-            release.push_str(self.render_release(&mut previous, &tera)?.as_str());
+        self.context.extend((&version).to_context());
+        let mut changelog_content = tera.render(self.kind.name(), &self.context)?;
+
+        while let Some(previous) = version.previous.map(|v| *v) {
+            changelog_content.push_str("\n- - -\n\n");
+            self.context.extend((&previous).to_context());
+            let content = tera.render(self.kind.name(), &self.context)?;
+            changelog_content.push_str(&content);
             version = previous;
         }
 
-        Ok(release)
+        Ok(changelog_content)
     }
 
     fn init_tera(&self) -> Result<Tera, ChangelogError> {
@@ -108,16 +115,6 @@ impl Template {
         tera.check_macro_files()?;
 
         Ok(tera)
-    }
-
-    fn render_release(
-        &mut self,
-        version: &mut Release,
-        tera: &Tera,
-    ) -> Result<String, ChangelogError> {
-        self.context.extend(version.to_context());
-        tera.render(self.kind.name(), &self.context)
-            .map_err(Into::into)
     }
 
     pub(crate) fn with_context(mut self, context: impl ToContext) -> Self {

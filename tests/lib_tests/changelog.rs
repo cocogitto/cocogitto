@@ -35,10 +35,9 @@ fn getting_changelog_from_tags_should_produce_the_same_range_either_from_tags_or
 
     // Act
     let cocogitto = CocoGitto::get()?;
-    let changelog_from_commit_range =
-        cocogitto.get_changelog(&format!("{sha_0_1}..{head}"), false)?;
-    let changelog_tag_range = cocogitto.get_changelog("0.1.0..0.2.0", false)?;
-    let at_tag = cocogitto.get_changelog("..0.2.0", false)?;
+    let changelog_from_commit_range = cocogitto.get_release(&format!("{sha_0_1}..{head}"))?;
+    let changelog_tag_range = cocogitto.get_release("0.1.0..0.2.0")?;
+    let at_tag = cocogitto.get_release("..0.2.0")?;
 
     let commit_range_oids: Vec<String> = changelog_from_commit_range
         .commits
@@ -91,8 +90,7 @@ fn from_commit_should_be_drained() -> Result<()> {
 
     // Act
     let cocogitto = CocoGitto::get()?;
-    let changelog_from_commit_range =
-        cocogitto.get_changelog(&format!("{unttaged_sha}..{head}"), true)?;
+    let changelog_from_commit_range = cocogitto.get_release(&format!("{unttaged_sha}..{head}"))?;
 
     let commit_range_oids: Vec<String> = changelog_from_commit_range
         .commits

@@ -247,6 +247,10 @@ enum Command {
         /// Combine package and global changes into one changelog
         #[arg(short, long)]
         unified: bool,
+
+        /// Instead of rendering the changelog, print the template engine context for this changelog as a json string
+        #[arg(long, short)]
+        inspect_context: bool,
     },
 
     /// Get current version
@@ -670,6 +674,7 @@ fn main() -> Result<()> {
             owner,
             repository,
             unified,
+            inspect_context,
         } => {
             let cocogitto = CocoGitto::get()?;
 
@@ -685,13 +690,27 @@ fn main() -> Result<()> {
             // TODO: fallback to tag here
             let pattern = pattern.as_deref().unwrap_or("..");
             let result = match at {
+                Some(at) if inspect_context => {
+                    let release = cocogitto.get_release(&at)?;
+                    release.json_context(template, ReleaseType::Standard)?
+                }
                 Some(at) => cocogitto.get_changelog_at_tag(&at, template)?,
+                None if inspect_context => {
+                    if !SETTINGS.packages.is_empty() {
+                        let (context, release) =
+                            cocogitto.get_monorepo_release(pattern, unified)?;
+                        release.json_context(template, ReleaseType::MonoRepo(context))?
+                    } else {
+                        let changelog = cocogitto.get_release(pattern)?;
+                        changelog.json_context(template, ReleaseType::Standard)?
+                    }
+                }
                 None => {
                     if !SETTINGS.packages.is_empty() {
                         cocogitto.get_monorepo_changelog(pattern, template, unified)?
                     } else {
-                        let changelog = cocogitto.get_changelog(pattern, true)?;
-                        changelog.into_markdown(template, ReleaseType::Standard)?
+                        let changelog = cocogitto.get_release(pattern)?;
+                        changelog.render(template, ReleaseType::Standard)?
                     }
                 }
             };

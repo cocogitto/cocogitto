@@ -47,7 +47,7 @@ impl CocoGitto {
             let path = opts.package.changelog_path();
             let template = SETTINGS.get_package_changelog_template()?;
             let additional_context = ReleaseType::Package(PackageContext {
-                package_name: opts.package_name,
+                package_name: opts.package_name.to_string(),
             });
             changelog.write_to_file(path, template, additional_context)?;
         }

@@ -184,13 +184,13 @@ impl Default for CommitFixture {
     }
 }
 
-pub fn monorepo_context<'a>() -> MonoRepoContext<'a> {
+pub fn monorepo_context<'a>() -> MonoRepoContext {
     MonoRepoContext {
         package_lock: false,
         packages: vec![
             PackageBumpContext {
-                package_name: "one",
-                package_path: "crates/one",
+                package_name: "one".to_string(),
+                package_path: "crates/one".to_string(),
                 version: OidOf::Tag(
                     Tag::from_str(
                         "0.1.0",
@@ -207,8 +207,8 @@ pub fn monorepo_context<'a>() -> MonoRepoContext<'a> {
                 )),
             },
             PackageBumpContext {
-                package_name: "two",
-                package_path: "crates/two",
+                package_name: "two".to_string(),
+                package_path: "crates/two".to_string(),
                 version: OidOf::Tag(
                     Tag::from_str(
                         "0.2.0",
@@ -228,13 +228,13 @@ pub fn monorepo_context<'a>() -> MonoRepoContext<'a> {
     }
 }
 
-pub fn default_package_context<'a>() -> MonoRepoContext<'a> {
+pub fn default_package_context<'a>() -> MonoRepoContext {
     MonoRepoContext {
         package_lock: true,
         packages: vec![
             PackageBumpContext {
-                package_name: "one",
-                package_path: "crates/one",
+                package_name: "one".to_string(),
+                package_path: "crates/one".to_string(),
                 version: OidOf::Tag(
                     Tag::from_str(
                         "0.1.0",
@@ -245,8 +245,8 @@ pub fn default_package_context<'a>() -> MonoRepoContext<'a> {
                 from: None,
             },
             PackageBumpContext {
-                package_name: "two",
-                package_path: "crates/two",
+                package_name: "two".to_string(),
+                package_path: "crates/two".to_string(),
                 version: OidOf::Tag(
                     Tag::from_str(
                         "0.2.0",

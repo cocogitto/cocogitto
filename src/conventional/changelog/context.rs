@@ -12,29 +12,29 @@ pub struct RemoteContext {
 }
 
 #[derive(Debug)]
-pub struct MonoRepoContext<'a> {
+pub struct MonoRepoContext {
     pub package_lock: bool,
-    pub packages: Vec<PackageBumpContext<'a>>,
+    pub packages: Vec<PackageBumpContext>,
 }
 
 #[derive(Debug, Serialize)]
-pub struct PackageBumpContext<'a> {
-    pub package_name: &'a str,
-    pub package_path: &'a str,
+pub struct PackageBumpContext {
+    pub package_name: String,
+    pub package_path: String,
     pub version: OidOf,
     pub from: Option<OidOf>,
 }
 
 #[derive(Debug)]
-pub struct PackageContext<'a> {
-    pub package_name: &'a str,
+pub struct PackageContext {
+    pub package_name: String,
 }
 
 pub(crate) trait ToContext {
     fn to_context(&self) -> Context;
 }
 
-impl ToContext for MonoRepoContext<'_> {
+impl ToContext for MonoRepoContext {
     fn to_context(&self) -> Context {
         let mut context = tera::Context::new();
         context.insert("package_lock", &self.package_lock);
@@ -43,7 +43,7 @@ impl ToContext for MonoRepoContext<'_> {
     }
 }
 
-impl ToContext for PackageContext<'_> {
+impl ToContext for PackageContext {
     fn to_context(&self) -> Context {
         let mut context = tera::Context::new();
         context.insert("package_name", &self.package_name);
