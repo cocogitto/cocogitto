@@ -320,6 +320,56 @@ fn pre_release_bump_auto() -> Result<()> {
 }
 
 #[sealed_test]
+fn pre_and_auto_pre_conflict() -> Result<()> {
+    git_init()?;
+    git_commit("chore: init")?;
+
+    Command::cargo_bin("cog")?
+        .arg("bump")
+        .arg("--auto")
+        .arg("--pre")
+        .arg("alpha")
+        .arg("--auto-pre")
+        .assert()
+        .failure()
+        .stderr("Error: Cannot use --pre and --auto-pre options together. Please choose one.\n");
+    Ok(())
+}
+
+#[sealed_test]
+fn pre_with_pre_pattern_conflict() -> Result<()> {
+    git_init()?;
+    git_commit("chore: init")?;
+
+    Command::cargo_bin("cog")?
+        .arg("bump")
+        .arg("--auto")
+        .arg("--pre")
+        .arg("alpha")
+        .arg("--pre-pattern")
+        .arg("alpha.*")
+        .assert()
+        .failure()
+        .stderr("Error: Cannot use --pre-pattern with --pre. Did you mean to use --auto-pre?\n");
+    Ok(())
+}
+
+#[sealed_test]
+fn auto_pre_without_pattern_is_err() -> Result<()> {
+    git_init()?;
+    git_commit("chore: init")?;
+
+    Command::cargo_bin("cog")?
+        .arg("bump")
+        .arg("--auto")
+        .arg("--auto-pre")
+        .assert()
+        .failure()
+        .stderr("Error: Cannot use --auto-pre without a pattern. Use --pre-pattern to specify a pattern.\n");
+    Ok(())
+}
+
+#[sealed_test]
 fn build_release_bump() -> Result<()> {
     git_init()?;
     git_commit("chore: init")?;
