@@ -6,6 +6,7 @@ use crate::git::oid::OidOf;
 
 use crate::conventional::error::BumpError as ConvBumpError;
 use crate::conventional::version::IncrementCommand;
+use crate::conventional::version::PreCommand;
 use crate::git::repository::Repository;
 use crate::git::tag::{Tag, TagLookUpOptions};
 use crate::hook::{Hook, HookVersion, Hooks};
@@ -33,7 +34,7 @@ mod standard;
 #[derive(Default)]
 pub struct BumpOptions<'a> {
     pub increment: IncrementCommand,
-    pub pre_release: Option<&'a str>,
+    pub pre_release: Option<PreCommand<'a>>,
     pub build: Option<&'a str>,
     pub hooks_config: Option<&'a str>,
     pub annotated: Option<String>,
@@ -50,7 +51,7 @@ pub struct PackageBumpOptions<'a> {
     pub package_name: &'a str,
     pub package: &'a MonoRepoPackage,
     pub increment: IncrementCommand,
-    pub pre_release: Option<&'a str>,
+    pub pre_release: Option<PreCommand<'a>>,
     pub build: Option<&'a str>,
     pub hooks_config: Option<&'a str>,
     pub annotated: Option<String>,
@@ -109,14 +110,15 @@ impl<'a> BumpOptions<'a> {
         }
 
         if current.version != next.version {
-            if let Some(pre_release) = self.pre_release {
-                let pre_release = if pre_release.contains("*") {
-                    &increment_prerelease(&current_prerelease, &next, pre_release)?
-                } else {
-                    pre_release
-                };
-
-                next.version.pre = Prerelease::new(pre_release)?;
+            match self.pre_release {
+                Some(PreCommand::Exact(pre)) => {
+                    next.version.pre = Prerelease::new(pre)?;
+                }
+                Some(PreCommand::Auto(pattern)) => {
+                    let pre = increment_prerelease(&current_prerelease, &next, pattern)?;
+                    next.version.pre = Prerelease::new(&pre)?;
+                }
+                None => {}
             }
 
             if let Some(build) = self.build {
@@ -146,7 +148,7 @@ impl<'a> PackageBumpOptions<'a> {
     fn common(&self) -> BumpOptions<'a> {
         BumpOptions {
             increment: self.increment.clone(),
-            pre_release: self.pre_release,
+            pre_release: self.pre_release.clone(),
             build: self.build,
             hooks_config: self.hooks_config,
             annotated: self.annotated.clone(),
