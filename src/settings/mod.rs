@@ -3,12 +3,13 @@ use std::fmt;
 use std::fmt::Formatter;
 use std::path::PathBuf;
 
+use crate::conventional::changelog::context::RemoteContext;
 use crate::conventional::commit::CommitConfig;
 use crate::git::repository::Repository;
 use crate::{get_config_path, SETTINGS};
 
 use crate::conventional::changelog::error::ChangelogError;
-use crate::conventional::changelog::template::{RemoteContext, Template};
+use crate::conventional::changelog::template::Template;
 use crate::hook::Hooks;
 use crate::settings::error::SettingError;
 use config::{Config, File, FileFormat};
@@ -506,9 +507,7 @@ impl Settings {
 
     pub fn get_template_context(&self) -> Option<RemoteContext> {
         let remote = self.changelog.remote.as_ref().cloned();
-
         let repository = self.changelog.repository.as_ref().cloned();
-
         let owner = self.changelog.owner.as_ref().cloned();
 
         RemoteContext::try_new(remote, repository, owner)
@@ -518,7 +517,8 @@ impl Settings {
         let context = self.get_template_context();
         let template = self.changelog.template.as_deref().unwrap_or("default");
 
-        Template::from_arg(template, context)
+        // TODO: there should be a unified settings
+        Template::from_arg(template, context, false)
     }
 
     pub fn get_package_changelog_template(&self) -> Result<Template, ChangelogError> {
@@ -535,7 +535,8 @@ impl Settings {
             template => template,
         };
 
-        Template::from_arg(template, context)
+        // TODO: there should be a unified settings
+        Template::from_arg(template, context, false)
     }
 
     pub fn get_monorepo_changelog_template(&self) -> Result<Template, ChangelogError> {
@@ -552,7 +553,8 @@ impl Settings {
             template => template,
         };
 
-        Template::from_arg(template, context)
+        // TODO: there should be a unified settings
+        Template::from_arg(template, context, false)
     }
 
     pub fn monorepo_separator(&self) -> Option<&str> {

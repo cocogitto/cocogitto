@@ -120,7 +120,9 @@ fn changelog_date_should_come_from_commit_date_not_current_time() -> Result<()> 
     git_tag("0.1.0")?;
 
     // Create another commit with current date
-    git_commit("feat: another feature")?;
+    run_cmd!(
+        GIT_AUTHOR_DATE="2023-01-15 10:00:00" GIT_COMMITTER_DATE="2023-01-15 10:00:00" git commit --allow-empty -q -m "feat: another feature";
+    )?;
     git_tag("0.2.0")?;
 
     // Act
@@ -138,7 +140,7 @@ fn changelog_date_should_come_from_commit_date_not_current_time() -> Result<()> 
 
     asserting!("Changelog should contain the commit date from the v0.2.0 tag")
         .that(&changelog_text)
-        .contains("## 0.2.0 - 2025-12-19");
+        .contains("## 0.2.0 - 2023-01-15");
 
     Ok(())
 }
