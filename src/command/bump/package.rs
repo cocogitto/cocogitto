@@ -1,5 +1,5 @@
 use crate::command::bump::{HookRunOptions, PackageBumpOptions};
-use crate::conventional::changelog::template::PackageContext;
+use crate::conventional::changelog::context::PackageContext;
 use crate::conventional::changelog::ReleaseType;
 use crate::git::tag::Tag;
 use crate::hook::HookVersion;

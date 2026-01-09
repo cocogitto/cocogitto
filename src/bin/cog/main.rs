@@ -5,7 +5,8 @@ use std::fs;
 use std::io::{self, Read};
 use std::path::PathBuf;
 
-use cocogitto::conventional::changelog::template::{RemoteContext, Template};
+use cocogitto::conventional::changelog::context::RemoteContext;
+use cocogitto::conventional::changelog::template::Template;
 use cocogitto::conventional::changelog::ReleaseType;
 use cocogitto::conventional::commit as conv_commit;
 use cocogitto::conventional::version::{IncrementCommand, PreCommand};
@@ -695,7 +696,7 @@ fn main() -> Result<()> {
                 .or_else(|| SETTINGS.get_template_context());
             let template = template.as_ref().or(SETTINGS.changelog.template.as_ref());
             let template = if let Some(template) = template {
-                Template::from_arg(template, context)?
+                Template::from_arg(template, context, unified)?
             } else {
                 Template::fallback(unified)
             };

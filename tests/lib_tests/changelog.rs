@@ -107,3 +107,40 @@ fn from_commit_should_be_drained() -> Result<()> {
 
     Ok(())
 }
+
+#[sealed_test]
+fn changelog_date_should_come_from_commit_date_not_current_time() -> Result<()> {
+    // Arrange
+    git_init()?;
+
+    run_cmd!(
+        GIT_AUTHOR_DATE="2023-01-15 10:00:00" GIT_COMMITTER_DATE="2023-01-15 10:00:00" git commit --allow-empty -q -m "feat: initial feature";
+    )?;
+
+    git_tag("0.1.0")?;
+
+    // Create another commit with current date
+    run_cmd!(
+        GIT_AUTHOR_DATE="2023-01-15 10:00:00" GIT_COMMITTER_DATE="2023-01-15 10:00:00" git commit --allow-empty -q -m "feat: another feature";
+    )?;
+    git_tag("0.2.0")?;
+
+    // Act
+    let cmd = Command::new(assert_cmd::cargo_bin!("cog"))
+        .arg("changelog")
+        .arg("0.1.0..0.2.0")
+        .arg("-t")
+        .arg("default")
+        .assert()
+        .success();
+
+    // Assert
+    let changelog_output = cmd.get_output();
+    let changelog_text = String::from_utf8_lossy(&changelog_output.stdout);
+
+    asserting!("Changelog should contain the commit date from the v0.2.0 tag")
+        .that(&changelog_text)
+        .contains("## 0.2.0 - 2023-01-15");
+
+    Ok(())
+}
