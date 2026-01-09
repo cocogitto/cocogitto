@@ -34,7 +34,7 @@
   - {{ breaking_badge }}{%if commit.scope %}(**{{ commit.scope }}**) {% endif %}{{ commit.summary }} - ([{{shorthand}}]({{ commit_link }})) - {{ author }}
   {%- if commit.co_authors | length > 0 -%}
     {%- for co_author in commit.co_authors -%}
-    , [@{{ co_author }}](https://github.com/{{ co_author }})
+    , [@{{ co_author }}]({{platform}}/{{ co_author }})
     {%- endfor -%}
   {%- endif -%}
 {%- endmacro remote -%}

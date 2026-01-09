@@ -164,6 +164,10 @@ impl Template {
         }
 
         self.push_context(version);
+        println!(
+            "{:?}",
+            serde_json::to_string(&self.context.clone().into_json()).unwrap()
+        );
         tera.render(self.kind.name(), &self.context)
             .map_err(Into::into)
     }

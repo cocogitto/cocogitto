@@ -312,27 +312,38 @@ changelog_test!(
     "
 );
 
-#[test]
-fn should_render_github_footers() -> anyhow::Result<()> {
-    let release = ReleaseFixture::cocogitto()
-        .with_commit(CommitFixture::default().with_footer(
-            "Co-authored-by",
-            "Toml Bombadil <tom.bombadil@lorien.com>",
-            Separator::Colon,
-        ))
-        .build();
-
-    let changelog = Template::from_arg("remote", remote_context_with_github_provider(), false)?
-        .render(release)?;
-    assert_doc_eq!(
-        changelog,
-        r#"## [1.0.0](https://github.com/cocogitto/cocogitto/compare/0.1.0..1.0.0) - 2015-09-05
+changelog_test! {
+    should_render_github_footers_with_remote_provider,
+    ReleaseFixture::cocogitto()
+            .with_commit(CommitFixture::default().with_footer(
+                "Co-authored-by",
+                "Toml Bombadil <tom.bombadil@lorien.com>",
+                Separator::Colon,
+            )),
+    Template::from_arg("remote", remote_context_with_github_provider(), false)?,
+    r#"## [1.0.0](https://github.com/cocogitto/cocogitto/compare/0.1.0..1.0.0) - 2015-09-05
     #### Features
     - (**parser**) implement the changelog generator - ([9d14c0b](https://github.com/cocogitto/cocogitto/commit/9d14c0b967598780d2acd9e281bcf2ee4d0e9fd7)) - [@oknozor](https://github.com/oknozor)
     - awesome feature - ([cc0e64d](https://github.com/cocogitto/cocogitto/commit/cc0e64d2c1e075ac9b782258783212b4d7917892)) - [@ba-lindner](https://github.com/ba-lindner), [@oknozor](https://github.com/oknozor)
     #### Bug Fixes
     - fix parser implementation - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor)
     "#
-    );
-    Ok(())
+}
+
+changelog_test! {
+    should_render_github_footers_remote,
+    ReleaseFixture::cocogitto()
+            .with_commit(CommitFixture::default().with_footer(
+                "Co-authored-by",
+                "Toml Bombadil <tom.bombadil@lorien.com>",
+                Separator::Colon,
+            )),
+    Template::from_arg("remote", default_remote_context(), false)?,
+    r#"## [1.0.0](https://github.com/cocogitto/cocogitto/compare/0.1.0..1.0.0) - 2015-09-05
+    #### Features
+    - (**parser**) implement the changelog generator - ([9d14c0b](https://github.com/cocogitto/cocogitto/commit/9d14c0b967598780d2acd9e281bcf2ee4d0e9fd7)) - Paul Delafosse
+    - awesome feature - ([cc0e64d](https://github.com/cocogitto/cocogitto/commit/cc0e64d2c1e075ac9b782258783212b4d7917892)) - Bernard Lindner, Paul Delafosse
+    #### Bug Fixes
+    - fix parser implementation - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - Paul Delafosse
+    "#
 }

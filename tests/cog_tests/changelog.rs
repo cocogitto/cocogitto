@@ -1160,7 +1160,7 @@ fn monorepo_changelog_default_template() -> Result<()> {
 }
 
 #[test]
-fn should_render_github_changelog() -> anyhow::Result<()> {
+fn should_render_remote_changelog_with_provider() -> anyhow::Result<()> {
     let result = Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("changelog")
         .arg("-t")
