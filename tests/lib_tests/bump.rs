@@ -11,7 +11,10 @@ use speculoos::prelude::*;
 use crate::helpers::*;
 use cocogitto::command::bump::{BumpOptions, PackageBumpOptions};
 use cocogitto::settings::{MonoRepoPackage, Settings};
-use cocogitto::{conventional::version::IncrementCommand, CocoGitto};
+use cocogitto::{
+    conventional::version::{IncrementCommand, PreCommand},
+    CocoGitto,
+};
 
 #[sealed_test]
 fn bump_ok() -> Result<()> {
@@ -372,7 +375,7 @@ fn should_ignore_latest_prerelease_tag() -> Result<()> {
 
     let mut cocogitto = CocoGitto::get()?;
     cocogitto.create_version(BumpOptions {
-        pre_release: Some("alpha1"),
+        pre_release: Some(PreCommand::Exact("alpha1")),
         ..Default::default()
     })?;
 
@@ -398,7 +401,7 @@ fn increment_pre_release_alpha_1() -> Result<()> {
     // Act
     let mut cocogitto = CocoGitto::get()?;
     cocogitto.create_version(BumpOptions {
-        pre_release: Some("alpha.*"),
+        pre_release: Some(PreCommand::Auto("alpha.*")),
         ..Default::default()
     })?;
 
@@ -419,7 +422,7 @@ fn increment_pre_release_alpha_2() -> Result<()> {
     // Act
     let mut cocogitto = CocoGitto::get()?;
     cocogitto.create_version(BumpOptions {
-        pre_release: Some("alpha.*"),
+        pre_release: Some(PreCommand::Auto("alpha.*")),
         ..Default::default()
     })?;
 
@@ -441,7 +444,7 @@ fn increment_pre_release_beta_1() -> Result<()> {
     // Act
     let mut cocogitto = CocoGitto::get()?;
     cocogitto.create_version(BumpOptions {
-        pre_release: Some("beta.*"),
+        pre_release: Some(PreCommand::Auto("beta.*")),
         ..Default::default()
     })?;
 
@@ -464,7 +467,7 @@ fn increment_pre_release_new_feature_alpha_1() -> Result<()> {
     // Act
     let mut cocogitto = CocoGitto::get()?;
     cocogitto.create_version(BumpOptions {
-        pre_release: Some("alpha.*"),
+        pre_release: Some(PreCommand::Auto("alpha.*")),
         ..Default::default()
     })?;
 

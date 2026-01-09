@@ -308,7 +308,8 @@ fn pre_release_bump_auto() -> Result<()> {
     Command::cargo_bin("cog")?
         .arg("bump")
         .arg("--major")
-        .arg("--pre")
+        .arg("--auto-pre")
+        .arg("--pre-pattern")
         .arg("alpha.*")
         .assert()
         .success();
@@ -1085,7 +1086,8 @@ fn bump_prerelease_from_latest_pre_release_auto() -> Result<()> {
     Command::cargo_bin("cog")?
         .arg("bump")
         .arg("--auto")
-        .arg("--pre")
+        .arg("--auto-pre")
+        .arg("--pre-pattern")
         .arg("alpha.*")
         .assert()
         .success();
@@ -1109,7 +1111,8 @@ fn bump_prerelease_from_latest_pre_release_auto_2() -> Result<()> {
     Command::cargo_bin("cog")?
         .arg("bump")
         .arg("--auto")
-        .arg("--pre")
+        .arg("--auto-pre")
+        .arg("--pre-pattern")
         .arg("alpha.*")
         .assert()
         .success();
@@ -1137,7 +1140,8 @@ fn bump_prerelease_from_latest_pre_release_auto_3() -> Result<()> {
     Command::cargo_bin("cog")?
         .arg("bump")
         .arg("--auto")
-        .arg("--pre")
+        .arg("--auto-pre")
+        .arg("--pre-pattern")
         .arg("alpha.*")
         .assert()
         .success();

@@ -9,7 +9,7 @@ use cocogitto::conventional::changelog::context::RemoteContext;
 use cocogitto::conventional::changelog::template::Template;
 use cocogitto::conventional::changelog::ReleaseType;
 use cocogitto::conventional::commit as conv_commit;
-use cocogitto::conventional::version::IncrementCommand;
+use cocogitto::conventional::version::{IncrementCommand, PreCommand};
 
 use cocogitto::log::filter::{CommitFilter, CommitFilters};
 use cocogitto::log::output::Output;
@@ -295,6 +295,14 @@ enum Command {
         #[arg(long)]
         pre: Option<String>,
 
+        /// Enable auto pre-release increment (see --pre-pattern)
+        #[arg(long)]
+        auto_pre: bool,
+
+        /// Pre-release pattern to use for auto increment (e.g. "alpha.*")
+        #[arg(long = "pre-pattern")]
+        pre_pattern: Option<String>,
+
         /// Set the build suffix
         #[arg(long)]
         build: Option<String>,
@@ -455,6 +463,8 @@ fn main() -> Result<()> {
             minor,
             patch,
             pre,
+            auto_pre,
+            pre_pattern,
             build,
             hook_profile,
             package,
@@ -487,6 +497,15 @@ fn main() -> Result<()> {
                 _ => unreachable!(),
             };
 
+            let pre_release = match (pre.as_deref(), auto_pre, pre_pattern.as_deref()) {
+                (Some(_), true, _) => bail!("Cannot use --pre and --auto-pre options together. Please choose one."),
+                (Some(_), _, Some(_)) => bail!("Cannot use --pre-pattern with --pre. Did you mean to use --auto-pre?"),
+                (_, true, None) => bail!("Cannot use --auto-pre without a pattern. Use --pre-pattern to specify a pattern."),
+                (Some(pre), _, _) => Some(PreCommand::Exact(pre)),
+                (_, true, Some(pattern)) => Some(PreCommand::Auto(pattern)),
+                _ => None,
+            };
+
             if is_monorepo {
                 match package {
                     Some(package_name) => {
@@ -497,7 +516,7 @@ fn main() -> Result<()> {
                             package_name: &package_name,
                             package,
                             increment,
-                            pre_release: pre.as_deref(),
+                            pre_release,
                             build: build.as_deref(),
                             hooks_config: hook_profile.as_deref(),
                             annotated,
@@ -513,7 +532,7 @@ fn main() -> Result<()> {
                     None => {
                         let opts = BumpOptions {
                             increment,
-                            pre_release: pre.as_deref(),
+                            pre_release,
                             build: build.as_deref(),
                             hooks_config: hook_profile.as_deref(),
                             annotated,
@@ -531,7 +550,7 @@ fn main() -> Result<()> {
             } else {
                 let opts = BumpOptions {
                     increment,
-                    pre_release: pre.as_deref(),
+                    pre_release,
                     build: build.as_deref(),
                     hooks_config: hook_profile.as_deref(),
                     annotated,

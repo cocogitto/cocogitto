@@ -21,6 +21,14 @@ pub enum Increment {
     NoBump,
 }
 
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub enum PreCommand<'a> {
+    /// Specify the exact pre-release version
+    Exact(&'a str),
+    /// Automatically increment the pre-release version based on a pattern
+    Auto(&'a str),
+}
+
 impl From<Increment> for IncrementCommand {
     fn from(value: Increment) -> Self {
         match value {
