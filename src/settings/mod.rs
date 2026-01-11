@@ -79,6 +79,9 @@ pub struct Settings {
     /// as a tag prefix, cocogitto will generate versions starting with `v` and
     /// commands like `cog changelog` will pick only those versions.
     pub tag_prefix: Option<String>,
+    /// Default pre-release pattern to be used when auto-incrementing pre-release versions.
+    /// It must contain exactly one wildcard `*` to be replaced by the numeric identifier.
+    pub pre_pattern: String,
     /// A "skip-ci" string to add to the commits when using the `bump` or `commit` commands.
     /// Default value is `[skip ci].
     pub skip_ci: String,
@@ -121,6 +124,7 @@ impl Default for Settings {
             monorepo_version_separator: None,
             branch_whitelist: vec![],
             tag_prefix: None,
+            pre_pattern: "alpha.*".to_string(),
             skip_ci: "[skip ci]".to_string(),
             skip_untracked: false,
             pre_bump_hooks: vec![],

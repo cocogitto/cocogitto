@@ -296,7 +296,7 @@ enum Command {
         pre: Option<String>,
 
         /// Enable auto pre-release increment (see --pre-pattern)
-        #[arg(long, conflicts_with = "pre", requires = "pre_pattern")]
+        #[arg(long, conflicts_with = "pre")]
         auto_pre: bool,
 
         /// Pre-release pattern to use for auto increment (e.g. "alpha.*")
@@ -500,10 +500,9 @@ fn main() -> Result<()> {
             let pre_release = if let Some(pre) = pre.as_deref() {
                 Some(PreCommand::Exact(pre))
             } else if auto_pre {
-                let pattern = match pre_pattern.as_deref() {
-                    Some(pat) => pat,
-                    None => unimplemented!("TODO: get pattern from settings"),
-                };
+                let pattern = pre_pattern
+                    .as_deref()
+                    .unwrap_or_else(|| &SETTINGS.pre_pattern);
                 Some(PreCommand::Auto(pattern))
             } else {
                 None
