@@ -361,19 +361,79 @@ fn pre_with_pre_pattern_conflict() -> Result<()> {
 }
 
 #[sealed_test]
-fn auto_pre_without_pattern_is_err() -> Result<()> {
+fn pre_pattern_requires_auto_pre() -> Result<()> {
     git_init()?;
     git_commit("chore: init")?;
 
     Command::cargo_bin("cog")?
         .arg("bump")
         .arg("--auto")
-        .arg("--auto-pre")
+        .arg("--pre-pattern")
+        .arg("rc.*")
         .assert()
         .failure()
         .stderr(contains(
-            "error: the following required arguments were not provided:\n  --pre-pattern <PRE_PATTERN>",
+            "error: the following required arguments were not provided:\n  --auto-pre",
         ));
+
+    Ok(())
+}
+
+#[sealed_test]
+fn auto_pre_without_pattern_uses_default() -> Result<()> {
+    git_init()?;
+    git_commit("chore: init")?;
+    git_tag("1.0.0")?;
+    git_commit("feat: feature")?;
+
+    Command::new(assert_cmd::cargo_bin!("cog"))
+        .arg("bump")
+        .arg("--auto")
+        .arg("--auto-pre")
+        .assert()
+        .success();
+
+    assert_tag_exists("1.1.0-alpha.1")?;
+    Ok(())
+}
+
+#[sealed_test]
+fn auto_pre_uses_pattern_from_settings() -> Result<()> {
+    git_init()?;
+    git_add(r#"pre_pattern = "custom-default.*""#, "cog.toml")?;
+    git_commit("chore: init")?;
+    git_tag("1.0.0")?;
+    git_commit("feat: feature")?;
+
+    Command::new(assert_cmd::cargo_bin!("cog"))
+        .arg("bump")
+        .arg("--auto")
+        .arg("--auto-pre")
+        .assert()
+        .success();
+
+    assert_tag_exists("1.1.0-custom-default.1")?;
+    Ok(())
+}
+
+#[sealed_test]
+fn auto_pre_cli_pattern_overrides_settings() -> Result<()> {
+    git_init()?;
+    git_add(r#"pre_pattern = "custom-default.*""#, "cog.toml")?;
+    git_commit("chore: init")?;
+    git_tag("1.0.0")?;
+    git_commit("feat: feature")?;
+
+    Command::new(assert_cmd::cargo_bin!("cog"))
+        .arg("bump")
+        .arg("--auto")
+        .arg("--auto-pre")
+        .arg("--pre-pattern")
+        .arg("beta.*")
+        .assert()
+        .success();
+
+    assert_tag_exists("1.1.0-beta.1")?;
     Ok(())
 }
 
