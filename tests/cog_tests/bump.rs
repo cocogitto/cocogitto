@@ -7,6 +7,7 @@ use assert_cmd::prelude::*;
 use cmd_lib::run_cmd;
 use cocogitto::settings::Settings;
 use indoc::indoc;
+use predicates::str::contains;
 use sealed_test::prelude::*;
 use speculoos::prelude::*;
 use std::path::Path;
@@ -332,7 +333,9 @@ fn pre_and_auto_pre_conflict() -> Result<()> {
         .arg("--auto-pre")
         .assert()
         .failure()
-        .stderr("Error: Cannot use --pre and --auto-pre options together. Please choose one.\n");
+        .stderr(contains(
+            "error: the argument '--pre <PRE>' cannot be used with '--auto-pre'",
+        ));
     Ok(())
 }
 
@@ -350,7 +353,10 @@ fn pre_with_pre_pattern_conflict() -> Result<()> {
         .arg("alpha.*")
         .assert()
         .failure()
-        .stderr("Error: Cannot use --pre-pattern with --pre. Did you mean to use --auto-pre?\n");
+        .stderr(contains(
+            "error: the argument '--pre <PRE>' cannot be used with '--pre-pattern <PRE_PATTERN>'",
+        ));
+
     Ok(())
 }
 
@@ -365,7 +371,9 @@ fn auto_pre_without_pattern_is_err() -> Result<()> {
         .arg("--auto-pre")
         .assert()
         .failure()
-        .stderr("Error: Cannot use --auto-pre without a pattern. Use --pre-pattern to specify a pattern.\n");
+        .stderr(contains(
+            "error: the following required arguments were not provided:\n  --pre-pattern <PRE_PATTERN>",
+        ));
     Ok(())
 }
 
