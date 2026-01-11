@@ -292,15 +292,15 @@ enum Command {
         patch: bool,
 
         /// Set the pre-release version
-        #[arg(long)]
+        #[arg(long, conflicts_with_all = ["auto_pre", "pre_pattern"])]
         pre: Option<String>,
 
         /// Enable auto pre-release increment (see --pre-pattern)
-        #[arg(long)]
+        #[arg(long, conflicts_with = "pre", requires = "pre_pattern")]
         auto_pre: bool,
 
         /// Pre-release pattern to use for auto increment (e.g. "alpha.*")
-        #[arg(long = "pre-pattern")]
+        #[arg(long = "pre-pattern", conflicts_with = "pre", requires = "auto_pre")]
         pre_pattern: Option<String>,
 
         /// Set the build suffix
@@ -497,13 +497,16 @@ fn main() -> Result<()> {
                 _ => unreachable!(),
             };
 
-            let pre_release = match (pre.as_deref(), auto_pre, pre_pattern.as_deref()) {
-                (Some(_), true, _) => bail!("Cannot use --pre and --auto-pre options together. Please choose one."),
-                (Some(_), _, Some(_)) => bail!("Cannot use --pre-pattern with --pre. Did you mean to use --auto-pre?"),
-                (_, true, None) => bail!("Cannot use --auto-pre without a pattern. Use --pre-pattern to specify a pattern."),
-                (Some(pre), _, _) => Some(PreCommand::Exact(pre)),
-                (_, true, Some(pattern)) => Some(PreCommand::Auto(pattern)),
-                _ => None,
+            let pre_release = if let Some(pre) = pre.as_deref() {
+                Some(PreCommand::Exact(pre))
+            } else if auto_pre {
+                let pattern = match pre_pattern.as_deref() {
+                    Some(pat) => pat,
+                    None => unimplemented!("TODO: get pattern from settings"),
+                };
+                Some(PreCommand::Auto(pattern))
+            } else {
+                None
             };
 
             if is_monorepo {
