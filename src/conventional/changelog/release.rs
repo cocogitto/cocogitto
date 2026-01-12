@@ -1,5 +1,5 @@
 use chrono::{NaiveDateTime, Utc};
-use conventional_commit_parser::commit::Footer;
+use conventional_commit_parser::commit::{Footer, Separator};
 use serde::Serialize;
 
 use crate::conventional::commit::Commit;
@@ -119,17 +119,131 @@ impl From<Commit> for ChangelogCommit {
     }
 }
 
-#[derive(Serialize)]
-pub struct ChangelogFooter<'a> {
-    token: &'a str,
-    content: &'a str,
+/// Either a simple conventional commit footer (ex: Myfooter: value, Other #value)
+/// or GitHub specific trailers:
+/// Co-authored-by: Paul Delafosse <paul.delafosse@protonmail.com>
+/// Closes #123
+#[derive(Serialize, Debug)]
+#[serde(rename_all = "snake_case")]
+pub enum ChangelogFooter<'a> {
+    GithubCoAuthoredBy {
+        user: &'a str,
+        username: Option<&'a str>,
+    },
+    GithubCloses {
+        gh_reference: &'a str,
+    },
+    Footer {
+        token: &'a str,
+        content: &'a str,
+    },
 }
 
 impl<'a> From<&'a Footer> for ChangelogFooter<'a> {
     fn from(footer: &'a Footer) -> Self {
-        Self {
-            token: footer.token.as_str(),
-            content: footer.content.as_str(),
+        match footer.token.as_str().to_lowercase().as_str() {
+            "co-authored-by" if footer.token_separator == Separator::Colon => {
+                let user = footer
+                    .content
+                    .split('<')
+                    .next()
+                    .map(str::trim)
+                    .unwrap_or(footer.content.as_str());
+
+                let username = settings::commit_username(user);
+
+                Self::GithubCoAuthoredBy { user, username }
+            }
+            "close" | "closes" | "closed" | "fix" | "fixes" | "fixed" | "resolve" | "resolves"
+            | "resolved"
+                if footer.token_separator == Separator::Hash =>
+            {
+                Self::GithubCloses {
+                    gh_reference: footer.content.as_str(),
+                }
+            }
+            _ => Self::Footer {
+                token: footer.token.as_str(),
+                content: footer.content.as_str(),
+            },
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use conventional_commit_parser::commit::{Footer, Separator};
+    use speculoos::prelude::*;
+
+    #[test]
+    fn changelog_footer_from_github_co_authored_by() {
+        // Arrange
+        let footer = Footer {
+            token: "Co-authored-by".to_string(),
+            token_separator: Separator::Colon,
+            content: "Paul Delafosse <paul.delafosse@protonmail.com>".to_string(),
+        };
+
+        // Act
+        let changelog_footer = ChangelogFooter::from(&footer);
+
+        // Assert
+        assert_that!(changelog_footer).matches(|ch| {
+            matches!(
+                ch,
+                ChangelogFooter::GithubCoAuthoredBy {
+                    user: "Paul Delafosse",
+                    username: Some("oknozor")
+                }
+            )
+        });
+    }
+
+    #[test]
+    fn changelog_footer_from_github_closes() {
+        // Arrange
+        let footer = Footer {
+            token: "Closes".to_string(),
+            token_separator: Separator::Hash,
+            content: "123".to_string(),
+        };
+
+        // Act
+        let changelog_footer = ChangelogFooter::from(&footer);
+
+        // Assert
+        assert_that!(changelog_footer).matches(|ch| {
+            matches!(
+                ch,
+                ChangelogFooter::GithubCloses {
+                    gh_reference: "123"
+                }
+            )
+        });
+    }
+
+    #[test]
+    fn changelog_footer_from_generic_footer() {
+        // Arrange
+        let footer = Footer {
+            token: "MyFooter".to_string(),
+            token_separator: Separator::Colon,
+            content: "Some value".to_string(),
+        };
+
+        // Act
+        let changelog_footer = ChangelogFooter::from(&footer);
+
+        // Assert
+        assert_that!(changelog_footer).matches(|ch| {
+            matches!(
+                ch,
+                ChangelogFooter::Footer {
+                    token: "MyFooter",
+                    content: "Some value"
+                }
+            )
+        });
     }
 }

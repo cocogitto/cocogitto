@@ -66,7 +66,8 @@ impl Default for ReleaseFixture {
                 CommitFixture::default()
                     .with_scope("parser")
                     .with_username("oknozor")
-                    .with_message("fix parser implementation"),
+                    .with_message("fix parser implementation")
+                    .with_footer("Co-authored-by", "Tom", Separator::Colon),
             );
     }
 }
