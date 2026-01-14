@@ -7,7 +7,6 @@ use assert_cmd::prelude::*;
 use cmd_lib::run_cmd;
 use cocogitto::settings::Settings;
 use indoc::indoc;
-use predicates::str::contains;
 use sealed_test::prelude::*;
 use speculoos::prelude::*;
 use std::path::Path;
@@ -309,73 +308,13 @@ fn pre_release_bump_auto() -> Result<()> {
     Command::cargo_bin("cog")?
         .arg("bump")
         .arg("--major")
-        .arg("--auto-pre")
-        .arg("--pre-pattern")
+        .arg("--pre")
         .arg("alpha.*")
         .assert()
         .success();
 
     assert_that!(Path::new("CHANGELOG.md")).exists();
     assert_tag_exists("2.0.0-alpha.1")?;
-    Ok(())
-}
-
-#[sealed_test]
-fn pre_and_auto_pre_conflict() -> Result<()> {
-    git_init()?;
-    git_commit("chore: init")?;
-
-    Command::cargo_bin("cog")?
-        .arg("bump")
-        .arg("--auto")
-        .arg("--pre")
-        .arg("alpha")
-        .arg("--auto-pre")
-        .assert()
-        .failure()
-        .stderr(contains(
-            "error: the argument '--pre <PRE>' cannot be used with '--auto-pre'",
-        ));
-    Ok(())
-}
-
-#[sealed_test]
-fn pre_with_pre_pattern_conflict() -> Result<()> {
-    git_init()?;
-    git_commit("chore: init")?;
-
-    Command::cargo_bin("cog")?
-        .arg("bump")
-        .arg("--auto")
-        .arg("--pre")
-        .arg("alpha")
-        .arg("--pre-pattern")
-        .arg("alpha.*")
-        .assert()
-        .failure()
-        .stderr(contains(
-            "error: the argument '--pre <PRE>' cannot be used with '--pre-pattern <PRE_PATTERN>'",
-        ));
-
-    Ok(())
-}
-
-#[sealed_test]
-fn pre_pattern_requires_auto_pre() -> Result<()> {
-    git_init()?;
-    git_commit("chore: init")?;
-
-    Command::cargo_bin("cog")?
-        .arg("bump")
-        .arg("--auto")
-        .arg("--pre-pattern")
-        .arg("rc.*")
-        .assert()
-        .failure()
-        .stderr(contains(
-            "error: the following required arguments were not provided:\n  --auto-pre",
-        ));
-
     Ok(())
 }
 
@@ -389,7 +328,7 @@ fn auto_pre_without_pattern_uses_default() -> Result<()> {
     Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
-        .arg("--auto-pre")
+        .arg("--pre")
         .assert()
         .success();
 
@@ -408,7 +347,7 @@ fn auto_pre_uses_pattern_from_settings() -> Result<()> {
     Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
-        .arg("--auto-pre")
+        .arg("--pre")
         .assert()
         .success();
 
@@ -427,8 +366,7 @@ fn auto_pre_cli_pattern_overrides_settings() -> Result<()> {
     Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
-        .arg("--auto-pre")
-        .arg("--pre-pattern")
+        .arg("--pre")
         .arg("beta.*")
         .assert()
         .success();
@@ -1204,8 +1142,7 @@ fn bump_prerelease_from_latest_pre_release_auto() -> Result<()> {
     Command::cargo_bin("cog")?
         .arg("bump")
         .arg("--auto")
-        .arg("--auto-pre")
-        .arg("--pre-pattern")
+        .arg("--pre")
         .arg("alpha.*")
         .assert()
         .success();
@@ -1229,8 +1166,7 @@ fn bump_prerelease_from_latest_pre_release_auto_2() -> Result<()> {
     Command::cargo_bin("cog")?
         .arg("bump")
         .arg("--auto")
-        .arg("--auto-pre")
-        .arg("--pre-pattern")
+        .arg("--pre")
         .arg("alpha.*")
         .assert()
         .success();
@@ -1258,8 +1194,7 @@ fn bump_prerelease_from_latest_pre_release_auto_3() -> Result<()> {
     Command::cargo_bin("cog")?
         .arg("bump")
         .arg("--auto")
-        .arg("--auto-pre")
-        .arg("--pre-pattern")
+        .arg("--pre")
         .arg("alpha.*")
         .assert()
         .success();

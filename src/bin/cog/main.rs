@@ -291,17 +291,13 @@ enum Command {
         #[arg(short, long, group = "bump-spec")]
         patch: bool,
 
-        /// Set the pre-release version
-        #[arg(long, conflicts_with_all = ["auto_pre", "pre_pattern"])]
+        /// Set the pre-release version (e.g. "beta.1")
+        ///
+        /// Or increment based on a pattern (e.g. "beta.*")
+        ///
+        /// If no value provided, falls back to the pre defined in cog.toml
+        #[arg(long, num_args = 0..=1, default_missing_value = "")]
         pre: Option<String>,
-
-        /// Enable auto pre-release increment (see --pre-pattern)
-        #[arg(long, conflicts_with = "pre")]
-        auto_pre: bool,
-
-        /// Pre-release pattern to use for auto increment (e.g. "alpha.*")
-        #[arg(long = "pre-pattern", conflicts_with = "pre", requires = "auto_pre")]
-        pre_pattern: Option<String>,
 
         /// Set the build suffix
         #[arg(long)]
@@ -463,8 +459,6 @@ fn main() -> Result<()> {
             minor,
             patch,
             pre,
-            auto_pre,
-            pre_pattern,
             build,
             hook_profile,
             package,
@@ -497,16 +491,15 @@ fn main() -> Result<()> {
                 _ => unreachable!(),
             };
 
-            let pre_release = if let Some(pre) = pre.as_deref() {
-                Some(PreCommand::Exact(pre))
-            } else if auto_pre {
-                let pattern = pre_pattern
-                    .as_deref()
-                    .unwrap_or_else(|| &SETTINGS.pre_pattern);
-                Some(PreCommand::Auto(pattern))
-            } else {
-                None
-            };
+            let pre_release = pre.as_deref().map(|pre| {
+                if pre.is_empty() {
+                    PreCommand::Auto(&SETTINGS.pre_pattern)
+                } else if pre.contains('*') {
+                    PreCommand::Auto(pre)
+                } else {
+                    PreCommand::Exact(pre)
+                }
+            });
 
             if is_monorepo {
                 match package {
