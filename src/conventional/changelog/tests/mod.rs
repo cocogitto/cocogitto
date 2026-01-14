@@ -8,7 +8,8 @@ use speculoos::prelude::*;
 use crate::conventional::changelog::release::Release;
 use crate::conventional::changelog::template::Template;
 use crate::conventional::changelog::tests::fixtures::{
-    default_package_context, default_remote_context, monorepo_context, ReleaseFixture,
+    default_package_context, default_remote_context, monorepo_context,
+    remote_context_with_github_provider, ReleaseFixture,
 };
 use crate::git::repository::Repository;
 
@@ -298,3 +299,14 @@ changelog_test!(
     - (**parser**) fix parser implementation - ([17f7e23](https://github.com/cocogitto/cocogitto/commit/17f7e23081db15e9318aeb37529b1d473cf41cbe)) - [@oknozor](https://github.com/oknozor), Tom
     "
 );
+
+changelog_test! {
+    should_render_github_footers_with_remote_provider,
+    ReleaseFixture::cocogitto(),
+    Template::from_arg("remote", remote_context_with_github_provider(), false)?,
+    r#"## [1.0.0](https://github.com/cocogitto/cocogitto/compare/0.1.0..1.0.0) - 2015-09-05
+    #### Features
+    - (**parser**) implement the changelog generator - ([9d14c0b](https://github.com/cocogitto/cocogitto/commit/9d14c0b967598780d2acd9e281bcf2ee4d0e9fd7)) - [@oknozor](https://github.com/oknozor), dependabot[bot]
+    - awesome feature - ([cc0e64d](https://github.com/cocogitto/cocogitto/commit/cc0e64d2c1e075ac9b782258783212b4d7917892)) - [@ba-lindner](https://github.com/ba-lindner), [@oknozor](https://github.com/oknozor)
+    "#
+}

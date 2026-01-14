@@ -1,7 +1,11 @@
 use serde::Serialize;
 use tera::Context;
 
-use crate::{conventional::changelog::release::Release, git::oid::OidOf};
+use crate::{
+    conventional::changelog::{provider::GitProvider, release::Release},
+    git::oid::OidOf,
+    settings,
+};
 
 /// A wrapper to append remote repository information to template context
 #[derive(Debug)]
@@ -9,6 +13,7 @@ pub struct RemoteContext {
     pub remote: String,
     pub repository: String,
     pub owner: String,
+    pub provider: Option<Box<dyn GitProvider>>,
 }
 
 #[derive(Debug)]
@@ -70,12 +75,14 @@ impl RemoteContext {
         remote: Option<String>,
         repository: Option<String>,
         owner: Option<String>,
+        provider: Option<settings::GitProvider>,
     ) -> Option<Self> {
         match (remote, repository, owner) {
             (Some(remote), Some(repository), Some(owner)) => Some(Self {
                 remote,
                 repository,
                 owner,
+                provider: provider.map(|provider| provider.into())
             }),
             (None, None, None) => None,
             _ => panic!("Changelog remote context should be set. Missing one of 'remote', 'repository', 'owner' in changelog configuration")

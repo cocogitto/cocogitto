@@ -4,6 +4,7 @@ use crate::conventional::changelog::release::Release;
 use crate::SETTINGS;
 
 use super::filters;
+use std::collections::HashMap;
 use std::io;
 use std::path::PathBuf;
 use tera::{Context, Tera};
@@ -44,6 +45,7 @@ pub struct Template {
     pub context: Context,
     pub kind: TemplateKind,
     pub remote_context: Option<RemoteContext>,
+    username_cache: HashMap<String, String>,
 }
 
 impl Template {
@@ -62,6 +64,7 @@ impl Template {
             context,
             kind,
             remote_context,
+            username_cache: HashMap::new(),
         })
     }
 
@@ -77,6 +80,7 @@ impl Template {
             kind,
             context: Context::default(),
             remote_context: None,
+            username_cache: HashMap::new(),
         }
     }
 
@@ -115,6 +119,54 @@ impl Template {
         version: &mut Release,
         tera: &Tera,
     ) -> Result<String, ChangelogError> {
+        if let Some(remote_context) = self.remote_context.as_ref() {
+            let owner = &remote_context.owner;
+            let repo = &remote_context.repository;
+
+            if let Some(provider) = remote_context.provider.as_deref() {
+                for commit in &mut version.commits {
+                    if let Some(username) = self.username_cache.get(&commit.commit.author) {
+                        commit.author_username = Some(username.clone());
+                    } else {
+                        let github_authors =
+                            provider.get_commit_contributors(repo, owner, &commit.commit.oid);
+
+                        if let Ok(github_authors) = github_authors {
+                            if let Some(author) = github_authors.author {
+                                self.username_cache
+                                    .insert(commit.commit.author.clone(), author.clone());
+                                commit.author_username = Some(author);
+                            }
+                        }
+                    }
+
+                    for footer in &commit.commit.conventional.footers {
+                        if footer.token.as_str().to_lowercase() == "co-authored-by"
+                            && footer.token_separator
+                                == conventional_commit_parser::commit::Separator::Colon
+                        {
+                            let user = footer
+                                .content
+                                .split('<')
+                                .next()
+                                .map(str::trim)
+                                .unwrap_or(footer.content.as_str());
+
+                            if let Some(username) = crate::settings::commit_username(user) {
+                                commit
+                                    .coauthor_usernames
+                                    .insert(user.to_string(), username.to_string());
+                            } else if let Some(username) = self.username_cache.get(user) {
+                                commit
+                                    .coauthor_usernames
+                                    .insert(user.to_string(), username.clone());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         self.context.extend(version.to_context());
         tera.render(self.kind.name(), &self.context)
             .map_err(Into::into)
