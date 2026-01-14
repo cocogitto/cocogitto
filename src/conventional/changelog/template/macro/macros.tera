@@ -1,17 +1,16 @@
 {%- macro simple(commit) -%}
-  {%-if commit.author -%}
+  {%- if commit.author -%}
       {% set author = "*" ~ commit.author  ~ "*" -%}
   {% else -%}
       {% set author = commit.signature -%}
   {% endif -%}
-
-  {% set shorthand = commit.id | truncate(length=7, end="") -%}
+  {%- set shorthand = commit.id | truncate(length=7, end="") -%}
   {% if commit.breaking_change -%}
       {% set breaking_badge = '<span style="background-color: #d73a49; color: white; padding: 2px 6px; border-radius: 3px; font-weight: bold; font-size: 0.85em;">BREAKING</span>' -%}
   {% else -%}
       {% set breaking_badge = "" -%}
   {% endif -%}
-  - {{ breaking_badge }}{%if commit.scope %}(**{{ commit.scope }}**) {% endif %}{{ commit.summary }} - ({{shorthand}}) - {{ author }}
+  - {{ breaking_badge }}{%if commit.scope %}(**{{ commit.scope }}**) {% endif %}{{ commit.summary }} - ({{shorthand}}) - {{ author }}{%- for footer in commit.footers -%}{%- if footer.github_co_authored_by -%}{%- if footer.github_co_authored_by.username -%}, *{{ footer.github_co_authored_by.username }}*{%- else -%}, *{{ footer.github_co_authored_by.user }}*{%- endif -%}{%- endif -%}{%- endfor -%}
 {%- endmacro simple -%}
 
 {%- macro remote(commit) -%}
@@ -22,14 +21,14 @@
   {% else -%}
       {% set author = commit.signature -%}
   {% endif -%}
-  {% set commit_link = repository_url ~ "/commit/" ~ commit.id -%}
+  {%- set commit_link = repository_url ~ "/commit/" ~ commit.id -%}
   {% set shorthand = commit.id | truncate(length=7, end="") -%}
   {% if commit.breaking_change -%}
       {% set breaking_badge = "![BREAKING](https://img.shields.io/badge/BREAKING-red) " -%}
   {% else -%}
       {% set breaking_badge = "" -%}
   {% endif -%}
-  - {{ breaking_badge }}{%if commit.scope %}(**{{ commit.scope }}**) {% endif %}{{ commit.summary }} - ([{{shorthand}}]({{ commit_link }})) - {{ author }}
+  - {{ breaking_badge }}{%if commit.scope %}(**{{ commit.scope }}**) {% endif %}{{ commit.summary }} - ([{{shorthand}}]({{ commit_link }})) - {{ author }}{%- for footer in commit.footers -%}{%- if footer.github_co_authored_by -%}{%- if footer.github_co_authored_by.username -%}{%- set coauthor_link = platform ~ "/" ~ footer.github_co_authored_by.username -%}, [@{{ footer.github_co_authored_by.username }}]({{ coauthor_link }}){%- else -%}, {{ footer.github_co_authored_by.user }}{%- endif -%}{%- endif -%}{%- endfor -%}
 {%- endmacro remote -%}
 
 {%- macro fullhash(commit) -%}
@@ -38,10 +37,10 @@
     {% else -%}
         {% set author = commit.signature -%}
     {% endif -%}
-    {% if commit.breaking_change -%}
+    {%- if commit.breaking_change -%}
         {% set breaking_badge = "![BREAKING](https://img.shields.io/badge/BREAKING-red) " -%}
     {% else -%}
         {% set breaking_badge = "" -%}
     {% endif -%}
-    - {{ breaking_badge }}{{ commit.id }}{% if commit.scope %} - (**{{ commit.scope }}**) {% else %} - {% endif %}{{ commit.summary }} - {{ author }}
+    - {{ breaking_badge }}{{ commit.id }}{% if commit.scope %} - (**{{ commit.scope }}**) {% else %} - {% endif %}{{ commit.summary }} - {{ author }}{%- for footer in commit.footers -%}{%- if footer.github_co_authored_by -%}{%- if footer.github_co_authored_by.username -%}, @{{ footer.github_co_authored_by.username }}{%- else -%}, {{ footer.github_co_authored_by.user }}{%- endif -%}{%- endif -%}{%- endfor -%}
 {%- endmacro fullhash -%}

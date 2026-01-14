@@ -119,14 +119,55 @@ Then use, for example:
 
 ### Footer
 
-- `token`:
-    * **Type:** `String`
-    * **Description:** the footer token
-    * **Nullable:** `false`
-- `content`:
-    * **Type:** `String`
-    * **Description:** the footer content
-    * **Nullable:** `false`
+Footers can be either generic footers or GitHub-specific trailers. Cocogitto automatically recognizes and parses the following GitHub trailers:
+
+#### Generic Footer
+
+- `footer`:
+    * **Type:** `Object`
+    * **Description:** a generic conventional commit footer
+    * **Fields:**
+        - `token` (`String`): the footer token (e.g., "Reviewed-by", "Signed-off-by")
+        - `content` (`String`): the footer content
+
+#### GitHub Co-authored-by
+
+Recognized from trailers like: `Co-authored-by: Name <email@example.com>`
+
+- `github_co_authored_by`:
+    * **Type:** `Object`
+    * **Description:** a GitHub co-author trailer
+    * **Fields:**
+        - `user` (`String`): the original name from the git trailer (e.g., "Paul Delafosse")
+        - `username` (`String`, nullable): the username mapped from [changelog authors](/reference/config.html#authors) configuration. If the `user` is found in the authors mapping, this contains the corresponding username (e.g., "oknozor"). Otherwise, it is `null`.
+
+**Usage in templates:**
+```tera
+{%- if footer.github_co_authored_by -%}
+  {%- if footer.github_co_authored_by.username -%}
+    , @{{ footer.github_co_authored_by.username }}
+  {%- else -%}
+    , {{ footer.github_co_authored_by.user }}
+  {%- endif -%}
+{%- endif -%}
+```
+
+#### GitHub Closes
+
+Recognized from trailers like: `Closes #123`, `Fixes #456`, `Resolves #789`
+
+- `github_closes`:
+    * **Type:** `Object`
+    * **Description:** a GitHub issue/PR reference trailer
+    * **Fields:**
+        - `gh_reference` (`String`): the issue or PR number (e.g., "123")
+
+**Usage in templates:**
+```tera
+{%- if footer.github_closes -%}
+  Closes #{{ footer.github_closes.gh_reference }}
+{%- endif -%}
+```
 
 ### Remote
 

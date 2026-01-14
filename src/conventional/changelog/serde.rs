@@ -55,7 +55,7 @@ impl Serialize for ChangelogCommit {
             "breaking_change",
             &self.commit.conventional.is_breaking_change,
         )?;
-        commit.serialize_field("footer", footers)?;
+        commit.serialize_field("footers", footers)?;
         commit.end()
     }
 }
@@ -115,10 +115,47 @@ mod test {
                     scope: Some("parser".to_string()),
                     summary: "fix parser implementation".to_string(),
                     body: Some("the body".to_string()),
+                    footers: vec![
+                        Footer {
+                            token: "token".to_string(),
+                            content: "content".to_string(),
+                            ..Default::default()
+                        },
+                        Footer {
+                            token: "Co-authored-by".to_string(),
+                            content: "oknozor".to_string(),
+                            ..Default::default()
+                        },
+                    ],
+                    is_breaking_change: false,
+                },
+                author: "Jean Michel Doudou".to_string(),
+                date: Utc::now().naive_utc(),
+            },
+        };
+
+        let result = serde_json::to_string(&commit);
+
+        assert_that!(result).is_ok();
+    }
+
+    #[test]
+    fn should_serialize_commit_with_coauthor() {
+        use conventional_commit_parser::commit::Separator;
+
+        let commit = ChangelogCommit {
+            author_username: Some("Jm Doudou".to_string()),
+            commit: Commit {
+                oid: "1234567890".to_string(),
+                conventional: ConventionalCommit {
+                    commit_type: CommitType::BugFix,
+                    scope: Some("parser".to_string()),
+                    summary: "fix parser implementation".to_string(),
+                    body: Some("the body".to_string()),
                     footers: vec![Footer {
-                        token: "token".to_string(),
-                        content: "content".to_string(),
-                        ..Default::default()
+                        token: "Co-authored-by".to_string(),
+                        content: "Tom <tom@example.com>".to_string(),
+                        token_separator: Separator::Colon,
                     }],
                     is_breaking_change: false,
                 },
@@ -130,5 +167,8 @@ mod test {
         let result = serde_json::to_string(&commit);
 
         assert_that!(result).is_ok();
+        let json = result.unwrap();
+        assert!(json.contains("github_co_authored_by"));
+        assert!(json.contains("\"user\":\"Tom\""));
     }
 }
