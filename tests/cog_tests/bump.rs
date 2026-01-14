@@ -339,7 +339,7 @@ fn auto_pre_without_pattern_uses_default() -> Result<()> {
 #[sealed_test]
 fn auto_pre_uses_pattern_from_settings() -> Result<()> {
     git_init()?;
-    git_add(r#"pre_pattern = "custom-default.*""#, "cog.toml")?;
+    git_add(r#"pre = "custom-default.*""#, "cog.toml")?;
     git_commit("chore: init")?;
     git_tag("1.0.0")?;
     git_commit("feat: feature")?;
@@ -358,7 +358,7 @@ fn auto_pre_uses_pattern_from_settings() -> Result<()> {
 #[sealed_test]
 fn auto_pre_cli_pattern_overrides_settings() -> Result<()> {
     git_init()?;
-    git_add(r#"pre_pattern = "custom-default.*""#, "cog.toml")?;
+    git_add(r#"pre = "custom-default.*""#, "cog.toml")?;
     git_commit("chore: init")?;
     git_tag("1.0.0")?;
     git_commit("feat: feature")?;

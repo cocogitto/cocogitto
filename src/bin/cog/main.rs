@@ -493,7 +493,7 @@ fn main() -> Result<()> {
 
             let pre_release = pre.as_deref().map(|pre| {
                 if pre.is_empty() {
-                    PreCommand::Auto(&SETTINGS.pre_pattern)
+                    PreCommand::Auto(&SETTINGS.pre)
                 } else if pre.contains('*') {
                     PreCommand::Auto(pre)
                 } else {
