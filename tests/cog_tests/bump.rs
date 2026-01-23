@@ -305,7 +305,7 @@ fn pre_release_bump_auto() -> Result<()> {
     git_tag("1.0.0")?;
     git_commit("feat: feature")?;
 
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--major")
         .arg("--pre")
@@ -1139,7 +1139,7 @@ fn bump_prerelease_from_latest_pre_release_auto() -> Result<()> {
     git_commit("feat: feature 2")?;
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .arg("--pre")
@@ -1163,7 +1163,7 @@ fn bump_prerelease_from_latest_pre_release_auto_2() -> Result<()> {
     git_commit("feat: feature 2")?;
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .arg("--pre")
@@ -1191,7 +1191,7 @@ fn bump_prerelease_from_latest_pre_release_auto_3() -> Result<()> {
     git_commit("feat: feature 2")?;
 
     // Act
-    Command::cargo_bin("cog")?
+    Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("bump")
         .arg("--auto")
         .arg("--pre")
