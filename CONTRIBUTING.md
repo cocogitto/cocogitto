@@ -15,7 +15,7 @@ If you find something is missing or unclear please open a pull request or an iss
 ## Submitting a pull request
 
 Before submitting a PR don't hesitate to talk about your feature request or bug fix either on the issue board or on
-our [discord server](https://discord.gg/951009223121195021).
+our [discord server](https://discord.gg/YUUGFSHeUQ).
 If you need an early review or guidance on how to implement a feature or bug fix, draft PRs are welcome.
 
 ### Prerequisites
