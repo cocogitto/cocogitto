@@ -332,26 +332,40 @@ pub fn verify(
     let commit = conventional_commit_parser::parse(msg);
 
     match commit {
-        Ok(commit) => match &COMMITS_METADATA.get(&commit.commit_type) {
-            Some(_) => {
-                info!(
-                    "{}",
-                    Commit {
+        Ok(commit) => {
+            // An empty `scopes` vector means no scopes are allowed, causing an `Err` to always be returned.
+            // If `scopes` is not provided, the scope check is skipped.
+            if let (Some(scopes), Some(scope)) = (&SETTINGS.commit_scopes(), &commit.scope) {
+                if !scopes.contains(&scope) {
+                    return Err(Box::new(ConventionalCommitError::CommitScopeNotDefined {
                         oid: "not committed".to_string(),
-                        conventional: commit,
-                        date: Utc::now().naive_utc(),
+                        summary: format_summary(&commit),
+                        scope: commit.scope.unwrap_or_else(|| "Unknown".to_string()),
                         author: author.unwrap_or_else(|| "Unknown".to_string()),
-                    }
-                );
-                Ok(())
+                    }));
+                }
             }
-            None => Err(Box::new(ConventionalCommitError::CommitTypeNotAllowed {
-                oid: "not committed".to_string(),
-                summary: format_summary(&commit),
-                commit_type: commit.commit_type.to_string(),
-                author: author.unwrap_or_else(|| "Unknown".to_string()),
-            })),
-        },
+            match &COMMITS_METADATA.get(&commit.commit_type) {
+                Some(_) => {
+                    info!(
+                        "{}",
+                        Commit {
+                            oid: "not committed".to_string(),
+                            conventional: commit,
+                            date: Utc::now().naive_utc(),
+                            author: author.unwrap_or_else(|| "Unknown".to_string()),
+                        }
+                    );
+                    Ok(())
+                }
+                None => Err(Box::new(ConventionalCommitError::CommitTypeNotAllowed {
+                    oid: "not committed".to_string(),
+                    summary: format_summary(&commit),
+                    commit_type: commit.commit_type.to_string(),
+                    author: author.unwrap_or_else(|| "Unknown".to_string()),
+                })),
+            }
+        }
         Err(err) => Err(Box::new(ConventionalCommitError::ParseError(err))),
     }
 }
