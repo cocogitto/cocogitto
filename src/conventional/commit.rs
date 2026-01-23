@@ -336,7 +336,7 @@ pub fn verify(
             // An empty `scopes` vector means no scopes are allowed, causing an `Err` to always be returned.
             // If `scopes` is not provided, the scope check is skipped.
             if let (Some(scopes), Some(scope)) = (&SETTINGS.commit_scopes(), &commit.scope) {
-                if !scopes.contains(&scope) {
+                if !scopes.contains(scope) {
                     return Err(Box::new(ConventionalCommitError::CommitScopeNotDefined {
                         oid: "not committed".to_string(),
                         summary: format_summary(&commit),
