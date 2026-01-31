@@ -59,6 +59,79 @@ fn verify_with_scope() -> Result<()> {
     Ok(())
 }
 
+#[sealed_test]
+fn verify_with_valid_scopes_setting_ok() -> Result<()> {
+    // Arrange
+    git_init()?;
+    let settings = r#"scopes = ["valid"]"#;
+    run_cmd!(
+        echo $settings > cog.toml;
+    )?;
+
+    let message = "feat(valid): a commit message";
+
+    let expected = indoc!(
+        "a commit message (not committed) - now
+            \tAuthor: Tom
+            \tType: feat
+            \tScope: valid
+
+            ",
+    );
+
+    // Act
+    Command::new(assert_cmd::cargo_bin!("cog"))
+        .arg("verify")
+        .arg(message)
+        // Assert
+        .assert()
+        .success()
+        .stderr(expected);
+    Ok(())
+}
+
+#[sealed_test]
+fn verify_with_invalid_scopes_setting_fails() -> Result<()> {
+    // Arrange
+    git_init()?;
+    let settings = r#"scopes = ["valid"]"#;
+    run_cmd!(
+        echo $settings > cog.toml;
+    )?;
+
+    let message = "feat(invalid): a commit message";
+
+    // Act
+    Command::new(assert_cmd::cargo_bin!("cog"))
+        .arg("verify")
+        .arg(message)
+        // Assert
+        .assert()
+        .failure();
+    Ok(())
+}
+
+#[sealed_test]
+fn verify_with_empty_scopes_setting_fails() -> Result<()> {
+    // Arrange
+    git_init()?;
+    let settings = r#"scopes = []"#;
+    run_cmd!(
+        echo $settings > cog.toml;
+    )?;
+
+    let message = "feat(valid): a commit message";
+
+    // Act
+    Command::new(assert_cmd::cargo_bin!("cog"))
+        .arg("verify")
+        .arg(message)
+        // Assert
+        .assert()
+        .failure();
+    Ok(())
+}
+
 #[test]
 fn verify_fails() -> Result<()> {
     // Arrange
