@@ -65,12 +65,13 @@ jobs:
           git config --global user.email github-actions@github.com
           git config --global user.name github-actions
 
-      - name: Conventional commit check
-        if: ${{matrix.conventional_commit_check }}
-        uses: cocogitto/cocogitto-action@v3
-        with:
-          git-user: "github-actions"
-          git-user-email: "github-actions@github.com"
+      # Disabled until next release since we need `changelog.provider`
+      # - name: Conventional commit check
+      #   if: ${{matrix.conventional_commit_check }}
+      #   uses: cocogitto/cocogitto-action@v3
+      #   with:
+      #     git-user: "github-actions"
+      #     git-user-email: "github-actions@github.com"
 
       - name: Install stable toolchain
         uses: actions-rs/toolchain@v1
@@ -87,6 +88,8 @@ jobs:
 
       - name: Collect coverage data
         if: ${{matrix.coverage}}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: cargo llvm-cov nextest --lcov --output-path lcov.info
 
       - name: Upload coverage to Codecov
@@ -100,6 +103,8 @@ jobs:
       - name: Test
         if: ${{ ! matrix.coverage }}
         uses: actions-rs/cargo@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           command: nextest
           args: run

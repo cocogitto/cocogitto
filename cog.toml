@@ -66,35 +66,24 @@ chore = { omit_from_changelog = true }
 test = { omit_from_changelog = true }
 
 [changelog]
+# Path to the changelog file
 path = "CHANGELOG.md"
+# Template to use for changelog generation (remote, full_hash etc)
 template = "remote"
+# Remote url to use in changelog templates
 remote = "github.com"
+# The remote repository name
 repository = "cocogitto"
+# The owner of the repository
 owner = "cocogitto"
+# Indicate the provider to use for resolving usernames from git signatures
+provider = "github"
 
 # Optional contributor list
 # intended to map git signature to remote username
-# and generate changelog links to their remote profiles
-authors = [
-    { signature = "Paul Delafosse", username = "oknozor" },
-    { signature = "Jack Dorland", username = "jackdorland" },
-    { signature = "Mike Lubinets", username = "mersinvald" },
-    { signature = "Marcin Puc", username = "tranzystorek-io" },
-    { signature = "Renault Fernandes", username = "renaultfernandes" },
-    { signature = "Pieter Joost van de Sande", username = "pjvds" },
-    { signature = "orhun", username = "orhun" },
-    { signature = "Danny Tatom", username = "its-danny" },
-    { signature = "Clément Poissonnier", username = "cpoissonnier" },
-    { signature = "Luke Hsiao", username = "lukehsiao" },
-    { signature = "Caleb Maclennan", username = "alerque" },
-    { signature = "Zshoham", username = "Zshoham" },
-    { signature = "darlaam", username = "darlaam" },
-    { signature = "Stephen Connolly", username = "stephenc" },
-    { signature = "Luca Trevisani", username = "lucatrv" },
-    { signature = "Racci", username = "DaRacci" },
-    { signature = "Conrad Hoffmann", username = "bitfehler" },
-    { signature = "andre161292", username = "andre161292" },
-    { signature = "Sanchith Hegde", username = "SanchithHegde" },
-    { signature = "Wassim Ahmed-Belkacem", username = "Wassim-AB" },
-    { signature = "Lindner, Bernhard", username = "ba-lindner" },
-]
+# and generate changelog links to their remote profiles.
+# You can use changelog.provider instead  to directly resolve username from remote
+# authors = [
+#     { signature = "Paul Delafosse", username = "oknozor" },
+#     { signature = "Jack Dorland", username = "jackdorland" },
+# ]

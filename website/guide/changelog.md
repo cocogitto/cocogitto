@@ -94,14 +94,7 @@ cog changelog --template full_hash
 ```
 
 Below is the changelog as rendered by GitHub release, notice how the committer git signature as been replaced
-by their GitHub username. To do that you need to tell cocogitto about your contributor's username in `cog.toml`:
-
-```toml
-  [changelog]
-  authors = [
-      { username = "oknozor", signature = "Paul Delafosse" }
-  ]
-```
+by their GitHub username.
 
 ![Github release changelog screenshot](/github-release-changelog.png)
 
@@ -124,32 +117,46 @@ to the provided remote, owner and repository flags.
 - say hello to the world - ([c361eea](https://github.com/cocogitto/cocogitto/commit/c361eeae958a0a28041aecfed10091dc0e6768dd)) - [@oknozor](https://github.com/oknozor)
 ```
 
-::: tip
-To avoid typing the remote information and changelog template everytime you can set some default values in `cog.toml`.
+## Automatic username resolution with Git providers
 
-Here is the config used by cocogitto itself.
+Cocogitto can automatically resolve GitHub usernames from git signatures using the GitHub API. This eliminates the need to manually configure author mappings.
+
+To enable automatic username resolution, configure the `provider` field in your `cog.toml`:
 
 ```toml
 [changelog]
-path = "CHANGELOG.md"
 template = "remote"
 remote = "github.com"
 repository = "cocogitto"
 owner = "cocogitto"
+provider = "github"  # Enable automatic username resolution
+```
+
+When `provider = "github"` is set, cocogitto will:
+- Query the GitHub API to resolve usernames for commit authors and co-authors
+- Cache the results to minimize API calls
+- Automatically handle co-authored-by footers in commits
+- Use the `GITHUB_TOKEN` environment variable if available to avoid rate limiting
+
+::: tip
+If you have a `GITHUB_TOKEN` environment variable set, cocogitto will use it for authenticated API requests, which provides higher rate limits and access to private repositories.
+:::
+
+### Manual username mapping (legacy)
+
+Alternatively, you can manually configure author mappings in `cog.toml`:
+
+```toml
+[changelog]
 authors = [
-  { signature = "Paul Delafosse", username = "oknozor" },
-  { signature = "Jack Dorland", username = "jackdorland" },
-  { signature = "Mike Lubinets", username = "mersinvald" },
-  { signature = "Marcin Puc", username = "tranzystorek-io" },
-  { signature = "Renault Fernandes", username = "renaultfernandes" },
-  { signature = "Pieter Joost van de Sande", username = "pjvds" },
-  { signature = "orhun", username = "orhun" },
-  { signature = "Danny Tatom", username = "its-danny" },
+    { username = "oknozor", signature = "Paul Delafosse" },
+    { username = "jackdorland", signature = "Jack Dorland" }
 ]
 ```
 
+::: warning
+When using `provider = "github"`, the manual `authors` configuration is not required. The provider will automatically resolve usernames via the GitHub API.
 :::
-
 ## Monorepo changelogs
 
 Inside a monorepo, there are three types of changelogs:

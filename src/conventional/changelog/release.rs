@@ -1,6 +1,7 @@
 use chrono::{NaiveDateTime, Utc};
 use conventional_commit_parser::commit::{Footer, Separator};
 use serde::Serialize;
+use std::collections::HashMap;
 
 use crate::conventional::commit::Commit;
 use crate::git::oid::OidOf;
@@ -105,6 +106,7 @@ impl TryFrom<CommitIter<'_>> for Release {
 pub struct ChangelogCommit {
     pub author_username: Option<String>,
     pub commit: Commit,
+    pub coauthor_usernames: HashMap<String, String>,
 }
 
 impl From<Commit> for ChangelogCommit {
@@ -115,6 +117,7 @@ impl From<Commit> for ChangelogCommit {
         ChangelogCommit {
             author_username,
             commit,
+            coauthor_usernames: HashMap::new(),
         }
     }
 }
@@ -137,6 +140,44 @@ pub enum ChangelogFooter<'a> {
         token: &'a str,
         content: &'a str,
     },
+}
+
+impl<'a> ChangelogFooter<'a> {
+    /// Convert a Footer to ChangelogFooter, using the coauthor_usernames map for co-authors
+    pub fn from_footer(
+        footer: &'a Footer,
+        coauthor_usernames: &'a HashMap<String, String>,
+    ) -> Self {
+        match footer.token.as_str().to_lowercase().as_str() {
+            "co-authored-by" if footer.token_separator == Separator::Colon => {
+                let user = footer
+                    .content
+                    .split('<')
+                    .next()
+                    .map(str::trim)
+                    .unwrap_or(footer.content.as_str());
+
+                let username = coauthor_usernames
+                    .get(user)
+                    .map(|s| s.as_str())
+                    .or_else(|| settings::commit_username(user));
+
+                Self::GithubCoAuthoredBy { user, username }
+            }
+            "close" | "closes" | "closed" | "fix" | "fixes" | "fixed" | "resolve" | "resolves"
+            | "resolved"
+                if footer.token_separator == Separator::Hash =>
+            {
+                Self::GithubCloses {
+                    gh_reference: footer.content.as_str(),
+                }
+            }
+            _ => Self::Footer {
+                token: footer.token.as_str(),
+                content: footer.content.as_str(),
+            },
+        }
+    }
 }
 
 impl<'a> From<&'a Footer> for ChangelogFooter<'a> {
@@ -194,7 +235,7 @@ mod tests {
                 ch,
                 ChangelogFooter::GithubCoAuthoredBy {
                     user: "Paul Delafosse",
-                    username: Some("oknozor")
+                    username: None
                 }
             )
         });

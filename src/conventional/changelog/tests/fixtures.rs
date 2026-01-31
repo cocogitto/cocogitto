@@ -162,6 +162,7 @@ impl Default for CommitFixture {
         Self {
             changelog: ChangelogCommit {
                 author_username: None,
+                coauthor_usernames: std::collections::HashMap::new(),
                 commit: Commit {
                     oid: "17f7e23081db15e9318aeb37529b1d473cf41cbe".to_string(),
                     conventional: ConventionalCommit {
@@ -267,6 +268,19 @@ pub fn default_remote_context() -> Option<RemoteContext> {
             Some("github.com".into()),
             Some("cocogitto".into()),
             Some("cocogitto".into()),
+            None,
+        )
+        .unwrap(),
+    )
+}
+
+pub fn remote_context_with_github_provider() -> Option<RemoteContext> {
+    Some(
+        RemoteContext::try_new(
+            Some("github.com".into()),
+            Some("cocogitto".into()),
+            Some("cocogitto".into()),
+            Some(crate::settings::GitProvider::Github),
         )
         .unwrap(),
     )

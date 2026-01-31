@@ -12,6 +12,7 @@ use crate::conventional::changelog::error::ChangelogError;
 use crate::conventional::changelog::template::Template;
 use crate::hook::Hooks;
 use crate::settings::error::SettingError;
+use clap::ValueEnum;
 use config::{Config, File, FileFormat};
 use conventional_commit_parser::commit::CommitType;
 use maplit::hashmap;
@@ -378,6 +379,27 @@ pub struct Changelog {
     pub repository: Option<String>,
     /// Author mappings for changelog generation
     pub authors: AuthorSettings,
+    /// When specified, `cog changelog` will try to resolve author profile over http, using the specified provider.
+    pub provider: Option<GitProvider>,
+}
+
+/// # GitProvider
+/// Represents the different Git providers that can be used for changelog generation.
+///
+/// This enum defines the supported Git providers that can be used to resolve author
+/// profiles when generating changelogs. Each variant corresponds to a specific
+/// Git hosting service that provides APIs for user information.
+///
+///  **Example :**
+/// ```toml
+/// [changelog]
+/// git_provider = "github"
+/// ```
+#[cfg_attr(feature = "docgen", derive(cog_schemars::JsonSchema))]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Serialize, Deserialize, ValueEnum)]
+#[non_exhaustive]
+pub enum GitProvider {
+    Github,
 }
 
 impl Default for Changelog {
@@ -390,6 +412,7 @@ impl Default for Changelog {
             owner: None,
             repository: None,
             authors: vec![],
+            provider: None,
         }
     }
 }
@@ -513,8 +536,9 @@ impl Settings {
         let remote = self.changelog.remote.as_ref().cloned();
         let repository = self.changelog.repository.as_ref().cloned();
         let owner = self.changelog.owner.as_ref().cloned();
+        let provider = self.changelog.provider.as_ref().cloned();
 
-        RemoteContext::try_new(remote, repository, owner)
+        RemoteContext::try_new(remote, repository, owner, provider)
     }
 
     pub fn get_changelog_template(&self) -> Result<Template, ChangelogError> {
