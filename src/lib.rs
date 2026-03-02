@@ -133,14 +133,15 @@ impl CocoGitto {
     }
 
     pub fn run_commit_hook(&self, hook: CommitHook) -> Result<(), Git2Error> {
+        let git_dir = self.repository.get_git_dir();
         let repo_dir = self.repository.get_repo_dir().expect("git repository");
         let git_config = self.repository.0.config()?;
         let hooks_dir = git_config
             .get_string("core.hooksPath")
             .map(|path| repo_dir.join(path))
-            .unwrap_or_else(|_| repo_dir.join(".git/hooks"));
+            .unwrap_or_else(|_| git_dir.join("hooks"));
 
-        let edit_message = repo_dir.join(".git/COMMIT_EDITMSG");
+        let edit_message = git_dir.join("COMMIT_EDITMSG");
         let edit_message = edit_message.to_string_lossy();
 
         let (hook_path, args) = match hook {
@@ -186,10 +187,7 @@ impl CocoGitto {
     }
 
     pub fn prepare_edit_message_path(&self) -> PathBuf {
-        self.repository
-            .get_repo_dir()
-            .map(|path| path.join(".git/COMMIT_EDITMSG"))
-            .expect("git repository")
+        self.repository.get_git_dir().join("COMMIT_EDITMSG")
     }
 
     // Currently only used in test to force rebuild the tag cache

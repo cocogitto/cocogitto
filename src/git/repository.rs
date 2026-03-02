@@ -85,6 +85,10 @@ impl Repository {
         self.0.workdir()
     }
 
+    pub(crate) fn get_git_dir(&self) -> &Path {
+        self.0.path()
+    }
+
     pub(crate) fn add_all(&self) -> Result<(), Git2Error> {
         let mut index = self.0.index()?;
         index.add_all(["."], IndexAddOption::DEFAULT, None)?;
