@@ -77,6 +77,21 @@ impl Repository {
     }
 
     pub(crate) fn open<S: AsRef<Path> + ?Sized>(path: &S) -> Result<Repository, Git2Error> {
+        // Check if the repository uses SHA-256 object format
+        if let Ok(config_path) = std::path::Path::new(path.as_ref())
+            .join(".git")
+            .join("config")
+            .canonicalize()
+        {
+            if let Ok(config_content) = std::fs::read_to_string(&config_path) {
+                if config_content.contains("objectformat = sha256") {
+                    return Err(Git2Error::Other(git2::Error::from_str(
+                        "SHA-256 repositories are not yet supported by the git2 library. ",
+                    )));
+                }
+            }
+        }
+
         let repo = Git2Repository::discover(path).map_err(Git2Error::FailedToOpenRepository)?;
         Ok(Repository(repo))
     }

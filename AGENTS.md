@@ -249,7 +249,7 @@ pre_bump_hooks = [
 ## Best Practices for AI Agents
 
 ### Coding Rules
-- **No AI Traces**: Leave no comments or traces indicating AI involvement in the code
+- **No AI Traces**: Leave no comments in the code except for // Arrange, // Act, and // Assert pattern in the test. 
 - **Test Convention**: Use the `// Arrange`, `// Act`, `// Assert` pattern in all tests (as seen in existing project tests)
 
 ### Code Analysis

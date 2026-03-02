@@ -7,6 +7,7 @@ use assert_cmd::prelude::*;
 use cmd_lib::run_cmd;
 use cocogitto::settings::Settings;
 use indoc::indoc;
+use predicates::prelude::*;
 use sealed_test::prelude::*;
 use speculoos::prelude::*;
 use std::path::Path;
@@ -1349,6 +1350,26 @@ fn auto_bump_conflicts_with_include_packages() -> Result<()> {
         .arg("--include-packages")
         .assert()
         .failure();
+
+    Ok(())
+}
+
+#[sealed_test]
+fn auto_bump_sha256_repo() -> Result<()> {
+    // Arrange
+    run_cmd!(git init --object-format sha256)?;
+    git_commit("chore: init")?;
+    git_commit("feat: feature")?;
+
+    // Act
+    Command::new(assert_cmd::cargo_bin!("cog"))
+        .arg("bump")
+        .arg("--auto")
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains(
+            "SHA-256 repositories are not yet supported",
+        ));
 
     Ok(())
 }
