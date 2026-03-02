@@ -10,6 +10,7 @@ use std::path::Path;
 pub mod context;
 pub mod error;
 pub mod filters;
+pub mod provider;
 pub(crate) mod release;
 pub(crate) mod serde;
 pub mod template;

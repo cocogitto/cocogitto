@@ -1158,3 +1158,48 @@ fn monorepo_changelog_default_template() -> Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn should_render_remote_changelog_with_provider() -> anyhow::Result<()> {
+    let result = Command::new(assert_cmd::cargo_bin!("cog"))
+        .arg("changelog")
+        .arg("-t")
+        .arg("remote")
+        .arg("--at")
+        .arg("6.4.0")
+        // Assert
+        .assert()
+        .success();
+
+    let changelog = String::from_utf8_lossy(&result.get_output().stdout);
+
+    assert_doc_eq!(
+        changelog,
+        r#"## [6.4.0](https://github.com/cocogitto/cocogitto/compare/c8e46aa2b28ff1bad94852b1abbec568adbff5aa..6.4.0) - 2025-10-18
+            #### Features
+            - add breaking changes badge in all built-in templates - ([1b7f965](https://github.com/cocogitto/cocogitto/commit/1b7f96576e98e89838ba7608904fad65983a9e9d)) - [@oknozor](https://github.com/oknozor)
+            - apply sort order in template - ([306da76](https://github.com/cocogitto/cocogitto/commit/306da76e540b6bc6736af11753b916806cd8c9e0)) - [@oknozor](https://github.com/oknozor)
+            - Allow sort order to be specified for commit types - ([1949b50](https://github.com/cocogitto/cocogitto/commit/1949b505ba47367145f8f55529c9d798e0745568)) - [@mofojed](https://github.com/mofojed)
+            - only read tags reachable from HEAD - ([aecd76b](https://github.com/cocogitto/cocogitto/commit/aecd76bd47a31644bb89158aa17f7246a8740765)) - [@ba-lindner](https://github.com/ba-lindner)
+            - allow specifying config path via command line (#466) - ([b5443e8](https://github.com/cocogitto/cocogitto/commit/b5443e8d8da0a4674ababbc0e031aedf0b795a85)) - [@TECHNOFAB11](https://github.com/TECHNOFAB11)
+            - resolve tilde in the signingkey to home (#460) - ([daa983b](https://github.com/cocogitto/cocogitto/commit/daa983b1b0507a326099fcbe50b1a80bdab8a296)) - [@kristof-mattei](https://github.com/kristof-mattei)
+            #### Bug Fixes
+            - respect disable_changelog setting for package changelogs - ([d6ac8bf](https://github.com/cocogitto/cocogitto/commit/d6ac8bf253b1f3dc6082af91c82039c13d5acc1a)) - [@ba-lindner](https://github.com/ba-lindner)
+            - allow packages without bump in changelog command - ([71dc621](https://github.com/cocogitto/cocogitto/commit/71dc6218bcba2c96bd622deefdf0a4136aa5c84f)) - [@ba-lindner](https://github.com/ba-lindner)
+            - don't reverse commit list - ([bec8de8](https://github.com/cocogitto/cocogitto/commit/bec8de8b1ef6618880fc556d7b53083f324a5432)) - [@ba-lindner](https://github.com/ba-lindner)
+            - save multiple tags per commit - ([cc0e64d](https://github.com/cocogitto/cocogitto/commit/cc0e64d2c1e075ac9b782258783212b4d7917892)) - [@ba-lindner](https://github.com/ba-lindner)
+            - cog changelog failing on single commit - ([a155a9d](https://github.com/cocogitto/cocogitto/commit/a155a9d3e331517398efefab0dbd0a426ff38f1b)) - [@oknozor](https://github.com/oknozor)
+            - set explicit binstall pkg-url, bin-dir and pkg-fmt - ([97fe60e](https://github.com/cocogitto/cocogitto/commit/97fe60ed25e6458b842afb52bc1ac30fdcef5c11)) - [@kristof-mattei](https://github.com/kristof-mattei)
+            - fix github pages build - ([c8e46aa](https://github.com/cocogitto/cocogitto/commit/c8e46aa2b28ff1bad94852b1abbec568adbff5aa)) - [@oknozor](https://github.com/oknozor)
+            #### Documentation
+            - (**typo**) fix various doc typo (#458) - ([707a80a](https://github.com/cocogitto/cocogitto/commit/707a80acafac209d20e20fef19ecb3b539b791ef)) - [@JxJxxJxJ](https://github.com/JxJxxJxJ)
+            - add commit order doc - ([7e4e6ef](https://github.com/cocogitto/cocogitto/commit/7e4e6ef80503f71748e369e8b92e4c8c135ad68a)) - [@oknozor](https://github.com/oknozor)
+            #### Refactoring
+            - remove field target of Tag - ([3a4472b](https://github.com/cocogitto/cocogitto/commit/3a4472beacf7679b6cbd6a8903693822b27297ea)) - [@ba-lindner](https://github.com/ba-lindner)
+
+
+            "#
+    );
+
+    Ok(())
+}

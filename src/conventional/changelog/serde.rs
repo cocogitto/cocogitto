@@ -27,7 +27,7 @@ impl Serialize for ChangelogCommit {
             .conventional
             .footers
             .iter()
-            .map(ChangelogFooter::from)
+            .map(|footer| ChangelogFooter::from_footer(footer, &self.coauthor_usernames))
             .collect::<Vec<ChangelogFooter>>();
 
         let commit_type = &COMMITS_METADATA
@@ -108,6 +108,7 @@ mod test {
     fn should_serialize_commit() {
         let commit = ChangelogCommit {
             author_username: Some("Jm Doudou".to_string()),
+            coauthor_usernames: std::collections::HashMap::new(),
             commit: Commit {
                 oid: "1234567890".to_string(),
                 conventional: ConventionalCommit {
@@ -145,6 +146,7 @@ mod test {
 
         let commit = ChangelogCommit {
             author_username: Some("Jm Doudou".to_string()),
+            coauthor_usernames: std::collections::HashMap::new(),
             commit: Commit {
                 oid: "1234567890".to_string(),
                 conventional: ConventionalCommit {
