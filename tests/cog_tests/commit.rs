@@ -428,6 +428,7 @@ fn should_run_git_hooks() -> Result<()> {
 #[sealed_test]
 #[cfg(target_os = "linux")]
 fn should_run_pre_commit_hook_with_custom_hooks_path() -> Result<()> {
+    // Arrange
     git_init()?;
     git_add("content", "test_file")?;
 
@@ -444,6 +445,7 @@ fn should_run_pre_commit_hook_with_custom_hooks_path() -> Result<()> {
        chmod +x .husky/post-commit;
     )?;
 
+    // Act
     Command::new(assert_cmd::cargo_bin!("cog"))
         .arg("commit")
         .arg("feat")
@@ -454,6 +456,34 @@ fn should_run_pre_commit_hook_with_custom_hooks_path() -> Result<()> {
         .stdout(predicates::str::contains("running prepare-commit-msg hook"))
         .stdout(predicates::str::contains("running commit-msg hook"))
         .stdout(predicates::str::contains("running post-commit hook"));
+
+    // Assert
+    Ok(())
+}
+
+#[sealed_test]
+fn commit_in_git_worktree_should_work() -> Result<()> {
+    // Arrange
+    git_init()?;
+    git_add("content", "test_file")?;
+    git_commit("feat: initial commit")?;
+
+    let worktree_name = format!("../worktree-test-{}", std::process::id());
+    run_cmd!(git worktree add $worktree_name)?;
+    std::env::set_current_dir(&worktree_name)?;
+    git_add("worktree content", "worktree_file")?;
+
+    // Act
+    Command::new(assert_cmd::cargo_bin!("cog"))
+        .arg("commit")
+        .arg("feat")
+        .arg("worktree commit")
+        .assert()
+        .success();
+
+    // Assert
+    let commit_message = git_log_head_message()?;
+    assert_eq!(commit_message, "feat: worktree commit");
 
     Ok(())
 }
