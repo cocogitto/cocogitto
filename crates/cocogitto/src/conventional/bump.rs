@@ -430,7 +430,7 @@ mod test {
         Ok(())
     }
 
-    #[test]
+    #[sealed_test]
     fn increment_minor_version_should_set_patch_to_zero() -> Result<()> {
         // Arrange
         let repository = git_init_no_gpg()?;

@@ -72,6 +72,7 @@ remote = "github.com"
 repository = "cocogitto"
 owner = "cocogitto"
 
+
 # Optional contributor list
 # intended to map git signature to remote username
 # and generate changelog links to their remote profiles
@@ -98,3 +99,7 @@ authors = [
     { signature = "Wassim Ahmed-Belkacem", username = "Wassim-AB" },
     { signature = "Lindner, Bernhard", username = "ba-lindner" },
 ]
+
+[packages]
+cocogitto = { path = "crates/cocogitto" }
+cocogitto-dependency-resolver = { path = "crates/cocogitto-dependency-resolver" }
