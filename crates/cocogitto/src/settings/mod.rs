@@ -330,12 +330,14 @@ impl fmt::Display for GitHookType {
 #[serde(deny_unknown_fields, untagged)]
 pub enum GitHook {
     /// Direct script string that will be executed
-    Script { /// The script content to execute
-        script: String
+    Script {
+        /// The script content to execute
+        script: String,
     },
     /// Path to a script file that will be executed
-    File { /// The path to the script file
-        path: PathBuf
+    File {
+        /// The path to the script file
+        path: PathBuf,
     },
 }
 

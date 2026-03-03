@@ -52,6 +52,8 @@ pub struct Property {
     #[serde(rename = "minimum")]
     pub _minimum: Option<u64>,
     pub property_names: Option<AnyOf>,
+    #[serde(rename = "oneOf")]
+    pub one_of: Option<Vec<AnyOf>>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -93,12 +95,17 @@ pub enum AdditionalProperties {
 #[derive(Deserialize, Debug, Clone)]
 #[serde(untagged)]
 pub enum AnyOf {
-    Type {
+    Const {
         r#type: String,
+        #[serde(rename = "const")]
+        const_value: String,
     },
     Ref {
         #[serde(rename = "$ref")]
         reference: String,
+    },
+    Type {
+        r#type: String,
     },
 }
 
@@ -107,6 +114,7 @@ impl From<AnyOf> for Type {
         match value {
             AnyOf::Type { r#type } => Type::Unique(r#type),
             AnyOf::Ref { reference } => Type::Unique(reference_stripped(&reference).to_string()),
+            AnyOf::Const { const_value, .. } => Type::Unique(const_value),
         }
     }
 }
