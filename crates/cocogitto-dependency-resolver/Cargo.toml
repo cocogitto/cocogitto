@@ -1,0 +1,16 @@
+[package]
+name = "cocogitto-dependency-resolver"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license = "MIT"
+repository = "https://github.com/cocogitto/cocogitto"
+description = "Dependency resolver for Cocogitto"
+
+[dependencies]
+# Add dependencies here as needed
+
+[lib]
+name = "cocogitto_dependency_resolver"
+path = "src/lib.rs"
