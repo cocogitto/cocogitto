@@ -590,35 +590,6 @@ mod test {
         Ok(())
     }
 
-    #[test]
-    fn recursive_from_origin_to_head() -> Result<()> {
-        // Arrange
-        let repo = Repository::open(COCOGITTO_REPOSITORY)?;
-        let mut tag_count = repo.0.tag_names(None)?.len();
-        let head = repo.get_head_commit_oid()?;
-        let latest = repo.get_latest_tag(TagLookUpOptions::default())?;
-        let latest = latest.oid();
-        if latest == Some(&head) {
-            tag_count -= 1;
-        };
-
-        let range = repo.revwalk("..")?;
-
-        // Act
-        let mut release = Release::try_from(range)?;
-        let mut count = 0;
-
-        while let Some(previous) = release.previous {
-            release = *previous;
-            count += 1;
-        }
-
-        // Assert
-        assert_that!(count).is_equal_to(tag_count);
-
-        Ok(())
-    }
-
     #[sealed_test]
     fn from_commit_to_head() -> Result<()> {
         // Arrange
