@@ -1,6 +1,6 @@
 [package]
 name = "cocogitto"
-version.workspace = true
+version = "6.5.0"
 authors.workspace = true
 edition.workspace = true
 rust-version.workspace = true
