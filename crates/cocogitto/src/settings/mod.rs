@@ -1,3 +1,4 @@
+#![deny(missing_docs)]
 use std::collections::HashMap;
 use std::fmt;
 use std::fmt::Formatter;
@@ -22,9 +23,16 @@ pub(crate) type AuthorSettings = Vec<AuthorSetting>;
 
 mod error;
 
+/// # HookType
+/// Represents the type of hook that can be executed during version bumping.
+///
+/// This enum defines the different types of hooks that can be configured
+/// to run at specific points during the version bumping process.
 #[derive(Copy, Clone)]
 pub enum HookType {
+    /// Hooks that run before the version bump
     PreBump,
+    /// Hooks that run after the version bump
     PostBump,
 }
 
@@ -80,6 +88,31 @@ pub struct MonorepoConfig {
 #[cfg_attr(feature = "docgen", derive(cog_schemars::JsonSchema))]
 #[derive(Debug, Deserialize, Serialize, Eq, PartialEq)]
 #[serde(deny_unknown_fields, default)]
+/// # Settings
+/// Configuration structure for the Cocogitto tool.
+///
+/// This struct defines the main configuration options for Cocogitto, including settings
+/// for version generation, changelog handling, commit conventions, hooks, and monorepo support.
+///
+///  **Example :**
+/// ```toml
+/// # Basic settings
+/// from_latest_tag = true
+/// ignore_merge_commits = true
+///
+/// # Changelog settings
+/// [changelog]
+/// path = "CHANGELOG.md"
+/// template = "remote"
+///
+/// # Git hooks
+/// [git_hooks.pre-commit]
+/// script = "./scripts/pre-commit.sh"
+///
+/// # Monorepo configuration
+/// [packages.my-package]
+/// path = "packages/my-package"
+/// ```
 pub struct Settings {
     /// Whether to only consider commits since the latest SemVer tag.
     pub from_latest_tag: bool,
@@ -181,26 +214,47 @@ impl Default for Settings {
 #[derive(Debug, Deserialize, Serialize, Eq, PartialEq, Hash, Copy, Clone)]
 #[serde(deny_unknown_fields, rename_all = "kebab-case", into = "&str")]
 pub enum GitHookType {
+    /// Hook that is invoked by `git-am`.
     ApplypatchMsg,
+    /// Hook that is invoked by `git-am`.
     PreApplypatch,
+    /// Hook that is invoked by `git-am`.
     PostApplypatch,
+    /// Hook that is invoked by `git-commit`.
     PreCommit,
+    /// Hook that is invoked by `git-merge`.
     PreMergeCommit,
+    /// Hook that is invoked by `git-commit`.
     PrePrepareCommitMsg,
+    /// Hook that is invoked by `git-commit`.
     CommitMsg,
+    /// Hook that is invoked by `git-commit`.
     PostCommit,
+    /// Hook that is invoked by `git-rebase`.
     PreRebase,
+    /// Hook that is invoked by `git-checkout`.
     PostCheckout,
+    /// Hook that is invoked by `git-merge`.
     PostMerge,
+    /// Hook that is invoked by `git-push`.
     PrePush,
+    /// Hook that is invoked by `git-gc`.
     PreAutoGc,
+    /// Hook that is invoked by commands that rewrite commits.
     PostRewrite,
+    /// Hook that is invoked by `git-send-email`.
     SendemailValidate,
+    /// Hook that is invoked by `git-fsmonitor--daemon`.
     FsmonitorWatchman,
+    /// Hook that is invoked by `git-p4`.
     P4Changelist,
+    /// Hook that is invoked by `git-p4`.
     P4PrepareChangelist,
+    /// Hook that is invoked by `git-p4`.
     P4Postchangelist,
+    /// Hook that is invoked by `git-p4`.
     P4PreSubmit,
+    /// Hook that is invoked by `git-update-index`.
     PostIndexChange,
 }
 
@@ -276,9 +330,13 @@ impl fmt::Display for GitHookType {
 #[serde(deny_unknown_fields, untagged)]
 pub enum GitHook {
     /// Direct script string that will be executed
-    Script { script: String },
+    Script { /// The script content to execute
+        script: String
+    },
     /// Path to a script file that will be executed
-    File { path: PathBuf },
+    File { /// The path to the script file
+        path: PathBuf
+    },
 }
 
 /// # MonoRepoPackage
@@ -361,6 +419,10 @@ impl Default for MonoRepoPackage {
 }
 
 impl MonoRepoPackage {
+    /// Returns the path to the changelog file for this package.
+    ///
+    /// If a custom changelog path is configured, it returns that path.
+    /// Otherwise, it returns the default path: `<package_path>/CHANGELOG.md`.
     pub fn changelog_path(&self) -> PathBuf {
         self.changelog_path
             .as_ref()
@@ -440,6 +502,19 @@ pub struct AuthorSetting {
     pub username: String,
 }
 
+/// Looks up the username for a given Git commit author signature.
+///
+/// This function searches through the configured author mappings to find
+/// a match for the given author signature (typically an email address).
+///
+/// # Arguments
+///
+/// * `author` - The Git commit signature (email address) to look up
+///
+/// # Returns
+///
+/// * `Some(&str)` - The corresponding username if found
+/// * `None` - If no mapping is found for the given signature
 pub fn commit_username(author: &str) -> Option<&'static str> {
     SETTINGS
         .changelog
@@ -449,6 +524,11 @@ pub fn commit_username(author: &str) -> Option<&'static str> {
         .map(|author| author.username.as_str())
 }
 
+/// Returns the path to the changelog file as configured in settings.
+///
+/// # Returns
+///
+/// * `&'static PathBuf` - The path to the changelog file
 pub fn changelog_path() -> &'static PathBuf {
     &SETTINGS.changelog.path
 }
@@ -485,6 +565,14 @@ impl Settings {
         repository.try_into()
     }
 
+    /// Loads and merges commit types configuration.
+    ///
+    /// This method combines default commit types with any custom configurations
+    /// defined in the settings, applying overrides where specified.
+    ///
+    /// # Returns
+    ///
+    /// * `HashMap<CommitType, CommitConfig>` - A map of commit types to their configurations
     pub fn load_commit_types(&self) -> HashMap<CommitType, CommitConfig> {
         let commit_settings = self.commit_types.clone();
         let mut custom_types = HashMap::new();
@@ -513,6 +601,11 @@ impl Settings {
             .collect()
     }
 
+    /// Returns the configured commit scopes, if any.
+    ///
+    /// # Returns
+    ///
+    /// * `Option<Vec<String>>` - List of valid commit scopes, or None if not configured
     pub fn commit_scopes(&self) -> Option<Vec<String>> {
         self.scopes.clone()
     }
@@ -533,6 +626,11 @@ impl Settings {
         }
     }
 
+    /// Creates a template context for remote changelog generation.
+    ///
+    /// # Returns
+    ///
+    /// * `Option<RemoteContext>` - Context for remote template rendering, or None if not configured
     pub fn get_template_context(&self) -> Option<RemoteContext> {
         let remote = self.changelog.remote.as_ref().cloned();
         let repository = self.changelog.repository.as_ref().cloned();
@@ -541,6 +639,11 @@ impl Settings {
         RemoteContext::try_new(remote, repository, owner)
     }
 
+    /// Gets the changelog template for the main repository.
+    ///
+    /// # Returns
+    ///
+    /// * `Result<Template, ChangelogError>` - The changelog template
     pub fn get_changelog_template(&self) -> Result<Template, ChangelogError> {
         let context = self.get_template_context();
         let template = self.changelog.template.as_deref().unwrap_or("default");
@@ -549,6 +652,11 @@ impl Settings {
         Template::from_arg(template, context, false)
     }
 
+    /// Gets the changelog template for package changelogs in monorepos.
+    ///
+    /// # Returns
+    ///
+    /// * `Result<Template, ChangelogError>` - The package changelog template
     pub fn get_package_changelog_template(&self) -> Result<Template, ChangelogError> {
         let context = self.get_template_context();
         let template = self
@@ -567,6 +675,11 @@ impl Settings {
         Template::from_arg(template, context, false)
     }
 
+    /// Gets the changelog template for monorepo changelogs.
+    ///
+    /// # Returns
+    ///
+    /// * `Result<Template, ChangelogError>` - The monorepo changelog template
     pub fn get_monorepo_changelog_template(&self) -> Result<Template, ChangelogError> {
         let context = self.get_template_context();
         let template = self
@@ -585,6 +698,11 @@ impl Settings {
         Template::from_arg(template, context, false)
     }
 
+    /// Returns the version separator for monorepo package tags.
+    ///
+    /// # Returns
+    ///
+    /// * `Option<&str>` - The separator string, or None if monorepo is not configured
     pub fn monorepo_separator(&self) -> Option<&str> {
         if self
             .monorepo
@@ -598,6 +716,11 @@ impl Settings {
         }
     }
 
+    /// Returns an iterator over all package paths in the monorepo.
+    ///
+    /// # Returns
+    ///
+    /// * `impl Iterator<Item = &Path>` - Iterator over package paths
     pub fn package_paths(&self) -> impl Iterator<Item = &Path> {
         self.monorepo
             .as_ref()
