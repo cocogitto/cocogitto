@@ -1,0 +1,82 @@
+[package]
+name = "cocogitto"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+readme = "../../README.md"
+license = "MIT"
+repository = "https://github.com/cocogitto/cocogitto"
+categories = ["command-line-utilities", "development-tools"]
+keywords = ["git", "conventional-commit", "changelog", "semver"]
+description = """
+Cocogitto is a set of cli tools for the conventional commit
+and semver specifications.
+"""
+
+[dependencies]
+git2.workspace = true
+anyhow.workspace = true
+colored.workspace = true
+chrono.workspace = true
+config.workspace = true
+edit.workspace = true
+itertools.workspace = true
+serde.workspace = true
+tempfile.workspace = true
+semver.workspace = true
+shell-words.workspace = true
+which.workspace = true
+once_cell.workspace = true
+toml.workspace = true
+clap = { workspace =  true, optional = true }
+clap_complete = { workspace =  true, optional = true }
+clap_mangen = { workspace =  true, optional = true }
+clap_complete_nushell = { workspace =  true, optional = true }
+conventional_commit_parser.workspace = true
+pest.workspace = true
+pest_derive.workspace = true
+tera.workspace = true
+globset.workspace = true
+log.workspace = true
+stderrlog.workspace = true
+cog_schemars = { workspace =  true, optional = true }
+serde_json = { workspace =  true, optional = true }
+maplit.workspace = true
+indexmap.workspace = true
+
+[dev-dependencies]
+assert_cmd.workspace = true
+predicates.workspace = true
+indoc.workspace = true
+speculoos.workspace = true
+pretty_assertions.workspace = true
+sealed_test.workspace = true
+cmd_lib.workspace = true
+serde_json.workspace = true
+
+[features]
+default = ["cli"]
+cli = ["clap", "clap_complete", "clap_mangen", "clap_complete_nushell"]
+docgen = ["clap", "cog_schemars", "serde_json"]
+
+[lib]
+name = "cocogitto"
+path = "src/lib.rs"
+
+[[bin]]
+name = "cog"
+required-features = ["clap", "clap_complete", "clap_mangen"]
+
+[[bin]]
+name = "cog-doc"
+required-features = ["docgen"]
+
+[[test]]
+name = "all"
+path = "tests/common.rs"
+
+[package.metadata.binstall]
+pkg-url = "{ repo }/releases/download/{ version }/{ name }-{ version }-{ target }.tar.gz"
+bin-dir = "{ target }/{ bin }{ binary-ext }"
+pkg-fmt = "tgz"
