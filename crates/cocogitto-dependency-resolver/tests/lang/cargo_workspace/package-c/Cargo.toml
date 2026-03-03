@@ -1,0 +1,8 @@
+[package]
+name = "package-c"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+package-d.workspace = true
+package-e.workspace = true

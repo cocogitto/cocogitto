@@ -1,0 +1,12 @@
+{
+  "name": "npm-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "package-a",
+    "package-b",
+    "package-c",
+    "package-d",
+    "package-e"
+  ]
+}
