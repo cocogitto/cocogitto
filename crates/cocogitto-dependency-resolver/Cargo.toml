@@ -9,8 +9,17 @@ repository = "https://github.com/cocogitto/cocogitto"
 description = "Dependency resolver for Cocogitto"
 
 [dependencies]
-# Add dependencies here as needed
+cargo_metadata.workspace = true
+petgraph.workspace = true
+speculoos.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde-xml-rs.workspace = true
 
-[lib]
-name = "cocogitto_dependency_resolver"
-path = "src/lib.rs"
+[[test]]
+name = "cargo_workspace"
+path = "tests/resolver_tests.rs"
+
+[[example]]
+name = "maven"
+path = "example/maven.rs"
