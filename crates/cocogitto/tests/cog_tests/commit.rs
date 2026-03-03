@@ -1,0 +1,489 @@
+use std::process::Command;
+use std::{ffi::OsStr, fs};
+
+use crate::helpers::*;
+
+use anyhow::Result;
+use assert_cmd::prelude::*;
+use cmd_lib::run_cmd;
+use indoc::{formatdoc, indoc};
+use pretty_assertions::assert_eq;
+use sealed_test::prelude::*;
+
+#[sealed_test]
+fn commit_ok() -> Result<()> {
+    // Arrange
+    git_init()?;
+    git_add("content", "test_file")?;
+
+    // Act
+    Command::new(assert_cmd::cargo_bin!("cog"))
+        .arg("commit")
+        .arg("feat")
+        .arg("this is a commit message")
+        .arg("scope")
+        // Assert
+        .assert()
+        .success();
+    Ok(())
+}
+
+#[sealed_test]
+fn commit_fail_if_not_a_repository() -> Result<()> {
+    // Act
+    let output = Command::new(assert_cmd::cargo_bin!("cog"))
+        .arg("commit")
+        .arg("feat")
+        .arg("this is a commit message")
+        .arg("scope")
+        .output()?;
+
+    let stderr = String::from_utf8(output.stderr)?;
+
+    // Assert
+    let current_dir = std::env::current_dir()?;
+    let current_dir: &OsStr = current_dir.as_os_str();
+    let current_dir = current_dir.to_str().expect("utf8 error");
+
+    assert_eq!(
+        stderr,
+        formatdoc!(
+            "Error: failed to open repository
+
+        cause: could not find repository at '{}'; class=Repository (6); code=NotFound (-3)
+
+        ",
+            current_dir
+        )
+    );
+    Ok(())
+}
+
+#[sealed_test]
+fn unstaged_changes_commit_err() -> Result<()> {
+    // Arrange
+    git_init()?;
+    std::fs::write("test_file", "content")?;
+
+    // Act
+    let output = Command::new(assert_cmd::cargo_bin!("cog"))
+        .arg("commit")
+        .arg("feat")
+        .arg("this is a commit message")
+        .arg("scope")
+        .output()?;
+
+    let stderr = String::from_utf8(output.stderr)?;
+
+    // Assert
+    assert_eq!(
+        stderr,
+        indoc!(
+            "Error: Untracked files :
+                \tnew: test_file
+
+                nothing added to commit but untracked files present (use \"git add\" to track)\n\n"
+        )
+    );
+
+    Ok(())
+}
+
+#[sealed_test]
+fn untracked_changes_commit_ok() -> Result<()> {
+    // Arrange
+    git_init()?;
+    git_add("content", "staged")?;
+    std::fs::write("untracked", "content")?;
+
+    // Act
+    Command::new(assert_cmd::cargo_bin!("cog"))
+        .arg("commit")
+        .arg("feat")
+        .arg("this is a commit message")
+        .arg("scope")
+        // Assert
+        .assert()
+        .success();
+    Ok(())
+}
+
+#[sealed_test]
+fn empty_commit_err() -> Result<()> {
+    // Arrange
+    git_init()?;
+
+    // Act
+    let output = Command::new(assert_cmd::cargo_bin!("cog"))
+        .arg("commit")
+        .arg("feat")
+        .arg("this is a commit message")
+        .arg("scope")
+        .output()?;
+
+    let stderr = String::from_utf8(output.stderr)?;
+
+    // Assert
+    assert_eq!(
+        stderr,
+        "Error: nothing to commit (create/copy files and use \"git add\" to track)\n\n"
+    );
+
+    Ok(())
+}
+
+#[sealed_test]
+fn commit_with_default_skip_ci_ok() -> Result<()> {
+    // Arrange
+    git_init()?;
+    git_add("content", "test_file")?;
+
+    // Act
+    Command::new(assert_cmd::cargo_bin!("cog"))
+        .arg("commit")
+        .arg("--skip-ci")
+        .arg("feat")
+        .arg("this is a commit message")
+        .arg("scope")
+        // Assert
+        .assert()
+        .success();
+
+    let commit_message = git_log_head_message()?;
+
+    assert_eq!(
+        commit_message,
+        "feat(scope): this is a commit message [skip ci]"
+    );
+
+    Ok(())
+}
+
+#[sealed_test]
+fn commit_with_cog_toml_defined_skip_ci_ok() -> Result<()> {
+    // Arrange
+    git_init()?;
+    git_add("content", "test_file")?;
+    git_add("skip_ci = \"[ci-skip]\" ", "cog.toml")?;
+
+    // Act
+    Command::new(assert_cmd::cargo_bin!("cog"))
+        .arg("commit")
+        .arg("--skip-ci")
+        .arg("feat")
+        .arg("this is a commit message")
+        .arg("scope")
+        // Assert
+        .assert()
+        .success();
+
+    let commit_message = git_log_head_message()?;
+
+    assert_eq!(
+        commit_message,
+        "feat(scope): this is a commit message [ci-skip]"
+    );
+
+    Ok(())
+}
+
+#[sealed_test]
+fn commit_with_skip_ci_override_option_takes_precedence() -> Result<()> {
+    // Arrange
+    git_init()?;
+    git_add("content", "test_file")?;
+    git_add("skip_ci = \"[ci-skip]\" ", "cog.toml")?;
+
+    // Act
+    Command::new(assert_cmd::cargo_bin!("cog"))
+        .arg("commit")
+        .arg("--skip-ci-override")
+        .arg("[skip-ci-override]")
+        .arg("feat")
+        .arg("this is a commit message")
+        .arg("scope")
+        // Assert
+        .assert()
+        .success();
+
+    let commit_message = git_log_head_message()?;
+
+    assert_eq!(
+        commit_message,
+        "feat(scope): this is a commit message [skip-ci-override]"
+    );
+
+    Ok(())
+}
+
+#[sealed_test]
+fn add_option_git_commit_ok() -> Result<()> {
+    // Arrange
+    git_init()?;
+    run_cmd!(
+        echo "new file" > new_file;
+        echo "dot file" > .dotfile;
+    )?;
+
+    Command::new(assert_cmd::cargo_bin!("cog"))
+        .arg("commit")
+        .arg("-a")
+        .arg("feat")
+        .arg("feature")
+        .assert()
+        .success();
+
+    let commit_message = git_log_head_message()?;
+
+    assert_eq!(commit_message, "feat: feature");
+
+    Command::new("git")
+        .arg("status")
+        .arg("-s")
+        .assert()
+        .success()
+        .stdout(indoc!(""));
+
+    Ok(())
+}
+
+#[sealed_test]
+fn update_option_git_commit_ok() -> Result<()> {
+    // Arrange
+    git_init()?;
+
+    run_cmd!(
+        echo "existing file" > existing_file;
+        git add .;
+        git commit -m "feat: existing file";
+        echo "update existing file" > existing_file;
+        echo "new file" > new_file;
+    )?;
+
+    Command::new(assert_cmd::cargo_bin!("cog"))
+        .arg("commit")
+        .arg("-u")
+        .arg("feat")
+        .arg("update existing file")
+        .assert()
+        .success();
+
+    let commit_message = git_log_head_message()?;
+
+    assert_eq!(commit_message, "feat: update existing file");
+
+    Command::new("git")
+        .arg("status")
+        .arg("-s")
+        .assert()
+        .success()
+        .stdout(indoc!("?? new_file\n"));
+
+    Ok(())
+}
+
+#[sealed_test]
+fn should_error_on_disabled_commit_error() -> Result<()> {
+    // Arrange
+    git_init()?;
+    git_add("content", "test_file")?;
+    let settings = r#"
+        [commit_types]
+        perf = {}
+        "#;
+
+    fs::write("cog.toml", settings)?;
+
+    // Act
+    Command::new(assert_cmd::cargo_bin!("cog"))
+        .arg("commit")
+        .arg("perf")
+        .arg("fails at the speed of light")
+        // Assert
+        .assert()
+        .failure();
+    Ok(())
+}
+
+#[sealed_test]
+/// Creating cog.toml with empty content. This makes sure that a cog.toml without the `scopes`
+/// array still allows an arbitrary commit scope.
+fn allow_arbitrary_scope_when_not_constrained() -> Result<()> {
+    git_init()?;
+    git_add("content", "test_file")?;
+
+    fs::write("cog.toml", "")?;
+
+    Command::new(assert_cmd::cargo_bin!("cog"))
+        .arg("commit")
+        .arg("test")
+        .arg("arbitrary commit scopes are allowed")
+        .arg("arbitrary_scope")
+        .assert()
+        .success();
+    Ok(())
+}
+
+#[sealed_test]
+/// Creating cog.toml with an empty definition of scopes. The effect is that there are no valid
+/// scopes, hence scopes are disallowed for use entirely.
+fn empty_scopes_disallow_scopes() -> Result<()> {
+    git_init()?;
+    git_add("content", "test_file")?;
+
+    let settings = r#"
+        scopes = []
+    "#;
+    fs::write("cog.toml", settings)?;
+
+    Command::new(assert_cmd::cargo_bin!("cog"))
+        .arg("commit")
+        .arg("test")
+        .arg("scopes are disabled")
+        .arg("arbitrary_scope")
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains(
+            "Commit scope `arbitrary_scope` not allowed",
+        ));
+    Ok(())
+}
+
+#[sealed_test]
+/// Create the cog.toml with a valid scope "valid_scope". This is the only scope that should be
+/// allowed.
+fn only_allow_defined_scope() -> Result<()> {
+    git_init()?;
+    git_add("content", "test_file")?;
+
+    let settings = r#"
+        scopes = ["valid_scope"]
+    "#;
+    fs::write("cog.toml", settings)?;
+
+    Command::new(assert_cmd::cargo_bin!("cog"))
+        .arg("commit")
+        .arg("test")
+        .arg("only one valid scope")
+        .arg("valid_scope")
+        .assert()
+        .success();
+    Ok(())
+}
+
+#[sealed_test]
+/// Defining scopes in cog.toml and using an undefined one should error.
+fn should_error_on_disallowed_scope() -> Result<()> {
+    git_init()?;
+    git_add("content", "test_file")?;
+    let settings = r#"
+        scopes = ["valid_scope"]
+    "#;
+    fs::write("cog.toml", settings)?;
+
+    Command::new(assert_cmd::cargo_bin!("cog"))
+        .arg("commit")
+        .arg("feat")
+        .arg("fails due to invalid commit scope")
+        .arg("invalid_scope")
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains(
+            "Commit scope `invalid_scope` not allowed",
+        ));
+    Ok(())
+}
+
+#[sealed_test]
+#[cfg(target_os = "linux")]
+fn should_run_git_hooks() -> Result<()> {
+    git_init()?;
+    git_add("content", "test_file")?;
+
+    run_cmd!(
+       echo "echo 'running pre-commit hook'" > .git/hooks/pre-commit;
+       echo "echo 'running prepare-commit-msg hook'" > .git/hooks/prepare-commit-msg;
+       echo "echo 'running commit-msg hook'" > .git/hooks/commit-msg;
+       echo "echo 'running post-commit hook'" > .git/hooks/post-commit;
+       chmod +x .git/hooks/pre-commit;
+       chmod +x .git/hooks/prepare-commit-msg;
+       chmod +x .git/hooks/commit-msg;
+       chmod +x .git/hooks/post-commit;
+    )?;
+
+    Command::new(assert_cmd::cargo_bin!("cog"))
+        .arg("commit")
+        .arg("feat")
+        .arg("test commit")
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("running pre-commit hook"))
+        .stdout(predicates::str::contains("running prepare-commit-msg hook"))
+        .stdout(predicates::str::contains("running commit-msg hook"))
+        .stdout(predicates::str::contains("running post-commit hook"));
+
+    Ok(())
+}
+
+#[sealed_test]
+#[cfg(target_os = "linux")]
+fn should_run_pre_commit_hook_with_custom_hooks_path() -> Result<()> {
+    // Arrange
+    git_init()?;
+    git_add("content", "test_file")?;
+
+    run_cmd!(
+       git config --local core.hooksPath .husky;
+       mkdir .husky;
+       echo "echo 'running pre-commit hook'" > .husky/pre-commit;
+       echo "echo 'running prepare-commit-msg hook'" > .husky/prepare-commit-msg;
+       echo "echo 'running commit-msg hook'" > .husky/commit-msg;
+       echo "echo 'running post-commit hook'" > .husky/post-commit;
+       chmod +x .husky/pre-commit;
+       chmod +x .husky/prepare-commit-msg;
+       chmod +x .husky/commit-msg;
+       chmod +x .husky/post-commit;
+    )?;
+
+    // Act
+    Command::new(assert_cmd::cargo_bin!("cog"))
+        .arg("commit")
+        .arg("feat")
+        .arg("test commit")
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("running pre-commit hook"))
+        .stdout(predicates::str::contains("running prepare-commit-msg hook"))
+        .stdout(predicates::str::contains("running commit-msg hook"))
+        .stdout(predicates::str::contains("running post-commit hook"));
+
+    // Assert
+    Ok(())
+}
+
+#[sealed_test]
+fn commit_in_git_worktree_should_work() -> Result<()> {
+    // Arrange
+    git_init()?;
+    git_add("content", "test_file")?;
+    git_commit("feat: initial commit")?;
+
+    let worktree_name = format!("../worktree-test-{}", std::process::id());
+    run_cmd!(git worktree add $worktree_name)?;
+    std::env::set_current_dir(&worktree_name)?;
+    git_add("worktree content", "worktree_file")?;
+
+    // Act
+    Command::new(assert_cmd::cargo_bin!("cog"))
+        .arg("commit")
+        .arg("feat")
+        .arg("worktree commit")
+        .assert()
+        .success();
+
+    // Assert
+    let commit_message = git_log_head_message()?;
+    assert_eq!(commit_message, "feat: worktree commit");
+
+    Ok(())
+}

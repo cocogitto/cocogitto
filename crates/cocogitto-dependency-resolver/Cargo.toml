@@ -1,0 +1,28 @@
+[package]
+name = "cocogitto-dependency-resolver"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license = "MIT"
+repository = "https://github.com/cocogitto/cocogitto"
+description = "Dependency resolver for Cocogitto"
+
+[dependencies]
+cargo_metadata.workspace = true
+petgraph.workspace = true
+speculoos.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde-xml-rs.workspace = true
+
+[dev-dependencies]
+anyhow.workspace = true
+
+[[test]]
+name = "cargo_workspace"
+path = "tests/resolver_tests.rs"
+
+[[example]]
+name = "maven"
+path = "example/maven.rs"

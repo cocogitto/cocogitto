@@ -321,3 +321,74 @@ branch_whitelist = [
   "release/**"
 ]
 ```
+
+## Monorepo Dependency Resolution
+
+When working with monorepos that contain multiple packages with dependencies between them, Cocogitto can automatically determine the correct bump order based on package dependencies. This ensures that packages are bumped in the correct order to respect dependency relationships.
+
+### Dependency Resolver Configuration
+
+To enable dependency-based bump ordering, configure a dependency resolver in your `cog.toml`:
+
+```toml
+[monorepo]
+resolver = "Cargo"  # or "Maven", "Npm"
+
+[monorepo.packages]
+my-package = { path = "packages/my-package" }
+my-dependency = { path = "packages/my-dependency" }
+```
+
+### Supported Resolvers
+
+Cocogitto supports several dependency resolvers:
+
+- **Cargo**: For Rust projects using Cargo.toml
+- **Maven**: For Java projects using pom.xml
+- **Npm**: For JavaScript/TypeScript projects using package.json
+
+The resolver will automatically detect the appropriate manifest files and use them to determine package dependencies.
+
+### How It Works
+
+1. **Dependency Analysis**: The resolver analyzes dependency relationships between packages
+2. **Topological Sorting**: Packages are sorted in an order that respects dependencies (dependencies are bumped before dependents)
+3. **Ordered Bumping**: Packages are bumped in the determined order
+
+### Example
+
+Given a monorepo with these packages and dependencies:
+
+```
+my-app → my-lib → my-core
+```
+
+Where `my-app` depends on `my-lib`, and `my-lib` depends on `my-core`, the bump order will be:
+
+1. `my-core` (no dependencies)
+2. `my-lib` (depends on `my-core`)
+3. `my-app` (depends on `my-lib`)
+
+### Manual Ordering
+
+If you prefer to manually specify the bump order, you can use the `bump_order` field:
+
+```toml
+[monorepo.packages]
+my-core = { path = "packages/my-core", bump_order = 1 }
+my-lib = { path = "packages/my-lib", bump_order = 2 }
+my-app = { path = "packages/my-app", bump_order = 3 }
+```
+
+When both dependency resolution and manual ordering are present, dependency resolution takes precedence.
+
+### Benefits
+
+- **Automatic Ordering**: No need to manually specify bump order in most cases
+- **Dependency Awareness**: Ensures packages are bumped in the correct dependency order
+- **Flexible Configuration**: Works with different package managers and build systems
+- **Fallback Support**: If no resolver is configured, falls back to manual ordering or alphabetical order
+
+::: tip
+The dependency resolver is particularly useful in large monorepos where manually tracking dependency relationships would be error-prone and time-consuming.
+:::
