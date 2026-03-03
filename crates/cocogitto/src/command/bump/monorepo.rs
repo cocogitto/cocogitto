@@ -105,8 +105,9 @@ impl CocoGitto {
         // Run per package post hooks
         for bump in bumps {
             let package = SETTINGS
-                .packages
-                .get(&bump.package_name)
+                .monorepo
+                .as_ref()
+                .and_then(|m| m.packages.get(&bump.package_name))
                 .expect("package exists");
 
             self.run_hooks(
@@ -267,8 +268,9 @@ impl CocoGitto {
         // Run per package post hooks
         for bump in bumps {
             let package = SETTINGS
-                .packages
-                .get(&bump.package_name)
+                .monorepo
+                .as_ref()
+                .and_then(|m| m.packages.get(&bump.package_name))
                 .expect("package exists");
             self.run_hooks(
                 HookRunOptions::post_bump()
@@ -402,7 +404,12 @@ impl CocoGitto {
 
     pub fn get_current_packages(&self) -> Result<Vec<PackageData>> {
         let mut packages = vec![];
-        for (package_name, package) in SETTINGS.packages.iter() {
+        for (package_name, package) in SETTINGS
+            .monorepo
+            .as_ref()
+            .map(|m| m.packages.iter())
+            .unwrap_or_default()
+        {
             let tag = match self.repository.get_latest_package_tag(package_name) {
                 Ok(tag) => tag,
                 Err(TagError::NoTag) => Tag::default(),
@@ -420,57 +427,61 @@ impl CocoGitto {
 
     fn get_packages_bumps(&self, opts: &BumpOptions) -> Result<Vec<PackageBumpData>> {
         let mut package_bumps = vec![];
-        let mut packages: Vec<(&String, &MonoRepoPackage)> = SETTINGS.packages.iter().collect();
+        let mut packages: Vec<(&String, &MonoRepoPackage)> = SETTINGS
+            .monorepo
+            .as_ref()
+            .map(|m| m.packages.iter().collect())
+            .unwrap_or_default();
 
-        if packages.iter().any(|(_, p)| p.resolver.is_some()) {
-            use cocogitto_dependency_resolver::DepGraphResolver;
+        if let Some(monorepo) = &SETTINGS.monorepo {
+            if monorepo.resolver.is_some() {
+                use cocogitto_dependency_resolver::DepGraphResolver;
 
-            let resolver_name = packages
-                .iter()
-                .find_map(|(_, p)| p.resolver.as_deref())
-                .unwrap_or("Cargo"); // Default to Cargo if no specific resolver
+                let resolver_name = monorepo.resolver.as_deref().unwrap_or("Cargo");
 
-            let resolver = match resolver_name {
-                "Cargo" => DepGraphResolver::Cargo,
-                "Maven" => DepGraphResolver::Maven,
-                "Npm" => DepGraphResolver::Npm,
-                _ => DepGraphResolver::Cargo, // Default fallback
-            };
+                let resolver = match resolver_name {
+                    "Cargo" => DepGraphResolver::Cargo,
+                    "Maven" => DepGraphResolver::Maven,
+                    "Npm" => DepGraphResolver::Npm,
+                    _ => DepGraphResolver::Cargo, // Default fallback
+                };
 
-            let manifest_path = self.repository.get_repo_dir().and_then(|repo_path| {
-                // Try common manifest files
-                let cargo_toml = repo_path.join("Cargo.toml");
-                if cargo_toml.exists() {
-                    return Some(cargo_toml);
-                }
+                let manifest_path = self.repository.get_repo_dir().and_then(|repo_path| {
+                    // Try common manifest files
+                    let cargo_toml = repo_path.join("Cargo.toml");
+                    if cargo_toml.exists() {
+                        return Some(cargo_toml);
+                    }
 
-                let pom_xml = repo_path.join("pom.xml");
-                if pom_xml.exists() {
-                    return Some(pom_xml);
-                }
+                    let pom_xml = repo_path.join("pom.xml");
+                    if pom_xml.exists() {
+                        return Some(pom_xml);
+                    }
 
-                let package_json = repo_path.join("package.json");
-                if package_json.exists() {
-                    return Some(package_json);
-                }
+                    let package_json = repo_path.join("package.json");
+                    if package_json.exists() {
+                        return Some(package_json);
+                    }
 
-                None
-            });
-
-            if let Some(manifest_path) = manifest_path {
-                let dependencies = resolver.topological_sort(manifest_path.to_str().unwrap_or(""));
-
-                let order_map: HashMap<&str, usize> = dependencies
-                    .iter()
-                    .enumerate()
-                    .map(|(i, name)| (name.as_str(), i))
-                    .collect();
-
-                packages.sort_by(|a, b| {
-                    let a_order = order_map.get(a.0.as_str()).unwrap_or(&usize::MAX);
-                    let b_order = order_map.get(b.0.as_str()).unwrap_or(&usize::MAX);
-                    a_order.cmp(b_order)
+                    None
                 });
+
+                if let Some(manifest_path) = manifest_path {
+                    let dependencies =
+                        resolver.topological_sort(manifest_path.to_str().unwrap_or(""));
+
+                    let order_map: HashMap<&str, usize> = dependencies
+                        .iter()
+                        .enumerate()
+                        .map(|(i, name)| (name.as_str(), i))
+                        .collect();
+
+                    packages.sort_by(|a, b| {
+                        let a_order = order_map.get(a.0.as_str()).unwrap_or(&usize::MAX);
+                        let b_order = order_map.get(b.0.as_str()).unwrap_or(&usize::MAX);
+                        a_order.cmp(b_order)
+                    });
+                }
             }
         } else {
             packages.sort_by(|a, b| a.1.bump_order.cmp(&b.1.bump_order));
@@ -525,8 +536,9 @@ impl CocoGitto {
             let tag = &bump.new_version.prefixed_tag;
 
             let package = SETTINGS
-                .packages
-                .get(package_name.as_str())
+                .monorepo
+                .as_ref()
+                .and_then(|m| m.packages.get(package_name.as_str()))
                 .expect("package exists");
 
             if !SETTINGS.disable_changelog {

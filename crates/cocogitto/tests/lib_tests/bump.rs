@@ -10,7 +10,7 @@ use speculoos::prelude::*;
 
 use crate::helpers::*;
 use cocogitto::command::bump::{BumpOptions, PackageBumpOptions};
-use cocogitto::settings::{MonoRepoPackage, Settings};
+use cocogitto::settings::{MonoRepoPackage, MonorepoConfig, Settings};
 use cocogitto::{
     conventional::version::{IncrementCommand, PreCommand},
     CocoGitto,
@@ -168,7 +168,11 @@ fn package_bump_ok() -> Result<()> {
     };
 
     init_monorepo(&mut settings)?;
-    let package = settings.packages.get("one").unwrap();
+    let package = settings
+        .monorepo
+        .as_ref()
+        .and_then(|m| m.packages.get("one"))
+        .unwrap();
     let mut cocogitto = CocoGitto::get()?;
 
     // Act
@@ -209,7 +213,10 @@ fn consecutive_package_bump_ok() -> Result<()> {
     packages.insert("thumbor".to_owned(), thumbor());
 
     let settings = Settings {
-        packages,
+        monorepo: Some(MonorepoConfig {
+            packages,
+            ..Default::default()
+        }),
         ignore_merge_commits: true,
         ..Default::default()
     };
@@ -292,7 +299,14 @@ fn ordered_package_bump() -> Result<()> {
         ..Default::default()
     };
 
-    settings.packages.insert("jenkins".to_owned(), jenkins());
+    settings.monorepo = Some(MonorepoConfig {
+        packages: {
+            let mut packages = HashMap::new();
+            packages.insert("jenkins".to_owned(), jenkins());
+            packages
+        },
+        ..Default::default()
+    });
 
     let thumbor = || MonoRepoPackage {
         path: PathBuf::from("thumbor"),
@@ -302,7 +316,18 @@ fn ordered_package_bump() -> Result<()> {
         ..Default::default()
     };
 
-    settings.packages.insert("thumbor".to_owned(), thumbor());
+    if let Some(monorepo) = settings.monorepo.as_mut() {
+        monorepo.packages.insert("thumbor".to_owned(), thumbor());
+    } else {
+        settings.monorepo = Some(MonorepoConfig {
+            packages: {
+                let mut packages = HashMap::new();
+                packages.insert("thumbor".to_owned(), thumbor());
+                packages
+            },
+            ..Default::default()
+        });
+    }
 
     let settings = toml::to_string(&settings)?;
 
@@ -499,7 +524,10 @@ fn auto_bump_package_only_ok() -> Result<()> {
     packages.insert("thumbor".to_owned(), thumbor());
 
     let settings = Settings {
-        packages,
+        monorepo: Some(MonorepoConfig {
+            packages,
+            ..Default::default()
+        }),
         generate_mono_repository_global_tag: false,
         ..Default::default()
     };
@@ -570,7 +598,10 @@ fn auto_bump_global_only_ok() -> Result<()> {
     packages.insert("thumbor".to_owned(), thumbor());
 
     let settings = Settings {
-        packages,
+        monorepo: Some(MonorepoConfig {
+            packages,
+            ..Default::default()
+        }),
         generate_mono_repository_package_tags: false,
         ..Default::default()
     };
@@ -781,7 +812,10 @@ fn bump_no_error_should_be_thrown_on_only_chore_docs_commit() -> Result<()> {
     packages.insert("thumbor".to_owned(), thumbor());
 
     let settings = Settings {
-        packages,
+        monorepo: Some(MonorepoConfig {
+            packages,
+            ..Default::default()
+        }),
         ignore_merge_commits: true,
         ..Default::default()
     };
@@ -915,7 +949,10 @@ fn error_on_no_conventional_commits_found_for_package() -> Result<()> {
     packages.insert("jenkins".to_owned(), jenkins());
 
     let settings = Settings {
-        packages,
+        monorepo: Some(MonorepoConfig {
+            packages,
+            ..Default::default()
+        }),
         ignore_merge_commits: true,
         ..Default::default()
     };
@@ -988,7 +1025,10 @@ fn bump_with_unconventional_and_conventional_commits_found_for_packages() -> Res
     packages.insert("thumbor".to_owned(), thumbor());
 
     let settings = Settings {
-        packages,
+        monorepo: Some(MonorepoConfig {
+            packages,
+            ..Default::default()
+        }),
         ignore_merge_commits: true,
         ..Default::default()
     };

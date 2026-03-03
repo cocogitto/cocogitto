@@ -300,7 +300,7 @@ mod test {
     use crate::conventional::version::{Increment, IncrementCommand};
     use crate::git::repository::Repository;
     use crate::git::tag::Tag;
-    use crate::settings::{MonoRepoPackage, Settings};
+    use crate::settings::{MonoRepoPackage, MonorepoConfig, Settings};
     use crate::test_helpers::{git_init_no_gpg, git_tag};
 
     impl Commit {
@@ -806,7 +806,10 @@ mod test {
         );
 
         let settings = Settings {
-            packages,
+            monorepo: Some(MonorepoConfig {
+                packages,
+                ..Default::default()
+            }),
             ..Default::default()
         };
 

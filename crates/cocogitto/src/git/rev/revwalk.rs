@@ -16,7 +16,11 @@ impl Repository {
     ) -> Result<CommitIter<'_>, Git2Error> {
         let mut commit_range = self.revwalk_pkg(pattern, Some(package))?;
         let mut commits = vec![];
-        let package = SETTINGS.packages.get(package).expect("package exists");
+        let package = SETTINGS
+            .monorepo
+            .as_ref()
+            .and_then(|m| m.packages.get(package))
+            .expect("package exists");
         let package_path_filter = PackagePathFilter::from_package(package);
 
         for (oid_of, commit) in commit_range.into_iter() {
@@ -66,8 +70,10 @@ impl Repository {
         let mut commit_range = self.revwalk(pattern)?;
         let mut commits = vec![];
         let package_paths: Vec<_> = SETTINGS
-            .packages
-            .values()
+            .monorepo
+            .as_ref()
+            .map(|m| m.packages.values())
+            .unwrap_or_default()
             .map(|package| &package.path)
             .collect();
 
@@ -330,7 +336,10 @@ mod test {
         );
 
         let settings = Settings {
-            packages,
+            monorepo: Some(crate::settings::MonorepoConfig {
+                packages,
+                ..Default::default()
+            }),
             ..Default::default()
         };
 
@@ -473,7 +482,10 @@ mod test {
         );
 
         let settings = Settings {
-            packages,
+            monorepo: Some(crate::settings::MonorepoConfig {
+                packages,
+                ..Default::default()
+            }),
             ..Default::default()
         };
 

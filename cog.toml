@@ -100,6 +100,6 @@ authors = [
     { signature = "Lindner, Bernhard", username = "ba-lindner" },
 ]
 
-[packages]
+[monorepo.packages]
 cocogitto = { path = "crates/cocogitto" }
 cocogitto-dependency-resolver = { path = "crates/cocogitto-dependency-resolver" }
