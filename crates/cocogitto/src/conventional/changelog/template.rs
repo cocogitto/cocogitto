@@ -66,7 +66,12 @@ impl Template {
     }
 
     pub fn fallback(unified: bool) -> Self {
-        let kind = if SETTINGS.packages.is_empty() {
+        let kind = if SETTINGS
+            .monorepo
+            .as_ref()
+            .map(|m| m.packages.is_empty())
+            .unwrap_or(true)
+        {
             TemplateKind::Default
         } else if unified {
             TemplateKind::UnifiedDefault

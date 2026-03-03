@@ -285,7 +285,10 @@ mod test {
         let mut packages = HashMap::new();
         packages.insert("cog".to_string(), MonoRepoPackage::default());
         let settings = Settings {
-            packages,
+            monorepo: Some(crate::settings::MonorepoConfig {
+                packages,
+                ..Default::default()
+            }),
             ..Default::default()
         };
 
@@ -375,7 +378,10 @@ mod test {
         let mut packages = HashMap::new();
         packages.insert("cog".to_string(), MonoRepoPackage::default());
         let settings = Settings {
-            packages,
+            monorepo: Some(crate::settings::MonorepoConfig {
+                packages,
+                ..Default::default()
+            }),
             ..Default::default()
         };
 
@@ -575,7 +581,10 @@ mod test {
         let mut packages = HashMap::new();
         packages.insert("cog".to_string(), MonoRepoPackage::default());
         let settings = Settings {
-            packages,
+            monorepo: Some(crate::settings::MonorepoConfig {
+                packages,
+                ..Default::default()
+            }),
             ..Default::default()
         };
 
@@ -622,7 +631,10 @@ mod test {
         let mut packages = HashMap::new();
         packages.insert("cog".to_string(), MonoRepoPackage::default());
         let settings = Settings {
-            packages,
+            monorepo: Some(crate::settings::MonorepoConfig {
+                packages,
+                ..Default::default()
+            }),
             ..Default::default()
         };
 

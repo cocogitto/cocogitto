@@ -1208,7 +1208,7 @@ fn bump_prerelease_from_latest_pre_release_auto_3() -> Result<()> {
 fn bump_from_latest_pre_release_monorepo() -> Result<()> {
     // Arrange
     git_init()?;
-    git_add("packages.pkg.path = \"pkg\"", "cog.toml")?;
+    git_add("[monorepo.packages.pkg]\npath = \"pkg\"", "cog.toml")?;
     git_commit("chore: init")?;
     git_commit("feat: feature 1")?;
     git_tag("1.0.0-alpha.0")?;
@@ -1235,7 +1235,7 @@ fn bump_from_latest_pre_release_monorepo() -> Result<()> {
 fn bump_prerelease_from_latest_pre_release_monorepo() -> Result<()> {
     // Arrange
     git_init()?;
-    git_add("packages.pkg.path = \"pkg\"", "cog.toml")?;
+    git_add("[monorepo.packages.pkg]\npath = \"pkg\"", "cog.toml")?;
     git_commit("chore: init")?;
     git_commit("feat: feature 1")?;
     git_tag("1.0.0-alpha.0")?;
@@ -1267,10 +1267,10 @@ fn bump_prerelease_ignore_packages() -> Result<()> {
     git_add(
         indoc! {
             r#"
-            [packages.a]
+            [monorepo.packages.a]
             path = "a"
 
-            [packages.b]
+            [monorepo.packages.b]
             path = "b"
             "#
         },
@@ -1306,10 +1306,10 @@ fn major_bump_with_packages() -> Result<()> {
     git_add(
         indoc! {
             r#"
-            [packages.a]
+            [monorepo.packages.a]
             path = "a"
 
-            [packages.b]
+            [monorepo.packages.b]
             path = "b"
             "#
         },

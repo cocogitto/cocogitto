@@ -27,11 +27,11 @@ mod test {
         // Arrange
         let settings = formatdoc!(
             "
-            [packages.one]
+            [monorepo.packages.one]
             path = \"one\"
             changelog_path = \"one/CHANGELOG.md\"
 
-            [packages.two]
+            [monorepo.packages.two]
             path = \"two\"
             changelog_path = \"two/CHANGELOG.md\"
             "

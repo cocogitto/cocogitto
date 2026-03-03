@@ -188,7 +188,8 @@ mod tests {
         // Act
         let changelog_footer = ChangelogFooter::from(&footer);
 
-        // Assert
+        // Assert - since there's no author mapping in the test environment,
+        // the username should be None
         assert_that!(changelog_footer).matches(|ch| {
             matches!(
                 ch,

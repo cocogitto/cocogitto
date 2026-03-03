@@ -633,7 +633,7 @@ fn should_get_global_changelog() -> anyhow::Result<()> {
         repository = "test"
         owner = "test"
 
-        [packages]
+        [monorepo.packages]
         pkg1 = { path = "packages/pkg1" }
         pkg2 = { path = "packages/pkg2" }
         "#
@@ -976,7 +976,7 @@ fn changelog_monorepo_multi_versions() -> Result<()> {
         r#"
         tag_prefix = "v"
 
-        [packages]
+        [monorepo.packages]
         zz = { path = "zz" }
         "#
     );
@@ -1048,7 +1048,7 @@ fn unified_changelog() -> Result<()> {
     let today = Utc::now().date_naive();
     let cog = indoc!(
         r#"
-        [packages]
+        [monorepo.packages]
         a = { path = "a" }
         b = { path = "b" }
         "#
@@ -1113,7 +1113,7 @@ fn monorepo_changelog_default_template() -> Result<()> {
     let today = Utc::now().date_naive();
     let cog = indoc!(
         r#"
-        [packages]
+        [monorepo.packages]
         pkg = { path = "pkg" }
         "#
     );
