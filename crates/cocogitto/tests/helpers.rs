@@ -11,7 +11,7 @@ use speculoos::option::OptionAssertions;
 
 use cocogitto::get_config_path;
 use cocogitto::git::tag::Tag;
-use cocogitto::settings::{MonoRepoPackage, Settings};
+use cocogitto::settings::{MonoRepoPackage, MonorepoConfig, Settings};
 
 pub fn init_monorepo(settings: &mut Settings) -> Result<()> {
     let mut packages = HashMap::new();
@@ -22,7 +22,10 @@ pub fn init_monorepo(settings: &mut Settings) -> Result<()> {
             ..Default::default()
         },
     );
-    settings.packages = packages;
+    settings.monorepo = Some(MonorepoConfig {
+        packages,
+        ..Default::default()
+    });
     let settings = toml::to_string(&settings)?;
 
     git_init()?;

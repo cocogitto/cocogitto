@@ -44,7 +44,12 @@ fn git_hook_types() -> PossibleValuesParser {
 }
 
 fn packages() -> PossibleValuesParser {
-    let profiles = SETTINGS.packages.keys().map(|profile| -> &str { profile });
+    let profiles = SETTINGS
+        .monorepo
+        .as_ref()
+        .map(|m| m.packages.keys())
+        .unwrap_or_default()
+        .map(|profile| -> &str { profile });
 
     profiles.into()
 }
@@ -471,7 +476,11 @@ fn main() -> Result<()> {
             include_packages,
         } => {
             let mut cocogitto = CocoGitto::get()?;
-            let is_monorepo = !SETTINGS.packages.is_empty();
+            let is_monorepo = SETTINGS
+                .monorepo
+                .as_ref()
+                .map(|m| !m.packages.is_empty())
+                .unwrap_or(false);
 
             let increment = match version {
                 Some(version) => IncrementCommand::Manual(version),
@@ -505,7 +514,11 @@ fn main() -> Result<()> {
                 match package {
                     Some(package_name) => {
                         // Safe unwrap here, package name is validated by clap
-                        let package = SETTINGS.packages.get(&package_name).unwrap();
+                        let package = SETTINGS
+                            .monorepo
+                            .as_ref()
+                            .and_then(|m| m.packages.get(&package_name))
+                            .unwrap();
 
                         let opts = PackageBumpOptions {
                             package_name: &package_name,
@@ -701,7 +714,12 @@ fn main() -> Result<()> {
             let result = match at {
                 Some(at) => cocogitto.get_changelog_at_tag(&at, template)?,
                 None => {
-                    if !SETTINGS.packages.is_empty() {
+                    if SETTINGS
+                        .monorepo
+                        .as_ref()
+                        .map(|m| !m.packages.is_empty())
+                        .unwrap_or(false)
+                    {
                         cocogitto.get_monorepo_changelog(pattern, template, unified)?
                     } else {
                         let changelog = cocogitto.get_changelog(pattern, true)?;

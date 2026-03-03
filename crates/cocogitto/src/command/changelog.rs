@@ -27,8 +27,10 @@ impl CocoGitto {
         let mut packages = vec![];
 
         let mut package_data: Vec<(&String, String)> = SETTINGS
-            .packages
-            .iter()
+            .monorepo
+            .as_ref()
+            .map(|m| m.packages.iter())
+            .unwrap_or_default()
             .map(|(name, p)| (name, p.path.to_string_lossy().to_string()))
             .collect();
         package_data.sort_by_key(|&(name, _)| name);

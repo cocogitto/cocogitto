@@ -223,8 +223,10 @@ impl Tag {
         let prefix = SETTINGS.tag_prefix.as_ref();
 
         let package_tag: Option<Tag> = SETTINGS
-            .packages
-            .keys()
+            .monorepo
+            .as_ref()
+            .map(|m| m.packages.keys())
+            .unwrap_or_default()
             .filter_map(|package_name| {
                 raw.strip_prefix(package_name)
                     .zip(SETTINGS.monorepo_separator())
@@ -438,7 +440,10 @@ mod test {
         let mut packages = HashMap::new();
         packages.insert("one".to_string(), Default::default());
         let settings = Settings {
-            packages,
+            monorepo: Some(crate::settings::MonorepoConfig {
+                packages,
+                ..Default::default()
+            }),
             ..Default::default()
         };
 
@@ -465,7 +470,10 @@ mod test {
         packages.insert("one".to_string(), Default::default());
         let settings = Settings {
             tag_prefix: Some("v".to_string()),
-            packages,
+            monorepo: Some(crate::settings::MonorepoConfig {
+                packages,
+                ..Default::default()
+            }),
             ..Default::default()
         };
 
@@ -493,7 +501,10 @@ mod test {
         let settings = Settings {
             tag_prefix: Some("v".to_string()),
             monorepo_version_separator: Some("#".to_string()),
-            packages,
+            monorepo: Some(crate::settings::MonorepoConfig {
+                packages,
+                ..Default::default()
+            }),
             ..Default::default()
         };
 
@@ -644,7 +655,10 @@ mod test {
             from_latest_tag: true,
             ignore_merge_commits: true,
             tag_prefix: Some("v".to_string()),
-            packages,
+            monorepo: Some(crate::settings::MonorepoConfig {
+                packages,
+                ..Default::default()
+            }),
             ..Default::default()
         };
 

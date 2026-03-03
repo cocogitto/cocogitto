@@ -53,6 +53,30 @@ pub enum HookType {
 /// [packages.my-package]
 /// path = "packages/my-package"
 /// ```
+/// # MonorepoConfig
+/// Configuration for monorepo support including packages and dependency resolver.
+///
+/// This struct defines the monorepo configuration including all packages
+/// and a single dependency resolver to use for determining package bump order.
+///
+///  **Example :**
+/// ```toml
+/// [monorepo]
+/// resolver = "Cargo"
+///
+/// [monorepo.packages.my-package]
+/// path = "packages/my-package"
+/// ```
+#[cfg_attr(feature = "docgen", derive(cog_schemars::JsonSchema))]
+#[derive(Debug, Deserialize, Serialize, Eq, PartialEq, Default)]
+#[serde(deny_unknown_fields, default)]
+pub struct MonorepoConfig {
+    /// Dependency resolver to use for determining package bump order.
+    pub resolver: Option<String>,
+    /// Monorepo packages configuration.
+    pub packages: HashMap<String, MonoRepoPackage>,
+}
+
 #[cfg_attr(feature = "docgen", derive(cog_schemars::JsonSchema))]
 #[derive(Debug, Deserialize, Serialize, Eq, PartialEq)]
 #[serde(deny_unknown_fields, default)]
@@ -105,8 +129,8 @@ pub struct Settings {
     pub changelog: Changelog,
     /// Custom bump profiles configurations.
     pub bump_profiles: HashMap<String, BumpProfile>,
-    /// Monorepo packages configuration.
-    pub packages: HashMap<String, MonoRepoPackage>,
+    /// Monorepo configuration.
+    pub monorepo: Option<MonorepoConfig>,
     /// List of valid commit scopes.
     pub scopes: Option<Vec<String>>,
 }
@@ -135,7 +159,7 @@ impl Default for Settings {
             commit_types: Default::default(),
             changelog: Default::default(),
             bump_profiles: Default::default(),
-            packages: Default::default(),
+            monorepo: Default::default(),
             scopes: Default::default(),
         }
     }
@@ -300,8 +324,6 @@ pub struct MonoRepoPackage {
     pub post_bump_hooks: Option<Vec<String>>,
     /// Custom profile to override `pre_bump_hooks`, `post_bump_hooks`.
     pub bump_profiles: HashMap<String, BumpProfile>,
-    /// Dependency resolver to use for determining package bump order.
-    pub resolver: Option<String>,
 }
 
 impl Default for &MonoRepoPackage {
@@ -316,7 +338,6 @@ impl Default for &MonoRepoPackage {
             bump_profiles: Default::default(),
             public_api: true,
             bump_order: None,
-            resolver: None,
         });
 
         Box::leak(package)
@@ -335,7 +356,6 @@ impl Default for MonoRepoPackage {
             bump_profiles: Default::default(),
             public_api: true,
             bump_order: None,
-            resolver: None,
         }
     }
 }
@@ -566,7 +586,12 @@ impl Settings {
     }
 
     pub fn monorepo_separator(&self) -> Option<&str> {
-        if self.packages.is_empty() {
+        if self
+            .monorepo
+            .as_ref()
+            .map(|m| m.packages.is_empty())
+            .unwrap_or(true)
+        {
             None
         } else {
             self.monorepo_version_separator.as_deref().or(Some("-"))
@@ -574,7 +599,11 @@ impl Settings {
     }
 
     pub fn package_paths(&self) -> impl Iterator<Item = &Path> {
-        self.packages.values().map(|package| package.path.as_path())
+        self.monorepo
+            .as_ref()
+            .map(|m| m.packages.values())
+            .unwrap_or_default()
+            .map(|package| package.path.as_path())
     }
 }
 

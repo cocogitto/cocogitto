@@ -89,17 +89,17 @@ path = "src/lib.rs"
     fs::write("packages/package-c/src/lib.rs", "// dummy lib")?;
 
     let config = r#"
-[packages.package-a]
+[monorepo]
+resolver = "Cargo"
+
+[monorepo.packages.package-a]
 path = "packages/package-a"
-resolver = "Cargo"
 
-[packages.package-b]
+[monorepo.packages.package-b]
 path = "packages/package-b"
-resolver = "Cargo"
 
-[packages.package-c]
+[monorepo.packages.package-c]
 path = "packages/package-c"
-resolver = "Cargo"
 "#;
 
     fs::write("cog.toml", config)?;
@@ -122,12 +122,17 @@ resolver = "Cargo"
         .args(["bump", "--auto", "--dry-run"])
         .output()?;
 
-    let stderr = String::from_utf8(output.stderr)?;
     let stdout = String::from_utf8(output.stdout)?;
 
     // Assert
-    assert_that!(stdout).is_equal_to("toto".to_string());
-    assert_that!(stderr).is_equal_to("toto".to_string());
+    assert_that!(stdout).is_equal_to(
+        r#"package-c-0.1.0
+package-b-0.1.0
+package-a-0.1.0
+0.1.0
+"#
+        .to_string(),
+    );
 
     Ok(())
 }
