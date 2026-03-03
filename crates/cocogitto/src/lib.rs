@@ -30,6 +30,7 @@ pub mod error;
 pub mod git;
 pub mod hook;
 pub mod log;
+/// Settings module containing configuration structures and functions for Cocogitto
 pub mod settings;
 
 pub const DEFAULT_CONFIG_PATH: &str = "cog.toml";
