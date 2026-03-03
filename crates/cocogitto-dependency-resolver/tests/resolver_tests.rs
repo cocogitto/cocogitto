@@ -1,5 +1,20 @@
+use std::path::PathBuf;
+
 use cocogitto_dependency_resolver::DepGraphResolver;
 use speculoos::prelude::*;
+
+#[test]
+fn cocogitto_workspace() -> anyhow::Result<()> {
+    let resolver = DepGraphResolver::Cargo;
+    let crate_dir = std::env::var("CARGO_MANIFEST_DIR")?;
+    let cargo_manifest = PathBuf::from(crate_dir).join("Cargo.toml");
+    let dependencies = resolver.topological_sort(cargo_manifest);
+    let dependencies: Vec<_> = dependencies.iter().map(String::as_str).collect();
+
+    assert_that!(dependencies).is_equal_to(vec!["cocogitto-dependency-resolver", "cocogitto"]);
+
+    Ok(())
+}
 
 // ┌───────────┐     ┌───────────┐
 // │ package-b │ ◀── │ package-a │

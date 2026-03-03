@@ -29,15 +29,31 @@ post_bump_hooks = [
     "cargo publish"
 ]
 
+# A list of commands to run AFTER bumping a package version.
+# `{{package}}` will be interpreted as the package name being bumped
+# `{{version}}` will be interpreted as the target version
+post_package_bump_hooks = [
+    "cargo set-version --package {{package}} {{version}}"
+]
+
 # A custom named bump profile, the inner post/pre bump hook will be used
 # instead of the main ones when running `cog bump --hook-profile example --auto`
-[bump_profiles.example]
+[bump_profiles.manual]
 pre_bump_hooks = [
-    "echo 'bumping from {{latest}} to {{version}} using a named profile'"
+    "cargo test",
+    "cargo clippy",
+    "cargo fmt --all",
+    "cargo set-version {{version}}",
+    "cargo run --features docgen --bin cog-doc json-schema --out website/public/cog-schema.json",
+    "cargo run --features docgen --bin cog-doc reference --out website/reference/config.md",
+    "cargo build --release",
 ]
+
 post_bump_hooks = [
-    "echo 'we are done'"
+    "echo 'This is a manual bump, no automated cargo release or push to remote will be triggered'"
 ]
+
+
 
 # Shareable git-hooks, can be installed using `cog install-hook --all`
 # or alternatively `cog install-hooks {commit_hook_type}
@@ -99,6 +115,9 @@ authors = [
     { signature = "Wassim Ahmed-Belkacem", username = "Wassim-AB" },
     { signature = "Lindner, Bernhard", username = "ba-lindner" },
 ]
+
+[monorepo]
+resolver = "Cargo"
 
 [monorepo.packages]
 cocogitto = { path = "crates/cocogitto" }
