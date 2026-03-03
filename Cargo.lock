@@ -328,6 +328,7 @@ dependencies = [
  "clap_complete_nushell",
  "clap_mangen",
  "cmd_lib",
+ "cocogitto-dependency-resolver",
  "cog_schemars",
  "colored",
  "config",

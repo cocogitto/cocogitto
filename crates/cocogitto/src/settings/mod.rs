@@ -300,6 +300,8 @@ pub struct MonoRepoPackage {
     pub post_bump_hooks: Option<Vec<String>>,
     /// Custom profile to override `pre_bump_hooks`, `post_bump_hooks`.
     pub bump_profiles: HashMap<String, BumpProfile>,
+    /// Dependency resolver to use for determining package bump order.
+    pub resolver: Option<String>,
 }
 
 impl Default for &MonoRepoPackage {
@@ -314,6 +316,7 @@ impl Default for &MonoRepoPackage {
             bump_profiles: Default::default(),
             public_api: true,
             bump_order: None,
+            resolver: None,
         });
 
         Box::leak(package)
@@ -332,6 +335,7 @@ impl Default for MonoRepoPackage {
             bump_profiles: Default::default(),
             public_api: true,
             bump_order: None,
+            resolver: None,
         }
     }
 }
