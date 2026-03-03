@@ -111,6 +111,25 @@ impl ToMarkDown for &mut Property {
             writeln!(out, "- **Possible values :** {}", values)?;
         }
 
+        // Handle oneOf with const values (used for enums in JSON schema)
+        if let Some(one_of) = &self.one_of {
+            let values: Vec<String> = one_of
+                .iter()
+                .filter_map(|any_of| {
+                    // Extract const values from oneOf entries
+                    match any_of {
+                        AnyOf::Const { const_value, .. } => Some(format!("`{const_value}`")),
+                        _ => None, // Skip other types
+                    }
+                })
+                .collect();
+
+            if !values.is_empty() {
+                let values_str = values.join(", ");
+                writeln!(out, "- **Possible values :** {}", values_str)?;
+            }
+        }
+
         if let Some(property_name) = &mut self.property_names {
             property_name.to_markdown(out)?;
         }
@@ -137,6 +156,7 @@ impl ToMarkDown for AnyOf {
         match self {
             AnyOf::Type { r#type } => Type::Unique(r#type.clone()).to_markdown(out)?,
             AnyOf::Ref { reference } => writeln!(out, "ref {}", reference)?,
+            AnyOf::Const { const_value, .. } => writeln!(out, "`{}`", const_value)?,
         };
 
         Ok(())
@@ -175,12 +195,14 @@ mod test {
     use std::fs;
     use std::io::BufWriter;
 
-    #[test]
+    #[sealed_test]
     fn test() -> anyhow::Result<()> {
         let mut root = root_schema()?;
         let out = vec![];
         let mut writer = BufWriter::new(out);
         root.to_markdown(&mut writer)?;
+        // Create directory if it doesn't exist
+        fs::create_dir_all("website/reference")?;
         fs::write("website/reference/config.md", writer.into_inner()?)?;
         Ok(())
     }

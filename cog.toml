@@ -119,6 +119,18 @@ authors = [
 [monorepo]
 resolver = "Cargo"
 
-[monorepo.packages]
-cocogitto = { path = "crates/cocogitto" }
-cocogitto-dependency-resolver = { path = "crates/cocogitto-dependency-resolver" }
+[monorepo.packages.cocogitto]
+path = "crates/cocogitto"
+
+[monorepo.packages.cocogitto.bump_profiles.manual]
+pre_bump_hooks = [
+    "cargo set-version --package {{package}} {{version}}",
+]
+
+[monorepo.packages.cocogitto-dependency-resolver]
+path = "crates/cocogitto-dependency-resolver"
+
+[monorepo.packages.cocogitto-dependency-resolver.bump_profiles.manual]
+pre_bump_hooks = [
+    "cargo set-version --package {{package}} {{version}}",
+]
