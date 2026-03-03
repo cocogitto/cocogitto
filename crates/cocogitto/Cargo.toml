@@ -44,6 +44,7 @@ cog_schemars = { workspace =  true, optional = true }
 serde_json = { workspace =  true, optional = true }
 maplit.workspace = true
 indexmap.workspace = true
+cocogitto-dependency-resolver = { path = "../cocogitto-dependency-resolver" }
 
 [dev-dependencies]
 assert_cmd.workspace = true
