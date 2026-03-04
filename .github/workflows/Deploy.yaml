@@ -94,7 +94,7 @@ jobs:
     needs: [build, upload_license]
     name: Publish cog binaries
     runs-on: ubuntu-latest
-    if: ${{ github.ref_type == 'tag' }}
+    if: ${{ github.ref_type == 'tag' || inputs.tag_name }}
     steps:
       - uses: actions/download-artifact@v4
         with:
