@@ -2,6 +2,57 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## [7.0.0](https://github.com/cocogitto/cocogitto/compare/3592d81caf6e02e4af493d6edb2fdb6ea3ecd9f5..7.0.0) - 2026-03-04
+### Package updates
+- [cocogitto-dependency-resolver](crates/cocogitto-dependency-resolver) bumped to [cocogitto-dependency-resolver-0.1.0](https://github.com/cocogitto/cocogitto/compare/8806a55727b6c1767cca5d494599623fbb5dd1dd..cocogitto-dependency-resolver-0.1.0)
+- [cocogitto-7.0.0](crates/cocogitto) bumped to [cocogitto-7.0.0](https://github.com/cocogitto/cocogitto/compare/cocogitto-6.5.0..cocogitto-7.0.0)
+### Global changes
+#### Features
+- (**changelog**) add support for GitHub specificgit trailers in changelog - ([5b3fbaa](https://github.com/cocogitto/cocogitto/commit/5b3fbaa6a06b88bf56359143da43bef036bd90b7)) - [@oknozor](https://github.com/oknozor)
+- (**verify**) Add stdin support via --file - (#515) - ([94bbd56](https://github.com/cocogitto/cocogitto/commit/94bbd56a3ffd6560885e0a54aa52da06112f8d4f)) - Sangeeth Sudheer, Cursor, [@oknozor](https://github.com/oknozor)
+- ![BREAKING](https://img.shields.io/badge/BREAKING-red) implement package resolver for monorepo - ([b72dc7f](https://github.com/cocogitto/cocogitto/commit/b72dc7f6bc2855d3f399b00942a3de4f5cd6ad63)) - [@oknozor](https://github.com/oknozor)
+- use dependency resolver for workspace dep resolution - ([5d41a77](https://github.com/cocogitto/cocogitto/commit/5d41a778039fd6dfc4d6a494c0c45200102745aa)) - [@oknozor](https://github.com/oknozor)
+- add cocogitto dependency resolver - ([c39d205](https://github.com/cocogitto/cocogitto/commit/c39d20531a86e486f2cdc3a6afee90a6b459dae6)) - [@oknozor](https://github.com/oknozor)
+- make the repository a workspace - ([460d1ff](https://github.com/cocogitto/cocogitto/commit/460d1ffb48296b424799518f0a537fdfb5a5eaf9)) - [@oknozor](https://github.com/oknozor)
+- Update name of cog.toml field - ([4ec1940](https://github.com/cocogitto/cocogitto/commit/4ec1940aadbe9c3df49fce64a8ee0f33bd12ba1a)) - Jonathan Andrew
+- Consolidate pre-release CLI options - ([ac98431](https://github.com/cocogitto/cocogitto/commit/ac98431993159eb5e34d06c275eb0081a674f3ff)) - Jonathan Andrew
+- Allow pre_pattern to be specified in cog.toml - ([5391ec1](https://github.com/cocogitto/cocogitto/commit/5391ec13bf894795e26352ee0fb8e2aa0feac7b9)) - Jonathan Andrew
+- Add --auto-pre and --pre-pattern flags - ([a172168](https://github.com/cocogitto/cocogitto/commit/a172168403c8b4c55fccb906546f6a7adc67a6d8)) - Jonathan Andrew
+- Auto-increment pre-releases - ([fd4451e](https://github.com/cocogitto/cocogitto/commit/fd4451ee16df7f164da403bd9806a22eec741a13)) - Jonathan Andrew
+#### Bug Fixes
+- (**commit**) respect EDITOR variable with spaces on Windows - ([11d0e05](https://github.com/cocogitto/cocogitto/commit/11d0e05b668a7bd7715b822ca6f0893f0b9b2c60)) - Ku6epXBOCTuK
+- (**test**) replace deprecated `cargo_bin` with macro - ([f74bb1b](https://github.com/cocogitto/cocogitto/commit/f74bb1b1c7e08b5eea256f5f8520cd3a6b1498e0)) - Ku6epXBOCTuK
+- (**verify**) add scope validation to verify command - ([7a32553](https://github.com/cocogitto/cocogitto/commit/7a3255347a1be0f98595e98e04b1880b08117045)) - Ku6epXBOCTuK
+- add worktree support by using git_dir instead of repo dir - ([be572ec](https://github.com/cocogitto/cocogitto/commit/be572ec9c0f4053d7b9a886dc771cacc2747730a)) - [@oknozor](https://github.com/oknozor)
+- resolve clippy warning about needless borrow - ([f98f728](https://github.com/cocogitto/cocogitto/commit/f98f72820355d2adf8b67bdbfe4126da31851ee5)) - Ku6epXBOCTuK
+- version date in changelogs - ([80cc0c5](https://github.com/cocogitto/cocogitto/commit/80cc0c59bbe8d432adaa7585b6d5d9b0fc2b26c2)) - [@oknozor](https://github.com/oknozor)
+- update default config for fixup commits - ([f12a389](https://github.com/cocogitto/cocogitto/commit/f12a389579c73bcb81f121721563c395e029b5ea)) - [@oknozor](https://github.com/oknozor)
+#### Performance Improvements
+- check all tags at once when building cache - ([bff9e69](https://github.com/cocogitto/cocogitto/commit/bff9e69b8a589bcf625b220034264f654ca5205b)) - [@ba-lindner](https://github.com/ba-lindner)
+#### Revert
+- "chore: fix release 6.5" - ([3592d81](https://github.com/cocogitto/cocogitto/commit/3592d81caf6e02e4af493d6edb2fdb6ea3ecd9f5)) - [@oknozor](https://github.com/oknozor)
+#### Documentation
+- (**README**) add mise alternative method installation - ([3e0943e](https://github.com/cocogitto/cocogitto/commit/3e0943e1932fdb76c3d2666d9f0f80516a22470d)) - jylenhof
+- fix cog-doc generation - ([df1c6c5](https://github.com/cocogitto/cocogitto/commit/df1c6c51943093bcc3287f6ac41302818b234f33)) - [@oknozor](https://github.com/oknozor)
+- add docs for dependency resolution - ([ba94bb9](https://github.com/cocogitto/cocogitto/commit/ba94bb9526a9d736c6514f43f60a0029d7c090f8)) - [@oknozor](https://github.com/oknozor)
+- replace expired discord invit with a permanent one - ([1fc95cd](https://github.com/cocogitto/cocogitto/commit/1fc95cd43547cffa0bc83f485e2509ed88393f89)) - [@oknozor](https://github.com/oknozor)
+- Update docs - ([cad56ce](https://github.com/cocogitto/cocogitto/commit/cad56ce75c0480fbc633fe8f38a518a517fe898b)) - Jonathan Andrew
+- Update user guide - ([b71ae86](https://github.com/cocogitto/cocogitto/commit/b71ae86661895476e02fce3950cdaf2d3c4dea4e)) - Jonathan Andrew
+- Fix documentation - ([a3b6724](https://github.com/cocogitto/cocogitto/commit/a3b67241f10e25b040879a6b1ff1be089063b2aa)) - Jonathan Andrew
+- update changelog to the latest fashion - ([6090801](https://github.com/cocogitto/cocogitto/commit/609080185b1cc7892afca7f96827a994d6e9e59d)) - [@oknozor](https://github.com/oknozor)
+#### Continuous Integration
+- add cargo package/publish to manual bump profile - ([acfc1ba](https://github.com/cocogitto/cocogitto/commit/acfc1ba6a9a7d05b1bab7264cfd0f4b2383df015)) - [@oknozor](https://github.com/oknozor)
+- only trigger release on global tags - ([ef605a9](https://github.com/cocogitto/cocogitto/commit/ef605a97cf435c201f4ac496feb0899383acb19c)) - [@oknozor](https://github.com/oknozor)
+- adapt cog.toml to monorepo - ([38403d9](https://github.com/cocogitto/cocogitto/commit/38403d9efb1a2bbf2c7412e32f06890a765248da)) - [@oknozor](https://github.com/oknozor)
+- update cog.toml with postbump hook - ([3760a7c](https://github.com/cocogitto/cocogitto/commit/3760a7ccc9399f04de56d3c7059ec6a20111e01c)) - [@oknozor](https://github.com/oknozor)
+- add path filter to avoid uneeded builds on doc PRs - ([3525392](https://github.com/cocogitto/cocogitto/commit/3525392b9a9ef377715ec1876f352e526f94e270)) - [@oknozor](https://github.com/oknozor)
+#### Refactoring
+- (**changelog**) simplify changelog template rendering - ([fc8d522](https://github.com/cocogitto/cocogitto/commit/fc8d522090013c67e659814839aa054483ecc3e6)) - [@oknozor](https://github.com/oknozor)
+- Use clap for argument conflicts/dependencies - ([c3faf31](https://github.com/cocogitto/cocogitto/commit/c3faf3161d0e28f40d363d3cb750120862e305c4)) - Jonathan Andrew
+- Improve numeric identifier extraction - ([0438ea6](https://github.com/cocogitto/cocogitto/commit/0438ea6186c3dd1cc1b8768ae3926e5d2dfcd449)) - Jonathan Andrew
+
+- - -
+
 
 ## [6.5.0](https://github.com/cocogitto/cocogitto/compare/6.4.0..6.5.0) - 2025-11-02
 #### Features

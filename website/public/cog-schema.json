@@ -80,12 +80,24 @@
     "ignore_fixup_commits": {
       "description": "Silently ignore fixup commits",
       "type": "boolean",
-      "default": true
+      "default": false
     },
     "ignore_merge_commits": {
       "description": "A list of glob patterns to allow bumping only on matching branches.",
       "type": "boolean",
       "default": false
+    },
+    "monorepo": {
+      "description": "Monorepo configuration.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/MonorepoConfig"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "monorepo_version_separator": {
       "description": "Specify the version separator character for mono-repository package's tags.",
@@ -94,14 +106,6 @@
         "null"
       ],
       "default": null
-    },
-    "packages": {
-      "description": "Monorepo packages configuration.",
-      "type": "object",
-      "additionalProperties": {
-        "$ref": "#/$defs/MonoRepoPackage"
-      },
-      "default": {}
     },
     "post_bump_hooks": {
       "description": "Hooks that will be executed after a bump command in root dir.",
@@ -118,6 +122,11 @@
       "items": {
         "type": "string"
       }
+    },
+    "pre": {
+      "description": "Default pre-release pattern to be used when auto-incrementing pre-release versions.\n It must contain exactly one wildcard `*` to be replaced by the numeric identifier.",
+      "type": "string",
+      "default": "alpha.*"
     },
     "pre_bump_hooks": {
       "description": "Hooks that will be executed before a bump command in root dir.",
@@ -329,6 +338,7 @@
           "type": "object",
           "properties": {
             "script": {
+              "description": "The script content to execute",
               "type": "string"
             }
           },
@@ -342,6 +352,7 @@
           "type": "object",
           "properties": {
             "path": {
+              "description": "The path to the script file",
               "type": "string"
             }
           },
@@ -355,29 +366,112 @@
     "GitHookType": {
       "title": "GitHookType",
       "description": "Represents the different types of Git hooks that can be configured.\n\n This enum defines all the standard Git hook types that can be used\n in the configuration. Each variant corresponds to a specific Git hook\n that gets triggered at different points in Git's execution.\n\n  **Example :**\n ```toml\n [git_hooks.pre-commit]\n script = \"./scripts/pre-commit.sh\"\n ```",
-      "type": "string",
-      "enum": [
-        "applypatch-msg",
-        "pre-applypatch",
-        "post-applypatch",
-        "pre-commit",
-        "pre-merge-commit",
-        "pre-prepare-commit-msg",
-        "commit-msg",
-        "post-commit",
-        "pre-rebase",
-        "post-checkout",
-        "post-merge",
-        "pre-push",
-        "pre-auto-gc",
-        "post-rewrite",
-        "sendemail-validate",
-        "fsmonitor-watchman",
-        "p4-changelist",
-        "p4-prepare-changelist",
-        "p4-postchangelist",
-        "p4-pre-submit",
-        "post-index-change"
+      "oneOf": [
+        {
+          "description": "Hook that is invoked by `git-am`.",
+          "type": "string",
+          "const": "applypatch-msg"
+        },
+        {
+          "description": "Hook that is invoked by `git-am`.",
+          "type": "string",
+          "const": "pre-applypatch"
+        },
+        {
+          "description": "Hook that is invoked by `git-am`.",
+          "type": "string",
+          "const": "post-applypatch"
+        },
+        {
+          "description": "Hook that is invoked by `git-commit`.",
+          "type": "string",
+          "const": "pre-commit"
+        },
+        {
+          "description": "Hook that is invoked by `git-merge`.",
+          "type": "string",
+          "const": "pre-merge-commit"
+        },
+        {
+          "description": "Hook that is invoked by `git-commit`.",
+          "type": "string",
+          "const": "pre-prepare-commit-msg"
+        },
+        {
+          "description": "Hook that is invoked by `git-commit`.",
+          "type": "string",
+          "const": "commit-msg"
+        },
+        {
+          "description": "Hook that is invoked by `git-commit`.",
+          "type": "string",
+          "const": "post-commit"
+        },
+        {
+          "description": "Hook that is invoked by `git-rebase`.",
+          "type": "string",
+          "const": "pre-rebase"
+        },
+        {
+          "description": "Hook that is invoked by `git-checkout`.",
+          "type": "string",
+          "const": "post-checkout"
+        },
+        {
+          "description": "Hook that is invoked by `git-merge`.",
+          "type": "string",
+          "const": "post-merge"
+        },
+        {
+          "description": "Hook that is invoked by `git-push`.",
+          "type": "string",
+          "const": "pre-push"
+        },
+        {
+          "description": "Hook that is invoked by `git-gc`.",
+          "type": "string",
+          "const": "pre-auto-gc"
+        },
+        {
+          "description": "Hook that is invoked by commands that rewrite commits.",
+          "type": "string",
+          "const": "post-rewrite"
+        },
+        {
+          "description": "Hook that is invoked by `git-send-email`.",
+          "type": "string",
+          "const": "sendemail-validate"
+        },
+        {
+          "description": "Hook that is invoked by `git-fsmonitor--daemon`.",
+          "type": "string",
+          "const": "fsmonitor-watchman"
+        },
+        {
+          "description": "Hook that is invoked by `git-p4`.",
+          "type": "string",
+          "const": "p4-changelist"
+        },
+        {
+          "description": "Hook that is invoked by `git-p4`.",
+          "type": "string",
+          "const": "p4-prepare-changelist"
+        },
+        {
+          "description": "Hook that is invoked by `git-p4`.",
+          "type": "string",
+          "const": "p4-postchangelist"
+        },
+        {
+          "description": "Hook that is invoked by `git-p4`.",
+          "type": "string",
+          "const": "p4-pre-submit"
+        },
+        {
+          "description": "Hook that is invoked by `git-update-index`.",
+          "type": "string",
+          "const": "post-index-change"
+        }
       ]
     },
     "MonoRepoPackage": {
@@ -458,6 +552,30 @@
           "description": "Bumping package marked as public api will increment\n the global monorepo version when using `cog bump --auto`.",
           "type": "boolean",
           "default": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "MonorepoConfig": {
+      "title": "Settings",
+      "description": "Configuration structure for the Cocogitto tool.\n\n This struct defines the main configuration options for Cocogitto, including settings\n for version generation, changelog handling, commit conventions, hooks, and monorepo support.\n\n  **Example :**\n ```toml\n # Basic settings\n from_latest_tag = true\n ignore_merge_commits = true\n\n # Changelog settings\n [changelog]\n path = \"CHANGELOG.md\"\n template = \"remote\"\n\n # Git hooks\n [git_hooks.pre-commit]\n script = \"./scripts/pre-commit.sh\"\n\n # Monorepo configuration\n [packages.my-package]\n path = \"packages/my-package\"\n ```\n # MonorepoConfig\n Configuration for monorepo support including packages and dependency resolver.\n\n This struct defines the monorepo configuration including all packages\n and a single dependency resolver to use for determining package bump order.\n\n  **Example :**\n ```toml\n [monorepo]\n resolver = \"Cargo\"\n\n [monorepo.packages.my-package]\n path = \"packages/my-package\"\n ```",
+      "type": "object",
+      "properties": {
+        "packages": {
+          "description": "Monorepo packages configuration.",
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/MonoRepoPackage"
+          },
+          "default": {}
+        },
+        "resolver": {
+          "description": "Dependency resolver to use for determining package bump order.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
         }
       },
       "additionalProperties": false

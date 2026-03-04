@@ -121,7 +121,7 @@ ref #/$defs/GitHookType
 - **Type :** `Boolean`
 - **Default :**
 ```toml
-ignore_fixup_commits = true
+ignore_fixup_commits = false
 ```
 
 ## `ignore_merge_commits`
@@ -132,17 +132,12 @@ ignore_fixup_commits = true
 ignore_merge_commits = false
 ```
 
+## `monorepo`
+- **Description :** Monorepo configuration.
+
 ## `monorepo_version_separator`
 - **Description :** Specify the version separator character for mono-repository package's tags.
 - **Type :** `String | Null`
-
-## `packages`
-- **Description :** Monorepo packages configuration.
-- **Type :** `Map<String, MonoRepoPackage>`
-- **Default :**
-```toml
-[packages]
-```
 
 ## `post_bump_hooks`
 - **Description :** Hooks that will be executed after a bump command in root dir.
@@ -161,6 +156,15 @@ post_bump_hooks = []
 post_package_bump_hooks = []
 ```
 - **Type :** `String`
+
+## `pre`
+- **Description :** Default pre-release pattern to be used when auto-incrementing pre-release versions.
+ It must contain exactly one wildcard `*` to be replaced by the numeric identifier.
+- **Type :** `String`
+- **Default :**
+```toml
+pre = "alpha.*"
+```
 
 ## `pre_bump_hooks`
 - **Description :** Hooks that will be executed before a bump command in root dir.
@@ -352,7 +356,6 @@ path = "CHANGELOG.md"
  [git_hooks.pre-commit]
  script = "./scripts/pre-commit.sh"
  ```
-- **Type :** `String`
 - **Possible values :** `applypatch-msg`, `pre-applypatch`, `post-applypatch`, `pre-commit`, `pre-merge-commit`, `pre-prepare-commit-msg`, `commit-msg`, `post-commit`, `pre-rebase`, `post-checkout`, `post-merge`, `pre-push`, `pre-auto-gc`, `post-rewrite`, `sendemail-validate`, `fsmonitor-watchman`, `p4-changelist`, `p4-prepare-changelist`, `p4-postchangelist`, `p4-pre-submit`, `post-index-change`
 
 ## MonoRepoPackage
@@ -435,6 +438,58 @@ path = ""
 ```toml
 public_api = true
 ```
+
+
+## MonorepoConfig
+- **Description :** Configuration structure for the Cocogitto tool.
+
+ This struct defines the main configuration options for Cocogitto, including settings
+ for version generation, changelog handling, commit conventions, hooks, and monorepo support.
+
+  **Example :**
+ ```toml
+ # Basic settings
+ from_latest_tag = true
+ ignore_merge_commits = true
+
+ # Changelog settings
+ [changelog]
+ path = "CHANGELOG.md"
+ template = "remote"
+
+ # Git hooks
+ [git_hooks.pre-commit]
+ script = "./scripts/pre-commit.sh"
+
+ # Monorepo configuration
+ [packages.my-package]
+ path = "packages/my-package"
+ ```
+ # MonorepoConfig
+ Configuration for monorepo support including packages and dependency resolver.
+
+ This struct defines the monorepo configuration including all packages
+ and a single dependency resolver to use for determining package bump order.
+
+  **Example :**
+ ```toml
+ [monorepo]
+ resolver = "Cargo"
+
+ [monorepo.packages.my-package]
+ path = "packages/my-package"
+ ```
+### `packages`
+- **Description :** Monorepo packages configuration.
+- **Type :** `Map<String, MonoRepoPackage>`
+- **Default :**
+```toml
+[packages]
+```
+
+### `resolver`
+- **Description :** Dependency resolver to use for determining package bump order.
+- **Type :** `String | Null`
 
 
 
