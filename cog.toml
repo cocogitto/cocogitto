@@ -125,10 +125,19 @@ pre_bump_hooks = [
     "cargo set-version --package {{package}} {{version}}",
 ]
 
+post_bump_hooks = [
+    "cargo package",
+    "cargo publish"
+]
 [monorepo.packages.cocogitto-dependency-resolver]
 path = "crates/cocogitto-dependency-resolver"
 
 [monorepo.packages.cocogitto-dependency-resolver.bump_profiles.manual]
 pre_bump_hooks = [
     "cargo set-version --package {{package}} {{version}}",
+]
+
+post_bump_hooks = [
+    "cargo package",
+    "cargo publish"
 ]
