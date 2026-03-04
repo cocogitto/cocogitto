@@ -59,6 +59,7 @@ export default defineConfig({
                     {text: 'Automatic versioning for monorepo', link: '/guide/monorepo'},
                     {text: 'Tags prefix', link: '/guide/tag'},
                     {text: 'Bump hook recipes', link: '/guide/recipes'},
+                    {text: 'Migration Guides', link: '/guide/migrations'},
                     {text: 'Miscellaneous', link: '/guide/misc'},
                 ]
             },
