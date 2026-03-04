@@ -96,7 +96,6 @@ pub enum AdditionalProperties {
 #[serde(untagged)]
 pub enum AnyOf {
     Const {
-        r#type: String,
         #[serde(rename = "const")]
         const_value: String,
     },
