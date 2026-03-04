@@ -5,10 +5,19 @@ on:
     branches:
       - main
     tags:
-      - "[0-9]*.[0-9]*.[0-9]*"
+      - '[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag name to deploy (optional)'
+        required: false
+        type: string
 
 env:
   CARGO_TERM_COLOR: always
+  # Set default tag information for manual dispatch
+  TAG_NAME: ${{ github.ref_name || inputs.tag_name || 'latest' }}
+  TAG_REF: ${{ github.ref || format('refs/tags/{0}', inputs.tag_name || 'latest') }}
 
 jobs:
   upload_license:
@@ -133,43 +142,43 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: cocogitto-x86_64-unknown-linux-musl.tar.gz
-          tag: ${{ github.ref }}
-          asset_name: cocogitto-${{ github.ref_name }}-x86_64-unknown-linux-musl.tar.gz
+          tag: ${{ env.TAG_REF }}
+          asset_name: cocogitto-${{ env.TAG_NAME }}-x86_64-unknown-linux-musl.tar.gz
 
       - uses: svenstaro/upload-release-action@v1-release
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: cocogitto-armv7-unknown-linux-musleabihf.tar.gz
-          tag: ${{ github.ref_name }}
-          asset_name: cocogitto-${{ github.ref_name }}-armv7-unknown-linux-musleabihf.tar.gz
+          tag: ${{ env.TAG_REF }}
+          asset_name: cocogitto-${{ env.TAG_NAME }}-armv7-unknown-linux-musleabihf.tar.gz
 
       - uses: svenstaro/upload-release-action@v1-release
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: cocogitto-aarch64-unknown-linux-gnu.tar.gz
-          tag: ${{ github.ref_name }}
-          asset_name: cocogitto-${{ github.ref_name }}-aarch64-unknown-linux-gnu.tar.gz
+          tag: ${{ env.TAG_REF }}
+          asset_name: cocogitto-${{ env.TAG_NAME }}-aarch64-unknown-linux-gnu.tar.gz
 
       - uses: svenstaro/upload-release-action@v1-release
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: cocogitto-x86_64-pc-windows-msvc.tar.gz
-          tag: ${{ github.ref_name }}
-          asset_name: cocogitto-${{ github.ref_name }}-x86_64-pc-windows-msvc.tar.gz
+          tag: ${{ env.TAG_REF }}
+          asset_name: cocogitto-${{ env.TAG_NAME }}-x86_64-pc-windows-msvc.tar.gz
 
       - uses: svenstaro/upload-release-action@v1-release
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: cocogitto-x86_64-apple-darwin.tar.gz
-          tag: ${{ github.ref_name }}
-          asset_name: cocogitto-${{ github.ref_name }}-x86_64-apple-darwin.tar.gz
+          tag: ${{ env.TAG_REF }}
+          asset_name: cocogitto-${{ env.TAG_NAME }}-x86_64-apple-darwin.tar.gz
 
       - uses: svenstaro/upload-release-action@v1-release
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: cocogitto-aarch64-apple-darwin.tar.gz
-          tag: ${{ github.ref_name }}
-          asset_name: cocogitto-${{ github.ref_name }}-aarch64-apple-darwin.tar.gz
+          tag: ${{ env.TAG_REF }}
+          asset_name: cocogitto-${{ env.TAG_NAME }}-aarch64-apple-darwin.tar.gz
 
   docker:
     needs: [build]
@@ -207,7 +216,7 @@ jobs:
           chmod +x -R  target/aarch64-unknown-linux-gnu/release
         working-directory: ./
 
-      - if: ${{ github.ref_type != 'tag' }}
+      - if: ${{ github.ref_type != 'tag' && !inputs.tag_name }}
         name: Update multi-arch container latest
         run: |
           docker buildx build \
@@ -215,19 +224,19 @@ jobs:
           -f docker/Dockerfile \
           -t ghcr.io/cocogitto/cog:latest .
 
-      - if: ${{ github.ref_type == 'tag' }}
+      - if: ${{ github.ref_type == 'tag' || inputs.tag_name }}
         name: Update multi-arch container latest
         run: |
           docker buildx build \
           --push --platform linux/amd64,linux/arm/v7,linux/arm64/v8 \
           -f docker/Dockerfile \
-          -t ghcr.io/cocogitto/cog:${{ github.ref_name }} .
+          -t ghcr.io/cocogitto/cog:${{ env.TAG_NAME }} .
 
   dispatch-release:
     needs: [upload_to_release]
     name: Dispatch release to org repositories
     runs-on: ubuntu-latest
-    if: ${{ github.ref_type == 'tag' }}
+    if: ${{ github.ref_type == 'tag' || inputs.tag_name }}
     steps:
       - name: Repository Dispatch
         uses: peter-evans/repository-dispatch@v4
@@ -235,4 +244,4 @@ jobs:
           token: ${{secrets.RELEASE_TOKEN}}
           repository: cocogitto/cocogitto-action
           event-type: cocogitto-released
-          client-payload: '{"version": "${{ github.ref_name }}", "sha": "${{ github.sha }}"}'
+          client-payload: '{"version": "${{ env.TAG_NAME }}", "sha": "${{ github.sha }}"}'
