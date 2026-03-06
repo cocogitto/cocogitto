@@ -28,7 +28,7 @@ pub fn get_template_context(settings: &Settings) -> Option<RemoteContext> {
 ///
 /// * `Result<Template, ChangelogError>` - The changelog template
 pub fn get_changelog_template(settings: &Settings) -> Result<Template, ChangelogError> {
-    let context = get_template_context(&settings);
+    let context = get_template_context(settings);
     let template = settings.changelog.template.as_deref().unwrap_or("default");
 
     // TODO: there should be a unified settings

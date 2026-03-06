@@ -51,13 +51,13 @@ pub trait Hooks {
     /// ```rust
     /// use cocogitto_settings::{Hooks, HookType};
     /// use std::collections::HashMap;
-    /// 
+    ///
     /// struct MyConfig {
     ///     bump_profiles: HashMap<String, cocogitto_settings::BumpProfile>,
     ///     pre_bump_hooks: Vec<String>,
     ///     post_bump_hooks: Vec<String>,
     /// }
-    /// 
+    ///
     /// impl Hooks for MyConfig {
     ///     fn bump_profiles(&self) -> &HashMap<String, cocogitto_settings::BumpProfile> {
     ///         &self.bump_profiles
@@ -65,13 +65,13 @@ pub trait Hooks {
     ///     fn pre_bump_hooks(&self) -> &Vec<String> { &self.pre_bump_hooks }
     ///     fn post_bump_hooks(&self) -> &Vec<String> { &self.post_bump_hooks }
     /// }
-    /// 
+    ///
     /// let my_config = MyConfig {
     ///     bump_profiles: HashMap::new(),
     ///     pre_bump_hooks: vec!["echo 'pre-bump'".to_string()],
     ///     post_bump_hooks: vec!["echo 'post-bump'".to_string()],
     /// };
-    /// 
+    ///
     /// let hooks = my_config.get_hooks(HookType::PreBump);
     /// for hook in hooks {
     ///     println!("Pre-bump hook: {}", hook);
@@ -107,31 +107,31 @@ pub trait Hooks {
     /// ```rust
     /// use cocogitto_settings::{Hooks, HookType, BumpProfile};
     /// use std::collections::HashMap;
-    /// 
+    ///
     /// struct MyConfig {
     ///     bump_profiles: HashMap<String, BumpProfile>,
     ///     pre_bump_hooks: Vec<String>,
     ///     post_bump_hooks: Vec<String>,
     /// }
-    /// 
+    ///
     /// impl Hooks for MyConfig {
     ///     fn bump_profiles(&self) -> &HashMap<String, BumpProfile> { &self.bump_profiles }
     ///     fn pre_bump_hooks(&self) -> &Vec<String> { &self.pre_bump_hooks }
     ///     fn post_bump_hooks(&self) -> &Vec<String> { &self.post_bump_hooks }
     /// }
-    /// 
+    ///
     /// let mut profiles = HashMap::new();
     /// profiles.insert("production".to_string(), BumpProfile {
     ///     pre_bump_hooks: vec!["echo 'production pre-bump'".to_string()],
     ///     post_bump_hooks: vec!["echo 'production post-bump'".to_string()],
     /// });
-    /// 
+    ///
     /// let my_config = MyConfig {
     ///     bump_profiles: profiles,
     ///     pre_bump_hooks: vec![],
     ///     post_bump_hooks: vec![],
     /// };
-    /// 
+    ///
     /// let hooks = my_config.get_profile_hooks("production", HookType::PostBump);
     /// for hook in hooks {
     ///     println!("Production post-bump hook: {}", hook);
