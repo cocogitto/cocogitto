@@ -383,7 +383,6 @@ pub(crate) fn format_summary(commit: &ConventionalCommit) -> String {
 mod test {
     use crate::conventional::commit::{format_summary, verify, Commit, CommitConfig};
 
-    use crate::test_helpers::{commit, git_init_no_gpg};
     use crate::Repository;
     use anyhow::Result;
     use chrono::DateTime;
@@ -392,6 +391,7 @@ mod test {
     use indoc::indoc;
     use sealed_test::prelude::*;
     use speculoos::prelude::*;
+    use cocogitto_test_helpers::{commit, git_init_no_gpg};
 
     #[test]
     fn should_map_conventional_commit_message_to_struct() {
@@ -609,9 +609,9 @@ mod test {
     #[sealed_test]
     fn should_map_conventional_commit() -> Result<()> {
         // Arrange
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
         let oid = commit("feat: a commit")?;
-        let oid = Oid::from_str(&oid).unwrap();
+        let oid = Oid::from_str(&oid)?;
         let commit = repo.0.find_commit(oid).expect("Unable to find commit");
 
         // Act
@@ -625,9 +625,9 @@ mod test {
     #[sealed_test]
     fn map_conventional_commit_should_fail_with_invalid_type() -> Result<()> {
         // Arrange
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
         let oid_str = commit("toto: a commit")?;
-        let oid = Oid::from_str(&oid_str).unwrap();
+        let oid = Oid::from_str(&oid_str)?;
         let commit = repo.0.find_commit(oid).expect("Unable to find commit");
 
         // Act
@@ -641,10 +641,10 @@ mod test {
     #[sealed_test]
     fn map_conventional_commit_should_fail() -> Result<()> {
         // Arrange
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
         let oid_str = commit("a commit")?;
-        let oid = Oid::from_str(&oid_str).unwrap();
-        let _ = Repository::open(".").unwrap();
+        let oid = Oid::from_str(&oid_str)?;
+        let _ = Repository::open(".")?;
         let commit = repo.0.find_commit(oid).expect("Unable to find commit");
 
         // Act

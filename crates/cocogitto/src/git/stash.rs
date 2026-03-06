@@ -15,16 +15,17 @@ impl Repository {
 
 #[cfg(test)]
 mod test {
-    use crate::test_helpers::git_init_no_gpg;
     use crate::Tag;
     use anyhow::Result;
     use cmd_lib::run_cmd;
     use sealed_test::prelude::*;
     use speculoos::prelude::*;
+    use cocogitto_test_helpers::git_init_no_gpg;
+    use crate::git::repository::Repository;
 
     #[sealed_test]
     fn should_stash_failed_bump() -> Result<()> {
-        let mut repo = git_init_no_gpg()?;
+        let mut repo: Repository = git_init_no_gpg()?.into();
         run_cmd!(git commit -m "Initial commit" --allow-empty;)?;
 
         let statuses = repo.get_statuses()?.0;

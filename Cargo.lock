@@ -329,6 +329,7 @@ dependencies = [
  "clap_mangen",
  "cmd_lib",
  "cocogitto-dependency-resolver",
+ "cocogitto-test-helpers",
  "cog_schemars",
  "colored",
  "config",
@@ -368,6 +369,22 @@ dependencies = [
  "petgraph",
  "serde",
  "serde-xml-rs",
+ "serde_json",
+ "speculoos",
+]
+
+[[package]]
+name = "cocogitto-test-helpers"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "assert_cmd",
+ "cmd_lib",
+ "git2",
+ "indoc",
+ "predicates",
+ "pretty_assertions",
+ "sealed_test",
  "serde_json",
  "speculoos",
 ]

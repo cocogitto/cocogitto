@@ -301,7 +301,7 @@ mod test {
     use crate::git::repository::Repository;
     use crate::git::tag::Tag;
     use crate::settings::{MonoRepoPackage, MonorepoConfig, Settings};
-    use crate::test_helpers::{git_init_no_gpg, git_tag};
+    use cocogitto_test_helpers::{git_init_no_gpg, git_tag};
 
     impl Commit {
         fn commit_fixture(commit_type: CommitType, is_breaking_change: bool) -> Self {
@@ -324,7 +324,7 @@ mod test {
     #[sealed_test]
     fn major_bump() -> Result<()> {
         // Arrange
-        let repository = git_init_no_gpg()?;
+        let repository: Repository = git_init_no_gpg()?.into();
         let base_version = Tag::from_str("1.0.0", None)?;
 
         // Act
@@ -338,7 +338,7 @@ mod test {
     #[sealed_test]
     fn minor_bump() -> Result<()> {
         // Arrange
-        let repository = git_init_no_gpg()?;
+        let repository: Repository = git_init_no_gpg()?.into();
         let base_version = Tag::from_str("1.0.0", None)?;
 
         // Act
@@ -352,7 +352,7 @@ mod test {
     #[sealed_test]
     fn patch_bump() -> Result<()> {
         // Arrange
-        let repository = git_init_no_gpg()?;
+        let repository: Repository = git_init_no_gpg()?.into();
         let base_version = Tag::from_str("1.0.0", None)?;
 
         // Act
@@ -366,7 +366,7 @@ mod test {
     #[sealed_test]
     fn no_bump() -> Result<()> {
         // Arrange
-        let repository = git_init_no_gpg()?;
+        let repository: Repository = git_init_no_gpg()?.into();
         let base_version = Tag::from_str("1.0.0", None)?;
 
         // Act
@@ -433,7 +433,7 @@ mod test {
     #[sealed_test]
     fn increment_minor_version_should_set_patch_to_zero() -> Result<()> {
         // Arrange
-        let repository = git_init_no_gpg()?;
+        let repository: Repository = git_init_no_gpg()?.into();
         let version = Tag::from_str("1.1.1", None)?;
 
         // Act
@@ -448,7 +448,7 @@ mod test {
     #[sealed_test]
     fn increment_major_version_should_set_minor_and_patch_to_zero() -> Result<()> {
         // Arrange
-        let repository = git_init_no_gpg()?;
+        let repository: Repository = git_init_no_gpg()?.into();
         let version = Tag::from_str("1.1.1", None)?;
 
         // Act
@@ -463,7 +463,7 @@ mod test {
     #[sealed_test]
     fn increment_should_strip_metadata() -> Result<()> {
         // Arrange
-        let repository = git_init_no_gpg()?;
+        let repository: Repository = git_init_no_gpg()?.into();
         let version = Tag::from_str("1.1.1-pre+10.1", None)?;
 
         // Act
@@ -653,7 +653,7 @@ mod test {
     #[sealed_test]
     fn monorepo_auto_bump_should_succeed_with_only_package_commits() -> Result<()> {
         // Arrange
-        let repository = git_init_no_gpg()?;
+        let repository: Repository = git_init_no_gpg()?.into();
         run_cmd!(
             echo "feature" > one;
             git add .;
@@ -795,7 +795,7 @@ mod test {
     }
 
     fn init_monorepo() -> Result<Repository> {
-        let repository = git_init_no_gpg()?;
+        let repository: Repository = git_init_no_gpg()?.into();
         let mut packages = HashMap::new();
         packages.insert(
             "one".to_string(),

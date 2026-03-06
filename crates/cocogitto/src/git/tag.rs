@@ -56,7 +56,7 @@ impl Repository {
             return Err(Git2Error::ChangesNeedToBeCommitted(statuses));
         }
 
-        let head = self.get_head_commit().unwrap();
+        let head = self.get_head_commit()?;
         self.0
             .tag_lightweight(&tag.to_string(), &head.into_object(), false)
             .map(|_| ())
@@ -74,7 +74,7 @@ impl Repository {
             return Err(Git2Error::ChangesNeedToBeCommitted(statuses));
         }
 
-        let head = self.get_head_commit().unwrap();
+        let head = self.get_head_commit()?;
         let sig = self.0.signature()?;
         self.0
             .tag(&tag.to_string(), &head.into_object(), &sig, msg, false)
@@ -316,10 +316,10 @@ mod test {
     use sealed_test::prelude::*;
     use semver::Version;
     use speculoos::prelude::*;
-
+    use cocogitto_test_helpers::{commit, git_init_no_gpg, git_tag};
+    use crate::git::repository::Repository;
     use crate::git::tag::{Tag, TagLookUpOptions};
     use crate::settings::{MonoRepoPackage, Settings};
-    use crate::test_helpers::{commit, git_init_no_gpg, git_tag};
 
     #[test]
     fn should_compare_tags() -> Result<()> {
@@ -340,7 +340,7 @@ mod test {
 
     #[sealed_test]
     fn tag_lookup() -> Result<()> {
-        let repository = git_init_no_gpg()?;
+        let repository: Repository = git_init_no_gpg()?.into();
         let settings = Settings {
             tag_prefix: Some("v".to_string()),
             ..Default::default()
@@ -526,7 +526,7 @@ mod test {
     #[sealed_test]
     fn get_latest_tag_ok() -> Result<()> {
         // Arrange
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
         run_cmd!(
             git commit --allow-empty -m "first commit";
             git tag 0.1.0;
@@ -545,7 +545,7 @@ mod test {
     #[sealed_test]
     fn get_previous_tag_ok() -> Result<()> {
         // Arrange
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
         run_cmd!(
             git commit --allow-empty -m "first commit";
             git tag 0.1.0;
@@ -570,7 +570,7 @@ mod test {
     #[sealed_test]
     fn get_previous_tag_pre_release_ok() -> Result<()> {
         // Arrange
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
         run_cmd!(
             git commit --allow-empty -m "first commit";
             git tag 0.1.0;
@@ -595,7 +595,7 @@ mod test {
     #[sealed_test]
     fn get_latest_tag_err() -> Result<()> {
         // Arrange
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
         run_cmd!(
             git commit --allow-empty -m "first commit"
         )?;
@@ -611,7 +611,7 @@ mod test {
     #[sealed_test]
     fn get_latest_tag_oid_ok() -> Result<()> {
         // Arrange
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
         run_cmd!(
             git commit --allow-empty -m "first commit";
             git tag 0.1.0;
@@ -628,7 +628,7 @@ mod test {
     #[sealed_test]
     fn get_latest_tag_oid_err() -> Result<()> {
         // Arrange
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
         run_cmd!(git commit --allow-empty -m "first commit")?;
 
         // Act
@@ -662,7 +662,7 @@ mod test {
             ..Default::default()
         };
 
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
         let settings = toml::to_string(&settings)?;
 
         run_cmd!(

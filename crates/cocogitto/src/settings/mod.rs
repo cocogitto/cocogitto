@@ -811,8 +811,8 @@ mod test {
     use conventional_commit_parser::commit::CommitType;
     use sealed_test::prelude::*;
     use speculoos::prelude::*;
-
-    use crate::{test_helpers::git_init_no_gpg, COMMITS_METADATA};
+    use cocogitto_test_helpers::git_init_no_gpg;
+    use crate::COMMITS_METADATA;
 
     #[sealed_test]
     fn should_disable_default_commit_type() -> anyhow::Result<()> {

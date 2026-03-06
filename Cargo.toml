@@ -16,6 +16,7 @@ edition = "2021"
 rust-version = "1.78.0"
 
 [workspace.dependencies]
+cocogitto-test-helpers = { path = "crates/cocogitto-test-helpers", version = "0.1.0" }
 cocogitto-dependency-resolver = { path = "crates/cocogitto-dependency-resolver", version = "0.1.0" }
 git2 = { version = "0.20.0", default-features = false, features = [] }
 anyhow = "1.0.75"

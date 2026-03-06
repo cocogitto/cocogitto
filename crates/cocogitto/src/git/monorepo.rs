@@ -15,12 +15,13 @@ impl Repository {
 #[cfg(test)]
 mod test {
 
-    use crate::test_helpers::{git_init_no_gpg, mkdir};
-    use anyhow::Result;
+    use crate::Repository;
+use anyhow::Result;
     use cmd_lib::run_cmd;
     use indoc::formatdoc;
     use sealed_test::prelude::*;
     use speculoos::prelude::*;
+    use cocogitto_test_helpers::{git_init_no_gpg, mkdir};
 
     #[sealed_test]
     fn get_repo_packages() -> Result<()> {
@@ -37,7 +38,7 @@ mod test {
             "
         );
 
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
         run_cmd!(
             echo $settings > cog.toml;
             git add .;

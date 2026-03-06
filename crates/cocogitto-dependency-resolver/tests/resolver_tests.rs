@@ -11,7 +11,11 @@ fn cocogitto_workspace() -> anyhow::Result<()> {
     let dependencies = resolver.topological_sort(cargo_manifest);
     let dependencies: Vec<_> = dependencies.iter().map(String::as_str).collect();
 
-    assert_that!(dependencies).is_equal_to(vec!["cocogitto-dependency-resolver", "cocogitto"]);
+    assert_that!(dependencies).is_equal_to(vec![
+        "cocogitto-test-helpers",
+        "cocogitto-dependency-resolver",
+        "cocogitto",
+    ]);
 
     Ok(())
 }

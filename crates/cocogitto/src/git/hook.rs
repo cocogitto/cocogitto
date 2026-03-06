@@ -53,12 +53,12 @@ mod tests {
     use crate::CocoGitto;
 
     use crate::settings::{GitHook, GitHookType, Settings};
-    use crate::test_helpers::git_init_no_gpg;
     use anyhow::Result;
     use cmd_lib::run_cmd;
     use sealed_test::prelude::*;
     use speculoos::prelude::*;
     use std::path::Path;
+    use cocogitto_test_helpers::git_init_no_gpg;
 
     #[sealed_test]
     fn add_pre_commit_hook() -> Result<()> {

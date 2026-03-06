@@ -221,10 +221,10 @@ mod test {
 
     use crate::hook::{Hook, HookVersion};
     use crate::settings::{MonoRepoPackage, Settings};
-    use crate::test_helpers::git_init_no_gpg;
     use sealed_test::prelude::*;
     use semver::Version;
     use speculoos::prelude::*;
+    use cocogitto_test_helpers::git_init_no_gpg;
 
     #[test]
     fn parse_empty_string() {
@@ -532,7 +532,7 @@ mod test {
         )?;
 
         let mut hook = Hook::from_str("echo \"the latest {{version_tag|1.0.0}}\"")?;
-        hook.insert_versions(None, None).unwrap();
+        hook.insert_versions(None, None)?;
 
         assert_that!(hook.0.as_str()).is_equal_to("echo \"the latest v1.0.0\"");
         Ok(())
@@ -550,8 +550,7 @@ mod test {
             oid: None,
         };
 
-        hook.insert_versions(None, Some(&HookVersion::new(tag)))
-            .unwrap();
+        hook.insert_versions(None, Some(&HookVersion::new(tag)))?;
 
         assert_that!(hook.0.as_str())
             .is_equal_to("echo \"the latest v2.0.0-pre.alpha-bravo+build.42\"");
@@ -566,8 +565,7 @@ mod test {
 
         let mut hook = Hook::from_str("git commit --allow-empty -m 'chore(snapshot): bump snapshot to {{version+1patch-SNAPSHOT}}'")?;
 
-        hook.insert_versions(None, Some(&HookVersion::new(Tag::from_str("1.0.0", None)?)))
-            .unwrap();
+        hook.insert_versions(None, Some(&HookVersion::new(Tag::from_str("1.0.0", None)?)))?;
 
         let outcome = hook.run(None);
 
@@ -618,8 +616,7 @@ mod test {
         hook.insert_versions(
             Some(&HookVersion::new(current)),
             Some(&HookVersion::new(tag)),
-        )
-        .unwrap();
+        )?;
 
         assert_that!(hook.0.as_str())
             .is_equal_to(r#"echo "cog, version: 1.1.0, tag: cog-v1.1.0, current: 1.0.0, current_tag: cog-v1.0.0""#);
@@ -669,8 +666,7 @@ mod test {
         hook.insert_versions(
             Some(&HookVersion::new(current)),
             Some(&HookVersion::new(tag)),
-        )
-        .unwrap();
+        )?;
 
         assert_that!(hook.0.as_str()).is_equal_to(r#"major=1 minor=2 patch=3"#);
         Ok(())

@@ -47,6 +47,7 @@ indexmap.workspace = true
 cocogitto-dependency-resolver.workspace = true
 
 [dev-dependencies]
+cocogitto-test-helpers.workspace = true
 assert_cmd.workspace = true
 predicates.workspace = true
 indoc.workspace = true
