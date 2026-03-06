@@ -36,13 +36,10 @@ clap_complete = { workspace =  true, optional = true }
 clap_mangen = { workspace =  true, optional = true }
 clap_complete_nushell = { workspace =  true, optional = true }
 conventional_commit_parser.workspace = true
-pest.workspace = true
-pest_derive.workspace = true
 tera.workspace = true
 globset.workspace = true
 log.workspace = true
 stderrlog.workspace = true
-cog_schemars = { workspace =  true, optional = true }
 serde_json = { workspace =  true, optional = true }
 cocogitto-dependency-resolver.workspace = true
 
