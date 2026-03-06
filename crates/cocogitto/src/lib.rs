@@ -1,7 +1,6 @@
 use anyhow::Result;
 use cocogitto_settings::Settings;
 use conventional::commit::Commit;
-use conventional::version::IncrementCommand;
 use conventional_commit_parser::commit::{CommitType, ConventionalCommit};
 use conventional_commit_parser::parse_footers;
 use error::BumpError;
@@ -12,10 +11,8 @@ use std::io::{self, BufRead};
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
-use crate::git::error::{Git2Error, TagError};
+use crate::git::error::Git2Error;
 use crate::git::rev::cache::get_cache;
-
-use crate::git::tag::Tag;
 
 pub mod command;
 pub mod conventional;

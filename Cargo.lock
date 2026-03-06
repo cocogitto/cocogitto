@@ -328,6 +328,7 @@ dependencies = [
  "clap_complete_nushell",
  "clap_mangen",
  "cmd_lib",
+ "cocogitto-core",
  "cocogitto-dependency-resolver",
  "cocogitto-settings",
  "cocogitto-test-helpers",
@@ -356,6 +357,21 @@ dependencies = [
  "tera",
  "toml",
  "which 6.0.3",
+]
+
+[[package]]
+name = "cocogitto-core"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "cocogitto-settings",
+ "conventional_commit_parser",
+ "git2",
+ "semver",
+ "serde",
+ "serde_json",
+ "speculoos",
 ]
 
 [[package]]

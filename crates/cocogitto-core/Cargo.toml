@@ -1,0 +1,19 @@
+[package]
+name = "cocogitto-core"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+serde.workspace = true
+semver.workspace = true
+git2.workspace = true
+cocogitto-settings.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
+speculoos.workspace = true
+chrono.workspace = true
+conventional_commit_parser.workspace = true
+anyhow.workspace = true

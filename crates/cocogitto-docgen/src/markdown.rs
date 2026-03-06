@@ -192,9 +192,9 @@ fn json_to_toml(json: &JsonValue) -> Option<TomlValue> {
 mod test {
     use crate::markdown::ToMarkDown;
     use crate::schema::root_schema;
+    use sealed_test::prelude::*;
     use std::fs;
     use std::io::BufWriter;
-    use sealed_test::prelude::*;
 
     #[sealed_test]
     fn test() -> anyhow::Result<()> {

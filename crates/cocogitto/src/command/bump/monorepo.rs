@@ -5,16 +5,17 @@ use crate::conventional::changelog::context::{
     MonoRepoContext, PackageBumpContext, PackageContext,
 };
 use crate::conventional::changelog::ReleaseType;
-use crate::conventional::version::{Increment, IncrementCommand};
-use crate::git::error::TagError;
-use crate::git::tag::{Tag, TagLookUpOptions};
+use crate::git::tag::TagLookUpOptions;
 use crate::hook::HookVersion;
 use crate::CocoGitto;
 use anyhow::{bail, Result};
 use cocogitto_settings::{MonoRepoPackage, SETTINGS};
 
 use crate::conventional::{get_monorepo_changelog_template, get_package_changelog_template};
-use crate::git::oid::OidOf;
+use cocogitto_core::error::TagError;
+use cocogitto_core::increment::{Increment, IncrementCommand};
+use cocogitto_core::oid::OidOf;
+use cocogitto_core::tag::Tag;
 use log::{info, warn};
 use tera::Tera;
 

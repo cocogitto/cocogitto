@@ -3,10 +3,11 @@ use crate::command::bump::{BumpOptions, HookRunOptions};
 use crate::conventional::changelog::ReleaseType;
 
 use crate::conventional::get_changelog_template;
-use crate::git::tag::{Tag, TagLookUpOptions};
+use crate::git::tag::TagLookUpOptions;
 use crate::hook::HookVersion;
 use crate::CocoGitto;
 use anyhow::Result;
+use cocogitto_core::tag::Tag;
 use cocogitto_settings::SETTINGS;
 use colored::*;
 use log::info;

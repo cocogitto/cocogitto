@@ -3,11 +3,11 @@ use conventional_commit_parser::commit::{Footer, Separator};
 use serde::Serialize;
 
 use crate::conventional::commit::Commit;
-use crate::git::oid::OidOf;
 use crate::git::rev::CommitIter;
 use colored::Colorize;
 
 use crate::conventional::changelog::error::ChangelogError;
+use cocogitto_core::oid::OidOf;
 use cocogitto_settings::SETTINGS;
 use log::warn;
 

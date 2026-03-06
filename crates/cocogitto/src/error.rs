@@ -1,9 +1,7 @@
-use std::fmt::{self, Debug, Display, Formatter};
-
-use crate::git::oid::OidOf;
-
 use crate::conventional::error::ConventionalCommitError;
+use cocogitto_core::oid::OidOf;
 use colored::*;
+use std::fmt::{self, Debug, Display, Formatter};
 
 #[derive(Debug)]
 pub(crate) struct CogCheckReport {

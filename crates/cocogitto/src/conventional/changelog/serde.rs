@@ -1,18 +1,7 @@
 use crate::conventional::changelog::release::{ChangelogCommit, ChangelogFooter};
-use crate::git::oid::OidOf;
-use crate::git::tag::Tag;
 use cocogitto_settings::COMMITS_METADATA;
 use serde::ser::SerializeStruct;
 use serde::{Serialize, Serializer};
-
-impl Serialize for Tag {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_str(&self.to_string())
-    }
-}
 
 impl Serialize for ChangelogCommit {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -59,37 +48,15 @@ impl Serialize for ChangelogCommit {
     }
 }
 
-impl Serialize for OidOf {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let mut oidof = serializer.serialize_struct("OidOf", 1)?;
-        match self {
-            OidOf::Tag(tag) => {
-                oidof.serialize_field("tag", &tag.to_string())?;
-                if let Some(oid) = tag.oid() {
-                    oidof.serialize_field("id", &oid.to_string())?;
-                }
-            }
-            OidOf::FirstCommit(oid) | OidOf::Head(oid) | OidOf::Other(oid) => {
-                oidof.serialize_field("id", &oid.to_string())?
-            }
-        };
-        oidof.end()
-    }
-}
-
 #[cfg(test)]
 mod test {
+    use crate::conventional::changelog::release::ChangelogCommit;
+    use crate::conventional::commit::Commit;
     use chrono::Utc;
+    use cocogitto_core::tag::Tag;
     use conventional_commit_parser::commit::{CommitType, ConventionalCommit, Footer};
     use git2::Oid;
     use speculoos::prelude::*;
-
-    use crate::conventional::changelog::release::ChangelogCommit;
-    use crate::conventional::commit::Commit;
-    use crate::git::tag::Tag;
 
     #[test]
     fn should_serialize_tag() {

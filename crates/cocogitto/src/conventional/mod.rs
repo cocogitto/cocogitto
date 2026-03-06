@@ -7,7 +7,6 @@ pub mod bump;
 pub mod changelog;
 pub mod commit;
 pub(crate) mod error;
-pub mod version;
 
 /// Creates a template context for remote changelog generation.
 ///

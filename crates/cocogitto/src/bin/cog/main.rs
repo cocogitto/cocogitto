@@ -8,7 +8,6 @@ use std::path::PathBuf;
 use cocogitto::conventional::changelog::context::RemoteContext;
 use cocogitto::conventional::changelog::template::Template;
 use cocogitto::conventional::changelog::ReleaseType;
-use cocogitto::conventional::version::{IncrementCommand, PreCommand};
 use cocogitto::conventional::{commit as conv_commit, get_template_context};
 
 use cocogitto::log::filter::{CommitFilter, CommitFilters};
@@ -23,6 +22,7 @@ use clap_complete::{shells, Generator};
 use clap_complete_nushell::Nushell;
 use cocogitto::command::bump::{BumpOptions, PackageBumpOptions};
 use cocogitto::command::commit::CommitOptions;
+use cocogitto_core::increment::{IncrementCommand, PreCommand};
 use cocogitto_settings::{set_config_path, GitHookType, DEFAULT_CONFIG_PATH, SETTINGS};
 
 fn hook_profiles() -> PossibleValuesParser {

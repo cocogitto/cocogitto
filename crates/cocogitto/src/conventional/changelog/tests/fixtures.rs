@@ -1,9 +1,9 @@
 use crate::conventional::changelog::context::{MonoRepoContext, PackageBumpContext, RemoteContext};
 use crate::conventional::changelog::release::{ChangelogCommit, Release};
 use crate::conventional::commit::Commit;
-use crate::git::oid::OidOf;
-use crate::git::tag::Tag;
 use chrono::NaiveDateTime;
+use cocogitto_core::oid::OidOf;
+use cocogitto_core::tag::Tag;
 use conventional_commit_parser::commit::{CommitType, ConventionalCommit, Footer, Separator};
 use git2::Oid;
 

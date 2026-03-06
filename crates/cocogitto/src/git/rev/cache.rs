@@ -1,7 +1,8 @@
-use crate::git::error::{Git2Error, TagError};
-use crate::git::oid::OidOf;
+use crate::git::error::Git2Error;
 use crate::git::repository::Repository;
-use crate::git::tag::Tag;
+use cocogitto_core::error::TagError;
+use cocogitto_core::oid::OidOf;
+use cocogitto_core::tag::Tag;
 use std::collections::{BTreeMap, HashMap};
 use std::sync::{Mutex, MutexGuard};
 

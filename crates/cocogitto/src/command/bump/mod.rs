@@ -1,19 +1,20 @@
 use crate::command::bump::prerelease::increment_prerelease;
 use crate::conventional::changelog::release::Release;
 use crate::conventional::commit::Commit;
-use crate::git::error::TagError;
-use crate::git::oid::OidOf;
 
+use crate::conventional::bump::bump;
 use crate::conventional::error::BumpError as ConvBumpError;
-use crate::conventional::version::IncrementCommand;
-use crate::conventional::version::PreCommand;
 use crate::git::repository::Repository;
-use crate::git::tag::{Tag, TagLookUpOptions};
+use crate::git::tag::TagLookUpOptions;
 use crate::hook::{Hook, HookVersion};
 use crate::BumpError;
 use crate::CocoGitto;
 use anyhow::Result;
 use anyhow::{bail, ensure, Context};
+use cocogitto_core::error::TagError;
+use cocogitto_core::increment::{IncrementCommand, PreCommand};
+use cocogitto_core::oid::OidOf;
+use cocogitto_core::tag::Tag;
 use cocogitto_settings::Hooks;
 use cocogitto_settings::{HookType, MonoRepoPackage, Settings, COMMITS_METADATA, SETTINGS};
 use colored::Colorize;
@@ -95,7 +96,7 @@ impl<'a> BumpOptions<'a> {
             .filter(|tag| *tag > current);
 
         let increment = increment.unwrap_or_else(|| self.increment.clone());
-        let (mut next, had_commits) = match current.bump(increment, repository) {
+        let (mut next, had_commits) = match bump(&current, increment, repository) {
             Ok(tag) => (tag, true),
             Err(ConvBumpError::NoCommitFound) if allow_empty => (current.strip_metadata(), false),
             Err(other) => bail!(other),
