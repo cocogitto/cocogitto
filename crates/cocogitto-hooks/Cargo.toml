@@ -1,0 +1,21 @@
+[package]
+name = "cocogitto-hooks"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+cocogitto-core.workspace = true
+cocogitto-settings.workspace = true
+semver.workspace = true
+pest.workspace = true
+pest_derive.workspace = true
+
+[dev-dependencies]
+cmd_lib.workspace = true
+cocogitto-test-helpers.workspace = true
+sealed_test.workspace = true
+speculoos.workspace = true
+toml.workspace = true

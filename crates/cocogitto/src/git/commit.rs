@@ -200,16 +200,16 @@ fn ssh_sign_string(
 #[cfg(test)]
 mod test {
     use crate::git::repository::Repository;
-    use crate::test_helpers::git_init_no_gpg;
     use anyhow::Result;
     use cmd_lib::run_cmd;
+    use cocogitto_test_helpers::git_init_no_gpg;
     use sealed_test::prelude::*;
     use speculoos::prelude::*;
 
     #[sealed_test]
     fn create_commit_ok() -> Result<()> {
         // Arrange
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
 
         run_cmd!(
             echo changes > file;
@@ -254,7 +254,7 @@ mod test {
     #[sealed_test]
     fn create_empty_commit() -> Result<()> {
         // Arrange
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
 
         // Act
         let oid = repo.commit("feat: a test commit", false, true);
@@ -335,7 +335,7 @@ mod test {
     #[sealed_test]
     fn not_create_empty_commit() -> Result<()> {
         // Arrange
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
 
         // Act
         let oid = repo.commit("feat: a test commit", false, false);
@@ -348,7 +348,7 @@ mod test {
     #[sealed_test]
     fn not_create_empty_commit_with_unstaged_changed() -> Result<()> {
         // Arrange
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
         run_cmd!(echo changes > file;)?;
 
         // Act

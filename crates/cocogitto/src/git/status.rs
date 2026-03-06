@@ -130,8 +130,9 @@ mod test {
 
     use crate::git::status::{Changes, Statuses};
 
-    use crate::test_helpers::git_init_no_gpg;
+    use crate::git::repository::Repository;
     use anyhow::{anyhow, Result};
+    use cocogitto_test_helpers::git_init_no_gpg;
     use git2::StatusOptions;
     use sealed_test::prelude::*;
     use speculoos::prelude::*;
@@ -139,7 +140,7 @@ mod test {
     #[sealed_test]
     fn get_repo_statuses_empty() -> Result<()> {
         // Arrange
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
 
         // Act
         let statuses = repo.get_statuses()?;
@@ -152,8 +153,8 @@ mod test {
     #[sealed_test]
     fn get_repo_statuses_not_empty() -> Result<()> {
         // Arrange
-        let repo = git_init_no_gpg()?;
-        std::fs::write("file", "changes")?;
+        let repo: Repository = git_init_no_gpg()?.into();
+        fs::write("file", "changes")?;
 
         // Act
         let statuses = repo.get_statuses()?;
@@ -166,7 +167,7 @@ mod test {
     #[sealed_test]
     fn should_get_statuses_from_git_statuses() -> Result<()> {
         // Arrange
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
         fs::write("file", "content")?;
 
         let mut options = StatusOptions::new();

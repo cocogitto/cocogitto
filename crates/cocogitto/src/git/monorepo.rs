@@ -1,7 +1,7 @@
 use crate::git::repository::Repository;
-
 use crate::git::tag::TagLookUpOptions;
-use crate::{Tag, TagError};
+use cocogitto_core::error::TagError;
+use cocogitto_core::tag::Tag;
 
 impl Repository {
     /// Get the latest SemVer tag for a given monorepo package.
@@ -15,9 +15,10 @@ impl Repository {
 #[cfg(test)]
 mod test {
 
-    use crate::test_helpers::{git_init_no_gpg, mkdir};
+    use crate::Repository;
     use anyhow::Result;
     use cmd_lib::run_cmd;
+    use cocogitto_test_helpers::{git_init_no_gpg, mkdir};
     use indoc::formatdoc;
     use sealed_test::prelude::*;
     use speculoos::prelude::*;
@@ -37,7 +38,7 @@ mod test {
             "
         );
 
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
         run_cmd!(
             echo $settings > cog.toml;
             git add .;

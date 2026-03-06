@@ -1,0 +1,11 @@
+[package]
+name = "cocogitto-test-helpers"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+cmd_lib.workspace = true
+anyhow.workspace = true
+git2.workspace = true

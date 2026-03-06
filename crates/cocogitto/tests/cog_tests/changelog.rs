@@ -9,7 +9,7 @@ use sealed_test::prelude::*;
 use std::fs;
 use std::path::PathBuf;
 
-use cocogitto::settings::Settings;
+use cocogitto_settings::Settings;
 
 use crate::helpers::*;
 

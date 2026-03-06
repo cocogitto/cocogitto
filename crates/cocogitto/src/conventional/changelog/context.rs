@@ -1,7 +1,7 @@
+use crate::conventional::changelog::release::Release;
+use cocogitto_core::oid::OidOf;
 use serde::Serialize;
 use tera::Context;
-
-use crate::{conventional::changelog::release::Release, git::oid::OidOf};
 
 /// A wrapper to append remote repository information to template context
 #[derive(Debug)]

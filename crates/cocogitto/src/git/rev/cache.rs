@@ -1,7 +1,8 @@
-use crate::git::error::{Git2Error, TagError};
-use crate::git::oid::OidOf;
+use crate::git::error::Git2Error;
 use crate::git::repository::Repository;
-use crate::git::tag::Tag;
+use cocogitto_core::error::TagError;
+use cocogitto_core::oid::OidOf;
+use cocogitto_core::tag::Tag;
 use std::collections::{BTreeMap, HashMap};
 use std::sync::{Mutex, MutexGuard};
 
@@ -92,8 +93,8 @@ impl Repository {
 mod test {
     use crate::git::repository::Repository;
     use crate::git::rev::cache::get_cache;
-    use crate::test_helpers::git_init_no_gpg;
     use cmd_lib::run_cmd;
+    use cocogitto_test_helpers::git_init_no_gpg;
     use sealed_test::prelude::*;
     use speculoos::prelude::*;
 
@@ -108,7 +109,7 @@ mod test {
     #[sealed_test]
     fn resolve_annotated_tag_ok() -> anyhow::Result<()> {
         // Arrange
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
         run_cmd!(
             git commit --allow-empty -m "first commit";
             git tag -a 1.0.0 -m "annotated tag";
@@ -125,7 +126,7 @@ mod test {
     #[sealed_test]
     fn resolve_lightweight_tag_ok() -> anyhow::Result<()> {
         // Arrange
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
         run_cmd!(
             git commit --allow-empty -m "first commit";
             git tag 1.0.0;
@@ -142,7 +143,7 @@ mod test {
     #[sealed_test]
     fn resolve_lightweight_tag_err() -> anyhow::Result<()> {
         // Arrange
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
         run_cmd!(
             git commit --allow-empty -m "first commit";
             git tag the_tag;
@@ -159,7 +160,7 @@ mod test {
     #[sealed_test]
     fn dont_read_future_tag() -> anyhow::Result<()> {
         // Arrange
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
         run_cmd!(
             git commit --allow-empty -m "first commit";
             git commit --allow-empty -m "second commit";

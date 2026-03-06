@@ -3,12 +3,12 @@ use conventional_commit_parser::commit::{Footer, Separator};
 use serde::Serialize;
 
 use crate::conventional::commit::Commit;
-use crate::git::oid::OidOf;
 use crate::git::rev::CommitIter;
-use crate::{settings, SETTINGS};
 use colored::Colorize;
 
 use crate::conventional::changelog::error::ChangelogError;
+use cocogitto_core::oid::OidOf;
+use cocogitto_settings::SETTINGS;
 use log::warn;
 
 #[derive(Debug, Serialize)]
@@ -109,8 +109,8 @@ pub struct ChangelogCommit {
 
 impl From<Commit> for ChangelogCommit {
     fn from(commit: Commit) -> Self {
-        let author_username =
-            settings::commit_username(&commit.author).map(|username| username.to_string());
+        let author_username = cocogitto_settings::commit_username(&commit.author)
+            .map(|username| username.to_string());
 
         ChangelogCommit {
             author_username,
@@ -150,7 +150,7 @@ impl<'a> From<&'a Footer> for ChangelogFooter<'a> {
                     .map(str::trim)
                     .unwrap_or(footer.content.as_str());
 
-                let username = settings::commit_username(user);
+                let username = cocogitto_settings::commit_username(user);
 
                 Self::GithubCoAuthoredBy { user, username }
             }

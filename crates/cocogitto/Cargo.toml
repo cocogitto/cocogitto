@@ -15,11 +15,13 @@ and semver specifications.
 """
 
 [dependencies]
+cocogitto-hooks.workspace = true
+cocogitto-core.workspace = true
+cocogitto-settings.workspace = true
 git2.workspace = true
 anyhow.workspace = true
 colored.workspace = true
 chrono.workspace = true
-config.workspace = true
 edit.workspace = true
 itertools.workspace = true
 serde.workspace = true
@@ -34,19 +36,15 @@ clap_complete = { workspace =  true, optional = true }
 clap_mangen = { workspace =  true, optional = true }
 clap_complete_nushell = { workspace =  true, optional = true }
 conventional_commit_parser.workspace = true
-pest.workspace = true
-pest_derive.workspace = true
 tera.workspace = true
 globset.workspace = true
 log.workspace = true
 stderrlog.workspace = true
-cog_schemars = { workspace =  true, optional = true }
 serde_json = { workspace =  true, optional = true }
-maplit.workspace = true
-indexmap.workspace = true
 cocogitto-dependency-resolver.workspace = true
 
 [dev-dependencies]
+cocogitto-test-helpers.workspace = true
 assert_cmd.workspace = true
 predicates.workspace = true
 indoc.workspace = true
@@ -59,7 +57,6 @@ serde_json.workspace = true
 [features]
 default = ["cli"]
 cli = ["clap", "clap_complete", "clap_mangen", "clap_complete_nushell"]
-docgen = ["clap", "cog_schemars", "serde_json"]
 
 [lib]
 name = "cocogitto"
@@ -68,10 +65,6 @@ path = "src/lib.rs"
 [[bin]]
 name = "cog"
 required-features = ["clap", "clap_complete", "clap_mangen"]
-
-[[bin]]
-name = "cog-doc"
-required-features = ["docgen"]
 
 [[test]]
 name = "all"

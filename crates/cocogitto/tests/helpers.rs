@@ -5,13 +5,12 @@ use anyhow::anyhow;
 use anyhow::Result;
 use assert_cmd::Command;
 use cmd_lib::{run_cmd, run_fun};
+use cocogitto_core::tag::Tag;
+use cocogitto_settings::get_config_path;
+use cocogitto_settings::{MonoRepoPackage, MonorepoConfig, Settings};
 use speculoos::assert_that;
 use speculoos::iter::ContainingIntoIterAssertions;
 use speculoos::option::OptionAssertions;
-
-use cocogitto::get_config_path;
-use cocogitto::git::tag::Tag;
-use cocogitto::settings::{MonoRepoPackage, MonorepoConfig, Settings};
 
 pub fn init_monorepo(settings: &mut Settings) -> Result<()> {
     let mut packages = HashMap::new();

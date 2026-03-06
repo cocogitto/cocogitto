@@ -1,20 +1,22 @@
 use crate::command::bump::prerelease::increment_prerelease;
 use crate::conventional::changelog::release::Release;
 use crate::conventional::commit::Commit;
-use crate::git::error::TagError;
-use crate::git::oid::OidOf;
 
+use crate::conventional::bump::bump;
 use crate::conventional::error::BumpError as ConvBumpError;
-use crate::conventional::version::IncrementCommand;
-use crate::conventional::version::PreCommand;
 use crate::git::repository::Repository;
-use crate::git::tag::{Tag, TagLookUpOptions};
-use crate::hook::{Hook, HookVersion, Hooks};
-use crate::settings::{HookType, MonoRepoPackage, Settings};
+use crate::git::tag::TagLookUpOptions;
 use crate::BumpError;
-use crate::{CocoGitto, COMMITS_METADATA, SETTINGS};
+use crate::CocoGitto;
 use anyhow::Result;
 use anyhow::{bail, ensure, Context};
+use cocogitto_core::error::TagError;
+use cocogitto_core::increment::{IncrementCommand, PreCommand};
+use cocogitto_core::oid::OidOf;
+use cocogitto_core::tag::Tag;
+use cocogitto_hooks::{Hook, HookVersion};
+use cocogitto_settings::Hooks;
+use cocogitto_settings::{HookType, MonoRepoPackage, Settings, COMMITS_METADATA, SETTINGS};
 use colored::Colorize;
 use conventional_commit_parser::commit::CommitType;
 use globset::Glob;
@@ -94,7 +96,7 @@ impl<'a> BumpOptions<'a> {
             .filter(|tag| *tag > current);
 
         let increment = increment.unwrap_or_else(|| self.increment.clone());
-        let (mut next, had_commits) = match current.bump(increment, repository) {
+        let (mut next, had_commits) = match bump(&current, increment, repository) {
             Ok(tag) => (tag, true),
             Err(ConvBumpError::NoCommitFound) if allow_empty => (current.strip_metadata(), false),
             Err(other) => bail!(other),
@@ -352,7 +354,7 @@ impl CocoGitto {
     }
 
     fn run_hooks(&self, options: HookRunOptions) -> Result<()> {
-        let settings = Settings::get(&self.repository)?;
+        let settings = Settings::try_from_path(".")?;
 
         let hooks: Vec<Hook> = match (options.package, options.hook_profile) {
             (None, Some(profile)) => settings

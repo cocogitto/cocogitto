@@ -36,16 +36,17 @@ impl Repository {
 
 #[cfg(test)]
 mod test {
-    use crate::test_helpers::git_init_no_gpg;
+    use crate::git::repository::Repository;
     use anyhow::Result;
     use cmd_lib::run_cmd;
+    use cocogitto_test_helpers::git_init_no_gpg;
     use sealed_test::prelude::*;
     use speculoos::prelude::*;
 
     #[sealed_test]
     fn get_head_some() -> Result<()> {
         // Arrange
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
 
         run_cmd!(
             echo changes > file;
@@ -65,7 +66,7 @@ mod test {
     #[sealed_test]
     fn get_head_none() -> Result<()> {
         // Arrange
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
 
         run_cmd!(
             echo changes > file;
@@ -82,7 +83,7 @@ mod test {
 
     #[sealed_test]
     fn get_diff_some() -> Result<()> {
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
 
         // Arrange
         run_cmd!(
@@ -100,7 +101,7 @@ mod test {
 
     #[sealed_test]
     fn get_diff_none() -> Result<()> {
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
 
         // Arrange
         run_cmd!(
@@ -117,7 +118,7 @@ mod test {
 
     #[sealed_test]
     fn get_diff_include_untracked_some() -> Result<()> {
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
 
         // Arrange
         run_cmd!(
@@ -135,7 +136,7 @@ mod test {
     #[sealed_test]
     fn get_diff_include_untracked_none() -> Result<()> {
         // Arrange
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
 
         // Act
         let diffs = repo.get_diff(true);

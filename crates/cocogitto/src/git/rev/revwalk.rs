@@ -1,11 +1,11 @@
-use git2::Commit;
-
 use crate::git::error::Git2Error;
-use crate::git::oid::OidOf;
 use crate::git::repository::Repository;
 use crate::git::rev::filters::PackagePathFilter;
 use crate::git::rev::CommitIter;
-use crate::SETTINGS;
+use cocogitto_core::oid::OidOf;
+use cocogitto_settings;
+use cocogitto_settings::SETTINGS;
+use git2::Commit;
 
 impl Repository {
     /// Return a commit range for the given package from a [`RevspecPattern2`]
@@ -173,17 +173,17 @@ mod test {
 
     use anyhow::Result;
 
+    use crate::conventional::changelog::release::Release;
+    use crate::git::repository::Repository;
+    use crate::git::tag::TagLookUpOptions;
     use cmd_lib::run_cmd;
+    use cocogitto_core::oid::OidOf;
+    use cocogitto_core::tag::Tag;
+    use cocogitto_settings::{MonoRepoPackage, Settings};
+    use cocogitto_test_helpers::{commit, git_init_no_gpg, git_tag, mkdir};
     use git2::Oid;
     use sealed_test::prelude::*;
     use speculoos::prelude::*;
-
-    use crate::conventional::changelog::release::Release;
-    use crate::git::oid::OidOf;
-    use crate::git::repository::Repository;
-    use crate::git::tag::{Tag, TagLookUpOptions};
-    use crate::settings::{MonoRepoPackage, Settings};
-    use crate::test_helpers::{commit, git_init_no_gpg, git_tag, mkdir};
 
     const COCOGITTO_REPOSITORY: &str = env!("CARGO_MANIFEST_DIR");
 
@@ -203,7 +203,7 @@ mod test {
     #[sealed_test]
     fn should_get_range_for_a_single_release() -> Result<()> {
         // Arrange
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
         let one = commit("chore: first commit")?;
         let two = commit("feat: feature 1")?;
         let three = commit("feat: feature 2")?;
@@ -235,7 +235,7 @@ mod test {
     #[sealed_test]
     fn should_get_range_for_a_multiple_release() -> Result<()> {
         // Arrange
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
         let one = commit("chore: first commit")?;
         let two = commit("feat: feature 1")?;
         let three = commit("feat: feature 2")?;
@@ -299,7 +299,7 @@ mod test {
     #[sealed_test]
     fn get_annotated_tag_commits() -> Result<()> {
         // Arrange
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
         let first = commit("chore: init")?;
         let _second = commit("chore: 1.0.0")?;
 
@@ -325,7 +325,7 @@ mod test {
     #[sealed_test]
     fn get_package_commit_range() -> Result<()> {
         // Arrange
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
         let mut packages = HashMap::new();
         packages.insert(
             "one".to_string(),
@@ -336,7 +336,7 @@ mod test {
         );
 
         let settings = Settings {
-            monorepo: Some(crate::settings::MonorepoConfig {
+            monorepo: Some(cocogitto_settings::MonorepoConfig {
                 packages,
                 ..Default::default()
             }),
@@ -469,7 +469,7 @@ mod test {
     }
 
     fn init_mono_repo_for_range_filtering() -> Result<Repository> {
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
         let mut packages = HashMap::new();
         packages.insert(
             "one".to_string(),
@@ -482,7 +482,7 @@ mod test {
         );
 
         let settings = Settings {
-            monorepo: Some(crate::settings::MonorepoConfig {
+            monorepo: Some(cocogitto_settings::MonorepoConfig {
                 packages,
                 ..Default::default()
             }),
@@ -504,7 +504,7 @@ mod test {
     #[sealed_test]
     fn get_tag_commits() -> Result<()> {
         // Arrange
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
 
         let first = commit("chore: init")?;
         commit("chore: 1.0.0")?;
@@ -593,7 +593,7 @@ mod test {
     #[sealed_test]
     fn from_commit_to_head() -> Result<()> {
         // Arrange
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
 
         commit("chore: init")?;
         commit("feat: a commit")?;
@@ -622,7 +622,7 @@ mod test {
     #[sealed_test]
     fn from_commit_to_head_with_overlapping_tag() -> Result<()> {
         // Arrange
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
 
         commit("chore: init")?;
         commit("feat: a commit")?;

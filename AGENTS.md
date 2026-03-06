@@ -246,7 +246,7 @@ pre_bump_hooks = [
 - Checks conventional commit compliance
 - Zero-configuration setup
 
-## Best Practices for AI Agents
+## Mandatory Practices for AI Agents
 
 ### Coding Rules
 - **No AI Traces**: Leave no comments or traces indicating AI involvement in the code
@@ -316,6 +316,22 @@ impl Repository {
 2. **Unit Tests Second**: Add detailed tests for edge cases
 3. **Run Tests Frequently**: Verify after each small change
 4. **Check Coverage**: Ensure coverage maintained
+
+### Quality Checks for Each Code Change
+After every code change, run these commands to ensure quality:
+
+```bash
+# Run all tests
+cargo nextest run
+
+# Run linter
+cargo clippy
+
+# Format code
+cargo fmt --all
+```
+
+All commands should return exit code 0 before committing changes.
 
 ### Documentation Updates
 1. **Identify Affected Docs**: Find relevant guide sections

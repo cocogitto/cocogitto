@@ -5,7 +5,7 @@ use crate::helpers::*;
 use anyhow::Result;
 use assert_cmd::prelude::*;
 use cmd_lib::run_cmd;
-use cocogitto::settings::Settings;
+use cocogitto_settings::Settings;
 use indoc::indoc;
 use sealed_test::prelude::*;
 use speculoos::prelude::*;

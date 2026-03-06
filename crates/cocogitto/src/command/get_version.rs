@@ -1,11 +1,10 @@
-use anyhow::bail;
-use anyhow::Result;
-use log::warn;
-use semver::Version;
-
-use crate::git::error::TagError;
 use crate::git::tag::TagLookUpOptions;
 use crate::CocoGitto;
+use anyhow::bail;
+use anyhow::Result;
+use cocogitto_core::error::TagError;
+use log::warn;
+use semver::Version;
 
 impl CocoGitto {
     pub fn get_latest_version(

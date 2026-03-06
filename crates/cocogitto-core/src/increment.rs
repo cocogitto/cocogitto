@@ -61,10 +61,3 @@ impl PartialOrd for Increment {
         Some(self.cmp(other))
     }
 }
-
-#[cfg(test)]
-// Auto version tests resides in test/ dir since it rely on git log
-// To generate the version
-mod test {
-    // TODO
-}

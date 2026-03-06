@@ -328,22 +328,20 @@ dependencies = [
  "clap_complete_nushell",
  "clap_mangen",
  "cmd_lib",
+ "cocogitto-core",
  "cocogitto-dependency-resolver",
- "cog_schemars",
+ "cocogitto-hooks",
+ "cocogitto-settings",
+ "cocogitto-test-helpers",
  "colored",
- "config",
  "conventional_commit_parser",
  "edit",
  "git2",
  "globset",
- "indexmap",
  "indoc",
  "itertools",
  "log",
- "maplit",
  "once_cell",
- "pest",
- "pest_derive",
  "predicates",
  "pretty_assertions",
  "sealed_test",
@@ -360,6 +358,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "cocogitto-core"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "cocogitto-settings",
+ "conventional_commit_parser",
+ "git2",
+ "semver",
+ "serde",
+ "serde_json",
+ "speculoos",
+]
+
+[[package]]
 name = "cocogitto-dependency-resolver"
 version = "0.1.0"
 dependencies = [
@@ -370,6 +383,67 @@ dependencies = [
  "serde-xml-rs",
  "serde_json",
  "speculoos",
+]
+
+[[package]]
+name = "cocogitto-docgen"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "cocogitto-settings",
+ "cog_schemars",
+ "itertools",
+ "sealed_test",
+ "serde",
+ "serde_json",
+ "speculoos",
+ "toml",
+]
+
+[[package]]
+name = "cocogitto-hooks"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "cmd_lib",
+ "cocogitto-core",
+ "cocogitto-settings",
+ "cocogitto-test-helpers",
+ "pest",
+ "pest_derive",
+ "sealed_test",
+ "semver",
+ "speculoos",
+ "toml",
+]
+
+[[package]]
+name = "cocogitto-settings"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "cocogitto-test-helpers",
+ "cog_schemars",
+ "config",
+ "conventional_commit_parser",
+ "git2",
+ "log",
+ "maplit",
+ "once_cell",
+ "sealed_test",
+ "serde",
+ "serde_json",
+ "speculoos",
+]
+
+[[package]]
+name = "cocogitto-test-helpers"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "cmd_lib",
+ "git2",
 ]
 
 [[package]]

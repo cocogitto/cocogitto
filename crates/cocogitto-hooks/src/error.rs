@@ -1,5 +1,3 @@
-use crate::hook;
-use serde::de::StdError;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 
@@ -16,8 +14,8 @@ impl From<semver::Error> for HookParseError {
     }
 }
 
-impl From<pest::error::Error<hook::parser::Rule>> for HookParseError {
-    fn from(err: pest::error::Error<hook::parser::Rule>) -> Self {
+impl From<pest::error::Error<crate::parser::Rule>> for HookParseError {
+    fn from(err: pest::error::Error<crate::parser::Rule>) -> Self {
         Self {
             error: Box::new(err),
         }
@@ -31,4 +29,4 @@ impl Display for HookParseError {
     }
 }
 
-impl StdError for HookParseError {}
+impl Error for HookParseError {}

@@ -1,10 +1,12 @@
 use crate::command::bump::{HookRunOptions, PackageBumpOptions};
 use crate::conventional::changelog::context::PackageContext;
 use crate::conventional::changelog::ReleaseType;
-use crate::git::tag::Tag;
-use crate::hook::HookVersion;
-use crate::{CocoGitto, SETTINGS};
+use crate::conventional::get_package_changelog_template;
+use crate::CocoGitto;
 use anyhow::Result;
+use cocogitto_core::tag::Tag;
+use cocogitto_hooks::HookVersion;
+use cocogitto_settings::SETTINGS;
 use colored::*;
 use log::info;
 use tera::Tera;
@@ -45,7 +47,7 @@ impl CocoGitto {
             changelog.pretty_print_bump_summary()?;
 
             let path = opts.package.changelog_path();
-            let template = SETTINGS.get_package_changelog_template()?;
+            let template = get_package_changelog_template(&SETTINGS)?;
             let additional_context = ReleaseType::Package(PackageContext {
                 package_name: opts.package_name,
             });

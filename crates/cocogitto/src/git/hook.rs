@@ -1,8 +1,8 @@
 use std::path::Path;
 use std::{fs, io};
 
-use crate::settings::{GitHook, GitHookType};
 use anyhow::Result;
+use cocogitto_settings::{GitHook, GitHookType};
 
 pub fn install_git_hook(
     repodir: &Path,
@@ -52,10 +52,10 @@ mod tests {
 
     use crate::CocoGitto;
 
-    use crate::settings::{GitHook, GitHookType, Settings};
-    use crate::test_helpers::git_init_no_gpg;
     use anyhow::Result;
     use cmd_lib::run_cmd;
+    use cocogitto_settings::{GitHook, GitHookType, Settings};
+    use cocogitto_test_helpers::git_init_no_gpg;
     use sealed_test::prelude::*;
     use speculoos::prelude::*;
     use std::path::Path;

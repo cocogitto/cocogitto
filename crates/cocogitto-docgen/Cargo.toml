@@ -1,0 +1,21 @@
+[package]
+name = "cocogitto-docgen"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish = false
+
+[dependencies]
+cocogitto-settings = {workspace = true, features = ["docgen"]}
+clap.workspace = true
+cog_schemars.workspace = true
+itertools.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+toml.workspace = true
+anyhow.workspace = true
+
+[dev-dependencies]
+speculoos.workspace = true
+sealed_test.workspace = true

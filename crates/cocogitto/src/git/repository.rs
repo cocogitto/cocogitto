@@ -11,6 +11,12 @@ use git2::{
 
 pub(crate) struct Repository(pub(crate) Git2Repository);
 
+impl From<Git2Repository> for Repository {
+    fn from(repo: Git2Repository) -> Self {
+        Self(repo)
+    }
+}
+
 impl Repository {
     pub(crate) fn signing_key(&self) -> Result<String, Git2Error> {
         let config = self.0.config()?;
@@ -162,21 +168,12 @@ mod test {
     use std::path::PathBuf;
     use std::str::FromStr;
 
+    use crate::git::repository::Repository;
     use anyhow::Result;
     use cmd_lib::run_cmd;
+    use cocogitto_test_helpers::git_init_no_gpg;
     use sealed_test::prelude::*;
     use speculoos::prelude::*;
-
-    use crate::git::repository::Repository;
-    use crate::test_helpers::git_init_no_gpg;
-
-    #[sealed_test]
-    fn init_repo() -> Result<()> {
-        let repo = git_init_no_gpg();
-
-        assert_that!(repo).is_ok();
-        Ok(())
-    }
 
     #[sealed_test]
     fn get_repo_working_dir_some() -> Result<()> {
@@ -201,7 +198,7 @@ mod test {
     #[sealed_test]
     fn get_repo_head_oid_ok() -> Result<()> {
         // Arrange
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
 
         run_cmd!(
             echo changes > file;
@@ -220,7 +217,7 @@ mod test {
     #[sealed_test]
     fn get_repo_head_oid_err() -> Result<()> {
         // Arrange
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
 
         // Act
         let oid = repo.get_head_commit_oid();
@@ -233,7 +230,7 @@ mod test {
     #[sealed_test]
     fn get_repo_head_obj_ok() -> Result<()> {
         // Arrange
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
 
         run_cmd!(
             echo changes > file;
@@ -253,7 +250,7 @@ mod test {
     #[sealed_test]
     fn get_repo_head_obj_err() -> Result<()> {
         // Arrange
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
 
         run_cmd!(
             echo changes > file;
@@ -271,7 +268,7 @@ mod test {
     #[sealed_test]
     fn get_branch_short_hand() -> Result<()> {
         // Arrange
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
 
         run_cmd!(
             echo changes > file;
@@ -291,7 +288,7 @@ mod test {
     #[sealed_test]
     fn signing_key_path_resolves_tilde() -> Result<()> {
         // Arrange
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
 
         // update path to key
         run_cmd!(

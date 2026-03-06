@@ -1,4 +1,4 @@
-use cocogitto::settings::Settings;
+use cocogitto_settings::Settings;
 use cog_schemars::schema_for;
 use itertools::Itertools;
 use serde::Deserialize;

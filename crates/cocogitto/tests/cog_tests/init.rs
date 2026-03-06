@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::str::FromStr;
 
-use cocogitto::DEFAULT_CONFIG_PATH;
+use cocogitto_settings::DEFAULT_CONFIG_PATH;
 
 use crate::helpers::*;
 

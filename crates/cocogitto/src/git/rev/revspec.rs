@@ -1,8 +1,8 @@
 use crate::git::error::Git2Error;
-use crate::git::oid::OidOf;
 use crate::git::repository::Repository;
 use crate::git::rev::cache::get_cache;
-use crate::git::tag::Tag;
+use cocogitto_core::oid::OidOf;
+use cocogitto_core::tag::Tag;
 use git2::Oid;
 use std::fmt;
 use std::fmt::Formatter;
@@ -112,11 +112,12 @@ impl fmt::Display for RevSpecPattern2 {
 
 #[cfg(test)]
 mod test {
-    use crate::git::oid::OidOf;
+    use crate::git::repository::Repository;
     use crate::git::rev::revspec::RevSpecPattern2;
-    use crate::git::tag::Tag;
-    use crate::test_helpers::{commit, git_init_no_gpg, git_tag};
     use anyhow::Result;
+    use cocogitto_core::oid::OidOf;
+    use cocogitto_core::tag::Tag;
+    use cocogitto_test_helpers::{commit, git_init_no_gpg, git_tag};
     use git2::Oid;
     use sealed_test::prelude::*;
     use semver::Version;
@@ -124,7 +125,7 @@ mod test {
 
     #[sealed_test]
     fn should_resolve_tag_oid() -> Result<()> {
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
         commit("chore: first commit")?;
         let commit_oid = commit("chore: v1")?;
         git_tag("1.0.0")?;
@@ -143,7 +144,7 @@ mod test {
 
     #[sealed_test]
     fn should_resolve_head_oid() -> Result<()> {
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
         commit("chore: first commit")?;
         let commit_oid = commit("chore: other")?;
 
@@ -156,7 +157,7 @@ mod test {
 
     #[sealed_test]
     fn should_resolve_commit_oid() -> Result<()> {
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
         commit("chore: first commit")?;
         let commit_oid = commit("chore: other")?;
         commit("chore: head")?;
@@ -170,7 +171,7 @@ mod test {
 
     #[sealed_test]
     fn should_error_on_unknown_rev() -> Result<()> {
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
         commit("chore: first commit")?;
         commit("chore: other")?;
 
@@ -183,7 +184,7 @@ mod test {
 
     #[sealed_test]
     fn convert_str_to_pattern_to() -> Result<()> {
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
         commit("chore: first commit")?;
         commit("chore: v1")?;
         git_tag("1.0.0")?;
@@ -196,7 +197,7 @@ mod test {
 
     #[sealed_test]
     fn convert_str_to_pattern_from() -> Result<()> {
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
         commit("chore: first commit")?;
         commit("chore: v1")?;
         git_tag("1.0.0")?;
@@ -210,7 +211,7 @@ mod test {
 
     #[sealed_test]
     fn convert_empty_pattern() -> Result<()> {
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
         commit("chore: first commit")?;
         let pattern = repo.revspec_from_str("..")?;
         assert_that!(matches!(pattern, RevSpecPattern2::Range { .. })).is_true();
@@ -219,7 +220,7 @@ mod test {
 
     #[sealed_test]
     fn error_invalid_pattern() -> Result<()> {
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
         commit("chore: first commit")?;
         commit("chore: v1")?;
         git_tag("1.0.0")?;
@@ -231,7 +232,7 @@ mod test {
 
     #[sealed_test]
     fn convert_full_pattern() -> Result<()> {
-        let repo = git_init_no_gpg()?;
+        let repo: Repository = git_init_no_gpg()?.into();
         commit("chore: first commit")?;
         commit("chore: first commit")?;
         commit("chore: v1")?;

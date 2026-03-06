@@ -2,7 +2,7 @@ use std::fmt::Write;
 use std::path::Path;
 use std::{fs, io};
 
-use cocogitto::COMMITS_METADATA;
+use cocogitto_settings::COMMITS_METADATA;
 
 use anyhow::{bail, Result};
 use clap::builder::PossibleValuesParser;

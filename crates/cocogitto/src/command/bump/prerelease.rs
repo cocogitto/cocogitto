@@ -1,7 +1,7 @@
 use anyhow::{ensure, Result};
 use semver::Version;
 
-use crate::git::tag::Tag;
+use cocogitto_core::tag::Tag;
 
 /// Increments a pre-release version based on a pattern.
 ///
@@ -27,7 +27,7 @@ pub(super) fn increment_prerelease(
     ensure!(!prerelease.is_empty(), "Pre-release can't be empty");
 
     if let Some(current_prerelease) = current_prerelease {
-        // Ensure the current pre-release is less than next version
+        // Ensure the current pre-release is less than next versiongit::tag::Tag
         ensure!(
             current_prerelease.version < next.version,
             "Current pre-release ({}) is greater than the next version ({})",
@@ -85,9 +85,9 @@ fn core_version(version: &Version) -> Version {
 
 #[cfg(test)]
 mod test {
+    use crate::command::bump::increment_prerelease;
     use anyhow::Result;
-
-    use crate::{command::bump::increment_prerelease, git::tag::Tag};
+    use cocogitto_core::tag::Tag;
 
     #[test]
     fn increment_prerelease_invalid_empty() -> Result<()> {
@@ -175,7 +175,7 @@ mod test {
 
     #[test]
     fn increment_prerelease_initial() -> Result<()> {
-        let current_prerelease = Option::None::<Tag>;
+        let current_prerelease = None::<Tag>;
         let next = Tag::from_str("1.2.3", None)?;
         let prerelease = "alpha.*";
 

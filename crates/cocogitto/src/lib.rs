@@ -1,73 +1,24 @@
-use std::collections::{BTreeMap, HashMap};
+use anyhow::Result;
+use cocogitto_settings::Settings;
+use conventional::commit::Commit;
+use conventional_commit_parser::commit::{CommitType, ConventionalCommit};
+use conventional_commit_parser::parse_footers;
+use error::BumpError;
+use git::repository::Repository;
+use std::collections::BTreeMap;
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
-use std::sync::OnceLock;
 
-use anyhow::Result;
-
-use ::log::warn;
-use conventional_commit_parser::commit::{CommitType, ConventionalCommit};
-use conventional_commit_parser::parse_footers;
-use once_cell::sync::Lazy;
-
-use conventional::commit::{Commit, CommitConfig};
-use conventional::version::IncrementCommand;
-use error::BumpError;
-use git::repository::Repository;
-
-use settings::Settings;
-
-use crate::git::error::{Git2Error, TagError};
+use crate::git::error::Git2Error;
 use crate::git::rev::cache::get_cache;
-
-use crate::git::tag::Tag;
 
 pub mod command;
 pub mod conventional;
 pub mod error;
 pub mod git;
-pub mod hook;
 pub mod log;
-/// Settings module containing configuration structures and functions for Cocogitto
-pub mod settings;
-
-pub const DEFAULT_CONFIG_PATH: &str = "cog.toml";
-static CONFIG_PATH: OnceLock<String> = OnceLock::new();
-
-pub fn get_config_path() -> &'static String {
-    if cfg!(test) || std::env::var("RUSTY_FORK_OCCURS").is_ok() {
-        CONFIG_PATH.get_or_init(|| DEFAULT_CONFIG_PATH.to_owned())
-    } else {
-        CONFIG_PATH.get().expect("config path to be set")
-    }
-}
-
-pub fn set_config_path(path: String) {
-    CONFIG_PATH
-        .set(path)
-        .expect("config path should not be set");
-}
-
-pub static SETTINGS: Lazy<Settings> = Lazy::new(|| {
-    if let Ok(repo) = Repository::open(".") {
-        let settings = Settings::get(&repo);
-        if let Err(err) = settings.as_ref() {
-            warn!("Failed to get config, falling back to default: {err}");
-        }
-
-        return settings.unwrap_or_default();
-    }
-
-    Settings::default()
-});
-
-// This cannot be carried by `Cocogitto` struct since we need it to be available in `Changelog`,
-// `Commit` etc. Be sure that `CocoGitto::new` is called before using this  in order to bypass
-// unwrapping in case of error.
-pub static COMMITS_METADATA: Lazy<HashMap<CommitType, CommitConfig>> =
-    Lazy::new(|| SETTINGS.load_commit_types());
 
 #[derive(Debug)]
 pub struct CocoGitto {
@@ -84,8 +35,8 @@ pub enum CommitHook {
 impl CocoGitto {
     pub fn get_at(path: PathBuf) -> Result<Self> {
         let repository = Repository::open(&path)?;
-        let _settings = Settings::get(&repository)?;
-        let _changelog_path = settings::changelog_path();
+        let _settings = Settings::try_from_path(&path)?;
+        let _changelog_path = cocogitto_settings::changelog_path();
 
         Ok(CocoGitto { repository })
     }
@@ -195,39 +146,5 @@ impl CocoGitto {
     pub fn clear_cache(&self) {
         let mut cache = get_cache(&self.repository);
         *cache = BTreeMap::new();
-    }
-}
-
-#[cfg(test)]
-pub mod test_helpers {
-    use crate::git::repository::Repository;
-    use cmd_lib::{run_cmd, run_fun};
-
-    pub(crate) fn git_init_no_gpg() -> anyhow::Result<Repository> {
-        run_cmd!(
-            git init -b master;
-            git config --local commit.gpgsign false;
-        )?;
-
-        Ok(Repository::open(".")?)
-    }
-
-    pub(crate) fn commit(message: &str) -> anyhow::Result<String> {
-        Ok(run_fun!(
-            git commit --allow-empty -q -m $message;
-            git log --format=%H -n 1;
-        )?)
-    }
-
-    pub(crate) fn git_tag(version: &str) -> anyhow::Result<()> {
-        run_fun!(git tag $version;)?;
-        Ok(())
-    }
-
-    pub(crate) fn mkdir(dirs: &[&str]) -> anyhow::Result<()> {
-        for dir in dirs {
-            std::fs::create_dir_all(dir)?;
-        }
-        Ok(())
     }
 }
