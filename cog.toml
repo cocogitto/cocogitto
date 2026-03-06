@@ -14,8 +14,8 @@ pre_bump_hooks = [
     "cargo test",
     "cargo clippy",
     "cargo fmt --all",
-    "cargo run --features docgen --bin cog-doc json-schema --out website/public/cog-schema.json",
-    "cargo run --features docgen --bin cog-doc reference --out website/reference/config.md",
+    "cargo run --package cocogitto-docgen json-schema --out website/public/cog-schema.json",
+    "cargo run --package cocogitto-docgen reference --out website/reference/config.md",
     "cargo build --release",
 ]
 

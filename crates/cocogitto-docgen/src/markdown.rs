@@ -194,6 +194,7 @@ mod test {
     use crate::schema::root_schema;
     use std::fs;
     use std::io::BufWriter;
+    use sealed_test::prelude::*;
 
     #[sealed_test]
     fn test() -> anyhow::Result<()> {

@@ -58,7 +58,6 @@ serde_json.workspace = true
 [features]
 default = ["cli"]
 cli = ["clap", "clap_complete", "clap_mangen", "clap_complete_nushell"]
-docgen = ["clap", "cog_schemars", "serde_json"]
 
 [lib]
 name = "cocogitto"
@@ -67,10 +66,6 @@ path = "src/lib.rs"
 [[bin]]
 name = "cog"
 required-features = ["clap", "clap_complete", "clap_mangen"]
-
-[[bin]]
-name = "cog-doc"
-required-features = ["docgen"]
 
 [[test]]
 name = "all"

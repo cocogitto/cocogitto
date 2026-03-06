@@ -372,6 +372,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "cocogitto-docgen"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "cocogitto-settings",
+ "cog_schemars",
+ "itertools",
+ "sealed_test",
+ "serde",
+ "serde_json",
+ "speculoos",
+ "toml",
+]
+
+[[package]]
 name = "cocogitto-settings"
 version = "0.1.0"
 dependencies = [
