@@ -130,12 +130,12 @@ mod test {
 
     use crate::git::status::{Changes, Statuses};
 
+    use crate::git::repository::Repository;
     use anyhow::{anyhow, Result};
+    use cocogitto_test_helpers::git_init_no_gpg;
     use git2::StatusOptions;
     use sealed_test::prelude::*;
     use speculoos::prelude::*;
-    use cocogitto_test_helpers::git_init_no_gpg;
-    use crate::git::repository::Repository;
 
     #[sealed_test]
     fn get_repo_statuses_empty() -> Result<()> {

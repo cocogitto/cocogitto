@@ -1,7 +1,7 @@
 use crate::git::hook::install_git_hook;
-use crate::settings::GitHookType;
-use crate::{CocoGitto, SETTINGS};
+use crate::CocoGitto;
 use anyhow::{anyhow, Result};
+use cocogitto_settings::{GitHookType, SETTINGS};
 
 impl CocoGitto {
     pub fn install_all_hooks(&self, overwrite_existing_hooks: bool) -> Result<()> {

@@ -1,7 +1,5 @@
 [workspace]
-members = [
-    "crates/*",
-]
+members = [ "crates/*" ]
 resolver = "2"
 
 [profile.release]
@@ -16,8 +14,10 @@ edition = "2021"
 rust-version = "1.78.0"
 
 [workspace.dependencies]
+cocogitto-settings = { path = "crates/cocogitto-settings", version = "0.1.0" }
 cocogitto-test-helpers = { path = "crates/cocogitto-test-helpers", version = "0.1.0" }
 cocogitto-dependency-resolver = { path = "crates/cocogitto-dependency-resolver", version = "0.1.0" }
+
 git2 = { version = "0.20.0", default-features = false, features = [] }
 anyhow = "1.0.75"
 colored = "^2"

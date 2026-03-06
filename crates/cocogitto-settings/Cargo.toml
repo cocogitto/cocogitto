@@ -1,0 +1,27 @@
+[package]
+name = "cocogitto-settings"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+config.workspace = true
+conventional_commit_parser.workspace = true
+maplit.workspace = true
+serde.workspace = true
+once_cell.workspace = true
+git2.workspace = true
+log.workspace = true
+cog_schemars = { workspace =  true, optional = true }
+serde_json = { workspace =  true, optional = true }
+
+[dev-dependencies]
+anyhow.workspace = true
+sealed_test.workspace = true
+speculoos.workspace = true
+cocogitto-test-helpers.workspace = true
+
+[features]
+default = []
+docgen = ["cog_schemars", "serde_json"]

@@ -113,15 +113,15 @@ impl fmt::Display for RevSpecPattern2 {
 #[cfg(test)]
 mod test {
     use crate::git::oid::OidOf;
+    use crate::git::repository::Repository;
     use crate::git::rev::revspec::RevSpecPattern2;
     use crate::git::tag::Tag;
     use anyhow::Result;
+    use cocogitto_test_helpers::{commit, git_init_no_gpg, git_tag};
     use git2::Oid;
     use sealed_test::prelude::*;
     use semver::Version;
     use speculoos::prelude::*;
-    use cocogitto_test_helpers::{commit, git_init_no_gpg, git_tag};
-    use crate::git::repository::Repository;
 
     #[sealed_test]
     fn should_resolve_tag_oid() -> Result<()> {

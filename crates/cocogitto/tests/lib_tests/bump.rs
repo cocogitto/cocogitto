@@ -10,11 +10,11 @@ use speculoos::prelude::*;
 
 use crate::helpers::*;
 use cocogitto::command::bump::{BumpOptions, PackageBumpOptions};
-use cocogitto::settings::{MonoRepoPackage, MonorepoConfig, Settings};
 use cocogitto::{
     conventional::version::{IncrementCommand, PreCommand},
     CocoGitto,
 };
+use cocogitto_settings::{MonoRepoPackage, MonorepoConfig, Settings};
 
 #[sealed_test]
 fn bump_ok() -> Result<()> {

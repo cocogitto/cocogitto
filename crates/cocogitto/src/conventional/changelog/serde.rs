@@ -1,10 +1,9 @@
-use serde::ser::SerializeStruct;
-use serde::{Serialize, Serializer};
-
 use crate::conventional::changelog::release::{ChangelogCommit, ChangelogFooter};
 use crate::git::oid::OidOf;
 use crate::git::tag::Tag;
-use crate::COMMITS_METADATA;
+use cocogitto_settings::COMMITS_METADATA;
+use serde::ser::SerializeStruct;
+use serde::{Serialize, Serializer};
 
 impl Serialize for Tag {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>

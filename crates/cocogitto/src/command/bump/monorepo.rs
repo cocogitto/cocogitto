@@ -9,14 +9,14 @@ use crate::conventional::version::{Increment, IncrementCommand};
 use crate::git::error::TagError;
 use crate::git::tag::{Tag, TagLookUpOptions};
 use crate::hook::HookVersion;
-use crate::settings::MonoRepoPackage;
-use crate::{settings, CocoGitto, SETTINGS};
+use crate::CocoGitto;
 use anyhow::{bail, Result};
+use cocogitto_settings::{MonoRepoPackage, SETTINGS};
 
+use crate::conventional::{get_monorepo_changelog_template, get_package_changelog_template};
+use crate::git::oid::OidOf;
 use log::{info, warn};
 use tera::Tera;
-
-use crate::git::oid::OidOf;
 
 #[derive(Debug)]
 struct PackageBumpData {
@@ -193,8 +193,8 @@ impl CocoGitto {
 
             changelog.pretty_print_bump_summary()?;
 
-            let path = settings::changelog_path();
-            let template = SETTINGS.get_monorepo_changelog_template()?;
+            let path = cocogitto_settings::changelog_path();
+            let template = get_monorepo_changelog_template(&SETTINGS)?;
 
             changelog.write_to_file(
                 path,
@@ -326,8 +326,8 @@ impl CocoGitto {
 
             changelog.pretty_print_bump_summary()?;
 
-            let path = settings::changelog_path();
-            let template = SETTINGS.get_monorepo_changelog_template()?;
+            let path = cocogitto_settings::changelog_path();
+            let template = get_monorepo_changelog_template(&SETTINGS)?;
 
             changelog.write_to_file(
                 path,
@@ -552,7 +552,7 @@ impl CocoGitto {
                 changelog.pretty_print_bump_summary()?;
 
                 let path = package.changelog_path();
-                let template = SETTINGS.get_package_changelog_template()?;
+                let template = get_package_changelog_template(&SETTINGS)?;
 
                 let additional_context = ReleaseType::Package(PackageContext {
                     package_name: package_name.as_ref(),

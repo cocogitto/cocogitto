@@ -9,12 +9,13 @@ use crate::conventional::version::IncrementCommand;
 use crate::conventional::version::PreCommand;
 use crate::git::repository::Repository;
 use crate::git::tag::{Tag, TagLookUpOptions};
-use crate::hook::{Hook, HookVersion, Hooks};
-use crate::settings::{HookType, MonoRepoPackage, Settings};
+use crate::hook::{Hook, HookVersion};
 use crate::BumpError;
-use crate::{CocoGitto, COMMITS_METADATA, SETTINGS};
+use crate::CocoGitto;
 use anyhow::Result;
 use anyhow::{bail, ensure, Context};
+use cocogitto_settings::Hooks;
+use cocogitto_settings::{HookType, MonoRepoPackage, Settings, COMMITS_METADATA, SETTINGS};
 use colored::Colorize;
 use conventional_commit_parser::commit::CommitType;
 use globset::Glob;
@@ -352,7 +353,7 @@ impl CocoGitto {
     }
 
     fn run_hooks(&self, options: HookRunOptions) -> Result<()> {
-        let settings = Settings::get(&self.repository)?;
+        let settings = Settings::try_from_path(".")?;
 
         let hooks: Vec<Hook> = match (options.package, options.hook_profile) {
             (None, Some(profile)) => settings

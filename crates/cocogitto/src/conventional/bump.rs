@@ -1,11 +1,11 @@
-use git2::Commit as Git2Commit;
-use once_cell::sync::Lazy;
-use semver::{BuildMetadata, Prerelease, Version};
-
 use crate::conventional::error::BumpError;
 use crate::conventional::version::Increment;
 use crate::git::tag::TagLookUpOptions;
-use crate::{Commit, IncrementCommand, Repository, Tag, SETTINGS};
+use crate::{Commit, IncrementCommand, Repository, Tag};
+use cocogitto_settings::SETTINGS;
+use git2::Commit as Git2Commit;
+use once_cell::sync::Lazy;
+use semver::{BuildMetadata, Prerelease, Version};
 
 static FILTER_MERGE_COMMITS: Lazy<fn(&&git2::Commit) -> bool> = Lazy::new(|| {
     |commit| {
@@ -295,12 +295,12 @@ mod test {
     use speculoos::prelude::*;
 
     use crate::conventional::bump::Bump;
-    use crate::conventional::commit::{Commit, CommitConfig};
+    use crate::conventional::commit::Commit;
     use crate::conventional::error::BumpError;
     use crate::conventional::version::{Increment, IncrementCommand};
     use crate::git::repository::Repository;
     use crate::git::tag::Tag;
-    use crate::settings::{MonoRepoPackage, MonorepoConfig, Settings};
+    use cocogitto_settings::{CommitConfig, MonoRepoPackage, MonorepoConfig, Settings};
     use cocogitto_test_helpers::{git_init_no_gpg, git_tag};
 
     impl Commit {

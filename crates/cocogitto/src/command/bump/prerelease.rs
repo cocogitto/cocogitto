@@ -175,7 +175,7 @@ mod test {
 
     #[test]
     fn increment_prerelease_initial() -> Result<()> {
-        let current_prerelease = Option::None::<Tag>;
+        let current_prerelease = None::<Tag>;
         let next = Tag::from_str("1.2.3", None)?;
         let prerelease = "alpha.*";
 

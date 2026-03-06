@@ -16,12 +16,12 @@ impl Repository {
 mod test {
 
     use crate::Repository;
-use anyhow::Result;
+    use anyhow::Result;
     use cmd_lib::run_cmd;
+    use cocogitto_test_helpers::{git_init_no_gpg, mkdir};
     use indoc::formatdoc;
     use sealed_test::prelude::*;
     use speculoos::prelude::*;
-    use cocogitto_test_helpers::{git_init_no_gpg, mkdir};
 
     #[sealed_test]
     fn get_repo_packages() -> Result<()> {

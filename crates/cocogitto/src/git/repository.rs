@@ -168,12 +168,12 @@ mod test {
     use std::path::PathBuf;
     use std::str::FromStr;
 
+    use crate::git::repository::Repository;
     use anyhow::Result;
     use cmd_lib::run_cmd;
+    use cocogitto_test_helpers::git_init_no_gpg;
     use sealed_test::prelude::*;
     use speculoos::prelude::*;
-    use cocogitto_test_helpers::git_init_no_gpg;
-    use crate::git::repository::Repository;
 
     #[sealed_test]
     fn get_repo_working_dir_some() -> Result<()> {

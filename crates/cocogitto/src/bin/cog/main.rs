@@ -8,12 +8,12 @@ use std::path::PathBuf;
 use cocogitto::conventional::changelog::context::RemoteContext;
 use cocogitto::conventional::changelog::template::Template;
 use cocogitto::conventional::changelog::ReleaseType;
-use cocogitto::conventional::commit as conv_commit;
 use cocogitto::conventional::version::{IncrementCommand, PreCommand};
+use cocogitto::conventional::{commit as conv_commit, get_template_context};
 
 use cocogitto::log::filter::{CommitFilter, CommitFilters};
 use cocogitto::log::output::Output;
-use cocogitto::{set_config_path, CocoGitto, CommitHook, DEFAULT_CONFIG_PATH, SETTINGS};
+use cocogitto::{CocoGitto, CommitHook};
 
 use crate::commit::prepare_edit_message;
 use anyhow::{bail, Context, Result};
@@ -23,7 +23,7 @@ use clap_complete::{shells, Generator};
 use clap_complete_nushell::Nushell;
 use cocogitto::command::bump::{BumpOptions, PackageBumpOptions};
 use cocogitto::command::commit::CommitOptions;
-use cocogitto::settings::GitHookType;
+use cocogitto_settings::{set_config_path, GitHookType, DEFAULT_CONFIG_PATH, SETTINGS};
 
 fn hook_profiles() -> PossibleValuesParser {
     let profiles = SETTINGS
@@ -701,7 +701,7 @@ fn main() -> Result<()> {
             let cocogitto = CocoGitto::get()?;
 
             let context = RemoteContext::try_new(remote, repository, owner)
-                .or_else(|| SETTINGS.get_template_context());
+                .or_else(|| get_template_context(&SETTINGS));
             let template = template.as_ref().or(SETTINGS.changelog.template.as_ref());
             let template = if let Some(template) = template {
                 Template::from_arg(template, context, unified)?
@@ -748,7 +748,7 @@ fn main() -> Result<()> {
             cocogitto.install_git_hooks(overwrite, hook_types)?;
         }
         Command::GenerateCompletions { shell } => {
-            clap_complete::generate(shell, &mut Cli::command(), "cog", &mut std::io::stdout());
+            clap_complete::generate(shell, &mut Cli::command(), "cog", &mut io::stdout());
         }
         Command::GenerateManpages { output_dir } => {
             mangen::generate_manpages(&output_dir)?;

@@ -1,4 +1,4 @@
-use crate::settings::MonoRepoPackage;
+use cocogitto_settings::MonoRepoPackage;
 use globset::{Candidate, GlobBuilder, GlobSet, GlobSetBuilder};
 use std::path::Path;
 

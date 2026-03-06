@@ -93,9 +93,9 @@ mod test {
     use crate::git::repository::Repository;
     use crate::git::rev::cache::get_cache;
     use cmd_lib::run_cmd;
+    use cocogitto_test_helpers::git_init_no_gpg;
     use sealed_test::prelude::*;
     use speculoos::prelude::*;
-    use cocogitto_test_helpers::git_init_no_gpg;
 
     #[test]
     fn init_cache_ok() -> anyhow::Result<()> {

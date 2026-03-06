@@ -1,7 +1,7 @@
-use crate::get_config_path;
 use crate::git::repository::Repository;
-use crate::settings::Settings;
 use anyhow::anyhow;
+use cocogitto_settings::get_config_path;
+use cocogitto_settings::Settings;
 use log::info;
 use std::path::Path;
 use std::process::exit;

@@ -5,9 +5,10 @@ use crate::conventional::changelog::template::Template;
 
 use crate::conventional::changelog::ReleaseType;
 use crate::CocoGitto;
-use crate::SETTINGS;
 use anyhow::anyhow;
 use anyhow::Result;
+use cocogitto_settings;
+use cocogitto_settings::SETTINGS;
 
 impl CocoGitto {
     /// ## Get a changelog between two oids

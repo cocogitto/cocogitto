@@ -5,7 +5,8 @@ use crate::git::oid::OidOf;
 use crate::git::repository::Repository;
 use crate::git::rev::filters::PackagePathFilter;
 use crate::git::rev::CommitIter;
-use crate::SETTINGS;
+use cocogitto_settings;
+use cocogitto_settings::SETTINGS;
 
 impl Repository {
     /// Return a commit range for the given package from a [`RevspecPattern2`]
@@ -173,16 +174,16 @@ mod test {
 
     use anyhow::Result;
 
-    use cmd_lib::run_cmd;
-    use git2::Oid;
-    use sealed_test::prelude::*;
-    use speculoos::prelude::*;
-    use cocogitto_test_helpers::{commit, git_init_no_gpg, git_tag, mkdir};
     use crate::conventional::changelog::release::Release;
     use crate::git::oid::OidOf;
     use crate::git::repository::Repository;
     use crate::git::tag::{Tag, TagLookUpOptions};
-    use crate::settings::{MonoRepoPackage, Settings};
+    use cmd_lib::run_cmd;
+    use cocogitto_settings::{MonoRepoPackage, Settings};
+    use cocogitto_test_helpers::{commit, git_init_no_gpg, git_tag, mkdir};
+    use git2::Oid;
+    use sealed_test::prelude::*;
+    use speculoos::prelude::*;
 
     const COCOGITTO_REPOSITORY: &str = env!("CARGO_MANIFEST_DIR");
 
@@ -335,7 +336,7 @@ mod test {
         );
 
         let settings = Settings {
-            monorepo: Some(crate::settings::MonorepoConfig {
+            monorepo: Some(cocogitto_settings::MonorepoConfig {
                 packages,
                 ..Default::default()
             }),
@@ -481,7 +482,7 @@ mod test {
         );
 
         let settings = Settings {
-            monorepo: Some(crate::settings::MonorepoConfig {
+            monorepo: Some(cocogitto_settings::MonorepoConfig {
                 packages,
                 ..Default::default()
             }),

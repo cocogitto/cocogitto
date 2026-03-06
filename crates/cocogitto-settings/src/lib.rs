@@ -1,27 +1,78 @@
+//! Cocogitto Settings
+//!
+//! This crate provides configuration management for the Cocogitto tool.
+//! It handles loading, parsing, and providing access to Cocogitto's configuration
+//! from `cog.toml` files, including settings for conventional commits, version bumping,
+//! changelog generation, hooks, and monorepo support.
 #![deny(missing_docs)]
+
 use std::collections::HashMap;
 use std::fmt;
 use std::fmt::Formatter;
 use std::path::PathBuf;
 
-use crate::conventional::changelog::context::RemoteContext;
-use crate::conventional::commit::CommitConfig;
-use crate::git::repository::Repository;
-use crate::{get_config_path, SETTINGS};
-
-use crate::conventional::changelog::error::ChangelogError;
-use crate::conventional::changelog::template::Template;
-use crate::hook::Hooks;
-use crate::settings::error::SettingError;
+use crate::error::SettingError;
 use config::{Config, File, FileFormat};
 use conventional_commit_parser::commit::CommitType;
+use git2::Repository;
+use log::warn;
 use maplit::hashmap;
+use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
+use std::sync::OnceLock;
 
 pub(crate) type AuthorSettings = Vec<AuthorSetting>;
 
 mod error;
+mod hooks;
+pub use hooks::Hooks;
+
+/// Default path for the Cocogitto configuration file
+pub const DEFAULT_CONFIG_PATH: &str = "cog.toml";
+static CONFIG_PATH: OnceLock<String> = OnceLock::new();
+
+/// Gets the current configuration file path
+///
+/// # Returns
+///
+/// * `&'static String` - The path to the configuration file
+pub fn get_config_path() -> &'static String {
+    CONFIG_PATH.get_or_init(|| DEFAULT_CONFIG_PATH.to_owned())
+}
+
+/// Sets the configuration file path
+///
+/// # Arguments
+///
+/// * `path` - The path to set as the configuration file
+pub fn set_config_path(path: String) {
+    CONFIG_PATH
+        .set(path)
+        .expect("config path should not be set");
+}
+
+/// Global settings instance that loads configuration from the current directory
+///
+/// This lazy-initialized static loads settings once and caches them for the lifetime of the program.
+pub static SETTINGS: Lazy<Settings> = Lazy::new(|| {
+    let settings = Settings::try_from_path(".");
+    if let Err(err) = settings.as_ref() {
+        warn!("Failed to get config, falling back to default: {err}");
+    }
+
+    settings.unwrap_or_default()
+});
+
+// This cannot be carried by `Cocogitto` struct since we need it to be available in `Changelog`,
+// `Commit` etc. Be sure that `CocoGitto::new` is called before using this  in order to bypass
+// unwrapping in case of error.
+
+/// Global commit metadata map that contains configurations for all commit types
+///
+/// This is loaded from the settings and contains merged default and custom commit configurations.
+pub static COMMITS_METADATA: Lazy<HashMap<CommitType, CommitConfig>> =
+    Lazy::new(|| SETTINGS.load_commit_types());
 
 /// # HookType
 /// Represents the type of hook that can be executed during version bumping.
@@ -559,12 +610,272 @@ pub struct BumpProfile {
     pub post_bump_hooks: Vec<String>,
 }
 
+/// # CommitConfig
+/// Configurations to create new conventional commit types or override behaviors of the existing ones.
+#[cfg_attr(feature = "docgen", derive(cog_schemars::JsonSchema))]
+#[derive(Debug, Deserialize, Serialize, Clone, Eq, PartialEq)]
+pub struct CommitConfig {
+    /// Define the title used in generated changelog for this commit type.
+    pub changelog_title: Option<String>,
+    /// Do not display this commit type in changelogs.
+    #[serde(default)]
+    pub omit_from_changelog: Option<bool>,
+    /// Allow for this commit type to bump the minor version.
+    #[serde(default)]
+    pub bump_minor: Option<bool>,
+    /// Allow for this commit type to bump the patch version.
+    #[serde(default)]
+    pub bump_patch: Option<bool>,
+    /// Specify a sort order attribute for this commit type.
+    #[serde(default)]
+    pub order: Option<u32>,
+}
+
+impl CommitConfig {
+    /// Creates a new CommitConfig with the specified changelog title.
+    ///
+    /// This initializes a commit configuration with default values for all fields
+    /// except the changelog title, which is set to the provided value.
+    ///
+    /// # Arguments
+    ///
+    /// * `changelog_title` - The title to use in generated changelogs for this commit type
+    ///
+    /// # Returns
+    ///
+    /// * `Self` - A new CommitConfig instance
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use cocogitto_settings::CommitConfig;
+    /// let config = CommitConfig::new("Features");
+    /// ```
+    pub fn new(changelog_title: &str) -> Self {
+        CommitConfig {
+            changelog_title: Some(changelog_title.to_string()),
+            omit_from_changelog: Some(false),
+            bump_minor: Some(false),
+            bump_patch: Some(false),
+            order: Some(0),
+        }
+    }
+
+    /// Merges this CommitConfig with another, giving priority to the other config's values.
+    ///
+    /// This method combines two commit configurations, using values from the `other` config
+    /// where they are defined, and falling back to values from `self` where they are not.
+    ///
+    /// # Arguments
+    ///
+    /// * `other` - The CommitConfig to merge with this one
+    ///
+    /// # Returns
+    ///
+    /// * `CommitConfig` - A new CommitConfig containing the merged configuration
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use cocogitto_settings::CommitConfig;
+    /// let config1 = CommitConfig::new("Features").with_minor_bump();
+    /// let config2 = CommitConfig::new("Enhancements").with_patch_bump();
+    /// let merged = config1.merge(config2);
+    /// ```
+    pub fn merge(self, other: CommitConfig) -> CommitConfig {
+        if other.none() {
+            return other;
+        }
+
+        CommitConfig {
+            changelog_title: other.changelog_title.or(self.changelog_title),
+            omit_from_changelog: other.omit_from_changelog.or(self.omit_from_changelog),
+            bump_minor: other.bump_minor.or(self.bump_minor),
+            bump_patch: other.bump_patch.or(self.bump_patch),
+            order: other.order.or(self.order),
+        }
+    }
+
+    /// Configures this commit type to bump the minor version.
+    ///
+    /// This sets the `bump_minor` field to `true`, indicating that commits
+    /// of this type should trigger a minor version bump.
+    ///
+    /// # Returns
+    ///
+    /// * `Self` - The modified CommitConfig instance (builder pattern)
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use cocogitto_settings::CommitConfig;
+    /// let config = CommitConfig::new("Features").with_minor_bump();
+    /// ```
+    pub fn with_minor_bump(mut self) -> Self {
+        self.bump_minor = Some(true);
+        self
+    }
+
+    /// Configures this commit type to bump the patch version.
+    ///
+    /// This sets the `bump_patch` field to `true`, indicating that commits
+    /// of this type should trigger a patch version bump.
+    ///
+    /// # Returns
+    ///
+    /// * `Self` - The modified CommitConfig instance (builder pattern)
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use cocogitto_settings::CommitConfig;
+    /// let config = CommitConfig::new("Bug Fixes").with_patch_bump();
+    /// ```
+    pub fn with_patch_bump(mut self) -> Self {
+        self.bump_patch = Some(true);
+        self
+    }
+
+    /// Sets the sort order for this commit type.
+    ///
+    /// This sets the `order` field to the specified value, which determines
+    /// the display order of this commit type in generated changelogs.
+    ///
+    /// # Arguments
+    ///
+    /// * `order` - The sort order value (lower values appear first)
+    ///
+    /// # Returns
+    ///
+    /// * `Self` - The modified CommitConfig instance (builder pattern)
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use cocogitto_settings::CommitConfig;
+    /// let config = CommitConfig::new("Features").with_order(1);
+    /// ```
+    pub fn with_order(mut self, order: u32) -> Self {
+        self.order = Some(order);
+        self
+    }
+
+    /// Returns whether this commit type should be omitted from changelogs.
+    ///
+    /// # Returns
+    ///
+    /// * `bool` - `true` if this commit type should be omitted, `false` otherwise
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use cocogitto_settings::CommitConfig;
+    /// let config = CommitConfig::new("Internal");
+    /// if config.omit_from_changelog() {
+    ///     println!("This commit type is hidden from changelogs");
+    /// }
+    /// ```
+    pub fn omit_from_changelog(&self) -> bool {
+        self.omit_from_changelog.unwrap_or_default()
+    }
+
+    /// Returns whether this commit type should bump the minor version.
+    ///
+    /// # Returns
+    ///
+    /// * `bool` - `true` if this commit type triggers minor version bumps, `false` otherwise
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use cocogitto_settings::CommitConfig;
+    /// let config = CommitConfig::new("Features").with_minor_bump();
+    /// if config.bump_minor() {
+    ///     println!("This commit type bumps minor versions");
+    /// }
+    /// ```
+    pub fn bump_minor(&self) -> bool {
+        self.bump_minor.unwrap_or_default()
+    }
+
+    /// Returns whether this commit type should bump the patch version.
+    ///
+    /// # Returns
+    ///
+    /// * `bool` - `true` if this commit type triggers patch version bumps, `false` otherwise
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use cocogitto_settings::CommitConfig;
+    /// let config = CommitConfig::new("Bug Fixes").with_patch_bump();
+    /// if config.bump_patch() {
+    ///     println!("This commit type bumps patch versions");
+    /// }
+    /// ```
+    pub fn bump_patch(&self) -> bool {
+        self.bump_patch.unwrap_or_default()
+    }
+
+    /// Returns whether this commit configuration has no values set.
+    ///
+    /// This method checks if all optional fields are `None`, indicating
+    /// that this configuration is effectively empty.
+    ///
+    /// # Returns
+    ///
+    /// * `bool` - `true` if all fields are `None`, `false` otherwise
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use cocogitto_settings::CommitConfig;
+    /// let config = CommitConfig::new("");
+    /// if config.none() {
+    ///     println!("This configuration is empty");
+    /// }
+    /// ```
+    pub fn none(&self) -> bool {
+        self.bump_patch.is_none()
+            && self.omit_from_changelog.is_none()
+            && self.bump_minor.is_none()
+            && self.changelog_title.is_none()
+    }
+}
+
 impl Settings {
-    // Fails only if config exists and is malformed
-    pub(crate) fn get<T: TryInto<Settings, Error = SettingError>>(
-        repository: T,
-    ) -> Result<Self, SettingError> {
-        repository.try_into()
+    /// Attempts to load settings from a configuration file in the given path.
+    ///
+    /// This method discovers the Git repository at the given path and looks for
+    /// a configuration file (default: `cog.toml`). If the file doesn't exist,
+    /// it returns default settings.
+    ///
+    /// # Arguments
+    ///
+    /// * `path` - The path to search for the configuration file
+    ///
+    /// # Returns
+    ///
+    /// * `Result<Self, SettingError>` - The loaded settings or an error
+    pub fn try_from_path<P: AsRef<Path>>(path: P) -> Result<Self, SettingError> {
+        let repository = Repository::discover(path)?;
+
+        match repository.workdir() {
+            Some(repo_path) => {
+                let settings_path = repo_path.join(get_config_path());
+                if settings_path.exists() {
+                    Config::builder()
+                        .add_source(File::from(settings_path))
+                        .build()
+                        .map_err(SettingError::from)?
+                        .try_deserialize()
+                        .map_err(SettingError::from)
+                } else {
+                    Ok(Settings::default())
+                }
+            }
+            None => Ok(Settings::default()),
+        }
     }
 
     /// Loads and merges commit types configuration.
@@ -628,78 +939,6 @@ impl Settings {
         }
     }
 
-    /// Creates a template context for remote changelog generation.
-    ///
-    /// # Returns
-    ///
-    /// * `Option<RemoteContext>` - Context for remote template rendering, or None if not configured
-    pub fn get_template_context(&self) -> Option<RemoteContext> {
-        let remote = self.changelog.remote.as_ref().cloned();
-        let repository = self.changelog.repository.as_ref().cloned();
-        let owner = self.changelog.owner.as_ref().cloned();
-
-        RemoteContext::try_new(remote, repository, owner)
-    }
-
-    /// Gets the changelog template for the main repository.
-    ///
-    /// # Returns
-    ///
-    /// * `Result<Template, ChangelogError>` - The changelog template
-    pub fn get_changelog_template(&self) -> Result<Template, ChangelogError> {
-        let context = self.get_template_context();
-        let template = self.changelog.template.as_deref().unwrap_or("default");
-
-        // TODO: there should be a unified settings
-        Template::from_arg(template, context, false)
-    }
-
-    /// Gets the changelog template for package changelogs in monorepos.
-    ///
-    /// # Returns
-    ///
-    /// * `Result<Template, ChangelogError>` - The package changelog template
-    pub fn get_package_changelog_template(&self) -> Result<Template, ChangelogError> {
-        let context = self.get_template_context();
-        let template = self
-            .changelog
-            .package_template
-            .as_deref()
-            .unwrap_or("package_default");
-
-        let template = match template {
-            "remote" => "package_remote",
-            "full_hash" => "package_full_hash",
-            template => template,
-        };
-
-        // TODO: there should be a unified settings
-        Template::from_arg(template, context, false)
-    }
-
-    /// Gets the changelog template for monorepo changelogs.
-    ///
-    /// # Returns
-    ///
-    /// * `Result<Template, ChangelogError>` - The monorepo changelog template
-    pub fn get_monorepo_changelog_template(&self) -> Result<Template, ChangelogError> {
-        let context = self.get_template_context();
-        let template = self
-            .changelog
-            .template
-            .as_deref()
-            .unwrap_or("monorepo_default");
-
-        let template = match template {
-            "remote" => "monorepo_remote",
-            "full_hash" => "monorepo_full_hash",
-            template => template,
-        };
-
-        // TODO: there should be a unified settings
-        Template::from_arg(template, context, false)
-    }
-
     /// Returns the version separator for monorepo package tags.
     ///
     /// # Returns
@@ -732,41 +971,21 @@ impl Settings {
     }
 }
 
-impl Hooks for Settings {
-    fn bump_profiles(&self) -> &HashMap<String, BumpProfile> {
-        &self.bump_profiles
-    }
-
-    fn pre_bump_hooks(&self) -> &Vec<String> {
-        &self.pre_bump_hooks
-    }
-
-    fn post_bump_hooks(&self) -> &Vec<String> {
-        &self.post_bump_hooks
-    }
-}
-
-impl Hooks for MonoRepoPackage {
-    fn bump_profiles(&self) -> &HashMap<String, BumpProfile> {
-        &self.bump_profiles
-    }
-
-    fn pre_bump_hooks(&self) -> &Vec<String> {
-        self.pre_bump_hooks
-            .as_ref()
-            .unwrap_or(&SETTINGS.pre_package_bump_hooks)
-    }
-
-    fn post_bump_hooks(&self) -> &Vec<String> {
-        self.post_bump_hooks
-            .as_ref()
-            .unwrap_or(&SETTINGS.post_package_bump_hooks)
-    }
-}
-
 impl TryFrom<String> for Settings {
     type Error = SettingError;
 
+    /// Attempts to create Settings from a TOML string.
+    ///
+    /// This allows creating settings programmatically from a TOML-formatted string.
+    /// If the string is empty, it returns default settings.
+    ///
+    /// # Arguments
+    ///
+    /// * `value` - The TOML string to parse
+    ///
+    /// # Returns
+    ///
+    /// * `Result<Self, SettingError>` - The parsed settings or an error
     fn try_from(value: String) -> Result<Self, Self::Error> {
         if value.is_empty() {
             Ok(Settings::default())
@@ -781,29 +1000,6 @@ impl TryFrom<String> for Settings {
     }
 }
 
-impl TryFrom<&Repository> for Settings {
-    type Error = SettingError;
-
-    fn try_from(repo: &Repository) -> Result<Self, Self::Error> {
-        match repo.get_repo_dir() {
-            Some(repo_path) => {
-                let settings_path = repo_path.join(get_config_path());
-                if settings_path.exists() {
-                    Config::builder()
-                        .add_source(File::from(settings_path))
-                        .build()
-                        .map_err(SettingError::from)?
-                        .try_deserialize()
-                        .map_err(SettingError::from)
-                } else {
-                    Ok(Settings::default())
-                }
-            }
-            None => Ok(Settings::default()),
-        }
-    }
-}
-
 #[cfg(test)]
 mod test {
     use std::fs;
@@ -811,8 +1007,9 @@ mod test {
     use conventional_commit_parser::commit::CommitType;
     use sealed_test::prelude::*;
     use speculoos::prelude::*;
-    use cocogitto_test_helpers::git_init_no_gpg;
+
     use crate::COMMITS_METADATA;
+    use cocogitto_test_helpers::git_init_no_gpg;
 
     #[sealed_test]
     fn should_disable_default_commit_type() -> anyhow::Result<()> {

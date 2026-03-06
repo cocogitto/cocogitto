@@ -2,13 +2,12 @@ use std::cmp::Ordering;
 use std::fmt::{self, Formatter};
 
 pub use crate::conventional::error::ConventionalCommitError;
-use crate::{COMMITS_METADATA, SETTINGS};
 use chrono::{DateTime, NaiveDateTime, Utc};
+use cocogitto_settings::{COMMITS_METADATA, SETTINGS};
 use colored::*;
 use conventional_commit_parser::commit::ConventionalCommit;
 use git2::Commit as Git2Commit;
 use log::info;
-use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct Commit {
@@ -16,86 +15,6 @@ pub struct Commit {
     pub conventional: ConventionalCommit,
     pub author: String,
     pub date: NaiveDateTime,
-}
-/// # CommitConfig
-/// Configurations to create new conventional commit types or override behaviors of the existing ones.
-#[cfg_attr(feature = "docgen", derive(cog_schemars::JsonSchema))]
-#[derive(Debug, Deserialize, Serialize, Clone, Eq, PartialEq)]
-pub struct CommitConfig {
-    /// Define the title used in generated changelog for this commit type.
-    pub changelog_title: Option<String>,
-    /// Do not display this commit type in changelogs.
-    #[serde(default)]
-    pub omit_from_changelog: Option<bool>,
-    /// Allow for this commit type to bump the minor version.
-    #[serde(default)]
-    pub bump_minor: Option<bool>,
-    /// Allow for this commit type to bump the patch version.
-    #[serde(default)]
-    pub bump_patch: Option<bool>,
-    /// Specify a sort order attribute for this commit type.
-    #[serde(default)]
-    pub order: Option<u32>,
-}
-
-impl CommitConfig {
-    pub(crate) fn new(changelog_title: &str) -> Self {
-        CommitConfig {
-            changelog_title: Some(changelog_title.to_string()),
-            omit_from_changelog: Some(false),
-            bump_minor: Some(false),
-            bump_patch: Some(false),
-            order: Some(0),
-        }
-    }
-
-    pub(crate) fn merge(self, other: CommitConfig) -> CommitConfig {
-        if other.none() {
-            return other;
-        }
-
-        CommitConfig {
-            changelog_title: other.changelog_title.or(self.changelog_title),
-            omit_from_changelog: other.omit_from_changelog.or(self.omit_from_changelog),
-            bump_minor: other.bump_minor.or(self.bump_minor),
-            bump_patch: other.bump_patch.or(self.bump_patch),
-            order: other.order.or(self.order),
-        }
-    }
-
-    pub(crate) fn with_minor_bump(mut self) -> Self {
-        self.bump_minor = Some(true);
-        self
-    }
-
-    pub(crate) fn with_patch_bump(mut self) -> Self {
-        self.bump_patch = Some(true);
-        self
-    }
-
-    pub(crate) fn with_order(mut self, order: u32) -> Self {
-        self.order = Some(order);
-        self
-    }
-
-    pub(crate) fn omit_from_changelog(&self) -> bool {
-        self.omit_from_changelog.unwrap_or_default()
-    }
-
-    pub(crate) fn bump_minor(&self) -> bool {
-        self.bump_minor.unwrap_or_default()
-    }
-
-    pub(crate) fn bump_patch(&self) -> bool {
-        self.bump_patch.unwrap_or_default()
-    }
-
-    pub(crate) fn none(&self) -> bool {
-        self.bump_patch.is_none()
-            && self.omit_from_changelog.is_none()
-            && self.bump_minor.is_none()
-            && self.changelog_title.is_none()
-    }
 }
 
 impl Commit {
@@ -381,17 +300,18 @@ pub(crate) fn format_summary(commit: &ConventionalCommit) -> String {
 
 #[cfg(test)]
 mod test {
-    use crate::conventional::commit::{format_summary, verify, Commit, CommitConfig};
+    use crate::conventional::commit::{format_summary, verify, Commit};
 
     use crate::Repository;
     use anyhow::Result;
     use chrono::DateTime;
+    use cocogitto_settings::CommitConfig;
+    use cocogitto_test_helpers::{commit, git_init_no_gpg};
     use conventional_commit_parser::commit::{CommitType, ConventionalCommit, Footer, Separator};
     use git2::Oid;
     use indoc::indoc;
     use sealed_test::prelude::*;
     use speculoos::prelude::*;
-    use cocogitto_test_helpers::{commit, git_init_no_gpg};
 
     #[test]
     fn should_map_conventional_commit_message_to_struct() {

@@ -5,7 +5,7 @@ use assert_cmd::prelude::*;
 use predicates::prelude::predicate;
 use sealed_test::prelude::*;
 
-use cocogitto::settings::Settings;
+use cocogitto_settings::Settings;
 
 use crate::helpers::*;
 

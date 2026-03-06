@@ -2,14 +2,13 @@ use std::cmp::Ordering;
 use std::fmt;
 use std::fmt::Formatter;
 
-use git2::Oid;
-use semver::Version;
-
 use crate::conventional::version::Increment;
 use crate::git::error::{Git2Error, TagError};
 use crate::git::oid::OidOf;
 use crate::git::repository::Repository;
-use crate::SETTINGS;
+use cocogitto_settings::SETTINGS;
+use git2::Oid;
+use semver::Version;
 
 #[derive(Copy, Clone, Debug, Default)]
 pub struct TagLookUpOptions<'a> {
@@ -311,15 +310,15 @@ mod test {
     use std::fs;
     use std::path::PathBuf;
 
+    use crate::git::repository::Repository;
+    use crate::git::tag::{Tag, TagLookUpOptions};
     use anyhow::Result;
     use cmd_lib::run_cmd;
+    use cocogitto_settings::{MonoRepoPackage, Settings};
+    use cocogitto_test_helpers::{commit, git_init_no_gpg, git_tag};
     use sealed_test::prelude::*;
     use semver::Version;
     use speculoos::prelude::*;
-    use cocogitto_test_helpers::{commit, git_init_no_gpg, git_tag};
-    use crate::git::repository::Repository;
-    use crate::git::tag::{Tag, TagLookUpOptions};
-    use crate::settings::{MonoRepoPackage, Settings};
 
     #[test]
     fn should_compare_tags() -> Result<()> {
@@ -440,7 +439,7 @@ mod test {
         let mut packages = HashMap::new();
         packages.insert("one".to_string(), Default::default());
         let settings = Settings {
-            monorepo: Some(crate::settings::MonorepoConfig {
+            monorepo: Some(cocogitto_settings::MonorepoConfig {
                 packages,
                 ..Default::default()
             }),
@@ -470,7 +469,7 @@ mod test {
         packages.insert("one".to_string(), Default::default());
         let settings = Settings {
             tag_prefix: Some("v".to_string()),
-            monorepo: Some(crate::settings::MonorepoConfig {
+            monorepo: Some(cocogitto_settings::MonorepoConfig {
                 packages,
                 ..Default::default()
             }),
@@ -501,7 +500,7 @@ mod test {
         let settings = Settings {
             tag_prefix: Some("v".to_string()),
             monorepo_version_separator: Some("#".to_string()),
-            monorepo: Some(crate::settings::MonorepoConfig {
+            monorepo: Some(cocogitto_settings::MonorepoConfig {
                 packages,
                 ..Default::default()
             }),
@@ -655,7 +654,7 @@ mod test {
             from_latest_tag: true,
             ignore_merge_commits: true,
             tag_prefix: Some("v".to_string()),
-            monorepo: Some(crate::settings::MonorepoConfig {
+            monorepo: Some(cocogitto_settings::MonorepoConfig {
                 packages,
                 ..Default::default()
             }),

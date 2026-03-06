@@ -1,9 +1,10 @@
 use crate::conventional::changelog::context::{RemoteContext, ToContext};
 use crate::conventional::changelog::error::ChangelogError;
 use crate::conventional::changelog::release::Release;
-use crate::SETTINGS;
+use cocogitto_settings;
 
 use super::filters;
+use cocogitto_settings::SETTINGS;
 use std::io;
 use std::path::PathBuf;
 use tera::{Context, Tera};

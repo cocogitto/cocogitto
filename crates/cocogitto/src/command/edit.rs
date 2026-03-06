@@ -1,8 +1,9 @@
 use crate::conventional::commit::{verify, Commit};
 
 use crate::git::tag::TagLookUpOptions;
-use crate::{CocoGitto, SETTINGS};
+use crate::CocoGitto;
 use anyhow::{anyhow, Result};
+use cocogitto_settings::SETTINGS;
 use colored::*;
 use git2::{Oid, RebaseOptions};
 use log::{error, info, warn};
