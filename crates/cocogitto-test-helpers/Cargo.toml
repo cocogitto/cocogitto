@@ -6,13 +6,6 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-assert_cmd.workspace = true
-predicates.workspace = true
-indoc.workspace = true
-speculoos.workspace = true
-pretty_assertions.workspace = true
-sealed_test.workspace = true
 cmd_lib.workspace = true
-serde_json.workspace = true
 anyhow.workspace = true
 git2.workspace = true

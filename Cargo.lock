@@ -333,16 +333,13 @@ dependencies = [
  "cocogitto-test-helpers",
  "cog_schemars",
  "colored",
- "config",
  "conventional_commit_parser",
  "edit",
  "git2",
  "globset",
- "indexmap",
  "indoc",
  "itertools",
  "log",
- "maplit",
  "once_cell",
  "pest",
  "pest_derive",
@@ -398,15 +395,8 @@ name = "cocogitto-test-helpers"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "assert_cmd",
  "cmd_lib",
  "git2",
- "indoc",
- "predicates",
- "pretty_assertions",
- "sealed_test",
- "serde_json",
- "speculoos",
 ]
 
 [[package]]

@@ -20,7 +20,6 @@ git2.workspace = true
 anyhow.workspace = true
 colored.workspace = true
 chrono.workspace = true
-config.workspace = true
 edit.workspace = true
 itertools.workspace = true
 serde.workspace = true
@@ -43,8 +42,6 @@ log.workspace = true
 stderrlog.workspace = true
 cog_schemars = { workspace =  true, optional = true }
 serde_json = { workspace =  true, optional = true }
-maplit.workspace = true
-indexmap.workspace = true
 cocogitto-dependency-resolver.workspace = true
 
 [dev-dependencies]
