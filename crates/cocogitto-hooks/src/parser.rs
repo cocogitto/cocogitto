@@ -1,8 +1,8 @@
 use std::collections::VecDeque;
 
-use crate::hook::{HookSpan, VersionSpan};
+use crate::{HookSpan, VersionSpan};
 
-use crate::hook::error::HookParseError;
+use crate::error::HookParseError;
 use pest::iterators::{Pair, Pairs};
 use pest::Parser;
 use pest_derive::Parser as ParserDerive;
@@ -10,7 +10,7 @@ use semver::{BuildMetadata, Prerelease, Version};
 
 #[doc(hidden)]
 #[derive(ParserDerive)]
-#[grammar = "hook/version_dsl.pest"]
+#[grammar = "version_dsl.pest"]
 struct HookDslParser;
 
 #[derive(Debug, Eq, PartialEq)]
@@ -128,8 +128,8 @@ fn parse_operator(
 mod test {
     use std::collections::VecDeque;
 
-    use crate::hook::parser::Token;
-    use crate::hook::{parser, VersionSpan};
+    use crate::parser::Token;
+    use crate::{parser, VersionSpan};
 
     use semver::{Prerelease, Version};
     use speculoos::prelude::*;

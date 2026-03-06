@@ -6,7 +6,6 @@ use crate::conventional::changelog::context::{
 };
 use crate::conventional::changelog::ReleaseType;
 use crate::git::tag::TagLookUpOptions;
-use crate::hook::HookVersion;
 use crate::CocoGitto;
 use anyhow::{bail, Result};
 use cocogitto_settings::{MonoRepoPackage, SETTINGS};
@@ -16,6 +15,7 @@ use cocogitto_core::error::TagError;
 use cocogitto_core::increment::{Increment, IncrementCommand};
 use cocogitto_core::oid::OidOf;
 use cocogitto_core::tag::Tag;
+use cocogitto_hooks::HookVersion;
 use log::{info, warn};
 use tera::Tera;
 

@@ -14,7 +14,10 @@ fn cocogitto_workspace() -> anyhow::Result<()> {
     assert_that!(dependencies).is_equal_to(vec![
         "cocogitto-test-helpers",
         "cocogitto-settings",
+        "cocogitto-docgen",
         "cocogitto-dependency-resolver",
+        "cocogitto-core",
+        "cocogitto-hooks",
         "cocogitto",
     ]);
 

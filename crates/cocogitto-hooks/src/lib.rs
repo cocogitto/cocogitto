@@ -7,7 +7,7 @@ use std::process::Command;
 use std::str::FromStr;
 use std::{fmt, path};
 
-use crate::hook::parser::VersionAccessToken;
+use crate::parser::VersionAccessToken;
 use parser::Token;
 
 use anyhow::{anyhow, ensure, Result};
@@ -23,18 +23,18 @@ pub struct VersionSpan {
 }
 
 #[derive(Debug)]
-pub(crate) struct HookVersion {
+pub struct HookVersion {
     pub prefixed_tag: Tag,
 }
 
 impl HookVersion {
-    pub(crate) fn new(tag: Tag) -> Self {
+    pub fn new(tag: Tag) -> Self {
         HookVersion { prefixed_tag: tag }
     }
 }
 
 impl VersionSpan {
-    pub(crate) fn build_version_str(
+    pub fn build_version_str(
         &mut self,
         version: Option<&HookVersion>,
         latest: Option<&HookVersion>,
@@ -164,7 +164,7 @@ impl fmt::Display for Hook {
 }
 
 impl Hook {
-    pub(crate) fn insert_versions(
+    pub fn insert_versions(
         &mut self,
         current_version: Option<&HookVersion>,
         next_version: Option<&HookVersion>,
@@ -195,7 +195,7 @@ mod test {
 
     use crate::Result;
 
-    use crate::hook::{Hook, HookVersion};
+    use crate::{Hook, HookVersion};
     use cocogitto_core::tag::Tag;
     use cocogitto_settings::{MonoRepoPackage, Settings};
     use cocogitto_test_helpers::git_init_no_gpg;

@@ -330,6 +330,7 @@ dependencies = [
  "cmd_lib",
  "cocogitto-core",
  "cocogitto-dependency-resolver",
+ "cocogitto-hooks",
  "cocogitto-settings",
  "cocogitto-test-helpers",
  "cog_schemars",
@@ -399,6 +400,23 @@ dependencies = [
  "sealed_test",
  "serde",
  "serde_json",
+ "speculoos",
+ "toml",
+]
+
+[[package]]
+name = "cocogitto-hooks"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "cmd_lib",
+ "cocogitto-core",
+ "cocogitto-settings",
+ "cocogitto-test-helpers",
+ "pest",
+ "pest_derive",
+ "sealed_test",
+ "semver",
  "speculoos",
  "toml",
 ]

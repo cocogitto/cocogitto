@@ -18,7 +18,6 @@ pub mod command;
 pub mod conventional;
 pub mod error;
 pub mod git;
-pub mod hook;
 pub mod log;
 
 #[derive(Debug)]
