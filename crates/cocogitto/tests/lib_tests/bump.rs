@@ -374,6 +374,116 @@ fn ordered_package_bump() -> Result<()> {
 }
 
 #[sealed_test]
+fn bump_order_respected_without_resolver() -> Result<()> {
+    // Regression test: bump_order must be respected when a monorepo config
+    // is present but no dependency resolver is configured.
+    // See: https://github.com/cocogitto/cocogitto/commit/5d41a778
+
+    // Arrange: three packages with explicit bump_order (3, 1, 2)
+    // to ensure sorting works regardless of insertion order.
+    // Each package has a pre_bump_hook that appends its name to a
+    // shared log file, so we can verify execution order.
+    // Use absolute path for the log file so hooks write to the same
+    // file regardless of their working directory (each package's path).
+    let log_path = std::env::current_dir()?.join("bump_order.log");
+    let log_str = log_path.to_str().unwrap().to_string();
+
+    let alpha = MonoRepoPackage {
+        path: PathBuf::from("alpha"),
+        public_api: false,
+        changelog_path: Some("alpha/CHANGELOG.md".to_owned()),
+        bump_order: Some(3),
+        pre_bump_hooks: Some(vec![
+            format!("echo alpha >> {log_str}"),
+        ]),
+        ..Default::default()
+    };
+
+    let beta = MonoRepoPackage {
+        path: PathBuf::from("beta"),
+        public_api: false,
+        changelog_path: Some("beta/CHANGELOG.md".to_owned()),
+        bump_order: Some(1),
+        pre_bump_hooks: Some(vec![
+            format!("echo beta >> {log_str}"),
+        ]),
+        ..Default::default()
+    };
+
+    let gamma = MonoRepoPackage {
+        path: PathBuf::from("gamma"),
+        public_api: false,
+        changelog_path: Some("gamma/CHANGELOG.md".to_owned()),
+        bump_order: Some(2),
+        pre_bump_hooks: Some(vec![
+            format!("echo gamma >> {log_str}"),
+        ]),
+        ..Default::default()
+    };
+
+    let mut packages = HashMap::new();
+    // Insert in non-sorted order to catch HashMap iteration bugs
+    packages.insert("alpha".to_owned(), alpha);
+    packages.insert("gamma".to_owned(), gamma);
+    packages.insert("beta".to_owned(), beta);
+
+    let settings = Settings {
+        ignore_merge_commits: true,
+        monorepo: Some(MonorepoConfig {
+            packages,
+            ..Default::default()
+        }),
+        ..Default::default()
+    };
+
+    let settings = toml::to_string(&settings)?;
+
+    git_init()?;
+    mkdir(&["alpha", "beta", "gamma"])?;
+    run_cmd!(
+        echo Hello > README.md;
+        git add .;
+        git commit -m "chore: first commit";
+        echo "alpha content" > alpha/file;
+        git add .;
+        git commit -m "feat(alpha): add alpha";
+        echo "beta content" > beta/file;
+        git add .;
+        git commit -m "feat(beta): add beta";
+        echo "gamma content" > gamma/file;
+        git add .;
+        git commit -m "feat(gamma): add gamma";
+        echo $settings > cog.toml;
+        git add .;
+        git commit -m "chore: add cog.toml";
+    )?;
+
+    let mut cocogitto = CocoGitto::get()?;
+
+    // Act
+    cocogitto.create_monorepo_version(BumpOptions {
+        increment: IncrementCommand::Auto,
+        pre_release: None,
+        build: None,
+        hooks_config: None,
+        annotated: None,
+        dry_run: false,
+        skip_ci: false,
+        skip_ci_override: None,
+        skip_untracked: true,
+        disable_bump_commit: false,
+        include_packages: false,
+    })?;
+
+    // Assert: hooks executed in bump_order: beta(1), gamma(2), alpha(3)
+    let log = std::fs::read_to_string("bump_order.log")?;
+    let order: Vec<&str> = log.lines().collect();
+    assert_that!(order).is_equal_to(vec!["beta", "gamma", "alpha"]);
+
+    Ok(())
+}
+
+#[sealed_test]
 fn should_fallback_to_0_0_0_when_there_is_no_tag() -> Result<()> {
     // Arrange
     git_init()?;

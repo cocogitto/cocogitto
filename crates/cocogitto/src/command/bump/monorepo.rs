@@ -482,9 +482,9 @@ impl CocoGitto {
                         a_order.cmp(b_order)
                     });
                 }
+            } else {
+                packages.sort_by(|a, b| a.1.bump_order.cmp(&b.1.bump_order));
             }
-        } else {
-            packages.sort_by(|a, b| a.1.bump_order.cmp(&b.1.bump_order));
         }
 
         for (package_name, package) in packages {
