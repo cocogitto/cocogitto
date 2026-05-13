@@ -2,7 +2,6 @@ use serde::ser::SerializeStruct;
 use serde::{Serialize, Serializer};
 
 use crate::conventional::changelog::release::{ChangelogCommit, ChangelogFooter};
-use crate::git::oid::OidOf;
 use crate::git::tag::Tag;
 use crate::COMMITS_METADATA;
 
@@ -57,27 +56,6 @@ impl Serialize for ChangelogCommit {
         )?;
         commit.serialize_field("footers", footers)?;
         commit.end()
-    }
-}
-
-impl Serialize for OidOf {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let mut oidof = serializer.serialize_struct("OidOf", 1)?;
-        match self {
-            OidOf::Tag(tag) => {
-                oidof.serialize_field("tag", &tag.to_string())?;
-                if let Some(oid) = tag.oid() {
-                    oidof.serialize_field("id", &oid.to_string())?;
-                }
-            }
-            OidOf::FirstCommit(oid) | OidOf::Head(oid) | OidOf::Other(oid) => {
-                oidof.serialize_field("id", &oid.to_string())?
-            }
-        };
-        oidof.end()
     }
 }
 

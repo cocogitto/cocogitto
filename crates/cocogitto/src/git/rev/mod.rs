@@ -1,6 +1,6 @@
 use git2::Commit;
 
-use crate::git::oid::OidOf;
+use crate::git::oid::CommitInfo;
 
 pub mod cache;
 pub mod filters;
@@ -8,18 +8,18 @@ pub mod revspec;
 pub mod revwalk;
 
 #[derive(Debug)]
-pub struct CommitIter<'repo>(Vec<(OidOf, Commit<'repo>)>);
+pub struct CommitIter<'repo>(Vec<(CommitInfo, Commit<'repo>)>);
 
 impl<'repo> CommitIter<'repo> {
-    pub fn single(oid_of: OidOf, commit: Commit<'repo>) -> Self {
+    pub fn single(oid_of: CommitInfo, commit: Commit<'repo>) -> Self {
         CommitIter::<'repo>(vec![(oid_of, commit)])
     }
 
-    pub fn from_oid(&self) -> OidOf {
+    pub fn from_oid(&self) -> CommitInfo {
         self.0.last().expect("non empty commit range").0.clone()
     }
 
-    pub fn to_oid(&self) -> OidOf {
+    pub fn to_oid(&self) -> CommitInfo {
         self.0.first().expect("non empty commit range").0.clone()
     }
 
@@ -33,7 +33,7 @@ impl<'repo> CommitIter<'repo> {
 }
 
 impl<'repo> IntoIterator for CommitIter<'repo> {
-    type Item = (OidOf, Commit<'repo>);
+    type Item = (CommitInfo, Commit<'repo>);
     type IntoIter = std::vec::IntoIter<Self::Item>;
 
     fn into_iter(self) -> Self::IntoIter {

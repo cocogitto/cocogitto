@@ -1,15 +1,18 @@
 use std::path::Path;
+use std::sync::Mutex;
 use std::{
     fmt::{Debug, Formatter},
     path::PathBuf,
 };
 
-use crate::git::error::Git2Error;
 use git2::{
     Commit as Git2Commit, IndexAddOption, Object, ObjectType, Oid, Repository as Git2Repository,
 };
 
-pub(crate) struct Repository(pub(crate) Git2Repository);
+use crate::git::error::Git2Error;
+use crate::git::rev::cache::RepoCache;
+
+pub(crate) struct Repository(pub(crate) Git2Repository, pub(super) Mutex<RepoCache>);
 
 impl Repository {
     pub(crate) fn signing_key(&self) -> Result<String, Git2Error> {
@@ -73,12 +76,12 @@ impl Repository {
     pub(crate) fn init<S: AsRef<Path> + ?Sized>(path: &S) -> Result<Repository, Git2Error> {
         let repository =
             Git2Repository::init(path).map_err(Git2Error::FailedToInitializeRepository)?;
-        Ok(Repository(repository))
+        Ok(Repository(repository, Mutex::new(RepoCache::empty())))
     }
 
     pub(crate) fn open<S: AsRef<Path> + ?Sized>(path: &S) -> Result<Repository, Git2Error> {
         let repo = Git2Repository::discover(path).map_err(Git2Error::FailedToOpenRepository)?;
-        Ok(Repository(repo))
+        Ok(Repository(repo, Mutex::new(RepoCache::empty())))
     }
 
     pub(crate) fn get_repo_dir(&self) -> Option<&Path> {

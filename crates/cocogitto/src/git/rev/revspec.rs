@@ -1,7 +1,6 @@
 use crate::git::error::Git2Error;
-use crate::git::oid::OidOf;
+use crate::git::oid::CommitInfo;
 use crate::git::repository::Repository;
-use crate::git::rev::cache::get_cache;
 use crate::git::tag::Tag;
 use git2::Oid;
 use std::fmt;
@@ -9,20 +8,20 @@ use std::fmt::Formatter;
 
 #[derive(Debug, Clone)]
 pub enum RevSpecPattern2 {
-    Range { from: OidOf, to: OidOf },
-    AtTag { from: OidOf, to: OidOf },
+    Range { from: CommitInfo, to: CommitInfo },
+    AtTag { from: CommitInfo, to: CommitInfo },
 }
 
 impl RevSpecPattern2 {
-    pub fn from(&self) -> &Oid {
+    pub fn from(&self) -> Oid {
         match self {
-            RevSpecPattern2::AtTag { from, .. } | RevSpecPattern2::Range { from, .. } => from.oid(),
+            RevSpecPattern2::AtTag { from, .. } | RevSpecPattern2::Range { from, .. } => from.oid,
         }
     }
 
-    pub fn to(&self) -> &Oid {
+    pub fn to(&self) -> Oid {
         match self {
-            RevSpecPattern2::AtTag { to, .. } | RevSpecPattern2::Range { to, .. } => to.oid(),
+            RevSpecPattern2::AtTag { to, .. } | RevSpecPattern2::Range { to, .. } => to.oid,
         }
     }
 }
@@ -31,72 +30,49 @@ impl Repository {
     pub(super) fn revspec_from_str(&self, s: &str) -> Result<RevSpecPattern2, Git2Error> {
         if let Some((from, to)) = s.split_once("..") {
             let from = if from.is_empty() {
-                OidOf::Other(self.get_first_commit()?)
+                CommitInfo::new(self.get_first_commit()?)
             } else {
-                self.resolve_oid_of(from)?
+                self.get_commit_info(from)?
             };
 
             let to = if to.is_empty() {
-                OidOf::Head(self.get_head_commit_oid()?)
+                self.get_cache().head_commit_info()
             } else {
-                self.resolve_oid_of(to)?
+                self.get_commit_info(to)?
             };
 
             Ok(RevSpecPattern2::Range { from, to })
         } else if let Ok(tag) = Tag::from_str(s, None) {
-            let previous = self.get_previous_tag(&tag)?.map(OidOf::Tag);
+            let previous = self.get_previous_tag(&tag)?.map(Into::into);
 
             let previous = match previous {
-                None => OidOf::Other(self.get_first_commit()?),
+                None => CommitInfo::new(self.get_first_commit()?),
                 Some(previous) => previous,
             };
 
             Ok(RevSpecPattern2::AtTag {
                 from: previous,
-                to: self.resolve_oid_of(s)?,
+                to: self.get_commit_info(s)?,
             })
         } else {
             Err(Git2Error::InvalidCommitRangePattern(s.to_string()))
         }
     }
 
-    pub(super) fn resolve_oid_of(&self, from: &str) -> Result<OidOf, Git2Error> {
-        self.resolve_oid_of_package(from, None)
-    }
+    pub(super) fn get_commit_info(&self, from: &str) -> Result<CommitInfo, Git2Error> {
+        let cache = self.get_cache();
+        let oid = cache
+            .refs
+            .get(from)
+            .copied()
+            .or_else(|| Some(self.0.revparse_single(from).ok()?.id()))
+            .ok_or(Git2Error::UnknownRevision(from.to_string()))?;
 
-    pub(super) fn resolve_oid_of_package(
-        &self,
-        from: &str,
-        package: Option<&str>,
-    ) -> Result<OidOf, Git2Error> {
-        let cache = get_cache(self);
-
-        // note: `get` cannot be used as `starts_with` is used for comparison
-        let oids = cache
-            .iter()
-            .find(|(k, _)| k.starts_with(from))
-            .map(|(_, v)| v);
-
-        let oid = oids
-            .and_then(|v| {
-                v.iter().rfind(|oid| {
-                    if let OidOf::Tag(tag) = oid {
-                        tag.package.as_deref() == package
-                    } else {
-                        true
-                    }
-                })
-            })
-            .cloned();
-        if let Some(oid) = oid {
-            Ok(oid)
-        } else {
-            let object = self
-                .0
-                .revparse_single(from)
-                .map_err(|_| Git2Error::UnknownRevision(from.to_string()))?;
-            Ok(OidOf::Other(object.id()))
-        }
+        Ok(cache
+            .commits
+            .get(&oid)
+            .cloned()
+            .unwrap_or(CommitInfo::new(oid)))
     }
 }
 
@@ -112,7 +88,7 @@ impl fmt::Display for RevSpecPattern2 {
 
 #[cfg(test)]
 mod test {
-    use crate::git::oid::OidOf;
+    use crate::git::oid::CommitInfo;
     use crate::git::rev::revspec::RevSpecPattern2;
     use crate::git::tag::Tag;
     use crate::test_helpers::{commit, git_init_no_gpg, git_tag};
@@ -129,14 +105,16 @@ mod test {
         let commit_oid = commit("chore: v1")?;
         git_tag("1.0.0")?;
 
-        let oid = repo.resolve_oid_of("1.0.0")?;
+        let oid = repo.get_commit_info("1.0.0")?;
 
-        assert_that!(oid).is_equal_to(OidOf::Tag(Tag {
+        let mut info = CommitInfo::from(Tag {
             package: None,
             prefix: None,
             version: Version::new(1, 0, 0),
             oid: Some(Oid::from_str(&commit_oid)?),
-        }));
+        });
+        info.head = true;
+        assert_that!(oid).is_equal_to(info);
 
         Ok(())
     }
@@ -147,9 +125,11 @@ mod test {
         commit("chore: first commit")?;
         let commit_oid = commit("chore: other")?;
 
-        let oid = repo.resolve_oid_of(&commit_oid)?;
+        let oid = repo.get_commit_info(&commit_oid)?;
 
-        assert_that!(oid).is_equal_to(OidOf::Head(Oid::from_str(&commit_oid)?));
+        let mut info = CommitInfo::new(Oid::from_str(&commit_oid)?);
+        info.head = true;
+        assert_that!(oid).is_equal_to(info);
 
         Ok(())
     }
@@ -161,9 +141,9 @@ mod test {
         let commit_oid = commit("chore: other")?;
         commit("chore: head")?;
 
-        let oid = repo.resolve_oid_of(&commit_oid)?;
+        let oid = repo.get_commit_info(&commit_oid)?;
 
-        assert_that!(oid).is_equal_to(OidOf::Other(Oid::from_str(&commit_oid)?));
+        assert_that!(oid).is_equal_to(CommitInfo::new(Oid::from_str(&commit_oid)?));
 
         Ok(())
     }
@@ -174,7 +154,7 @@ mod test {
         commit("chore: first commit")?;
         commit("chore: other")?;
 
-        let oid = repo.resolve_oid_of("v32");
+        let oid = repo.get_commit_info("v32");
 
         assert_that!(oid).is_err();
 

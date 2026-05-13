@@ -1,7 +1,7 @@
 use serde::Serialize;
 use tera::Context;
 
-use crate::{conventional::changelog::release::Release, git::oid::OidOf};
+use crate::{conventional::changelog::release::Release, git::oid::ReleaseVersion};
 
 /// A wrapper to append remote repository information to template context
 #[derive(Debug)]
@@ -21,8 +21,8 @@ pub struct MonoRepoContext<'a> {
 pub struct PackageBumpContext<'a> {
     pub package_name: &'a str,
     pub package_path: &'a str,
-    pub version: OidOf,
-    pub from: Option<OidOf>,
+    pub version: ReleaseVersion,
+    pub from: Option<ReleaseVersion>,
 }
 
 #[derive(Debug)]

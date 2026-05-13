@@ -1,13 +1,13 @@
 use std::fmt::{self, Debug, Display, Formatter};
 
-use crate::git::oid::OidOf;
+use crate::git::oid::CommitInfo;
 
 use crate::conventional::error::ConventionalCommitError;
 use colored::*;
 
 #[derive(Debug)]
 pub(crate) struct CogCheckReport {
-    pub from: OidOf,
+    pub from: CommitInfo,
     pub errors: Vec<ConventionalCommitError>,
 }
 

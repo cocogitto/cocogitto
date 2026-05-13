@@ -1,7 +1,6 @@
 use crate::conventional::changelog::context::{MonoRepoContext, PackageBumpContext, RemoteContext};
 use crate::conventional::changelog::release::{ChangelogCommit, Release};
 use crate::conventional::commit::Commit;
-use crate::git::oid::OidOf;
 use crate::git::tag::Tag;
 use chrono::NaiveDateTime;
 use conventional_commit_parser::commit::{CommitType, ConventionalCommit, Footer, Separator};
@@ -15,20 +14,18 @@ impl<'a> ReleaseFixture {
     pub fn builder() -> ReleaseFixture {
         ReleaseFixture {
             release: Release {
-                version: OidOf::Tag(
-                    Tag::from_str(
-                        "1.0.0",
-                        Some(Oid::from_str("9bb5facac5724bc81385fdd740fedbb49056da00").unwrap()),
-                    )
-                    .unwrap(),
-                ),
-                from: OidOf::Tag(
-                    Tag::from_str(
-                        "0.1.0",
-                        Some(Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap()),
-                    )
-                    .unwrap(),
-                ),
+                version: Tag::from_str(
+                    "1.0.0",
+                    Some(Oid::from_str("9bb5facac5724bc81385fdd740fedbb49056da00").unwrap()),
+                )
+                .unwrap()
+                .into(),
+                from: Tag::from_str(
+                    "0.1.0",
+                    Some(Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap()),
+                )
+                .unwrap()
+                .into(),
                 date: NaiveDateTime::parse_from_str("2015-09-05 23:56:04", "%Y-%m-%d %H:%M:%S")
                     .unwrap(),
                 commits: vec![],
@@ -192,38 +189,39 @@ pub fn monorepo_context<'a>() -> MonoRepoContext<'a> {
             PackageBumpContext {
                 package_name: "one",
                 package_path: "crates/one",
-                version: OidOf::Tag(
-                    Tag::from_str(
-                        "0.1.0",
-                        Some(Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap()),
-                    )
-                    .unwrap(),
-                ),
-                from: Some(OidOf::Tag(
+                version: Tag::from_str(
+                    "0.1.0",
+                    Some(Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap()),
+                )
+                .unwrap()
+                .into(),
+                from: Some(
                     Tag::from_str(
                         "0.2.0",
                         Some(Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap()),
                     )
-                    .unwrap(),
-                )),
+                    .unwrap()
+                    .into(),
+                ),
             },
             PackageBumpContext {
                 package_name: "two",
                 package_path: "crates/two",
-                version: OidOf::Tag(
-                    Tag::from_str(
-                        "0.2.0",
-                        Some(Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap()),
-                    )
-                    .unwrap(),
-                ),
-                from: Some(OidOf::Tag(
+                version: Tag::from_str(
+                    "0.2.0",
+                    Some(Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap()),
+                )
+                .unwrap()
+                .into(),
+
+                from: Some(
                     Tag::from_str(
                         "0.3.0",
                         Some(Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap()),
                     )
-                    .unwrap(),
-                )),
+                    .unwrap()
+                    .into(),
+                ),
             },
         ],
     }
@@ -236,25 +234,23 @@ pub fn default_package_context<'a>() -> MonoRepoContext<'a> {
             PackageBumpContext {
                 package_name: "one",
                 package_path: "crates/one",
-                version: OidOf::Tag(
-                    Tag::from_str(
-                        "0.1.0",
-                        Some(Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap()),
-                    )
-                    .unwrap(),
-                ),
+                version: Tag::from_str(
+                    "0.1.0",
+                    Some(Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap()),
+                )
+                .unwrap()
+                .into(),
                 from: None,
             },
             PackageBumpContext {
                 package_name: "two",
                 package_path: "crates/two",
-                version: OidOf::Tag(
-                    Tag::from_str(
-                        "0.2.0",
-                        Some(Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap()),
-                    )
-                    .unwrap(),
-                ),
+                version: Tag::from_str(
+                    "0.2.0",
+                    Some(Oid::from_str("fae3a288a1bc69b14f85a1d5fe57cee1964acd60").unwrap()),
+                )
+                .unwrap()
+                .into(),
                 from: None,
             },
         ],
