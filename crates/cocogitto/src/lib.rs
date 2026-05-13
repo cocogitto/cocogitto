@@ -31,6 +31,7 @@ pub mod hook;
 pub mod log;
 /// Settings module containing configuration structures and functions for Cocogitto
 pub mod settings;
+pub mod target;
 
 pub const DEFAULT_CONFIG_PATH: &str = "cog.toml";
 static CONFIG_PATH: OnceLock<String> = OnceLock::new();
