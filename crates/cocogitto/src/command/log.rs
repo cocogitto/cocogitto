@@ -1,4 +1,5 @@
 use crate::conventional::commit::Commit;
+use crate::git::rev::revspec::RevSpecPattern2;
 use crate::git::tag::TagLookUpOptions;
 use crate::log::filter::CommitFilters;
 use crate::CocoGitto;
@@ -7,7 +8,7 @@ use std::fmt::Write;
 
 impl CocoGitto {
     pub fn get_log(&self, filters: CommitFilters) -> Result<String> {
-        let commits = self.repository.revwalk("..")?;
+        let commits = self.repository.revwalk(RevSpecPattern2::full())?;
         let logs = commits
             .iter_commits()
             // Remove merge commits

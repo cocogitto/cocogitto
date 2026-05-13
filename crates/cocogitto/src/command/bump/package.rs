@@ -37,7 +37,7 @@ impl CocoGitto {
         if !SETTINGS.disable_changelog {
             let pattern = self.get_bump_revspec(&bump_res.current);
             let changelog = self.get_package_changelog_with_target_version(
-                &pattern,
+                pattern,
                 tag.clone(),
                 opts.package_name,
             )?;

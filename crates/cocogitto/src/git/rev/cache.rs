@@ -51,10 +51,10 @@ impl RepoCache {
 
     fn fill(&mut self, repo: &Repository) -> Result<(), Git2Error> {
         self.head = repo.get_head_commit_oid()?;
-        self.insert_oid(self.head).head = true;
+        self.insert_oid(self.head);
 
         self.first = repo.get_first_commit()?;
-        self.insert_oid(self.first).first = true;
+        self.insert_oid(self.first);
 
         // Tags, now performant
         // first, list all tags
@@ -109,10 +109,6 @@ impl RepoCache {
             .get(&oid)
             .cloned()
             .unwrap_or(CommitInfo::new(oid))
-    }
-
-    pub fn head_commit_info(&self) -> CommitInfo {
-        self.commits[&self.head].clone()
     }
 }
 

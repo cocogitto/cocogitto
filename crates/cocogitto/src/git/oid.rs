@@ -10,8 +10,6 @@ use crate::git::tag::Tag;
 pub struct CommitInfo {
     pub oid: Oid,
     pub tags: Vec<Tag>,
-    pub first: bool,
-    pub head: bool,
 }
 
 impl CommitInfo {
@@ -19,8 +17,6 @@ impl CommitInfo {
         Self {
             oid,
             tags: Vec::new(),
-            first: false,
-            head: false,
         }
     }
 
@@ -38,8 +34,6 @@ impl From<Tag> for CommitInfo {
         Self {
             oid: value.oid.unwrap_or(Oid::zero()),
             tags: vec![value],
-            first: false,
-            head: false,
         }
     }
 }
@@ -48,8 +42,6 @@ impl Display for CommitInfo {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         if let Some(tag) = self.tags.first() {
             tag.fmt(f)
-        } else if self.head {
-            f.write_str("HEAD")
         } else {
             self.oid.fmt(f)
         }

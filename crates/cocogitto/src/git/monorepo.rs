@@ -15,7 +15,10 @@ impl Repository {
 #[cfg(test)]
 mod test {
 
-    use crate::test_helpers::{git_init_no_gpg, mkdir};
+    use crate::{
+        git::rev::revspec::RevSpecPattern2,
+        test_helpers::{git_init_no_gpg, mkdir},
+    };
     use anyhow::Result;
     use cmd_lib::run_cmd;
     use indoc::formatdoc;
@@ -60,7 +63,7 @@ mod test {
         )?;
 
         // Act
-        let range = repo.get_commit_range_for_package("..HEAD", "two")?;
+        let range = repo.get_commit_range_for_package(RevSpecPattern2::full(), "two")?;
         let range = range.into_iter().collect::<Vec<_>>();
 
         // Assert

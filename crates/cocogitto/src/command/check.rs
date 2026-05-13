@@ -1,6 +1,7 @@
 use crate::conventional::commit::Commit;
 use crate::error::CogCheckReport;
 
+use crate::git::rev::revspec::RevSpecPattern2;
 use crate::git::tag::TagLookUpOptions;
 use crate::CocoGitto;
 use anyhow::anyhow;
@@ -16,16 +17,17 @@ impl CocoGitto {
         ignore_fixup_commits: bool,
         range: Option<String>,
     ) -> Result<()> {
-        let commit_range = if let Some(range) = range {
-            self.repository.revwalk(&range)?
+        let pattern = if let Some(range) = range {
+            self.repository.revspec_from_str(&range)?
         } else if check_from_latest_tag {
             let tag = self
                 .repository
                 .get_latest_tag(TagLookUpOptions::default())?;
-            self.repository.revwalk(&format!("{tag}.."))?
+            RevSpecPattern2::from(tag.oid.expect("latest tag should have oid"))
         } else {
-            self.repository.revwalk("..")?
+            RevSpecPattern2::full()
         };
+        let commit_range = self.repository.revwalk(pattern)?;
 
         let ignore_merge_commit_fn = |commit: &git2::Commit| commit.parent_count() <= 1;
         let ignore_fixup_commit_fn = |commit: &git2::Commit| {

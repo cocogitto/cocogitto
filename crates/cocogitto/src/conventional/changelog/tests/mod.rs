@@ -11,6 +11,7 @@ use crate::conventional::changelog::tests::fixtures::{
     default_package_context, default_remote_context, monorepo_context, ReleaseFixture,
 };
 use crate::git::repository::Repository;
+use crate::git::rev::revspec::RevSpecPattern2;
 
 macro_rules! assert_doc_eq {
     ($changelog:expr, $doc:literal) => {
@@ -55,7 +56,7 @@ macro_rules! changelog_test {
 #[test]
 fn should_get_a_release() -> anyhow::Result<()> {
     let repo = Repository::open(".")?;
-    let iter = repo.revwalk("..")?;
+    let iter = repo.revwalk(RevSpecPattern2::full())?;
     let release = Release::try_from(iter);
     assert_that!(release)
         .is_ok()

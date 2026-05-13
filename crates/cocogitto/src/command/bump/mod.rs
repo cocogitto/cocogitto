@@ -8,6 +8,7 @@ use crate::conventional::error::BumpError as ConvBumpError;
 use crate::conventional::version::IncrementCommand;
 use crate::conventional::version::PreCommand;
 use crate::git::repository::Repository;
+use crate::git::rev::revspec::RevSpecPattern2;
 use crate::git::tag::{Tag, TagLookUpOptions};
 use crate::hook::{Hook, HookVersion, Hooks};
 use crate::settings::{HookType, MonoRepoPackage, Settings};
@@ -229,11 +230,12 @@ impl<'a> HookRunOptions<'a> {
 }
 
 impl CocoGitto {
-    fn get_bump_revspec(&mut self, current_tag: &Tag) -> String {
+    fn get_bump_revspec(&mut self, current_tag: &Tag) -> RevSpecPattern2 {
         if current_tag.is_zero() {
-            "..".to_string()
+            RevSpecPattern2::full()
         } else {
-            format!("{current_tag}..")
+            // this function is always called with the latest tag, so it should always have a oid
+            RevSpecPattern2::from(*current_tag.oid_unchecked())
         }
     }
 
@@ -300,7 +302,11 @@ impl CocoGitto {
     }
 
     /// The target version is not created yet when generating the changelog.
-    pub fn get_changelog_with_target_version(&self, pattern: &str, tag: Tag) -> Result<Release> {
+    pub fn get_changelog_with_target_version(
+        &self,
+        pattern: RevSpecPattern2,
+        tag: Tag,
+    ) -> Result<Release> {
         let commit_range = self.repository.revwalk(pattern)?;
         let mut release = Release::try_from(commit_range)?;
         release.version = tag.into();
@@ -310,7 +316,7 @@ impl CocoGitto {
     /// The target package version is not created yet when generating the changelog.
     pub fn get_package_changelog_with_target_version(
         &self,
-        pattern: &str,
+        pattern: RevSpecPattern2,
         tag: Tag,
         package: &str,
     ) -> Result<Release> {
@@ -326,7 +332,7 @@ impl CocoGitto {
     /// The target global monorepo version is not created yet when generating the changelog.
     pub fn get_monorepo_global_changelog_for_version(
         &self,
-        pattern: &str,
+        pattern: RevSpecPattern2,
         from: ReleaseVersion,
         tag: Tag,
     ) -> Result<Release> {

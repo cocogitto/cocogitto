@@ -1,94 +1,80 @@
 use crate::git::error::Git2Error;
-use crate::git::oid::CommitInfo;
 use crate::git::repository::Repository;
 use crate::git::tag::Tag;
 use git2::Oid;
-use std::fmt;
-use std::fmt::Formatter;
 
-#[derive(Debug, Clone)]
-pub enum RevSpecPattern2 {
-    Range { from: CommitInfo, to: CommitInfo },
-    AtTag { from: CommitInfo, to: CommitInfo },
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct RevSpecPattern2 {
+    pub from: Option<Oid>,
+    pub to: Option<Oid>,
 }
 
 impl RevSpecPattern2 {
-    pub fn from(&self) -> Oid {
-        match self {
-            RevSpecPattern2::AtTag { from, .. } | RevSpecPattern2::Range { from, .. } => from.oid,
+    pub fn from(oid: Oid) -> Self {
+        Self {
+            from: Some(oid),
+            to: None,
         }
     }
 
-    pub fn to(&self) -> Oid {
-        match self {
-            RevSpecPattern2::AtTag { to, .. } | RevSpecPattern2::Range { to, .. } => to.oid,
+    pub fn to(oid: Oid) -> Self {
+        Self {
+            from: None,
+            to: Some(oid),
+        }
+    }
+
+    pub fn full() -> Self {
+        Self {
+            from: None,
+            to: None,
         }
     }
 }
 
 impl Repository {
-    pub(super) fn revspec_from_str(&self, s: &str) -> Result<RevSpecPattern2, Git2Error> {
+    pub fn revspec_from_str(&self, s: &str) -> Result<RevSpecPattern2, Git2Error> {
         if let Some((from, to)) = s.split_once("..") {
             let from = if from.is_empty() {
-                CommitInfo::new(self.get_first_commit()?)
+                None
             } else {
-                self.get_commit_info(from)?
+                Some(self.parse_rev(from)?)
             };
 
             let to = if to.is_empty() {
-                self.get_cache().head_commit_info()
+                None
             } else {
-                self.get_commit_info(to)?
+                Some(self.parse_rev(to)?)
             };
 
-            Ok(RevSpecPattern2::Range { from, to })
+            Ok(RevSpecPattern2 { from, to })
         } else if let Ok(tag) = Tag::from_str(s, None) {
-            let previous = self.get_previous_tag(&tag)?.map(Into::into);
+            let previous = self.get_previous_tag(&tag)?.and_then(|tag| tag.oid);
 
-            let previous = match previous {
-                None => CommitInfo::new(self.get_first_commit()?),
-                Some(previous) => previous,
-            };
-
-            Ok(RevSpecPattern2::AtTag {
+            Ok(RevSpecPattern2 {
                 from: previous,
-                to: self.get_commit_info(s)?,
+                to: Some(self.parse_rev(s)?),
             })
         } else {
             Err(Git2Error::InvalidCommitRangePattern(s.to_string()))
         }
     }
 
-    pub(super) fn get_commit_info(&self, from: &str) -> Result<CommitInfo, Git2Error> {
-        let cache = self.get_cache();
-        let oid = cache
+    pub fn parse_rev(&self, from: &str) -> Result<Oid, Git2Error> {
+        self.get_cache()
             .refs
             .get(from)
             .copied()
             .or_else(|| Some(self.0.revparse_single(from).ok()?.id()))
-            .ok_or(Git2Error::UnknownRevision(from.to_string()))?;
-
-        Ok(cache
-            .commits
-            .get(&oid)
-            .cloned()
-            .unwrap_or(CommitInfo::new(oid)))
-    }
-}
-
-impl fmt::Display for RevSpecPattern2 {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        match self {
-            RevSpecPattern2::AtTag { from, to } | RevSpecPattern2::Range { from, to } => {
-                write!(f, "{from}..{to}")
-            }
-        }
+            .ok_or(Git2Error::UnknownRevision(from.to_string()))
     }
 }
 
 #[cfg(test)]
 mod test {
+    use crate::git::error::Git2Error;
     use crate::git::oid::CommitInfo;
+    use crate::git::repository::Repository;
     use crate::git::rev::revspec::RevSpecPattern2;
     use crate::git::tag::Tag;
     use crate::test_helpers::{commit, git_init_no_gpg, git_tag};
@@ -97,6 +83,19 @@ mod test {
     use sealed_test::prelude::*;
     use semver::Version;
     use speculoos::prelude::*;
+
+    impl Repository {
+        pub(super) fn get_commit_info(&self, from: &str) -> Result<CommitInfo, Git2Error> {
+            let oid = self.parse_rev(from)?;
+
+            Ok(self
+                .get_cache()
+                .commits
+                .get(&oid)
+                .cloned()
+                .unwrap_or(CommitInfo::new(oid)))
+        }
+    }
 
     #[sealed_test]
     fn should_resolve_tag_oid() -> Result<()> {
@@ -107,14 +106,12 @@ mod test {
 
         let oid = repo.get_commit_info("1.0.0")?;
 
-        let mut info = CommitInfo::from(Tag {
+        assert_that!(oid).is_equal_to(CommitInfo::from(Tag {
             package: None,
             prefix: None,
             version: Version::new(1, 0, 0),
             oid: Some(Oid::from_str(&commit_oid)?),
-        });
-        info.head = true;
-        assert_that!(oid).is_equal_to(info);
+        }));
 
         Ok(())
     }
@@ -127,9 +124,7 @@ mod test {
 
         let oid = repo.get_commit_info(&commit_oid)?;
 
-        let mut info = CommitInfo::new(Oid::from_str(&commit_oid)?);
-        info.head = true;
-        assert_that!(oid).is_equal_to(info);
+        assert_that!(oid).is_equal_to(CommitInfo::new(Oid::from_str(&commit_oid)?));
 
         Ok(())
     }
@@ -165,12 +160,15 @@ mod test {
     fn convert_str_to_pattern_to() -> Result<()> {
         let repo = git_init_no_gpg()?;
         commit("chore: first commit")?;
-        commit("chore: v1")?;
+        let sha_1 = commit("chore: v1")?;
         git_tag("1.0.0")?;
 
         let pattern = repo.revspec_from_str("..1.0.0")?;
 
-        assert_that!(matches!(pattern, RevSpecPattern2::Range { .. })).is_true();
+        assert_that!(pattern).is_equal_to(RevSpecPattern2 {
+            from: None,
+            to: Some(sha_1.parse().unwrap()),
+        });
         Ok(())
     }
 
@@ -178,13 +176,16 @@ mod test {
     fn convert_str_to_pattern_from() -> Result<()> {
         let repo = git_init_no_gpg()?;
         commit("chore: first commit")?;
-        commit("chore: v1")?;
+        let sha_1 = commit("chore: v1")?;
         git_tag("1.0.0")?;
         commit("chore: more commits")?;
 
         let pattern = repo.revspec_from_str("1.0.0..")?;
 
-        assert_that!(matches!(pattern, RevSpecPattern2::Range { .. })).is_true();
+        assert_that!(pattern).is_equal_to(RevSpecPattern2 {
+            from: Some(sha_1.parse().unwrap()),
+            to: None,
+        });
         Ok(())
     }
 
@@ -192,8 +193,13 @@ mod test {
     fn convert_empty_pattern() -> Result<()> {
         let repo = git_init_no_gpg()?;
         commit("chore: first commit")?;
+
         let pattern = repo.revspec_from_str("..")?;
-        assert_that!(matches!(pattern, RevSpecPattern2::Range { .. })).is_true();
+
+        assert_that!(pattern).is_equal_to(RevSpecPattern2 {
+            from: None,
+            to: None,
+        });
         Ok(())
     }
 
@@ -201,11 +207,14 @@ mod test {
     fn error_invalid_pattern() -> Result<()> {
         let repo = git_init_no_gpg()?;
         commit("chore: first commit")?;
-        commit("chore: v1")?;
+        let sha_1 = commit("chore: v1")?;
         git_tag("1.0.0")?;
         let pattern = repo.revspec_from_str("1.0.0")?;
 
-        assert_that!(matches!(pattern, RevSpecPattern2::AtTag { .. })).is_true();
+        assert_that!(pattern).is_equal_to(RevSpecPattern2 {
+            from: None,
+            to: Some(sha_1.parse().unwrap()),
+        });
         Ok(())
     }
 
@@ -214,14 +223,17 @@ mod test {
         let repo = git_init_no_gpg()?;
         commit("chore: first commit")?;
         commit("chore: first commit")?;
-        commit("chore: v1")?;
+        let sha_1 = commit("chore: v1")?;
         git_tag("1.0.0")?;
-        commit("chore: more commits")?;
+        let sha_2 = commit("chore: more commits")?;
         git_tag("2.0.0")?;
 
         let pattern = repo.revspec_from_str("1.0.0..2.0.0")?;
 
-        assert_that!(matches!(pattern, RevSpecPattern2::Range { .. })).is_true();
+        assert_that!(pattern).is_equal_to(RevSpecPattern2 {
+            from: Some(sha_1.parse().unwrap()),
+            to: Some(sha_2.parse().unwrap()),
+        });
         Ok(())
     }
 }

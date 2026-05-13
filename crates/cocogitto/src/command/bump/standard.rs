@@ -30,7 +30,7 @@ impl CocoGitto {
         let pattern = self.get_bump_revspec(&bump_res.current);
 
         if !SETTINGS.disable_changelog {
-            let changelog = self.get_changelog_with_target_version(&pattern, tag.clone())?;
+            let changelog = self.get_changelog_with_target_version(pattern, tag.clone())?;
             changelog.pretty_print_bump_summary()?;
 
             let path = settings::changelog_path();
