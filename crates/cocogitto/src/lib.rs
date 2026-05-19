@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashMap};
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::PathBuf;
@@ -20,7 +20,6 @@ use git::repository::Repository;
 use settings::Settings;
 
 use crate::git::error::{Git2Error, TagError};
-use crate::git::rev::cache::get_cache;
 
 use crate::git::tag::Tag;
 
@@ -32,6 +31,7 @@ pub mod hook;
 pub mod log;
 /// Settings module containing configuration structures and functions for Cocogitto
 pub mod settings;
+pub mod target;
 
 pub const DEFAULT_CONFIG_PATH: &str = "cog.toml";
 static CONFIG_PATH: OnceLock<String> = OnceLock::new();
@@ -193,8 +193,7 @@ impl CocoGitto {
 
     // Currently only used in test to force rebuild the tag cache
     pub fn clear_cache(&self) {
-        let mut cache = get_cache(&self.repository);
-        *cache = BTreeMap::new();
+        self.repository.get_cache().clear();
     }
 }
 

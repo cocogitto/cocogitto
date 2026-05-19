@@ -14,7 +14,9 @@ impl CocoGitto {
     /// - `from` default value:latest tag or else first commit
     /// - `to` default value:`HEAD` or else first commit
     pub fn get_changelog(&self, pattern: &str, _with_child_releases: bool) -> Result<Release> {
-        let commit_range = self.repository.revwalk(pattern)?;
+        let commit_range = self
+            .repository
+            .revwalk(self.repository.revspec_from_str(pattern)?)?;
         Release::try_from(commit_range).map_err(Into::into)
     }
 
@@ -35,6 +37,7 @@ impl CocoGitto {
             .collect();
         package_data.sort_by_key(|&(name, _)| name);
 
+        let pattern = self.repository.revspec_from_str(pattern)?;
         for (package_name, package_path) in package_data.iter() {
             let range = self
                 .repository
@@ -43,9 +46,9 @@ impl CocoGitto {
                 continue;
             }
 
-            let from = Some(range.from_oid());
+            let from = Some(range.from_oid().into_version(Some(package_name)));
 
-            let version = range.to_oid();
+            let version = range.to_oid().into_version(Some(package_name));
 
             let context = PackageBumpContext {
                 package_name,
@@ -69,6 +72,7 @@ impl CocoGitto {
         };
 
         let changelog = Release::try_from(commit_range)?;
+
         changelog
             .into_markdown(template, ReleaseType::MonoRepo(context))
             .map_err(Into::into)

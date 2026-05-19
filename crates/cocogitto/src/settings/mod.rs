@@ -16,6 +16,7 @@ use crate::settings::error::SettingError;
 use config::{Config, File, FileFormat};
 use conventional_commit_parser::commit::CommitType;
 use maplit::hashmap;
+use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
@@ -565,6 +566,14 @@ impl Settings {
         repository: T,
     ) -> Result<Self, SettingError> {
         repository.try_into()
+    }
+
+    pub(crate) fn list_packages(&self) -> &HashMap<String, MonoRepoPackage> {
+        static EMPTY_PACKAGES: Lazy<HashMap<String, MonoRepoPackage>> = Lazy::new(HashMap::new);
+        self.monorepo
+            .as_ref()
+            .map(|mr| &mr.packages)
+            .unwrap_or(&*EMPTY_PACKAGES)
     }
 
     /// Loads and merges commit types configuration.

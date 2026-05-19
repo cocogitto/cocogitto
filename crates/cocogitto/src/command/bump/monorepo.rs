@@ -16,7 +16,7 @@ use anyhow::{bail, Result};
 use log::{info, warn};
 use tera::Tera;
 
-use crate::git::oid::OidOf;
+use crate::git::oid::ReleaseVersion;
 
 #[derive(Debug)]
 struct PackageBumpData {
@@ -167,17 +167,17 @@ impl CocoGitto {
             template_context.push(PackageBumpContext {
                 package_name: &bump.package_name,
                 package_path: &bump.package_path,
-                version: OidOf::Tag(bump.new_version.prefixed_tag.clone()),
+                version: bump.new_version.prefixed_tag.clone().into(),
                 from: Some(
                     bump.old_version
                         .as_ref()
-                        .map(|v| OidOf::Tag(v.prefixed_tag.clone()))
+                        .map(|v| v.prefixed_tag.clone().into())
                         .unwrap_or_else(|| {
                             let first = self
                                 .repository
                                 .get_first_commit()
                                 .expect("non empty repository");
-                            OidOf::Other(first)
+                            ReleaseVersion::new(first)
                         }),
                 ),
             })
@@ -186,8 +186,8 @@ impl CocoGitto {
         if !SETTINGS.disable_changelog {
             let pattern = self.get_bump_revspec(&bump_res.current);
             let changelog = self.get_monorepo_global_changelog_for_version(
-                &pattern,
-                OidOf::Tag(bump_res.current.clone()),
+                pattern,
+                bump_res.current.clone().into(),
                 tag.clone(),
             )?;
 
@@ -311,7 +311,7 @@ impl CocoGitto {
             template_context.push(PackageBumpContext {
                 package_name: &bump.package_name,
                 package_path: &bump.package_path,
-                version: OidOf::Tag(bump.version.clone()),
+                version: bump.version.clone().into(),
                 from: None,
             })
         }
@@ -319,8 +319,8 @@ impl CocoGitto {
         if !SETTINGS.disable_changelog {
             let pattern = self.get_bump_revspec(&bump_res.current);
             let changelog = self.get_monorepo_global_changelog_for_version(
-                &pattern,
-                OidOf::Tag(bump_res.current.clone()),
+                pattern,
+                bump_res.current.clone().into(),
                 tag.clone(),
             )?;
 
@@ -476,15 +476,12 @@ impl CocoGitto {
                         .map(|(i, name)| (name.as_str(), i))
                         .collect();
 
-                    packages.sort_by(|a, b| {
-                        let a_order = order_map.get(a.0.as_str()).unwrap_or(&usize::MAX);
-                        let b_order = order_map.get(b.0.as_str()).unwrap_or(&usize::MAX);
-                        a_order.cmp(b_order)
-                    });
+                    packages
+                        .sort_by_key(|pkg| order_map.get(pkg.0.as_str()).unwrap_or(&usize::MAX));
                 }
             }
         } else {
-            packages.sort_by(|a, b| a.1.bump_order.cmp(&b.1.bump_order));
+            packages.sort_by_key(|pkg| pkg.1.bump_order);
         }
 
         for (package_name, package) in packages {
@@ -544,7 +541,7 @@ impl CocoGitto {
             if !SETTINGS.disable_changelog {
                 let pattern = self.get_bump_revspec(&bump.current);
                 let changelog = self.get_package_changelog_with_target_version(
-                    &pattern,
+                    pattern,
                     tag.clone(),
                     package_name.as_str(),
                 )?;

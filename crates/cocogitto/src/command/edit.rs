@@ -1,5 +1,6 @@
 use crate::conventional::commit::{verify, Commit};
 
+use crate::git::rev::revspec::RevSpecPattern2;
 use crate::git::tag::TagLookUpOptions;
 use crate::{CocoGitto, SETTINGS};
 use anyhow::{anyhow, Result};
@@ -13,14 +14,15 @@ use tempfile::TempDir;
 
 impl CocoGitto {
     pub fn check_and_edit(&self, from_latest_tag: bool) -> Result<()> {
-        let commits = if from_latest_tag {
+        let pattern = if from_latest_tag {
             let tag = self
                 .repository
                 .get_latest_tag(TagLookUpOptions::default())?;
-            self.repository.revwalk(&format!("{tag}.."))?
+            RevSpecPattern2::from(tag.oid.expect("latest tag should have oid"))
         } else {
-            self.repository.revwalk("..")?
+            RevSpecPattern2::full()
         };
+        let commits = self.repository.revwalk(pattern)?;
 
         let editor = std::env::var("EDITOR")
             .map_err(|_err| anyhow!("the 'EDITOR' environment variable was not found"))?;

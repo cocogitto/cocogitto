@@ -1,9 +1,10 @@
 use git2::Commit;
 
 use crate::git::error::Git2Error;
-use crate::git::oid::OidOf;
+use crate::git::oid::CommitInfo;
 use crate::git::repository::Repository;
 use crate::git::rev::filters::PackagePathFilter;
+use crate::git::rev::revspec::RevSpecPattern2;
 use crate::git::rev::CommitIter;
 use crate::SETTINGS;
 
@@ -11,10 +12,10 @@ impl Repository {
     /// Return a commit range for the given package from a [`RevspecPattern2`]
     pub fn get_commit_range_for_package(
         &self,
-        pattern: &str,
+        pattern: RevSpecPattern2,
         package: &str,
     ) -> Result<CommitIter<'_>, Git2Error> {
-        let mut commit_range = self.revwalk_pkg(pattern, Some(package))?;
+        let mut commit_range = self.revwalk(pattern)?;
         let mut commits = vec![];
         let package = SETTINGS
             .monorepo
@@ -65,7 +66,7 @@ impl Repository {
 
     pub fn get_commit_range_for_monorepo_global(
         &self,
-        pattern: &str,
+        pattern: RevSpecPattern2,
     ) -> Result<CommitIter<'_>, Git2Error> {
         let mut commit_range = self.revwalk(pattern)?;
         let mut commits = vec![];
@@ -119,47 +120,25 @@ impl Repository {
     }
 
     /// Return a commit range from a [`RevspecPattern2`]
-    pub fn revwalk(&self, spec: &str) -> Result<CommitIter<'_>, Git2Error> {
-        self.revwalk_pkg(spec, None)
-    }
-
-    pub fn revwalk_pkg(
-        &self,
-        spec: &str,
-        package: Option<&str>,
-    ) -> Result<CommitIter<'_>, Git2Error> {
-        let spec = self.revspec_from_str(spec)?;
-
-        if spec.from() == spec.to() {
-            let oid = *spec.from();
-            let oid_of = self.resolve_oid_of(&oid.to_string())?;
-            let commit = self.0.find_commit(oid)?;
-            return Ok(CommitIter::single(oid_of, commit));
-        }
+    pub fn revwalk(&self, spec: RevSpecPattern2) -> Result<CommitIter<'_>, Git2Error> {
+        let cache = self.get_cache();
 
         let mut revwalk = self.0.revwalk()?;
-        revwalk.push_range(&spec.to_string())?;
-
-        let mut commits: Vec<(OidOf, Commit)> = vec![];
-
-        for oid in revwalk {
-            let oid = oid?;
-            // TODO: can we avoid allocating strings here ?
-            let oid_of = self.resolve_oid_of_package(&oid.to_string(), package)?;
-            let commit = self.0.find_commit(oid)?;
-            commits.push((oid_of, commit));
+        if let Some(to) = spec.to {
+            revwalk.push(to)?;
+        } else {
+            revwalk.push_head()?;
+        }
+        if let Some(from) = spec.from {
+            revwalk.hide(from)?;
         }
 
-        // TODO: can we avoid allocating strings here ?
-        let first_oid = self.resolve_oid_of_package(&spec.from().to_string(), package)?;
-        let include_start = match &first_oid {
-            OidOf::Head(_) | OidOf::FirstCommit(_) => true,
-            OidOf::Tag(_) | OidOf::Other(_) => false,
-        };
-
-        if include_start {
-            let first_commit = self.0.find_commit(*spec.from())?;
-            commits.push((first_oid, first_commit));
+        let mut commits: Vec<(CommitInfo, Commit)> = vec![];
+        for oid in revwalk {
+            let oid = oid?;
+            let info = cache.get_info(oid);
+            let commit = self.0.find_commit(oid)?;
+            commits.push((info, commit));
         }
 
         Ok(CommitIter(commits))
@@ -179,13 +158,22 @@ mod test {
     use speculoos::prelude::*;
 
     use crate::conventional::changelog::release::Release;
-    use crate::git::oid::OidOf;
+    use crate::git::error::Git2Error;
+    use crate::git::oid::CommitInfo;
     use crate::git::repository::Repository;
+    use crate::git::rev::revspec::RevSpecPattern2;
+    use crate::git::rev::CommitIter;
     use crate::git::tag::{Tag, TagLookUpOptions};
     use crate::settings::{MonoRepoPackage, Settings};
     use crate::test_helpers::{commit, git_init_no_gpg, git_tag, mkdir};
 
     const COCOGITTO_REPOSITORY: &str = env!("CARGO_MANIFEST_DIR");
+
+    impl Repository {
+        pub fn revwalk_pattern(&self, spec: &str) -> Result<CommitIter<'_>, Git2Error> {
+            self.revwalk(self.revspec_from_str(spec)?)
+        }
+    }
 
     #[test]
     fn all_commits() -> Result<()> {
@@ -193,7 +181,7 @@ mod test {
         let repo = Repository::open(COCOGITTO_REPOSITORY)?;
 
         // Act
-        let range = repo.revwalk("..")?;
+        let range = repo.revwalk_pattern("..")?;
 
         // Assert
         assert_that!(range.0).is_not_empty();
@@ -209,7 +197,7 @@ mod test {
         let three = commit("feat: feature 2")?;
         git_tag("0.1.0")?;
 
-        let range = repo.revwalk("0.1.0");
+        let range = repo.revwalk_pattern("0.1.0");
 
         let range = range?;
 
@@ -218,8 +206,8 @@ mod test {
 
         // Assert
         assert_that!(release.previous).is_none();
-        assert_that!(release.version.oid()).is_equal_to(&Oid::from_str(&three)?);
-        assert_that!(release.from).is_equal_to(OidOf::FirstCommit(Oid::from_str(&one)?));
+        assert_that!(release.version.id).is_equal_to(&Oid::from_str(&three)?);
+        assert_that!(release.from.id).is_equal_to(&Oid::from_str(&one)?);
 
         let expected_commits: Vec<String> = release
             .commits
@@ -244,7 +232,7 @@ mod test {
         let five = commit("feat: feature 4")?;
         git_tag("0.2.0")?;
 
-        let range = repo.revwalk("..0.2.0")?;
+        let range = repo.revwalk_pattern("..0.2.0")?;
 
         // Act
         let release = Release::try_from(range)?;
@@ -281,7 +269,7 @@ mod test {
     fn get_release_range_integration_test() -> Result<()> {
         // Arrange
         let repo = Repository::open(COCOGITTO_REPOSITORY)?;
-        let range = repo.revwalk("0.32.1..0.32.3")?;
+        let range = repo.revwalk_pattern("0.32.1..0.32.3")?;
 
         // Act
         let release = Release::try_from(range)?;
@@ -312,11 +300,10 @@ mod test {
         commit("feat: a commit")?;
 
         // Act
-        let commit_range = repo.revwalk("..1.0.0")?;
+        let commit_range = repo.revwalk_pattern("..1.0.0")?;
 
         // Assert
-        assert_that!(commit_range.from_oid())
-            .is_equal_to(OidOf::FirstCommit(Oid::from_str(&first)?));
+        assert_that!(commit_range.from_oid()).is_equal_to(CommitInfo::new(Oid::from_str(&first)?));
         assert_that!(commit_range.to_oid().to_string()).is_equal_to("1.0.0".to_string());
         assert_that!(commit_range.0).has_length(2);
         Ok(())
@@ -359,8 +346,10 @@ mod test {
             git commit -m "feat: global change";
         )?;
 
-        let commit_range_package = repo.get_commit_range_for_package("..HEAD", "one")?;
-        let commit_range_global = repo.get_commit_range_for_monorepo_global("..HEAD");
+        let commit_range_package =
+            repo.get_commit_range_for_package(RevSpecPattern2::full(), "one")?;
+        let commit_range_global =
+            repo.get_commit_range_for_monorepo_global(RevSpecPattern2::full());
         let commit_range_global = commit_range_global?;
         assert_that!(commit_range_package.0).has_length(1);
         assert_that!(commit_range_global.0).has_length(2);
@@ -377,7 +366,8 @@ mod test {
             git commit -m "feat: commit to non-ignored path";
         )?;
 
-        let commit_range_package = repo.get_commit_range_for_package("HEAD~1..HEAD", "one")?;
+        let commit_range_package =
+            repo.get_commit_range_for_package(repo.revspec_from_str("HEAD~1..HEAD")?, "one")?;
 
         asserting!("package with changes have some commits")
             .that(&commit_range_package.0)
@@ -399,7 +389,8 @@ mod test {
             git commit -m "feat: commit to ignored path";
         )?;
 
-        let commit_range_package = repo.get_commit_range_for_package("HEAD~1..HEAD", "one")?;
+        let commit_range_package =
+            repo.get_commit_range_for_package(repo.revspec_from_str("HEAD~1..HEAD")?, "one")?;
 
         asserting!("package with no changes should have some commits for HEAD~1 revspec")
             .that(&commit_range_package.0)
@@ -418,7 +409,8 @@ mod test {
             git commit -m "feat: commit to extra included path";
         )?;
 
-        let commit_range_package = repo.get_commit_range_for_package("HEAD~1..HEAD", "one")?;
+        let commit_range_package =
+            repo.get_commit_range_for_package(repo.revspec_from_str("HEAD~1..HEAD")?, "one")?;
 
         asserting!("package with shared changes should have some commits for HEAD~1 revspec")
             .that(&commit_range_package.0)
@@ -442,7 +434,8 @@ mod test {
             git commit -m "feat: commit to extra included file";
         )?;
 
-        let commit_range_package = repo.get_commit_range_for_package("HEAD~1..HEAD", "one")?;
+        let commit_range_package =
+            repo.get_commit_range_for_package(repo.revspec_from_str("HEAD~1..HEAD")?, "one")?;
 
         asserting!(
             "package with extra included changes should have some commits for HEAD~1 revspec"
@@ -461,7 +454,8 @@ mod test {
     #[sealed_test]
     fn package_with_with_only_ignored_path_should_have_no_commit() -> Result<()> {
         let repo = init_mono_repo_for_range_filtering()?;
-        let commit_range_package = repo.get_commit_range_for_package("..HEAD", "one")?;
+        let commit_range_package =
+            repo.get_commit_range_for_package(RevSpecPattern2::full(), "one")?;
         asserting!("package with with only ignored path commit should have no commits for full range revspec")
             .that(&commit_range_package.0).has_length(0);
 
@@ -512,7 +506,7 @@ mod test {
         commit("feat: a commit")?;
 
         // Act
-        let commit_range = repo.revwalk("..1.0.0")?;
+        let commit_range = repo.revwalk_pattern("..1.0.0")?;
 
         // Assert
         assert_that!(commit_range.from_oid().to_string()).is_equal_to(first);
@@ -526,12 +520,12 @@ mod test {
         // Arrange
         let repo = Repository::open(COCOGITTO_REPOSITORY)?;
         let v1_0_0 = Oid::from_str("549070fa99986b059cbaa9457b6b6f065bbec46b")?;
-        let _v1_0_0 = OidOf::Tag(Tag::from_str("1.0.0", Some(v1_0_0))?);
+        let _v1_0_0 = CommitInfo::from(Tag::from_str("1.0.0", Some(v1_0_0))?);
         let v3_0_0 = Oid::from_str("c6508e243e2816e2d2f58828ee0c6721502958dd")?;
-        let v3_0_0 = OidOf::Tag(Tag::from_str("3.0.0", Some(v3_0_0))?);
+        let v3_0_0 = CommitInfo::from(Tag::from_str("3.0.0", Some(v3_0_0))?);
 
         // Act
-        let range = repo.revwalk("1.0.0..3.0.0")?;
+        let range = repo.revwalk_pattern("1.0.0..3.0.0")?;
 
         // Assert
         assert_that!(range.from_oid().to_string())
@@ -546,24 +540,24 @@ mod test {
         // Arrange
         let repo = Repository::open(COCOGITTO_REPOSITORY)?;
         let head = repo.get_head_commit_oid()?;
-        let head = OidOf::Head(head);
+        let head = CommitInfo::new(head);
         let tag = repo.get_latest_tag(TagLookUpOptions::default())?;
 
         // Cover the case when we release a version and run the test in the CI right after that
-        let head = if tag.oid() == Some(head.oid()) {
-            OidOf::Tag(tag)
+        let head = if tag.oid == Some(head.oid) {
+            CommitInfo::from(tag)
         } else {
             head
         };
 
         let v1_0_0 = Oid::from_str("549070fa99986b059cbaa9457b6b6f065bbec46b")?;
-        let _v1_0_0 = OidOf::Tag(Tag::from_str("1.0.0", Some(v1_0_0))?);
+        let _v1_0_0 = CommitInfo::from(Tag::from_str("1.0.0", Some(v1_0_0))?);
 
         // Act
-        let range = repo.revwalk("1.0.0..")?;
+        let range = repo.revwalk_pattern("1.0.0..")?;
 
         // Assert
-        assert_that!(range.from_oid().oid())
+        assert_that!(range.from_oid().oid)
             .is_equal_to(&Oid::from_str("7c4a1cb692b445f36a44857ce17db32b91acd24c")?);
         assert_that!(range.to_oid()).is_equal_to(head);
 
@@ -575,17 +569,52 @@ mod test {
         // Arrange
         let repo = Repository::open(COCOGITTO_REPOSITORY)?;
         let v2_1_1 = Oid::from_str("9dcf728d2eef6b5986633dd52ecbe9e416234898")?;
-        let _v2_1_1 = OidOf::Tag(Tag::from_str("2.1.1", Some(v2_1_1))?);
+        let _v2_1_1 = CommitInfo::from(Tag::from_str("2.1.1", Some(v2_1_1))?);
         let v3_0_0 = Oid::from_str("c6508e243e2816e2d2f58828ee0c6721502958dd")?;
-        let v3_0_0 = OidOf::Tag(Tag::from_str("3.0.0", Some(v3_0_0))?);
+        let v3_0_0 = CommitInfo::from(Tag::from_str("3.0.0", Some(v3_0_0))?);
 
         // Act
-        let range = repo.revwalk("2.1.1..3.0.0")?;
+        let range = repo.revwalk_pattern("2.1.1..3.0.0")?;
 
         // Assert
-        assert_that!(range.from_oid().oid())
+        assert_that!(range.from_oid().oid)
             .is_equal_to(&Oid::from_str("434c22295390fda0f276e3a3ee32fa4658489c5d")?);
         assert_that!(range.to_oid()).is_equal_to(v3_0_0);
+
+        Ok(())
+    }
+
+    #[test]
+    fn recursive_from_origin_to_head() -> Result<()> {
+        // Arrange
+        let repo = Repository::open(COCOGITTO_REPOSITORY)?;
+        // filter tags to only count global tags (starting with major version = digit)
+        let mut tag_count = repo
+            .0
+            .tag_names(None)?
+            .iter()
+            .filter_map(|tag| tag)
+            .filter(|tag| tag.starts_with(|c: char| c.is_ascii_digit()))
+            .count();
+        let head = repo.get_head_commit_oid()?;
+        let latest = repo.get_latest_tag(TagLookUpOptions::default())?;
+        if latest.oid == Some(head) {
+            tag_count -= 1;
+        };
+
+        let range = repo.revwalk_pattern("..")?;
+
+        // Act
+        let mut release = Release::try_from(range)?;
+        let mut count = 0;
+
+        while let Some(previous) = release.previous {
+            release = *previous;
+            count += 1;
+        }
+
+        // Assert
+        assert_that!(count).is_equal_to(tag_count);
 
         Ok(())
     }
@@ -602,7 +631,7 @@ mod test {
         let three = commit("chore: 1.0.0")?;
         let four = commit("fix: the bug")?;
 
-        let range = repo.revwalk(&format!("{}..", &one[0..7]))?;
+        let range = repo.revwalk_pattern(&format!("{}..", &one[0..7]))?;
 
         // Act
         let release = Release::try_from(range)?;
@@ -633,7 +662,7 @@ mod test {
         git_tag("1.0.0")?;
         let three = commit("fix: the bug")?;
 
-        let range = repo.revwalk(&format!("{}..", &from[0..7]))?;
+        let range = repo.revwalk_pattern(&format!("{}..", &from[0..7]))?;
 
         // Act
         let release = Release::try_from(range)?;
