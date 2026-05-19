@@ -476,15 +476,12 @@ impl CocoGitto {
                         .map(|(i, name)| (name.as_str(), i))
                         .collect();
 
-                    packages.sort_by(|a, b| {
-                        let a_order = order_map.get(a.0.as_str()).unwrap_or(&usize::MAX);
-                        let b_order = order_map.get(b.0.as_str()).unwrap_or(&usize::MAX);
-                        a_order.cmp(b_order)
-                    });
+                    packages
+                        .sort_by_key(|pkg| order_map.get(pkg.0.as_str()).unwrap_or(&usize::MAX));
                 }
             }
         } else {
-            packages.sort_by(|a, b| a.1.bump_order.cmp(&b.1.bump_order));
+            packages.sort_by_key(|pkg| pkg.1.bump_order);
         }
 
         for (package_name, package) in packages {
