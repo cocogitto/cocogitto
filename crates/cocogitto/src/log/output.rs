@@ -164,9 +164,15 @@ impl OutputBuilder {
                 .any(|arg| arg == "-R" || arg == "--RAW-CONTROL-CHARS");
 
             let has_no_init_flag = args.iter().any(|arg| arg == "--no-init");
+            let less_version = less_version();
+            let is_gnu_less = less_version.is_some();
 
             if !has_r_flag {
-                cmd.arg("--RAW-CONTROL-CHARS");
+                if is_gnu_less {
+                    cmd.arg("--RAW-CONTROL-CHARS");
+                } else {
+                    cmd.arg("-R");
+                }
             }
 
             // Passing '--no-init' fixes a bug with '--quit-if-one-screen' in older
@@ -177,11 +183,8 @@ impl OutputBuilder {
             // For newer versions (530 or 558 on Windows), we omit '--no-init' as it
             // is not needed anymore.
             if !has_no_init_flag {
-                match less_version() {
-                    None => {
-                        cmd.arg("--no-init");
-                    }
-                    Some(version) if (version < 530 || (cfg!(windows) && version < 558)) => {
+                match less_version {
+                    Some(version) if version < 530 || (cfg!(windows) && version < 558) => {
                         cmd.arg("--no-init");
                     }
                     _ => {}
@@ -217,5 +220,34 @@ fn parse_less_version(output: &[u8]) -> Option<usize> {
         version[..end].parse::<usize>().ok()
     } else {
         None
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn parse_less_version_returns_none_for_busybox_output() {
+        // Arrange
+        let output = b"BusyBox v1.37.0 (2025-12-16 14:19:28 UTC) multi-call binary.";
+
+        // Act
+        let version = parse_less_version(output);
+
+        // Assert
+        assert_eq!(version, None);
+    }
+
+    #[test]
+    fn parse_less_version_returns_some_for_gnu_less_output() {
+        // Arrange
+        let output = b"less 661 (GNU regular expressions)";
+
+        // Act
+        let version = parse_less_version(output);
+
+        // Assert
+        assert_eq!(version, Some(661));
     }
 }
