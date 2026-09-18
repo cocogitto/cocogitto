@@ -1,7 +1,7 @@
 use std::collections::{BTreeMap, HashMap};
 use std::fs::File;
 use std::io::{self, BufRead};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::sync::OnceLock;
 
@@ -79,6 +79,55 @@ pub enum CommitHook {
     PrepareCommitMessage(String),
     CommitMessage,
     PostCommit,
+}
+
+/// Build the command used to execute a git hook.
+///
+/// On Windows the kernel cannot interpret shebangs, so hooks are run through
+/// a POSIX shell shipped with Git. On Unix, shebang hooks are executed
+/// directly and the kernel resolves the interpreter for us.
+#[cfg(windows)]
+fn git_hook_command(hook_path: &Path, _has_shebang: bool) -> Command {
+    if let Some(sh) = windows_shell() {
+        let mut command = Command::new(sh);
+        command.arg(hook_path);
+        return command;
+    }
+
+    Command::new(hook_path)
+}
+
+#[cfg(not(windows))]
+fn git_hook_command(hook_path: &Path, has_shebang: bool) -> Command {
+    if has_shebang {
+        Command::new(hook_path)
+    } else {
+        let mut command = Command::new("sh");
+        command.arg(hook_path);
+        command
+    }
+}
+
+/// Path to a POSIX shell on Windows, resolved once and reused across hooks.
+#[cfg(windows)]
+static WINDOWS_SHELL: Lazy<Option<PathBuf>> = Lazy::new(|| {
+    if let Ok(sh) = which::which("sh") {
+        return Some(sh);
+    }
+
+    let mut candidates = Vec::new();
+    if let Ok(git) = which::which("git") {
+        if let Some(git_root) = git.parent().and_then(Path::parent) {
+            candidates.push(git_root.join("usr").join("bin").join("sh.exe"));
+            candidates.push(git_root.join("bin").join("sh.exe"));
+        }
+    }
+    candidates.into_iter().find(|path| path.exists())
+});
+
+#[cfg(windows)]
+fn windows_shell() -> Option<PathBuf> {
+    WINDOWS_SHELL.clone()
 }
 
 impl CocoGitto {
@@ -163,13 +212,7 @@ impl CocoGitto {
             let mut first_line = String::new();
             reader.read_line(&mut first_line)?;
 
-            let mut command = if first_line.starts_with("#!") {
-                Command::new(&hook_path)
-            } else {
-                let mut cmd = Command::new("sh");
-                cmd.arg(&hook_path);
-                cmd
-            };
+            let mut command = git_hook_command(&hook_path, first_line.starts_with("#!"));
 
             let status = command
                 .args(&args)
@@ -229,5 +272,29 @@ pub mod test_helpers {
             std::fs::create_dir_all(dir)?;
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod test {
+    #[test]
+    #[cfg(windows)]
+    fn windows_shell_is_resolved_from_git() {
+        // Arrange
+        let sh = super::windows_shell();
+
+        // Act
+        let sh = sh.expect("sh should be resolvable on Windows via Git for Windows");
+
+        // Assert
+        assert!(
+            sh.is_file(),
+            "resolved shell should exist on disk: {}",
+            sh.display()
+        );
+        assert_eq!(
+            sh.file_name().and_then(|name| name.to_str()),
+            Some("sh.exe")
+        );
     }
 }

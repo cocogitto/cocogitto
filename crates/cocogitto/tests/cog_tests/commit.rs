@@ -462,6 +462,32 @@ fn should_run_pre_commit_hook_with_custom_hooks_path() -> Result<()> {
 }
 
 #[sealed_test]
+fn should_run_shebang_pre_commit_hook() -> Result<()> {
+    // Arrange
+    git_init()?;
+    git_add("content", "test_file")?;
+
+    std::fs::write(
+        ".git/hooks/pre-commit",
+        "#!/bin/sh\necho 'running shebang pre-commit hook'\n",
+    )?;
+    #[cfg(not(windows))]
+    run_cmd!(chmod +x .git/hooks/pre-commit;)?;
+
+    // Act
+    Command::new(assert_cmd::cargo_bin!("cog"))
+        .arg("commit")
+        .arg("feat")
+        .arg("test commit")
+        // Assert
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("running shebang pre-commit hook"));
+
+    Ok(())
+}
+
+#[sealed_test]
 fn commit_in_git_worktree_should_work() -> Result<()> {
     // Arrange
     git_init()?;
