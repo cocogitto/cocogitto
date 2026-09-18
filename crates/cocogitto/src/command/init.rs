@@ -19,24 +19,24 @@ pub fn init<S: AsRef<Path> + ?Sized>(path: &S) -> anyhow::Result<()> {
         Ok(repo) => {
             info!(
                 "Found git repository in {:?}, skipping initialisation",
-                &path
+                path
             );
             repo
         }
         Err(_) => match Repository::init(&path) {
             Ok(repo) => {
-                info!("Empty git repository initialized in {:?}", &path);
+                info!("Empty git repository initialized in {:?}", path);
                 is_init_commit = true;
                 repo
             }
-            Err(err) => panic!("Unable to init repository on {:?}: {}", &path, err),
+            Err(err) => panic!("Unable to init repository on {:?}: {}", path, err),
         },
     };
 
     let settings = Settings::default();
     let settings_path = path.join(get_config_path());
     if settings_path.exists() {
-        eprint!("Found {} in {:?}, Nothing to do", get_config_path(), &path);
+        eprint!("Found {} in {:?}, Nothing to do", get_config_path(), path);
         exit(1);
     } else {
         std::fs::write(

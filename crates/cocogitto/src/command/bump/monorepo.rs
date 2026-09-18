@@ -484,7 +484,7 @@ impl CocoGitto {
                 }
             }
         } else {
-            packages.sort_by(|a, b| a.1.bump_order.cmp(&b.1.bump_order));
+            packages.sort_by_key(|a| a.1.bump_order);
         }
 
         for (package_name, package) in packages {

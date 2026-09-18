@@ -28,8 +28,8 @@ impl Display for OidOf {
         match self {
             OidOf::Tag(tag) => write!(f, "{tag}"),
             OidOf::Head(_) => write!(f, "HEAD"),
-            OidOf::Other(oid) => write!(f, "{}", &oid.to_string()),
-            OidOf::FirstCommit(oid) => write!(f, "{}", &oid.to_string()),
+            OidOf::Other(oid) => write!(f, "{}", oid),
+            OidOf::FirstCommit(oid) => write!(f, "{}", oid),
         }
     }
 }

@@ -104,7 +104,7 @@ impl CocoGitto {
                             ignore_fixup_commit,
                         ) {
                             Ok(_) => {
-                                info!("Changed commit message to:\"{}\"", &new_message.trim_end())
+                                info!("Changed commit message to:\"{}\"", new_message.trim_end())
                             }
                             Err(err) => error!(
                                 "Error: {}\n\t{}",
