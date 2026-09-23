@@ -581,8 +581,8 @@ fn main() -> Result<()> {
             let ignore_merge_commits = ignore_merge_commits || SETTINGS.ignore_merge_commits;
             let ignore_fixup_commits = ignore_fixup_commits || SETTINGS.ignore_fixup_commits;
             let author = CocoGitto::get()
-                .map(|cogito| cogito.get_committer().unwrap())
-                .ok();
+                .ok()
+                .and_then(|cogito| cogito.get_committer().ok());
 
             let commit_message = match (message, file) {
                 (Some(message), None) => message,
