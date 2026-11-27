@@ -34,7 +34,7 @@ impl CocoGitto {
             return Ok(());
         }
 
-        if !SETTINGS.disable_changelog {
+        if !(opts.disable_changelog || SETTINGS.disable_changelog) {
             let pattern = self.get_bump_revspec(&bump_res.current);
             let changelog = self.get_package_changelog_with_target_version(
                 &pattern,

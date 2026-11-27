@@ -340,6 +340,10 @@ enum Command {
         #[arg(long = "disable-bump-commit")]
         disable_bump_commit: bool,
 
+        /// Disable changelog generation, as `disable_changelog = true` in cog.toml does
+        #[arg(long = "disable-changelog")]
+        disable_changelog: bool,
+
         /// Also bump packages on manual bump
         ///
         /// Overrides the default behaviour for --patch, --minor, --major and --version to only
@@ -473,6 +477,7 @@ fn main() -> Result<()> {
             skip_ci_override,
             skip_untracked,
             disable_bump_commit,
+            disable_changelog,
             include_packages,
         } => {
             let mut cocogitto = CocoGitto::get()?;
@@ -533,6 +538,7 @@ fn main() -> Result<()> {
                             skip_ci_override,
                             skip_untracked,
                             disable_bump_commit,
+                            disable_changelog,
                         };
 
                         cocogitto.create_package_version(opts)?
@@ -549,6 +555,7 @@ fn main() -> Result<()> {
                             skip_ci_override,
                             skip_untracked,
                             disable_bump_commit,
+                            disable_changelog,
                             include_packages,
                         };
 
@@ -567,6 +574,7 @@ fn main() -> Result<()> {
                     skip_ci_override,
                     skip_untracked,
                     disable_bump_commit,
+                    disable_changelog,
                     include_packages,
                 };
                 cocogitto.create_version(opts)?

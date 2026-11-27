@@ -89,6 +89,14 @@ the `--disable-bump-commit` option of the `cog bump` command. In that case, Coco
 latest commit and will not commit the files mentioned above. They will have to be manually committed, for example using
 the `post_bump_hooks`.
 
+Changelog generation can be disabled the same way, with the `disable_changelog` configuration or the
+`--disable-changelog` option of the `cog bump` command. Combined with `--disable-bump-commit`, `cog bump` only creates
+the tag(s), for example to tag a release commit whose changelog was already prepared and merged in a pull request:
+
+```bash
+cog bump --auto --disable-bump-commit --disable-changelog
+```
+
 ## Get the current version
 
 It's sometime needed to display the current version for scripting purpose.
