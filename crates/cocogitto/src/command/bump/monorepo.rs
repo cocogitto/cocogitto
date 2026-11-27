@@ -75,10 +75,11 @@ impl CocoGitto {
             self.run_hooks(HookRunOptions::pre_bump().hook_profile(opts.hooks_config));
 
         let disable_bump_commit = opts.disable_bump_commit || SETTINGS.disable_bump_commit;
+        let disable_changelog = opts.disable_changelog || SETTINGS.disable_changelog;
 
         self.repository.add_all()?;
         self.unwrap_or_stash_and_exit(&Tag::default(), hook_result);
-        self.bump_packages(opts.hooks_config, &bumps)?;
+        self.bump_packages(opts.hooks_config, disable_changelog, &bumps)?;
 
         if !disable_bump_commit {
             let sign = self.repository.gpg_sign();
@@ -183,7 +184,9 @@ impl CocoGitto {
             })
         }
 
-        if !SETTINGS.disable_changelog {
+        let disable_changelog = opts.disable_changelog || SETTINGS.disable_changelog;
+
+        if !disable_changelog {
             let pattern = self.get_bump_revspec(&bump_res.current);
             let changelog = self.get_monorepo_global_changelog_for_version(
                 &pattern,
@@ -222,7 +225,7 @@ impl CocoGitto {
 
         self.repository.add_all()?;
         self.unwrap_or_stash_and_exit(&tag, hook_result);
-        self.bump_packages(opts.hooks_config, &bumps)?;
+        self.bump_packages(opts.hooks_config, disable_changelog, &bumps)?;
 
         let disable_bump_commit = opts.disable_bump_commit || SETTINGS.disable_bump_commit;
 
@@ -316,7 +319,7 @@ impl CocoGitto {
             })
         }
 
-        if !SETTINGS.disable_changelog {
+        if !(opts.disable_changelog || SETTINGS.disable_changelog) {
             let pattern = self.get_bump_revspec(&bump_res.current);
             let changelog = self.get_monorepo_global_changelog_for_version(
                 &pattern,
@@ -529,6 +532,7 @@ impl CocoGitto {
     fn bump_packages(
         &mut self,
         hooks_config: Option<&str>,
+        disable_changelog: bool,
         package_bumps: &Vec<PackageBumpData>,
     ) -> Result<()> {
         for bump in package_bumps {
@@ -541,7 +545,7 @@ impl CocoGitto {
                 .and_then(|m| m.packages.get(package_name.as_str()))
                 .expect("package exists");
 
-            if !SETTINGS.disable_changelog {
+            if !disable_changelog {
                 let pattern = self.get_bump_revspec(&bump.current);
                 let changelog = self.get_package_changelog_with_target_version(
                     &pattern,
